@@ -73,3 +73,8 @@
   - Utilizar pastas
   - Utilizar funções de busca (item = personagem)
   - Criar diagramas para relacionar personagens
+
+---
+
+# Épicos
+Coming soon...
