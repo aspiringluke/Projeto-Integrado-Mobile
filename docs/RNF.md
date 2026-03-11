@@ -2,29 +2,70 @@
 
 ## Portabilidade
 
-- ### RNF01 (Portabilidade - Adaptabilidade) — Tela Responsiva:
+### RNF01 (Portabilidade Adaptabilidade) — Tela Responsiva:
   A interface deve ser responsiva e manter a integridade do layout em diferentes tamanhos de tela.
+
+  Critérios de Avaliação:
+  - C1:
+  - C2:
+
+  Relacionados aos Requisitos Funcionais:
+  - RFXX
+  - RFXX
 
 ## Eficiência de Desempenho
 
-- ### RNF02 (Eficiência de Desempenho — Utilização de Recursos) — Modo Desempenho:
-  O sistema deve possuir um "Modo Desempenho" em que o sistema consome até X MB de RAM.
+### RNF02 (Eficiência de Desempenho — Utilização de Recursos) — Modo Desempenho:
+  No "Modo Desempenho" o sistema deve consumir até X MB de RAM.
 
-- ### RNF03 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) — Latência de Busca:
-  O mecanismo de busca interna deve processar as consultas e retornar os resultados na interface do usuário em um tempo de resposta inferior a 500ms.
+  Critérios de Avaliação:
+  - C1:
+  - C2:
 
-- ### RNF04 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) — Renderização em Tempo Real:
-  O motor gráfico do editor de diagramas deve suportar atualizações visuais instantâneas (abaixo de 100ms de latência) durante a manipulação de elementos.
+  Relacionados aos Requisitos Funcionais:
+  - RF35
 
-- ### RNF05 (Eficiência de Desempenho — Capacidade) — Limite de Upload:
-  O sistema deve processar e armazenar arquivos de imagem de referência, respeitando o limite máximo de X MB por arquivo para garantir a estabilidade do servidor.
+### RNF03 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) — Latência de Busca:
+  O mecanismo de busca interna deve processar as consultas e retornar os resultados na interface do usuário em um tempo de resposta inferior a X ms.
+  
+  Critérios de Avaliação:
+  - C1:
+  - C2:
 
-## Usabilidade
+  Relacionados aos Requisitos Funcionais:
+  - RFXX
+  - RFXX
 
-- ### RNF06 (Usabilidade — Operacionalidade) — Interatividade Drag-and-Drop:
-  A interface de edição de diagramas deve implementar a funcionalidade de "arrastar e soltar" para a movimentação de nós e organização de itens em pastas, visando a facilidade de uso.
+### RNF04 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) — Renderização em Tempo Real:
+  O motor gráfico do editor de diagramas deve suportar atualizações visuais instantâneas (abaixo de X ms de latência) durante a manipulação de elementos.
+
+  Critérios de Avaliação:
+  - C1:
+  - C2:
+
+  Relacionados aos Requisitos Funcionais:
+  - RFXX
+  - RFXX
+
+### RNF05 (Eficiência de Desempenho — Capacidade) — Limite de Upload:
+  Os arquivos de imagem armazenados no perfil dos personagens devem respeitar o limite máximo de X MB por arquivo para garantir a estabilidade do servidor.
+
+  Critérios de Avaliação:
+  - C1:
+  - C2:
+    
+  Relacionados aos Requisitos Funcionais:
+  - RF29
 
 ## Confiabilidade
 
-- ### RNF07 (Confiabilidade — Recuperabilidade) — Persistência Automática:
-  O editor deve garantir a integridade dos dados através de salvamento automático em intervalos regulares ou acionamento imediato sob comando do usuário, prevenindo a perda de progresso em caso de falha.
+### RNF06 (Confiabilidade — Recuperabilidade) — Persistência Automática:
+  O editor deve garantir a integridade dos dados através de salvamento automático após o usuário finalizar alguma adição ou alteração de dados.
+  
+  Critérios de Avaliação:
+  - C1:
+  - C2:
+
+  Relacionados aos Requisitos Funcionais:
+  - RFXX
+  - RFXX
