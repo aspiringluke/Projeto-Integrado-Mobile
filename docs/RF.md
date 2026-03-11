@@ -7,56 +7,56 @@
   
 ## Funções de Busca
 
-### RF03 (Busca) — Filtrar itens por atributos ou tags
+### RF02 (Busca) — Filtrar itens por atributos ou tags
   O sistema deve permitir a filtragem de elementos do projeto com base em categorias ou etiquetas pré-definidas.
 
-### RF04 (Busca) — Ordenar itens por atributos ou tags
+### RF03 (Busca) — Ordenar itens por atributos ou tags
   O sistema deve permitir a organização da visualização de itens por ordem alfabética, data ou tags.
 
-### RF05 (Busca) — Buscar itens por atributos ou tags
+### RF04 (Busca) — Buscar itens por atributos ou tags
   O sistema deve oferecer um campo de pesquisa global para encontrar itens (ideias/personagens) via metadados.
 
 ## Gerenciamento de Diagramas
 
-### RF06 — Criar diagramas
+### RF05 — Criar diagramas
   O sistema deve permitir ao usuário criar diagramas
 
-### RF07 — Excluir diagrmas
+### RF06 — Excluir diagrmas
   O sistema deve permitir ao usuário excluir diagramas
 
-### RF08 — Organizar diagramas em pastas
+### RF07 — Organizar diagramas em pastas
   O sistema deve permitir a criação de pastas específicas para o armazenamento e categorização de diferentes diagramas.
 
 ## Edição de Diagramas
 
-### RF10 — Inserir nó
+### RF08 — Inserir nó
   O sistema deve permitir a adição de novos pontos de informação (nós) no plano de edição do diagrama.
 
-### RF11 — Mover nó
+### RF09 — Mover nó
   O sistema deve permitir o reposicionamento espacial dos nós através de interface de arrastar e soltar.
 
-### RF12 — Excluir nó
+### RF10 — Excluir nó
   O sistema deve permitir a remoção definitiva de um nó e suas conexões associadas.
 
-### RF13 — Renomear nó
+### RF11 — Renomear nó
   O sistema deve permitir a alteração do rótulo textual de identificação de um nó.
 
-### RF14 — Alterar tag do nó
+### RF12 — Alterar tag do nó
   O sistema deve permitir a atribuição ou modificação de etiquetas de categorização em um nó.
 
-### RF15 — Adicionar descrição ao nó
+### RF13 — Adicionar descrição ao nó
   O sistema deve permitir a inserção de textos detalhados ou notas explicativas vinculadas a um nó.
 
-### RF16 — Criar grupo de nós
+### RF14 — Criar grupo de nós
   O sistema deve permitir o agrupamento de múltiplos nós para tratamento coletivo.
 
-### RF17 — Renomear grupo de nós
+### RF15 — Renomear grupo de nós
   O sistema deve permitir a edição do nome identificador de um grupo de nós.
 
-### RF18 — Inserir nós em grupos
+### RF16 — Inserir nós em grupos
   O sistema deve permitir a inclusão de nós individuais dentro de grupos já existentes.
 
-### RF19 — Remover nós de grupo
+### RF17 — Remover nós de grupo
   O sistema deve permitir retirar um nó de um grupo sem excluí-lo do diagrama.
 
 ### RF18 — Alternar visibilidade do grupo
