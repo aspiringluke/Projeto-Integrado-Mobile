@@ -197,3 +197,9 @@
 ### RF45 — Modo Desempenho
 
   O sistema deve possuir um "Modo Desempenho"
+
+### RF46 — Assistente de Insights Contextuais (IA)
+
+  O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
+  (Projetos, Personagens, Ideias ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização
+  
