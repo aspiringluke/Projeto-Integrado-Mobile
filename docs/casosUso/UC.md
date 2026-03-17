@@ -14,7 +14,7 @@
 
 - Tela inicial aberta.
 
-### Pós-condições
+### Pós condições
 
 - Novo projeto criado.
 
@@ -31,11 +31,11 @@
 - **A1 — Modificar o atributo de ideias:**
     1. O usuário clica no botão da guia de ideias.
     2. O aplicativo abre a tela de ideias.
-    3. O usuário pode criar pastas e textos para as ideias. Além disso, pode criar também diagramas de ideias.
+    3. O usuário pode criar pastas e textos para as ideias. Além disso, pode também criar diagramas de ideias.
 - **A2 — Modificar o atributo de personagens:**
     1. Na página inicial, o usuário clica em um dos ícones de personagem.
     2. O aplicativo abre a tela de gerenciamento de personagens.
-    3. O usuário pode modificar os atributos de personagens, como nome, apelido, data de nascimento, etc. Além disso, pode criar também diagramas de personagens.
+    3. O usuário pode modificar os atributos de personagens, como nome, apelido, data de nascimento, etc. Além disso, pode também criar diagramas de personagens.
 
 ### RF Relacionadas
 
@@ -60,9 +60,9 @@
 
 ### Pré-condições
 
-- O usuário deve estar dentro de um Projeto ativo.
+- O usuário deve estar dentro de um projeto ativo.
 
-### Pós-condições
+### Pós condições
 
 - Um novo diagrama é persistido no banco de dados local.
 - O editor gráfico é carregado com as restrições de performance ativas.
@@ -115,7 +115,7 @@
 
 - Existir um diagrama onde um nó está vinculado a uma entidade persistente (Personagem/Ideia).
 
-### Pós-condições
+### Pós condições
 
 - A representação visual do nó no diagrama é atualizada.
 
@@ -163,7 +163,7 @@
 
 - Interface de listagem (projetos/ideias) ou editor de diagramas aberto.
 
-### Pós-condições
+### Pós condições
 
 - Nova posição espacial ou hierárquica salva.
 
@@ -212,7 +212,7 @@
 
 - Existirem itens (ideias, personagens, diagramas) cadastrados.
 
-### Pós-condições
+### Pós condições
 
 - Listagem filtrada exibida na tela.
 
@@ -255,7 +255,7 @@
 
 - Dispositivo com pouca RAM ou desejo do usuário por economia de bateria.
 
-### Pós-condições
+### Pós condições
 
 - Interface simplificada e consumo de recursos reduzido.
 
@@ -296,7 +296,7 @@
 
 - Diagrama com múltiplos nós existentes.
 
-### Pós-condições
+### Pós condições
 
 - Grupo criado e visibilidade configurada.
 
@@ -345,7 +345,7 @@
 
 - Ficha de personagem aberta em modo de edição.
 
-### Pós-condições
+### Pós condições
 
 - Imagem comprimida e exibida no perfil do personagem.
 
@@ -387,7 +387,7 @@
 
 - Projeto ativo.
 
-### Pós-condições
+### Pós condições
 
 - Ideia persistida com formatação e tags.
 
@@ -437,7 +437,7 @@
 
 - Aplicativo instalado.
 
-### Pós-condições
+### Pós condições
 
 - Senha de acesso configurada e ativa.
 
@@ -474,7 +474,7 @@
 
 - Diagrama aberto com ao menos um nó conectado a arestas.
 
-### Pós-condições
+### Pós condições
 
 - Nó e arestas vinculadas removidos permanentemente.
 
@@ -521,7 +521,7 @@
 
 - Projeto aberto com ao menos uma pasta criada.
 
-### Pós-condições
+### Pós condições
 
 - Estrutura de diretórios atualizada ou removida.
 
@@ -562,7 +562,7 @@
 
 - Editor de diagrama aberto com elementos (nós e arestas) presentes.
 
-### Pós-condições
+### Pós condições
 
 - Metadados salvos nos elementos do diagrama.
 
@@ -602,7 +602,7 @@
 
 - Aplicativo aberto na tela de configurações.
 
-### Pós-condições
+### Pós condições
 
 - Preferências de sistema e limites de validação alterados conforme a escolha do usuário.
 
@@ -654,7 +654,7 @@
 
 - Listagem de itens aberta.
 
-### Pós-condições
+### Pós condições
 
 - Item removido e memória liberada.
 
@@ -695,7 +695,7 @@
 
 - Acesso às configurações gerais.
 
-### Pós-condições
+### Pós condições
 
 - Status de segurança do app atualizado.
 
@@ -716,3 +716,57 @@
 ### RF Relacionadas
 
 - RF42
+
+---
+
+## UC17 — Gerar Insights Contextuais via IA
+
+### Ator Principal
+
+- Usuário
+- Serviço de IA
+
+### Objetivos
+
+- Fornecer análises e sugestões baseados no conteúdo da tela onde o usuário se encontra
+- Gerar perfis automáticos de personagens para auxiliar na organização e construção de mundo
+- Centralizar métricas e insights em uma tela de relatórios (Dashboards) por projeto
+
+### Pré-condições
+
+- O usuário deve estar em uma página de conteúdo (Projeto, Personagem, Ideia ou Diagrama)
+- Conexão ativa com o serviço de IA
+
+### Pós condições
+
+- Os insights são armazenados e exibidos na tela de relatórios do projeto
+- Novos perfis de personagens podem ser criados a partir das sugestões
+
+### Fluxo Principal
+
+1. O usuário clica no ícone de "IA" em qualquer parte do projeto
+2. O sistema coleta os dados da hierarquia atual e envia para o serviço de IA
+3. O serviço de IA processa o contexto e gera categorias de análise (Ex: Coerência, Criatividade, Organização, etc)
+4. O sistema redireciona o usuário para a tela de relatórios
+5. O sistema renderiza os Dashboards com gráficos e cards contendo os insights e sugestões de novos perfis
+6. O usuário seleciona uma sugestão de personagem para salvar na hierarquia do projeto
+
+### Fluxo Alternativo
+
+- **A1 — IA fora de contexto:**
+    1. O usuário aciona a IA em uma tela vazia ou sem dados suficientes
+    2. A IA retorna uma mensagem sugerindo que o usuário adicione mais informações para uma análise precisa
+- **A2 — Falha de conexão:**
+    1. O sistema detecta que o serviço de IA está offline
+    2. O sistema exibe mensagem de erro e informa que os insights não podem ser gerados no momento
+- **A3 — Consulta de relatórios anteriores:**
+    1. O usuário acessa diretamente a tela de relatórios sem acionar um novo processamento
+    2. O sistema carrega os últimos dashboards salvos localmente
+- **A4 — Falha na geração de perfil:**
+    1. A IA sugere um personagem, mas o usuário já atingiu o limite de armazenamento
+    2. O sistema alerta sobre a necessidade de limpeza antes de salvar o novo pérfil
+
+### RF Relacionadas
+
+- RF46
+- RF36
