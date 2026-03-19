@@ -9,6 +9,7 @@ class Wireframe extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         title: "Wireframe",
+        debugShowCheckedModeBanner: false,
         routes: {
             "/": (_) => HomePage()
         },
