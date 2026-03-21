@@ -20,31 +20,13 @@
 
 ### Fluxo Principal
 
-1. O usuário abre o aplicativo.
-2. O aplicativo abre a tela inicial.
-3. O usuário clica no botão "Novo Projeto".
-4. Um novo projeto é criado.
-5. O usuário pode modificar os atributos do projeto, como adicionar sinopse e adicionar tags.
-
-### Fluxo Alternativo
-
-- **A1 — Modificar o atributo de ideias:**
-    1. O usuário clica no botão da guia de ideias.
-    2. O aplicativo abre a tela de ideias.
-    3. O usuário pode criar pastas e textos para as ideias. Além disso, pode também criar diagramas de ideias.
-- **A2 — Modificar o atributo de personagens:**
-    1. Na página inicial, o usuário clica em um dos ícones de personagem.
-    2. O aplicativo abre a tela de gerenciamento de personagens.
-    3. O usuário pode modificar os atributos de personagens, como nome, apelido, data de nascimento, etc. Além disso, pode também criar diagramas de personagens.
+1. O aplicativo abre a tela inicial.
+2. O usuário clica no botão "Novo Projeto".
+3. Um novo projeto é criado.
 
 ### RF Relacionadas
 
 - RF01
-- RF05
-- RF24
-- RF31
-- RF36
-- RF40
 
 ---
 
@@ -65,7 +47,6 @@
 ### Pós condições
 
 - Um novo diagrama é persistido no banco de dados local.
-- O editor gráfico é carregado com as restrições de performance ativas.
 
 ### Fluxo Principal
 
@@ -97,54 +78,6 @@
 ### RNF Relacionadas
 
 - RNF04
-- RNF06
-
----
-
-## UC03 — Sincronizar Dados entre Entidade e Diagrama
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Garantir que alterações em fichas de personagens ou ideias sejam refletidas visualmente nos diagramas existentes.
-
-### Pré-condições
-
-- Existir um diagrama onde um nó está vinculado a uma entidade persistente (Personagem/Ideia).
-
-### Pós condições
-
-- A representação visual do nó no diagrama é atualizada.
-
-### Fluxo Principal
-
-1. O usuário acessa a aba de "Gerenciamento de Personagens".
-2. O usuário altera o nome de um personagem específico.
-3. O usuário clica em "Salvar".
-4. O sistema identifica todos os diagramas que contêm o nó vinculado a este personagem.
-5. O sistema atualiza o rótulo textual (label) de todos os nós correspondentes automaticamente.
-
-### Fluxo Alternativo
-
-- **A1 — Entidade Excluída:**
-
-    Se o personagem for excluído, o sistema remove o vínculo do nó no diagrama, mas mantém o nó como um elemento genérico.
-
-### RF Relacionadas
-
-- RF09
-- RF15
-- RF37
-
-### RN Relacionadas
-
-- RN07
-
-### RNF Relacionadas
-
 - RNF06
 
 ---
@@ -184,8 +117,8 @@
 ### RF Relacionadas
 
 - RF13
-- RF33
-- RF35
+- RF34
+- RF36
 
 ### RN Relacionadas
 
@@ -233,7 +166,7 @@
 
 - RF02
 - RF04
-- RF23
+- RF24
 
 ### RNF Relacionadas
 
@@ -251,10 +184,6 @@
 
 - Otimizar a experiência em dispositivos com hardware limitado.
 
-### Pré-condições
-
-- Dispositivo com pouca RAM ou desejo do usuário por economia de bateria.
-
 ### Pós condições
 
 - Interface simplificada e consumo de recursos reduzido.
@@ -264,7 +193,7 @@
 1. O usuário acessa as "Configurações Gerais".
 2. O usuário ativa o botão "Modo Desempenho".
 3. O sistema desabilita sombras dinâmicas, transparências e animações complexas.
-4. O sistema limita o uso da Heap de memória para o teto definido.
+4. O sistema limita o uso da memória para o teto definido.
 
 ### Fluxo Alternativo
 
@@ -274,7 +203,7 @@
 
 ### RF Relacionadas
 
-- RF45
+- RF46
 
 ### RNF Relacionadas
 
@@ -298,20 +227,25 @@
 
 ### Pós condições
 
-- Grupo criado e visibilidade configurada.
+- Grupo criado.
 
 ### Fluxo Principal
 
 1. O usuário seleciona múltiplos nós no editor.
 2. O usuário aciona a função "Criar Grupo de Nós".
 3. O usuário define um nome e cor para o grupo.
-4. O usuário alterna a visibilidade para "Oculto" para focar em outra parte do diagrama.
 
 ### Fluxo Alternativo
 
 - **A1 — Remoção de nó do grupo:**
 
-    O usuário seleciona um nó dentro do grupo e aciona "Remover do Grupo", mantendo o nó no diagrama de forma independente.
+    1. O usuário seleciona um nó dentro do grupo.
+    2. O usuário aciona "Remover do Grupo", mantendo o nó no diagrama de forma independente.
+
+- **A2 — Exclusão de grupo:**
+
+    1. O usuário seleciona o grupo
+    2. O usuário aciona "Excluir Grupo"
 
 ### RF Relacionadas
 
@@ -319,7 +253,7 @@
 - RF19
 - RF20
 - RF21
-- RF22
+- RF23
 
 ### RN Relacionadas
 
@@ -344,6 +278,7 @@
 ### Pré-condições
 
 - Ficha de personagem aberta em modo de edição.
+- Permissão para acessar imagens na galeria concedida.
 
 ### Pós condições
 
@@ -365,7 +300,7 @@
 
 ### RF Relacionadas
 
-- RF38
+- RF39
 
 ### RNF Relacionadas
 
@@ -383,10 +318,6 @@
 
 - Registrar e estilizar fragmentos criativos rapidamente.
 
-### Pré-condições
-
-- Projeto ativo.
-
 ### Pós condições
 
 - Ideia persistida com formatação e tags.
@@ -403,15 +334,19 @@
 
 - **A1 — Adição de Imagens:**
 
-    O usuário insere uma imagem entre os parágrafos de texto da ideia.
+    1. O usuário aciona "Adicionar imagem" entre ideias
+    2. O sistema exibe duas opções de upload: "Tirar foto" e "Acessar fotos da galeria"
+    3. O usuário escolhe a opção desejada
+    4. O sistema verifica se o tamanho da imagem respeita o limite de tamanho definido na RNF05
+    5. A imagem é adicionada entre ideias com sucesso
 
 ### RF Relacionadas
 
-- RF24
-- RF27
+- RF25
 - RF28
 - RF29
 - RF30
+- RF31
 
 ### RN Relacionadas
 
@@ -433,10 +368,6 @@
 
 - Garantir a privacidade do conteúdo criativo do autor.
 
-### Pré-condições
-
-- Aplicativo instalado.
-
 ### Pós condições
 
 - Senha de acesso configurada e ativa.
@@ -456,7 +387,7 @@
 
 ### RF Relacionadas
 
-- RF42
+- RF43
 
 ---
 
@@ -472,7 +403,7 @@
 
 ### Pré-condições
 
-- Diagrama aberto com ao menos um nó conectado a arestas.
+- Diagrama aberto com ao menos dois nós conectados a cada aresta existente.
 
 ### Pós condições
 
@@ -507,7 +438,7 @@
 
 ---
 
-## UC12 — Manutenção de Pastas e Conteúdo
+## UC12 — Exclusão de Pastas e Conteúdo
 
 ### Ator Principal
 
@@ -519,7 +450,7 @@
 
 ### Pré-condições
 
-- Projeto aberto com ao menos uma pasta criada.
+- Exisitir pelo menos uma pasta criada.
 
 ### Pós condições
 
@@ -543,8 +474,8 @@
 
 ### RF Relacionadas
 
-- RF32
-- RF34
+- RF33
+- RF35
 
 ---
 
@@ -630,8 +561,8 @@
 
 ### RF Relacionadas
 
-- RF43
 - RF44
+- RF45
 
 ### RN Relacionadas
 
@@ -670,14 +601,15 @@
 
 - **A1 — Ordenação antes da exclusão:**
 
-    O usuário utiliza a função de ordenação para encontrar itens antigos por data, facilitando a limpeza em massa, e depois prossegue para a exclusão.
+    1. O usuário utiliza a função de ordenação para encontrar itens antigos por data facilitando a remoção filtrada
+    2. O usuário executa a exclusão.
 
 ### RF Relacionadas
 
 - RF03
 - RF06
-- RF25
-- RF41
+- RF26
+- RF42
 
 ---
 
@@ -694,6 +626,7 @@
 ### Pré-condições
 
 - Acesso às configurações gerais.
+- Proteção estar ativa.
 
 ### Pós condições
 
@@ -715,7 +648,7 @@
 
 ### RF Relacionadas
 
-- RF42
+- RF43
 
 ---
 
@@ -728,19 +661,19 @@
 
 ### Objetivos
 
-- Fornecer análises e sugestões baseados no conteúdo da tela onde o usuário se encontra
-- Gerar perfis automáticos de personagens para auxiliar na organização e construção de mundo
-- Centralizar métricas e insights em uma tela de relatórios (Dashboards) por projeto
+- Fornecer análises e sugestões baseados no conteúdo da tela onde o usuário se encontra.
+- Gerar perfis automáticos de personagens para auxiliar na organização e construção de mundo.
+- Centralizar métricas e insights em uma tela de relatórios (Dashboards) por projeto.
 
 ### Pré-condições
 
-- O usuário deve estar em uma página de conteúdo (Projeto, Personagem, Ideia ou Diagrama)
-- Conexão ativa com o serviço de IA
+- O usuário deve estar em uma página de conteúdo (Projeto, Personagem, Ideia ou Diagrama).
+- Conexão ativa com o serviço de IA.
 
 ### Pós condições
 
-- Os insights são armazenados e exibidos na tela de relatórios do projeto
-- Novos perfis de personagens podem ser criados a partir das sugestões
+- Os insights são armazenados e exibidos na tela de relatórios do projeto.
+- Novos perfis de personagens podem ser criados a partir das sugestões.
 
 ### Fluxo Principal
 
@@ -749,7 +682,6 @@
 3. O serviço de IA processa o contexto e gera categorias de análise (Ex: Coerência, Criatividade, Organização, etc)
 4. O sistema redireciona o usuário para a tela de relatórios
 5. O sistema renderiza os Dashboards com gráficos e cards contendo os insights e sugestões de novos perfis
-6. O usuário seleciona uma sugestão de personagem para salvar na hierarquia do projeto
 
 ### Fluxo Alternativo
 
@@ -765,8 +697,76 @@
 - **A4 — Falha na geração de perfil:**
     1. A IA sugere um personagem, mas o usuário já atingiu o limite de armazenamento
     2. O sistema alerta sobre a necessidade de limpeza antes de salvar o novo pérfil
+- **A5 — Aviso por falta de tokens:**
+    1. O sistema detecta o esgotamento de tokens do serviço de IA
+    2. O sistema alerta o usuário sobre o esgotamento dos tokens
+    3. O sistema solicita que o usuário agaurde a renovação dos tokens
 
 ### RF Relacionadas
 
-- RF46
-- RF36
+- RF37
+- RF47
+
+---
+
+```md
+UC01 - NECESSITA REALOCAMENTO
+- **A1 — Modificar o atributo de ideias:**
+    1. O usuário clica no botão da guia de ideias.
+    2. O aplicativo abre a tela de ideias.
+    3. O usuário pode criar pastas e textos para as ideias. Além disso, pode também criar diagramas de ideias.
+- **A2 — Modificar o atributo de personagens:**
+    1. Na página inicial, o usuário clica em um dos ícones de personagem.
+    2. O aplicativo abre a tela de gerenciamento de personagens.
+    3. O usuário pode modificar os atributos de personagens, como nome, apelido, data de nascimento, etc. Além disso, pode também criar diagramas de personagens.
+```
+
+```md
+SERÁ RECONSIDERADO
+## UC03 — Sincronizar Dados entre Entidade e Diagrama
+
+### Ator Principal
+
+- Usuário
+
+### Objetivos
+
+- Garantir que alterações em fichas de personagens ou ideias sejam refletidas visualmente nos diagramas existentes.
+
+### Pré-condições
+
+- Existir um diagrama onde um nó está vinculado a uma entidade persistente (Personagem/Ideia).
+
+### Pós condições
+
+- A representação visual do nó no diagrama é atualizada.
+
+### Fluxo Principal
+
+1. O usuário acessa a aba de "Gerenciamento de Personagens".
+2. O usuário altera o nome de um personagem específico.
+3. O usuário clica em "Salvar".
+4. O sistema identifica todos os diagramas que contêm o nó vinculado a este personagem.
+5. O sistema atualiza o rótulo textual (label) de todos os nós correspondentes automaticamente.
+
+### Fluxo Alternativo
+
+- **A1 — Entidade Excluída:**
+
+    Se o personagem for excluído, o sistema remove o vínculo do nó no diagrama, mas mantém o nó como um elemento genérico.
+
+### RF Relacionadas
+
+- RF09
+- RF15
+- RF37
+
+### RN Relacionadas
+
+- RN07
+
+### RNF Relacionadas
+
+- RNF06
+
+```
