@@ -26,7 +26,7 @@
 
 #### Critérios de Avaliação
 
-- C1: Quando ativado, o consumo de memória heap do aplicativo não deve exceder 150MB em dispositivos de entrada (Android Go/iOS antigo).
+- C1: Quando ativado, o consumo de memória do aplicativo não deve exceder 150MB em dispositivos de entrada (Android Go/iOS antigo).
 - C2: O sistema deve suspender animações de transição de tela e reduzir a fidelidade visual de sombras no editor de diagramas para priorizar a CPU.
 
 #### Relacionados aos Requisitos Funcionais
