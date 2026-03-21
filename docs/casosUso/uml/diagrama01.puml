@@ -7,7 +7,6 @@ actor "Usuario" as U
 rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
     package "Diagramação" {
         usecase "UC02: Criar Diagrama de Relacionamento de Entidades" as UC02
-        usecase "UC03: Sincronizar Dados entre Entidade e Diagrama" as UC03
         usecase "UC07: Gestão de Grupos de Nós em Diagramas" as UC07
         usecase "UC11: Excluir Nó e Tratar Arestas Órfãs" as UC11
         usecase "UC13: Gestão de Atributos Detalhados no Diagrama" as UC13
@@ -23,7 +22,6 @@ rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
 
 U --> UC01
 U --> UC02
-U --> UC03
 U --> UC07
 U --> UC08
 U --> UC09
@@ -35,5 +33,4 @@ UC01 <.-. UC09: <<extends>>
 UC01 <.-. UC15: <<extends>>
 
 UC02 <.-. UC13: <<extends>>
-UC02 --> UC03: <<include>>
 @enduml
