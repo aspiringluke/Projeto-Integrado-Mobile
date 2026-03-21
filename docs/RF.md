@@ -96,109 +96,113 @@
 
   O sistema deve permitir ocultar ou exibir grupos inteiros para facilitar a navegação no diagrama.
 
-### RF23 — Aplicar buscas em diagramas
+### RF23 — Excluir grupo
+
+  O sistema deve permitir ao usuário excluir grupos de nós
+
+### RF24 — Aplicar buscas em diagramas
 
   O sistema deve permitir a localização de elementos específicos dentro de um diagrama através de palavras-chave.
 
 ## Gerenciamento de Ideias
 
-### RF24 — Criação de Ideias
+### RF25 — Criação de Ideias
 
   O sistema deve permitir ao usuário o registro inicial de novos conceitos ou fragmentos de história.
 
-### RF25 — Exclusão de ideias
+### RF26 — Exclusão de ideias
 
   O sistema deve permitir a exclusão permanente de registros de ideias.
 
-### RF26 — Organizar ideias em Pastas
+### RF27 — Organizar ideias em Pastas
 
   O sistema deve permitir ao usuário organizar suas ideias em pastas
 
 ## Edição de Ideias
 
-### RF27 — Editar Texto da Ideia
+### RF28 — Editar Texto da Ideia
 
   O sistema deve permitir ao usuário editar o texto das ideias
 
-### RF28 — Adicionar Imagens às Ideias
+### RF29 — Adicionar Imagens às Ideias
 
   O sistema deve permitir o armazenamento de arquivos de imagem referentes às ideias
 
-### RF29— Atribuir títulos às Ideias
+### RF30— Atribuir títulos às Ideias
 
   O sistema deve permitir ao usuário adicionar títulos às ideias criadas
 
-### RF30 — Adicionar tags às ideias
+### RF31 — Adicionar tags às ideias
 
   O sistema deve permitir ao usuário adicionar e atribuir tags às ideias criadas
 
 ## Gerenciamento de Pastas
 
-### RF31 — Criação de Pastas
+### RF32 — Criação de Pastas
 
   O sistema deve permitir ao usuário a criação de diretórios para organizar o conteúdo geral do projeto.
 
-### RF32 — Definir título de Pastas
+### RF33 — Definir título de Pastas
 
   O sistema deve permitir a atribuição de nomes identificadores às pastas criadas.
 
-### RF33 — Mover itens para uma Pasta
+### RF34 — Mover itens para uma Pasta
 
   O sistema deve permitir a alteração da localização de arquivos e itens entre diferentes pastas.
 
-### RF34 — Exclusão de pastas
+### RF35 — Exclusão de pastas
 
   O sistema deve permitir a remoção de pastas e, opcionalmente, de seu conteúdo.
 
-### RF35 — Interatividade Drag-and-Drop
+### RF36 — Interatividade Drag-and-Drop
 
   O sistema deve implementar a funcionalidade de "arrastar e soltar" para a movimentação de nós e organização de itens em pastas, visando a facilidade de uso.
 
 ## Edição de Projeto (Aba de Gerenciamento de Personagens)
 
-### RF36 — Criação de Personagens
+### RF37 — Criação de Personagens
 
   O sistema deve permitir ao usuário a inclusão de novos personagens no banco de dados do projeto.
 
-### RF37 (Pers.) — Edição de Dados de Personagens
+### RF38 (Pers.) — Edição de Dados de Personagens
 
   O sistema deve permitir a modificação das fichas técnicas e campos cadastrais dos personagens.
 
-### RF38 (Pers.) — Upload de Imagens de Personagem
+### RF39 (Pers.) — Upload de Imagens de Personagem
 
   O sistema deve permitir o armazenamento de arquivos de imagem no perfil do personagem.
 
-### RF39 (Pers.) — Organizar personagens em pastas
+### RF40 (Pers.) — Organizar personagens em pastas
 
   O sistema deve permitir a categorização de personagens em pastas.
 
-### RF40 — Criar diagramas para relacionar personagens
+### RF41 — Criar diagramas para relacionar personagens
 
   O sistema deve permitir a criação de mapas visuais focados na árvore genealógica ou relações interpessoais.
 
-### RF41 — Exclusão de personagens
+### RF42 — Exclusão de personagens
 
   O sistema deve permitir a remoção definitiva de personagens do projeto.
   
 ## Configuração gerais
 
-### RF42 — Configuração de Senha de Acesso
+### RF43 — Configuração de Senha de Acesso
 
   O sistema deve permitir ao usuário definir uma senha para o aplicativo.
 
-### RF43 — Configuração de limite de caracteres
+### RF44 — Configuração de limite de caracteres
 
   O sistema deve permitir que o usuário configure o limite de caracteres da sinopse, dentro de um intervalo pré-definido.
   
-### RF44 — Seleção de Idiomas
+### RF45 — Seleção de Idiomas
 
   O sistema deve permitir a troca de idiomas de acordo com a preferência do usuário.
 
-### RF45 — Modo Desempenho
+### RF46 — Modo Desempenho
 
   O sistema deve possuir um "Modo Desempenho"
 
-### RF46 — Assistente de Insights Contextuais (IA)
+### RF47 — Assistente de Insights Contextuais (IA)
 
   O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
   (Projetos, Personagens, Ideias ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização
