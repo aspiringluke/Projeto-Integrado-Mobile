@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
+enum NavTab { projects, ideas }
+
 class CustomNavBar extends StatelessWidget {
-  const CustomNavBar({super.key});
+  final NavTab activeTab;
+  final ValueChanged<NavTab> onTabSelected;
+
+  const CustomNavBar({
+    super.key,
+    required this.activeTab,
+    required this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,38 +25,73 @@ class CustomNavBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF9E8A98), Color(0xFFD97EB6)],
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.edit, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text("Projetos", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
+              child: _NavItem(
+                isActive: activeTab == NavTab.projects,
+                label: "Projetos",
+                icon: Icons.edit,
+                onTap: () => onTabSelected(NavTab.projects),
               ),
             ),
-            const Expanded(
-              child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Ideias", style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
-                    SizedBox(width: 8),
-                    Icon(Icons.lightbulb_outline, color: Colors.black54, size: 20),
-                  ],
-                ),
+            Expanded(
+              child: _NavItem(
+                isActive: activeTab == NavTab.ideas,
+                label: "Ideias",
+                icon: Icons.lightbulb_outline,
+                onTap: () => onTabSelected(NavTab.ideas),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final bool isActive;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.isActive,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? Colors.white : Colors.black54;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(30),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: isActive
+                ? const LinearGradient(
+                    colors: [Color(0xFF9E8A98), Color(0xFFD97EB6)],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

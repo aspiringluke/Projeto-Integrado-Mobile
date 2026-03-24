@@ -11,7 +11,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
-      bottomNavigationBar: const CustomNavBar(),
+      bottomNavigationBar: CustomNavBar(activeTab: NavTab.projects, onTabSelected: (_) {}),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: const Color(0xFFF4B8D8),
