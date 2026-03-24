@@ -9,13 +9,47 @@ class ProjectCard extends StatefulWidget {
   State<ProjectCard> createState() => _ProjectCardState();
 }
 
-class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStateMixin {
+class _ProjectCardState extends State<ProjectCard>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
+  late final AnimationController _expandController;
+  late final Animation<double> _expandAnimation;
+  late final Animation<double> _detailsFadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _expandController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _expandController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    _detailsFadeAnimation = CurvedAnimation(
+      parent: _expandController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+      reverseCurve: const Interval(0.0, 0.8, curve: Curves.easeIn),
+    );
+  }
 
   void _toggleExpand() {
     setState(() {
       _isExpanded = !_isExpanded;
     });
+    if (_isExpanded) {
+      _expandController.forward();
+    } else {
+      _expandController.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _expandController.dispose();
+    super.dispose();
   }
 
   @override
@@ -39,140 +73,81 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
                 )
               ],
             ),
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: _toggleExpand,
-                    child: Container(
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.vertical(
-                          top: const Radius.circular(16),
-                          bottom: _isExpanded ? Radius.zero : const Radius.circular(16),
-                        ),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://picsum.photos/seed/flower/400/100'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+            child: AnimatedBuilder(
+              animation: _expandAnimation,
+              builder: (context, child) {
+                final bottomRadius = Radius.circular(16 * (1 - _expandAnimation.value));
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GestureDetector(
+                      onTap: _toggleExpand,
                       child: Container(
+                        height: 60,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.vertical(
                             top: const Radius.circular(16),
-                            bottom: _isExpanded ? Radius.zero : const Radius.circular(16),
+                            bottom: bottomRadius,
                           ),
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.6),
-                              Colors.white.withValues(alpha: 0.9),
-                            ],
+                          image: const DecorationImage(
+                            image: NetworkImage('https://picsum.photos/seed/flower/400/100'),
+                            fit: BoxFit.cover,
                           ),
                         ),
-                        padding: const EdgeInsets.only(left: 40, right: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              widget.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontStyle: FontStyle.italic,
-                              ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.vertical(
+                              top: const Radius.circular(16),
+                              bottom: bottomRadius,
                             ),
-                            Text(
-                              _isExpanded ? "Ver menos..." : "Ver mais...",
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontStyle: FontStyle.italic,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  if (_isExpanded)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.history, size: 16, color: Colors.black54),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  "Última Modificação: dd/MM/aaaa hh:mm, há xxx atrás.",
-                                  style: TextStyle(fontSize: 10, color: Colors.black54, fontStyle: FontStyle.italic),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.black54),
-                                onPressed: () {},
-                                constraints: const BoxConstraints(),
-                                padding: EdgeInsets.zero,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          
-                          Container(
-                            padding: const EdgeInsets.only(right: 8),
-                            decoration: const BoxDecoration(
-                              border: Border(right: BorderSide(color: Color(0xFFDF6EB8), width: 2)),
-                            ),
-                            child: const Text(
-                              "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas, iaculis massa nisl malesuada lacinia integer nunc posuere.",
-                              style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
-                              textAlign: TextAlign.justify,
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.6),
+                                Colors.white.withValues(alpha: 0.9),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          
-                          Row(
-                            children: [
-                              _buildTag("Tag 1", const Color(0xFFF8BBD0)),
-                              const SizedBox(width: 8),
-                              _buildTag("Tag 2", const Color(0xFFBBDEFB)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          Row(
+                          padding: const EdgeInsets.only(left: 40, right: 16),
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  _buildCircle(),
-                                  const SizedBox(width: 4),
-                                  _buildCircle(),
-                                  const SizedBox(width: 4),
-                                  _buildCircle(),
-                                ],
+                              Text(
+                                widget.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
-                              const Icon(Icons.swap_horiz, color: Colors.black54),
+                              Text(
+                                _isExpanded ? "Ver menos..." : "Ver mais...",
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 14,
+                                ),
+                              ),
                             ],
-                          )
-                        ],
+                          ),
+                        ),
                       ),
                     ),
-                ],
-              ),
+                    ClipRect(
+                      child: SizeTransition(
+                        sizeFactor: _expandAnimation,
+                        axisAlignment: -1,
+                        child: FadeTransition(
+                          opacity: _detailsFadeAnimation,
+                          child: const _ProjectDetails(),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 
@@ -204,6 +179,91 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
     );
   }
 
+}
+
+class _ProjectDetails extends StatelessWidget {
+  const _ProjectDetails();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history, size: 16, color: Colors.black54),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  "Última Modificação: dd/MM/aaaa hh:mm, há xxx atrás.",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.black54,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: Colors.black54,
+                ),
+                onPressed: () {},
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.only(right: 8),
+            decoration: const BoxDecoration(
+              border: Border(
+                right: BorderSide(color: Color(0xFFDF6EB8), width: 2),
+              ),
+            ),
+            child: const Text(
+              "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas, iaculis massa nisl malesuada lacinia integer nunc posuere.",
+              style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+              textAlign: TextAlign.justify,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildTag("Tag 1", const Color(0xFFF8BBD0)),
+              const SizedBox(width: 8),
+              _buildTag("Tag 2", const Color(0xFFBBDEFB)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  _buildCircle(),
+                  const SizedBox(width: 4),
+                  _buildCircle(),
+                  const SizedBox(width: 4),
+                  _buildCircle(),
+                ],
+              ),
+              const Icon(Icons.swap_horiz, color: Colors.black54),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTag(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -213,7 +273,11 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 10,
+          color: Colors.black54,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
