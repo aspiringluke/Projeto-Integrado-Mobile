@@ -28,12 +28,12 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
           Container(
             margin: const EdgeInsets.only(left: 20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 )
@@ -69,8 +69,8 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                             colors: [
-                              Colors.black.withOpacity(0.6),
-                              Colors.white.withOpacity(0.9),
+                              Colors.black.withValues(alpha: 0.6),
+                              Colors.white.withValues(alpha: 0.9),
                             ],
                           ),
                         ),
@@ -187,7 +187,7 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(2, 2),
                   )
@@ -223,7 +223,7 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.3),
+        color: Colors.grey.withValues(alpha: 0.3),
         shape: BoxShape.circle,
       ),
     );

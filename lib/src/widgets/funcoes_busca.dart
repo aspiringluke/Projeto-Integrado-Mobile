@@ -8,7 +8,7 @@ class FuncoesBusca extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
+        color: Colors.white.withValues(alpha: 0.6),
       ),
       child: Row(
         children: [
@@ -32,7 +32,7 @@ class FuncoesBusca extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)
                 ]
               ),
               child: const TextField(
