@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import './ideas_page.dart';
@@ -142,16 +143,78 @@ class _AnimatedTabContent extends StatelessWidget {
   }
 }
 
-class _ProjectsContent extends StatelessWidget {
+class _ProjectsContent extends StatefulWidget {
   const _ProjectsContent();
 
   @override
+  State<_ProjectsContent> createState() => _ProjectsContentState();
+}
+
+class _ProjectsContentState extends State<_ProjectsContent> {
+  late List<String> _projects;
+
+  bool get _isMobileReorderEnabled {
+    if (kIsWeb) return false;
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS => true,
+      _ => false,
+    };
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _projects = List.generate(4, (index) => 'Projeto ${index + 1}');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return ReorderableListView.builder(
+      buildDefaultDragHandles: false,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: 4,
+      itemCount: _projects.length,
+      onReorder: (oldIndex, newIndex) {
+        if (!_isMobileReorderEnabled) return;
+
+        if (newIndex > oldIndex) {
+          newIndex -= 1;
+        }
+        setState(() {
+          final item = _projects.removeAt(oldIndex);
+          _projects.insert(newIndex, item);
+        });
+      },
+      proxyDecorator: (widget, index, animation) {
+        return Material(
+          elevation: 12,
+          color: Colors.transparent,
+          shadowColor: Colors.pink.withOpacity(0.25),
+          child: Opacity(
+            opacity: 0.95,
+            child: Transform.scale(
+              scale: 1.02,
+              child: widget,
+            ),
+          ),
+        );
+      },
       itemBuilder: (context, index) {
-        return ProjectCard(title: "Projeto ${index + 1}");
+        final project = _projects[index];
+        final card = ProjectCard(title: project);
+
+        if (_isMobileReorderEnabled) {
+          return ReorderableDelayedDragStartListener(
+            key: ValueKey(project),
+            index: index,
+            child: card,
+          );
+        }
+
+        return KeyedSubtree(
+          key: ValueKey(project),
+          child: card,
+        );
       },
     );
   }
