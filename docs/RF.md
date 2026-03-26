@@ -5,7 +5,11 @@
 ### RF01 - Criação de Projeto
 
   O sistema deve permitir ao usuário a criação de novos projetos
-  
+
+
+---
+
+
 ## Funções de Busca
 
 ### RF02 (Busca) - Filtrar itens por atributos ou tags
@@ -20,6 +24,10 @@
 
   O sistema deve oferecer um campo de pesquisa global para encontrar itens (ideias/personagens) via metadados.
 
+
+---
+
+
 ## Gerenciamento de Diagramas
 
 ### RF05 - Criar diagramas
@@ -33,6 +41,10 @@
 ### RF07 - Organizar diagramas em pastas
 
   O sistema deve permitir a criação de pastas específicas para o armazenamento e categorização de diferentes diagramas.
+
+
+---
+
 
 ## Edição de Diagramas
 
@@ -104,6 +116,10 @@
 
   O sistema deve permitir a localização de elementos específicos dentro de um diagrama através de palavras-chave.
 
+
+---
+
+
 ## Gerenciamento de Ideias
 
 ### RF25 - Criação de Ideias
@@ -117,6 +133,10 @@
 ### RF27 - Organizar ideias em Pastas
 
   O sistema deve permitir ao usuário organizar suas ideias em pastas
+
+
+---
+
 
 ## Edição de Ideias
 
@@ -135,6 +155,10 @@
 ### RF31 - Adicionar tags às ideias
 
   O sistema deve permitir ao usuário adicionar e atribuir tags às ideias criadas
+
+
+---
+
 
 ## Gerenciamento de Pastas
 
@@ -157,6 +181,10 @@
 ### RF36 - Interatividade Drag-and-Drop
 
   O sistema deve implementar a funcionalidade de "arrastar e soltar" para a movimentação de nós e organização de itens em pastas, visando a facilidade de uso.
+
+
+---
+
 
 ## Edição de Projeto (Aba de Gerenciamento de Personagens)
 
@@ -183,7 +211,11 @@
 ### RF42 - Exclusão de personagens
 
   O sistema deve permitir a remoção definitiva de personagens do projeto.
-  
+ 
+
+---
+
+
 ## Configuração gerais
 
 ### RF43 - Configuração de Senha de Acesso
@@ -206,6 +238,10 @@
 
   O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
   (Projetos, Personagens, Ideias ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização
+
+
+---
+
 
 ## Edição de projeto
 
