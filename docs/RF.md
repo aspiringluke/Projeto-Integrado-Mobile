@@ -246,16 +246,21 @@
 ## Edição de projeto
 
 ### RF48 - Editar informações
-O usuário poderá alterar o **nome** e a **sinopse** do projeto
+
+  O usuário poderá alterar o **nome** e a **sinopse** do projeto
 
 ### RF49 - Imagem do projeto
-O usuário poderá enviar uma imagem para aparecer no cartão do projeto, bem como removê-la, podendo alterar o modo de mesclagem
+
+  O usuário poderá enviar uma imagem para aparecer no cartão do projeto, bem como removê-la, podendo alterar o modo de mesclagem
 
 ### RF50 - Cor do projeto
-O usuário poderá escolher uma cor de fundo para aparecer no cartão do projeto, podendo alterar o modo de mesclagem
+
+  O usuário poderá escolher uma cor de fundo para aparecer no cartão do projeto, podendo alterar o modo de mesclagem
 
 ### RF51 - Tags do projeto
-O usário poderá inserir e remover tags ao projeto
+
+  O usário poderá inserir e remover tags ao projeto
 
 ### RF52 - Personagens do cartão de projeto
-O usuário poderá selecionar personagens do projeto cujas imagens aparecerão no respectivo cartão
+
+  O usuário poderá selecionar personagens do projeto cujas imagens aparecerão no respectivo cartão
