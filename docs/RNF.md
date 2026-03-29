@@ -15,8 +15,8 @@
 
 - RF01
 - RF05
-- RF13
-- RF35
+- RF12
+- RF34
 
 ## Eficiência de Desempenho
 
@@ -31,8 +31,7 @@
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF35
-- RF45
+- RF43
 
 ### RNF03 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) - Latência de Busca
 
@@ -56,32 +55,32 @@
 
 #### Critérios de Avaliação
 
-- C1: A movimentação de nós (Drag-and-Drop) deve manter uma taxa de quadros de 60 FPS (latência de renderização < 16.6ms por quadro).
+- C1: A movimentação de nós (drag-and-drop) deve manter uma taxa de quadros de 60 FPS (latência de renderização < 16.6ms por quadro).
 - C2: A reconexão visual de arestas durante o movimento do nó deve ser processada sem "ghosting" ou atraso perceptível ao olho humano.
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF10
-- RF13
+- RF09
+- RF12
 
 #### Relacionados às Regras de Negócio
 
-- RN03
 - RN04
+- RN05
 
 ### RNF05 (Eficiência de Desempenho — Capacidade) - Limite de Upload
 
-  Os arquivos de imagem armazenados no perfil dos personagens devem respeitar o limite máximo de 5 MB por arquivo para garantir a estabilidade do servidor.
+  Os arquivos de imagem armazenados em ideias e perfis de personagens devem respeitar o limite máximo de 5 MB por arquivo para garantir a estabilidade do aplicativo.
 
 #### Critérios de Avaliação
 
-- C1: O sistema deve validar e impedir o upload de arquivos maiores que 5MB por imagem.
-- C2: O aplicativo deve realizar compressão automática (Lossy compression) em imagens de perfil para garantir que o armazenamento interno do dispositivo não seja sobrecarregado.
+- C1: O sistema deve validar e impedir o upload de arquivos maiores que 5MB por imagem em ideias e perfis de personagens.
+- C2: O aplicativo deve realizar compressão automática (lossy compression) nas imagens enviadas para ideias e perfis de personagens para evitar sobrecarga de armazenamento interno.
 
 #### Relacionados aos Requisitos Funcionais
 
 - RF28
-- RF38
+- RF37
 
 ## Confiabilidade
 
@@ -98,7 +97,9 @@
 
 - RF09
 - RF27
+- RF36
+- RF45
 
 #### Relacionados às Regras de Negócio
 
-- RN07
+- RN08
