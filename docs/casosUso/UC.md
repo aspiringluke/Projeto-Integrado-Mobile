@@ -61,19 +61,18 @@
 
 - **A1 — Tentativa de salvamento inválido:**
 
-    Se o usuário tentar salvar com menos de dois nós ou sem conexão, o sistema exibe alerta baseado na RN03 e bloqueia a persistência.
+    Se o usuário tentar salvar com menos de dois nós ou sem conexão, o sistema exibe alerta baseado na RN04 e bloqueia a persistência.
 
 ### RF Relacionadas
 
 - RF05
-- RF08
-- RF10
-- RF12
+- RF09
+- RF11
 
 ### RN Relacionadas
 
-- RN03
 - RN04
+- RN05
 
 ### RNF Relacionadas
 
@@ -116,13 +115,8 @@
 
 ### RF Relacionadas
 
-- RF13
-- RF34
-- RF36
-
-### RN Relacionadas
-
-- RN06
+- RF12
+- RF33
 
 ### RNF Relacionadas
 
@@ -166,7 +160,6 @@
 
 - RF02
 - RF04
-- RF24
 
 ### RNF Relacionadas
 
@@ -203,7 +196,7 @@
 
 ### RF Relacionadas
 
-- RF46
+- RF43
 
 ### RNF Relacionadas
 
@@ -244,20 +237,21 @@
 
 - **A2 — Exclusão de grupo:**
 
-    1. O usuário seleciona o grupo
-    2. O usuário aciona "Excluir Grupo"
+    1. O usuário seleciona o grupo.
+    2. O usuário aciona "Excluir Grupo".
 
 ### RF Relacionadas
 
+- RF17
 - RF18
 - RF19
 - RF20
 - RF21
-- RF23
+- RF22
 
 ### RN Relacionadas
 
-- RN06
+- RN07
 
 ### RNF Relacionadas
 
@@ -300,7 +294,7 @@
 
 ### RF Relacionadas
 
-- RF39
+- RF37
 
 ### RNF Relacionadas
 
@@ -334,26 +328,27 @@
 
 - **A1 — Adição de Imagens:**
 
-    1. O usuário aciona "Adicionar imagem" entre ideias
-    2. O sistema exibe duas opções de upload: "Tirar foto" e "Acessar fotos da galeria"
-    3. O usuário escolhe a opção desejada
-    4. O sistema verifica se o tamanho da imagem respeita o limite de tamanho definido na RNF05
-    5. A imagem é adicionada entre ideias com sucesso
+    1. O usuário aciona "Adicionar imagem" entre ideias.
+    2. O sistema exibe duas opções de upload: "Tirar foto" e "Acessar fotos da galeria".
+    3. O usuário escolhe a opção desejada.
+    4. O sistema verifica se o tamanho da imagem respeita o limite definido na RNF05.
+    5. A imagem é adicionada entre ideias com sucesso.
 
 ### RF Relacionadas
 
-- RF25
+- RF24
+- RF27
 - RF28
 - RF29
 - RF30
-- RF31
 
 ### RN Relacionadas
 
-- RN02
+- RN03
 
 ### RNF Relacionadas
 
+- RNF05
 - RNF06
 
 ---
@@ -387,7 +382,7 @@
 
 ### RF Relacionadas
 
-- RF43
+- RF40
 
 ---
 
@@ -414,7 +409,7 @@
 1. O usuário seleciona um nó no editor de diagrama.
 2. O usuário clica em "Excluir".
 3. O sistema identifica todas as arestas vinculadas a esse nó (origem ou destino).
-4. O sistema remove o nó e todas as arestas órfãs simultaneamente.
+4. O sistema remove o nó e todas as arestas vinculadas simultaneamente.
 5. O sistema persiste a alteração após confirmação (Salvar).
 
 ### Fluxo Alternativo
@@ -425,12 +420,12 @@
 
 ### RF Relacionadas
 
-- RF14
+- RF13
 
 ### RN Relacionadas
 
-- RN04
 - RN05
+- RN06
 
 ### RNF Relacionadas
 
@@ -460,7 +455,7 @@
 
 1. O usuário acessa a listagem de itens (Personagens, Ideias ou Diagramas).
 2. O usuário seleciona o ícone de configurações de uma pasta específica.
-3. O usuário altera o título da pasta.
+3. O usuário altera o nome da pasta.
 4. O usuário seleciona a opção "Excluir Pasta".
 5. O sistema solicita confirmação, perguntando se deseja excluir apenas a pasta ou a pasta e todo o seu conteúdo.
 6. O usuário confirma a exclusão.
@@ -469,13 +464,13 @@
 
 - **A1 — Mover conteúdo antes da exclusão:**
 
-1. O usuário seleciona a opção de excluir apenas a pasta.
-2. O sistema move todos os itens contidos nela para o diretório raiz antes de deletar o diretório vazio.
+    1. O usuário seleciona a opção de excluir apenas a pasta.
+    2. O sistema move todos os itens contidos nela para o diretório raiz antes de deletar o diretório vazio.
 
 ### RF Relacionadas
 
-- RF33
-- RF35
+- RF32
+- RF34
 
 ---
 
@@ -514,8 +509,8 @@
 
 ### RF Relacionadas
 
-- RF11
-- RF17
+- RF10
+- RF16
 
 ---
 
@@ -547,27 +542,33 @@
 
 ### Fluxo Alternativo
 
-- **A1 — Alterar Idioma (RF44):**
+- **A1 — Alterar Idioma (RF42):**
     1. O usuário seleciona a opção de "Idioma".
     2. O sistema exibe a lista de idiomas suportados.
     3. O usuário seleciona o novo idioma e o sistema atualiza todos os rótulos e menus imediatamente.
-- **A2 — Configurar Limite de Sinopse:**
+- **A2 — Configurar Limite de Sinopse (RF41):**
     1. O usuário seleciona "Limite de Sinopse".
     2. O usuário define um valor numérico dentro do intervalo permitido.
     3. O sistema atualiza a regra de validação para campos de sinopse.
-- **A3 — Desativar Limite de Sinopse (RN02):**
+- **A3 — Desativar Limite de Sinopse (RN03):**
     1. O usuário ativa a opção "Ilimitado" no campo de limite global.
     2. O sistema desativa as travas de buffer para campos de texto longo.
 
 ### RF Relacionadas
 
-- RF44
-- RF45
+- RF41
+- RF42
+- RF43
 
 ### RN Relacionadas
 
 - RN01
 - RN02
+- RN03
+
+### RNF Relacionadas
+
+- RNF02
 
 ---
 
@@ -601,15 +602,15 @@
 
 - **A1 — Ordenação antes da exclusão:**
 
-    1. O usuário utiliza a função de ordenação para encontrar itens antigos por data facilitando a remoção filtrada
+    1. O usuário utiliza a função de ordenação para encontrar itens antigos por data, facilitando a remoção filtrada.
     2. O usuário executa a exclusão.
 
 ### RF Relacionadas
 
 - RF03
 - RF06
-- RF26
-- RF42
+- RF25
+- RF39
 
 ---
 
@@ -648,7 +649,7 @@
 
 ### RF Relacionadas
 
-- RF43
+- RF40
 
 ---
 
@@ -677,35 +678,35 @@
 
 ### Fluxo Principal
 
-1. O usuário clica no ícone de "IA" em qualquer parte do projeto
-2. O sistema coleta os dados da hierarquia atual e envia para o serviço de IA
-3. O serviço de IA processa o contexto e gera categorias de análise (Ex: Coerência, Criatividade, Organização, etc)
-4. O sistema redireciona o usuário para a tela de relatórios
-5. O sistema renderiza os Dashboards com gráficos e cards contendo os insights e sugestões de novos perfis
+1. O usuário clica no ícone de "IA" em qualquer parte do projeto.
+2. O sistema coleta os dados da hierarquia atual e envia para o serviço de IA.
+3. O serviço de IA processa o contexto e gera categorias de análise (Ex: Coerência, Criatividade, Organização, etc.).
+4. O sistema redireciona o usuário para a tela de relatórios.
+5. O sistema renderiza os dashboards com gráficos e cards contendo os insights e sugestões de novos perfis.
 
 ### Fluxo Alternativo
 
 - **A1 — IA fora de contexto:**
-    1. O usuário aciona a IA em uma tela vazia ou sem dados suficientes
-    2. A IA retorna uma mensagem sugerindo que o usuário adicione mais informações para uma análise precisa
+    1. O usuário aciona a IA em uma tela vazia ou sem dados suficientes.
+    2. A IA retorna uma mensagem sugerindo que o usuário adicione mais informações para uma análise precisa.
 - **A2 — Falha de conexão:**
-    1. O sistema detecta que o serviço de IA está offline
-    2. O sistema exibe mensagem de erro e informa que os insights não podem ser gerados no momento
+    1. O sistema detecta que o serviço de IA está offline.
+    2. O sistema exibe mensagem de erro e informa que os insights não podem ser gerados no momento.
 - **A3 — Consulta de relatórios anteriores:**
-    1. O usuário acessa diretamente a tela de relatórios sem acionar um novo processamento
-    2. O sistema carrega os últimos dashboards salvos localmente
+    1. O usuário acessa diretamente a tela de relatórios sem acionar um novo processamento.
+    2. O sistema carrega os últimos dashboards salvos localmente.
 - **A4 — Falha na geração de perfil:**
-    1. A IA sugere um personagem, mas o usuário já atingiu o limite de armazenamento
-    2. O sistema alerta sobre a necessidade de limpeza antes de salvar o novo pérfil
+    1. A IA sugere um personagem, mas o usuário já atingiu o limite de armazenamento.
+    2. O sistema alerta sobre a necessidade de limpeza antes de salvar o novo perfil.
 - **A5 — Aviso por falta de tokens:**
-    1. O sistema detecta o esgotamento de tokens do serviço de IA
-    2. O sistema alerta o usuário sobre o esgotamento dos tokens
-    3. O sistema solicita que o usuário agaurde a renovação dos tokens
+    1. O sistema detecta o esgotamento de tokens do serviço de IA.
+    2. O sistema alerta o usuário sobre o esgotamento dos tokens.
+    3. O sistema solicita que o usuário aguarde a renovação dos tokens.
 
 ### RF Relacionadas
 
-- RF37
-- RF47
+- RF35
+- RF44
 
 ---
 
@@ -757,13 +758,11 @@ SERÁ RECONSIDERADO
 
 ### RF Relacionadas
 
-- RF09
-- RF15
-- RF37
+- RF08
 
 ### RN Relacionadas
 
-- RN07
+- RN08
 
 ### RNF Relacionadas
 
