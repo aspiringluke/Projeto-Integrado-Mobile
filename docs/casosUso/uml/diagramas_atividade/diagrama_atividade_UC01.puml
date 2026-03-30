@@ -1,0 +1,15 @@
+@startuml diagrama_UC01
+
+|Sistema|
+start
+:Abre a tela inicial;
+
+|Usuário|
+:Clica no botão "Novo Projeto";
+
+|Sistema|
+:Cria um novo projeto;
+
+'Será analisado a necessidade de utilizar "Sistema" como ator
+stop
+@enduml
