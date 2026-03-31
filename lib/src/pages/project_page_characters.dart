@@ -14,6 +14,7 @@ class _CharactersSection extends StatelessWidget {
       birthDay: 21,
       birthMonth: 3,
       heightCm: 168,
+      weightKg: 58,
       quote: 'Frase de efeito do personagem.',
       synopsis:
           'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
@@ -29,6 +30,7 @@ class _CharactersSection extends StatelessWidget {
       birthDay: 8,
       birthMonth: 11,
       heightCm: 182,
+      weightKg: 74,
       quote: 'Outra frase de efeito do personagem.',
       synopsis:
           'Lorem ipsum dolor sit amet consectetur adipiscing elit. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas.',
@@ -44,6 +46,7 @@ class _CharactersSection extends StatelessWidget {
       birthDay: 19,
       birthMonth: 7,
       heightCm: 175,
+      weightKg: 67,
       quote: 'Frase de efeito do personagem.',
       synopsis:
           'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor.',
@@ -74,6 +77,7 @@ class _CharacterCardData {
   final int birthDay;
   final int birthMonth;
   final double heightCm;
+  final double weightKg;
   final String quote;
   final String synopsis;
   final int seed;
@@ -89,6 +93,7 @@ class _CharacterCardData {
     required this.birthDay,
     required this.birthMonth,
     required this.heightCm,
+    required this.weightKg,
     required this.quote,
     required this.synopsis,
     required this.seed,
@@ -99,6 +104,8 @@ class _CharacterCardData {
 enum _CharacterDateType { lastModified, lastAccessed, createdAt }
 
 enum _HeightUnit { centimeters, meters, feetAndInches }
+
+enum _WeightUnit { kilograms, grams, pounds, ounces }
 
 class _CharacterDateEntry {
   final String label;
@@ -188,12 +195,15 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   _CharacterDateEntries? _dateEntries;
   DateTime? _birthdayValue;
   double? _heightCmValue;
+  double? _weightKgValue;
   TextEditingController? _heightController;
+  TextEditingController? _weightController;
   TextEditingController? _quoteController;
   TextEditingController? _synopsisController;
   bool? _isEditing;
   _CharacterDateType _dateType = _CharacterDateType.lastModified;
   _HeightUnit _heightUnit = _HeightUnit.centimeters;
+  _WeightUnit _weightUnit = _WeightUnit.kilograms;
 
   @override
   void initState() {
@@ -206,8 +216,12 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
       widget.data.birthDay,
     );
     _heightCmValue = widget.data.heightCm;
+    _weightKgValue = widget.data.weightKg;
     _heightController = TextEditingController(
       text: _formatHeightEditorValue(widget.data.heightCm, _heightUnit),
+    );
+    _weightController = TextEditingController(
+      text: _formatWeightEditorValue(widget.data.weightKg, _weightUnit),
     );
     _quoteController = TextEditingController(text: widget.data.quote);
     _synopsisController = TextEditingController(text: widget.data.synopsis);
@@ -232,6 +246,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   @override
   void dispose() {
     _heightController?.dispose();
+    _weightController?.dispose();
     _quoteController?.dispose();
     _synopsisController?.dispose();
     _controller.dispose();
@@ -270,11 +285,19 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
 
   Future<void> _showSignDescription(Rect anchorRect) async {
     final sign = _signData;
+    final descriptionLines = sign.description.split('\n');
+    final dateRange = descriptionLines.isNotEmpty ? descriptionLines.first : '';
+    final traitsLine = descriptionLines.length > 1 ? descriptionLines.sublist(1).join(' ') : '';
+    final traits = traitsLine
+        .split(',')
+        .map((entry) => entry.trim())
+        .where((entry) => entry.isNotEmpty)
+        .toList(growable: false);
 
     await _showAnchoredInfoBubble(
       context: context,
       anchorRect: anchorRect,
-      width: 220,
+      width: 232,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,14 +310,28 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
               color: Color(0xFF2C262C),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            sign.description,
-            style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.68),
-              height: 1.45,
+          if (dateRange.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              dateRange,
+              style: TextStyle(
+                color: Colors.black.withValues(alpha: 0.46),
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+                letterSpacing: 0.2,
+              ),
             ),
-          ),
+          ],
+          if (traits.isNotEmpty) ...[
+            const SizedBox(height: 9),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final trait in traits) _ZodiacTraitPill(label: trait),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -349,6 +386,43 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
       _heightUnit = selectedUnit;
       if (_editing) {
         _heightTextController.text = _formatHeightEditorValue(_heightCm, _heightUnit);
+      }
+    });
+  }
+
+  Future<void> _selectWeightUnit() async {
+    final selectedUnit = await showModalBottomSheet<_WeightUnit>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _ProjectBottomSheetFrame(
+          title: 'Unidade de peso',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final unit in _WeightUnit.values)
+                _HeightUnitOption(
+                  label: _weightUnitMenuLabel(unit),
+                  isSelected: unit == _weightUnit,
+                  onTap: () => Navigator.of(context).pop(unit),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selectedUnit == null) {
+      return;
+    }
+
+    setState(() {
+      if (_editing) {
+        _commitWeightText(restoreText: false);
+      }
+      _weightUnit = selectedUnit;
+      if (_editing) {
+        _weightTextController.text = _formatWeightEditorValue(_weightKg, _weightUnit);
       }
     });
   }
@@ -474,6 +548,18 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
     }
   }
 
+  void _commitWeightText({bool restoreText = true}) {
+    final parsedWeight = _parseWeightToKg(_weightTextController.text, _weightUnit);
+
+    if (parsedWeight != null) {
+      _weightKgValue = parsedWeight;
+    }
+
+    if (restoreText) {
+      _weightTextController.text = _formatWeightEditorValue(_weightKg, _weightUnit);
+    }
+  }
+
   void _toggleEditing() {
     FocusScope.of(context).unfocus();
     final wasEditing = _editing;
@@ -481,8 +567,10 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
     setState(() {
       if (wasEditing) {
         _commitHeightText();
+        _commitWeightText();
       } else {
         _heightTextController.text = _formatHeightEditorValue(_heightCm, _heightUnit);
+        _weightTextController.text = _formatWeightEditorValue(_weightKg, _weightUnit);
       }
 
       _isEditing = !wasEditing;
@@ -503,6 +591,12 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
     );
   }
 
+  TextEditingController get _weightTextController {
+    return _weightController ??= TextEditingController(
+      text: _formatWeightEditorValue(_weightKg, _weightUnit),
+    );
+  }
+
   bool get _editing => _isEditing ?? false;
 
   DateTime get _birthday => _birthdayValue ??= DateTime(
@@ -512,6 +606,8 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   );
 
   double get _heightCm => _heightCmValue ??= widget.data.heightCm;
+
+  double get _weightKg => _weightKgValue ??= widget.data.weightKg;
 
   _ZodiacSignData get _signData => _zodiacSignFor(_birthday);
 
@@ -694,19 +790,28 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                                 isEditing: _editing,
                                 birthdayLabel: _formatBirthdayLabel(_birthday.day, _birthday.month),
                                 heightLabel: _formatHeightLabel(_heightCm, _heightUnit),
+                                weightLabel: _formatWeightLabel(_weightKg, _weightUnit),
                                 heightUnit: _heightUnit,
+                                weightUnit: _weightUnit,
                                 signData: _signData,
                                 synopsisController: _synopsisTextController,
                                 quoteController: _quoteTextController,
                                 heightController: _heightTextController,
+                                weightController: _weightTextController,
                                 onCycleDateType: _cycleDateType,
                                 onTapSign: _showSignDescription,
                                 onTapAge: _showCharacterAge,
                                 onTapBirthday: _selectBirthday,
-                                onTapUnit: _selectHeightUnit,
+                                onTapHeightUnit: _selectHeightUnit,
+                                onTapWeightUnit: _selectWeightUnit,
                                 onCommitHeight: () {
                                   setState(() {
                                     _commitHeightText();
+                                  });
+                                },
+                                onCommitWeight: () {
+                                  setState(() {
+                                    _commitWeightText();
                                   });
                                 },
                                 onToggleEditing: _toggleEditing,
@@ -869,17 +974,22 @@ class _ExpandedCharacterBody extends StatelessWidget {
   final bool isEditing;
   final String birthdayLabel;
   final String heightLabel;
+  final String weightLabel;
   final _HeightUnit heightUnit;
+  final _WeightUnit weightUnit;
   final _ZodiacSignData signData;
   final TextEditingController synopsisController;
   final TextEditingController quoteController;
   final TextEditingController heightController;
+  final TextEditingController weightController;
   final VoidCallback onCycleDateType;
   final ValueChanged<Rect> onTapSign;
   final ValueChanged<Rect> onTapAge;
   final VoidCallback onTapBirthday;
-  final VoidCallback onTapUnit;
+  final VoidCallback onTapHeightUnit;
+  final VoidCallback onTapWeightUnit;
   final VoidCallback onCommitHeight;
+  final VoidCallback onCommitWeight;
   final VoidCallback onToggleEditing;
 
   const _ExpandedCharacterBody({
@@ -887,17 +997,22 @@ class _ExpandedCharacterBody extends StatelessWidget {
     required this.isEditing,
     required this.birthdayLabel,
     required this.heightLabel,
+    required this.weightLabel,
     required this.heightUnit,
+    required this.weightUnit,
     required this.signData,
     required this.synopsisController,
     required this.quoteController,
     required this.heightController,
+    required this.weightController,
     required this.onCycleDateType,
     required this.onTapSign,
     required this.onTapAge,
     required this.onTapBirthday,
-    required this.onTapUnit,
+    required this.onTapHeightUnit,
+    required this.onTapWeightUnit,
     required this.onCommitHeight,
+    required this.onCommitWeight,
     required this.onToggleEditing,
   });
 
@@ -989,11 +1104,10 @@ class _ExpandedCharacterBody extends StatelessWidget {
             isEditing: isEditing,
           ),
           const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _CharacterBirthdayField(
+          Row(
+            children: [
+              Expanded(
+                child: _CharacterBirthdayField(
                   birthdayLabel: birthdayLabel,
                   signData: signData,
                   isEditing: isEditing,
@@ -1001,17 +1115,30 @@ class _ExpandedCharacterBody extends StatelessWidget {
                   onTapBirthday: onTapBirthday,
                   onTapSign: onTapSign,
                 ),
-                const SizedBox(width: 8),
-                _CharacterHeightField(
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _CharacterHeightField(
                   heightLabel: heightLabel,
                   unitLabel: _heightUnitCompactLabel(heightUnit),
                   controller: heightController,
                   isEditing: isEditing,
-                  onTapUnit: onTapUnit,
+                  onTapUnit: onTapHeightUnit,
                   onCommitHeight: onCommitHeight,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _CharacterWeightField(
+                  weightLabel: weightLabel,
+                  unitLabel: _weightUnitCompactLabel(weightUnit),
+                  controller: weightController,
+                  isEditing: isEditing,
+                  onTapUnit: onTapWeightUnit,
+                  onCommitWeight: onCommitWeight,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Row(
@@ -1338,75 +1465,77 @@ class _CharacterBirthdayField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 168,
       height: 38,
       child: Stack(
         children: [
           Positioned.fill(
-            child: Container(
-              padding: const EdgeInsets.only(left: 12, right: 68),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.42),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.62),
-                  width: 0.75,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: isEditing ? onTapBirthday : null,
+              child: Container(
+                padding: const EdgeInsets.only(left: 12, right: 56),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.42),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.62),
+                    width: 0.75,
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: isEditing ? onTapBirthday : null,
-                    child: Icon(
+                child: Row(
+                  children: [
+                    Icon(
                       isEditing ? Icons.edit_calendar_outlined : Icons.cake_outlined,
                       size: 18,
                       color: const Color(0xFF171419),
                     ),
-                  ),
-                  Container(
-                    width: 1.3,
-                    height: 18,
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    color: const Color(0xFFDF6EB8),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Builder(
-                        builder: (textContext) {
-                          return GestureDetector(
-                            onTap: () => onTapAge(_rectFromContext(textContext)),
-                            onLongPress: isEditing ? onTapBirthday : null,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  birthdayLabel,
-                                  style: TextStyle(
-                                    color: Colors.black.withValues(alpha: 0.68),
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                SizedBox(
-                                  width: 36,
-                                  height: 2,
-                                  child: CustomPaint(
-                                    painter: _DashedUnderlinePainter(
-                                      color: const Color(0xFF8A828C).withValues(alpha: 0.58),
+                    Container(
+                      width: 1.3,
+                      height: 18,
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      color: const Color(0xFFDF6EB8),
+                    ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Builder(
+                          builder: (textContext) {
+                            return GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: isEditing
+                                  ? null
+                                  : () => onTapAge(_rectFromContext(textContext)),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    birthdayLabel,
+                                    style: TextStyle(
+                                      color: Colors.black.withValues(alpha: 0.68),
+                                      fontSize: 11,
+                                      fontStyle: FontStyle.italic,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                                  const SizedBox(height: 2),
+                                  SizedBox(
+                                    width: 34,
+                                    height: 2,
+                                    child: CustomPaint(
+                                      painter: _DashedUnderlinePainter(
+                                        color: const Color(0xFF8A828C).withValues(alpha: 0.58),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1445,7 +1574,6 @@ class _CharacterHeightField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 192,
       height: 38,
       child: Stack(
         children: [
@@ -1453,7 +1581,7 @@ class _CharacterHeightField extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: Ink(
-                padding: const EdgeInsets.only(left: 12, right: 78),
+                padding: const EdgeInsets.only(left: 12, right: 74),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.42),
                   borderRadius: BorderRadius.circular(999),
@@ -1493,7 +1621,7 @@ class _CharacterHeightField extends StatelessWidget {
                               ),
                               style: TextStyle(
                                 color: Colors.black.withValues(alpha: 0.68),
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontStyle: FontStyle.italic,
                               ),
                             )
@@ -1501,7 +1629,107 @@ class _CharacterHeightField extends StatelessWidget {
                               heightLabel,
                               style: TextStyle(
                                 color: Colors.black.withValues(alpha: 0.68),
-                                fontSize: 12,
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 4,
+            top: 4,
+            bottom: 4,
+            child: _CharacterUnitButton(
+              label: unitLabel,
+              onTap: onTapUnit,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CharacterWeightField extends StatelessWidget {
+  final String weightLabel;
+  final String unitLabel;
+  final TextEditingController controller;
+  final bool isEditing;
+  final VoidCallback onTapUnit;
+  final VoidCallback onCommitWeight;
+
+  const _CharacterWeightField({
+    required this.weightLabel,
+    required this.unitLabel,
+    required this.controller,
+    required this.isEditing,
+    required this.onTapUnit,
+    required this.onCommitWeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: Ink(
+                padding: const EdgeInsets.only(left: 12, right: 54),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.42),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.62),
+                    width: 0.75,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.balance_outlined,
+                      size: 18,
+                      color: Color(0xFF171419),
+                    ),
+                    Container(
+                      width: 1.3,
+                      height: 18,
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      color: const Color(0xFFDF6EB8),
+                    ),
+                    Expanded(
+                      child: isEditing
+                          ? TextField(
+                              controller: controller,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => onCommitWeight(),
+                              onTapOutside: (_) {
+                                FocusScope.of(context).unfocus();
+                                onCommitWeight();
+                              },
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                border: InputBorder.none,
+                                hintText: 'Peso',
+                              ),
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.68),
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )
+                          : Text(
+                              weightLabel,
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.68),
+                                fontSize: 11,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
@@ -1545,9 +1773,9 @@ class _CharacterSignButton extends StatelessWidget {
             onTap: () => onTap(_rectFromContext(buttonContext)),
             borderRadius: BorderRadius.circular(999),
             child: Ink(
-              width: 58,
+              width: 52,
               height: 30,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: const Color(0xFFF3D7E6).withValues(alpha: 0.88),
                 borderRadius: BorderRadius.circular(999),
@@ -1563,7 +1791,7 @@ class _CharacterSignButton extends StatelessWidget {
                   Text(
                     signData.symbol,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       height: 0.9,
                       color: Color(0xFF544959),
                     ),
@@ -1578,7 +1806,7 @@ class _CharacterSignButton extends StatelessWidget {
                         softWrap: false,
                         style: TextStyle(
                           color: Colors.black.withValues(alpha: 0.48),
-                          fontSize: 7.6,
+                          fontSize: 7.1,
                           height: 0.9,
                           fontStyle: FontStyle.italic,
                         ),
@@ -1591,6 +1819,40 @@ class _CharacterSignButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ZodiacTraitPill extends StatelessWidget {
+  final String label;
+
+  const _ZodiacTraitPill({
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4EEF3).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.82),
+          width: 0.7,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.black.withValues(alpha: 0.6),
+            fontSize: 10.5,
+            fontStyle: FontStyle.italic,
+            height: 1,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1796,7 +2058,8 @@ class _CharacterMarkdownText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normalizedData = data.trim().isEmpty ? ' ' : data;
+    final sanitizedData = _sanitizeCharacterMarkdown(data);
+    final normalizedData = sanitizedData.trim().isEmpty ? ' ' : sanitizedData;
     final styleSheet = MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
       p: style,
       pPadding: EdgeInsets.zero,
@@ -1825,6 +2088,28 @@ class _CharacterMarkdownText extends StatelessWidget {
       styleSheet: styleSheet,
     );
   }
+}
+
+String _sanitizeCharacterMarkdown(String data) {
+  final withoutHtml = data.replaceAll(RegExp(r'<[^>]*>'), '');
+  final rawLines = withoutHtml.split('\n');
+  final sanitizedLines = <String>[];
+  final atxHeadingPattern = RegExp(r'^\s{0,3}#{1,6}\s*');
+  final setextHeadingPattern = RegExp(r'^\s{0,3}(=+|-+)\s*$');
+
+  for (final line in rawLines) {
+    final normalizedLine = line.replaceFirst(atxHeadingPattern, '');
+
+    if (setextHeadingPattern.hasMatch(normalizedLine) &&
+        sanitizedLines.isNotEmpty &&
+        sanitizedLines.last.trim().isNotEmpty) {
+      continue;
+    }
+
+    sanitizedLines.add(normalizedLine);
+  }
+
+  return sanitizedLines.join('\n');
 }
 
 String _formatBirthdayLabel(int day, int month) {
@@ -2126,15 +2411,41 @@ double? _parseHeightToCm(String rawValue, _HeightUnit unit) {
   }
 }
 
-String _formatHeightLabel(double heightCm, _HeightUnit unit) {
+String _formatWeightEditorValue(double weightKg, _WeightUnit unit) {
   switch (unit) {
-    case _HeightUnit.centimeters:
-      return '${heightCm.toStringAsFixed(0)} cm';
-    case _HeightUnit.meters:
-      return '${(heightCm / 100).toStringAsFixed(2)} m';
-    case _HeightUnit.feetAndInches:
-      return _formatFeetAndInches(heightCm);
+    case _WeightUnit.kilograms:
+      return _formatCompactDecimal(weightKg);
+    case _WeightUnit.grams:
+      return _formatCompactDecimal(weightKg * 1000);
+    case _WeightUnit.pounds:
+      return _formatCompactDecimal(weightKg * 2.2046226218);
+    case _WeightUnit.ounces:
+      return _formatCompactDecimal(weightKg * 35.27396195);
   }
+}
+
+double? _parseWeightToKg(String rawValue, _WeightUnit unit) {
+  final normalized = rawValue.replaceAll(',', '.').trim();
+  final parsed = double.tryParse(normalized);
+
+  if (parsed == null || parsed <= 0) {
+    return null;
+  }
+
+  return switch (unit) {
+    _WeightUnit.kilograms => parsed,
+    _WeightUnit.grams => parsed / 1000,
+    _WeightUnit.pounds => parsed / 2.2046226218,
+    _WeightUnit.ounces => parsed / 35.27396195,
+  };
+}
+
+String _formatHeightLabel(double heightCm, _HeightUnit unit) {
+  return _formatHeightEditorValue(heightCm, unit);
+}
+
+String _formatWeightLabel(double weightKg, _WeightUnit unit) {
+  return _formatWeightEditorValue(weightKg, unit);
 }
 
 String _formatFeetAndInches(double heightCm) {
@@ -2200,6 +2511,11 @@ double? _parseFeetAndInchesToCm(String rawValue) {
   return plainNumber * 2.54;
 }
 
+String _formatCompactDecimal(double value) {
+  final hasFraction = value != value.roundToDouble();
+  return hasFraction ? value.toStringAsFixed(1) : value.toStringAsFixed(0);
+}
+
 String _heightUnitCompactLabel(_HeightUnit unit) {
   return switch (unit) {
     _HeightUnit.centimeters => 'cm',
@@ -2213,6 +2529,24 @@ String _heightUnitMenuLabel(_HeightUnit unit) {
     _HeightUnit.centimeters => 'Centimetros (cm)',
     _HeightUnit.meters => 'Metros (m)',
     _HeightUnit.feetAndInches => 'Pes e polegadas (ft/in)',
+  };
+}
+
+String _weightUnitCompactLabel(_WeightUnit unit) {
+  return switch (unit) {
+    _WeightUnit.kilograms => 'kg',
+    _WeightUnit.grams => 'g',
+    _WeightUnit.pounds => 'lb',
+    _WeightUnit.ounces => 'oz',
+  };
+}
+
+String _weightUnitMenuLabel(_WeightUnit unit) {
+  return switch (unit) {
+    _WeightUnit.kilograms => 'Quilogramas (kg)',
+    _WeightUnit.grams => 'Gramas (g)',
+    _WeightUnit.pounds => 'Libras (lb)',
+    _WeightUnit.ounces => 'Oncas (oz)',
   };
 }
 
@@ -2259,85 +2593,96 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
 
   if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) {
     return const _ZodiacSignData(
-      name: 'Aries',
+      name: 'Áries',
       symbol: '\u2648',
-      description: 'Descricao placeholder de Aries. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description: '21/03 - 20/04\niniciativa, impulsividade, assertividade, competitividade, ação direta.',
     );
   }
   if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) {
     return const _ZodiacSignData(
       name: 'Touro',
       symbol: '\u2649',
-      description: 'Descricao placeholder de Touro. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '21/04 - 20/05\nestabilidade, persistência, apego material, sensorialidade, resistência à mudança.',
     );
   }
   if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) {
     return const _ZodiacSignData(
-      name: 'Gemeos',
+      name: 'Gêmeos',
       symbol: '\u264A',
-      description: 'Descricao placeholder de Gemeos. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '21/05 - 20/06\ncuriosidade, versatilidade, comunicação rápida, dispersão, adaptação constante.',
     );
   }
   if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) {
     return const _ZodiacSignData(
-      name: 'Cancer',
+      name: 'Câncer',
       symbol: '\u264B',
-      description: 'Descricao placeholder de Cancer. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '21/06 - 22/07\nemotividade, proteção, apego ao passado, sensibilidade, vínculo familiar.',
     );
   }
   if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) {
     return const _ZodiacSignData(
-      name: 'Leao',
+      name: 'Leão',
       symbol: '\u264C',
-      description: 'Descricao placeholder de Leao. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '23/07 - 22/08\nautoexpressão, orgulho, liderança, necessidade de reconhecimento, teatralidade.',
     );
   }
   if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) {
     return const _ZodiacSignData(
       name: 'Virgem',
       symbol: '\u264D',
-      description: 'Descricao placeholder de Virgem. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '23/08 - 22/09\nanálise, precisão, utilidade, crítica, foco em melhoria contínua.',
     );
   }
   if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) {
     return const _ZodiacSignData(
       name: 'Libra',
       symbol: '\u264E',
-      description: 'Descricao placeholder de Libra. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '23/09 - 22/10\nequilíbrio, mediação, estética, sociabilidade, indecisão estratégica.',
     );
   }
   if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) {
     return const _ZodiacSignData(
-      name: 'Escorpiao',
+      name: 'Escorpião',
       symbol: '\u264F',
-      description: 'Descricao placeholder de Escorpiao. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '23/10 - 21/11\nintensidade, controle, profundidade emocional, transformação, sigilo.',
     );
   }
   if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) {
     return const _ZodiacSignData(
-      name: 'Sagitario',
+      name: 'Sagitário',
       symbol: '\u2650',
-      description: 'Descricao placeholder de Sagitario. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '22/11 - 21/12\nexpansão, idealismo, franqueza, busca por sentido, inquietação.',
     );
   }
   if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) {
     return const _ZodiacSignData(
-      name: 'Capricornio',
+      name: 'Capricórnio',
       symbol: '\u2651',
-      description: 'Descricao placeholder de Capricornio. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '22/12 - 20/01\ndisciplina, responsabilidade, ambição estrutural, pragmatismo, contenção emocional.',
     );
   }
   if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) {
     return const _ZodiacSignData(
-      name: 'Aquario',
+      name: 'Aquário',
       symbol: '\u2652',
-      description: 'Descricao placeholder de Aquario. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+      description:
+          '21/01 - 18/02\ninovação, ruptura de padrões, pensamento coletivo, desapego, excentricidade funcional.',
     );
   }
   return const _ZodiacSignData(
     name: 'Peixes',
     symbol: '\u2653',
-    description: 'Descricao placeholder de Peixes. Aqui entra um resumo curto sobre o signo e como ele aparece no personagem.',
+    description:
+        '19/02 - 20/03\nimaginação, empatia, dissolução de limites, escapismo, sensibilidade difusa.',
   );
 }
 
