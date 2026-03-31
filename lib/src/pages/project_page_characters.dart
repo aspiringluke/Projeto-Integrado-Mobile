@@ -16,8 +16,7 @@ class _CharactersSection extends StatelessWidget {
       heightCm: 168,
       weightKg: 58,
       quote: 'Frase de efeito do personagem.',
-      synopsis:
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
+      synopsis: '',
       seed: 11,
     ),
     _CharacterCardData(
@@ -32,8 +31,7 @@ class _CharactersSection extends StatelessWidget {
       heightCm: 182,
       weightKg: 74,
       quote: 'Outra frase de efeito do personagem.',
-      synopsis:
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas.',
+      synopsis: '',
       seed: 23,
     ),
     _CharacterCardData(
@@ -48,8 +46,7 @@ class _CharactersSection extends StatelessWidget {
       heightCm: 175,
       weightKg: 67,
       quote: 'Frase de efeito do personagem.',
-      synopsis:
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor.',
+      synopsis: '',
       seed: 37,
       initiallyExpanded: true,
     ),
@@ -192,6 +189,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   late final AnimationController _controller;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _fadeAnimation;
+  late final ScrollController _synopsisScrollController;
   _CharacterDateEntries? _dateEntries;
   DateTime? _birthdayValue;
   double? _heightCmValue;
@@ -241,10 +239,12 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
       curve: const Interval(0.18, 1, curve: Curves.easeOut),
       reverseCurve: const Interval(0, 0.82, curve: Curves.easeIn),
     );
+    _synopsisScrollController = ScrollController();
   }
 
   @override
   void dispose() {
+    _synopsisScrollController.dispose();
     _heightController?.dispose();
     _weightController?.dispose();
     _quoteController?.dispose();
@@ -795,6 +795,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                                 weightUnit: _weightUnit,
                                 signData: _signData,
                                 synopsisController: _synopsisTextController,
+                                synopsisScrollController: _synopsisScrollController,
                                 quoteController: _quoteTextController,
                                 heightController: _heightTextController,
                                 weightController: _weightTextController,
@@ -979,6 +980,7 @@ class _ExpandedCharacterBody extends StatelessWidget {
   final _WeightUnit weightUnit;
   final _ZodiacSignData signData;
   final TextEditingController synopsisController;
+  final ScrollController synopsisScrollController;
   final TextEditingController quoteController;
   final TextEditingController heightController;
   final TextEditingController weightController;
@@ -1002,6 +1004,7 @@ class _ExpandedCharacterBody extends StatelessWidget {
     required this.weightUnit,
     required this.signData,
     required this.synopsisController,
+    required this.synopsisScrollController,
     required this.quoteController,
     required this.heightController,
     required this.weightController,
@@ -1041,62 +1044,29 @@ class _ExpandedCharacterBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.82),
-              borderRadius: BorderRadius.circular(16),
+          EditableSynopsisPanel(
+            controller: synopsisController,
+            scrollController: synopsisScrollController,
+            isEditing: isEditing,
+            placeholderText: synopsisPlaceholderText,
+            textStyle: const TextStyle(
+              color: Color(0xFF171419),
+              fontSize: 11,
+              height: 1.35,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: isEditing
-                      ? TextField(
-                          controller: synopsisController,
-                          keyboardType: TextInputType.multiline,
-                          maxLines: 6,
-                          minLines: 6,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            border: InputBorder.none,
-                            hintText: 'Sinopse do personagem',
-                          ),
-                          style: const TextStyle(
-                            color: Color(0xFF171419),
-                            fontSize: 11,
-                            height: 1.35,
-                          ),
-                        )
-                      : _CharacterMarkdownText(
-                          data: synopsisController.text,
-                          style: const TextStyle(
-                            color: Color(0xFF171419),
-                            fontSize: 11,
-                            height: 1.35,
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 3,
-                  height: 92,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD8D3D8),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  alignment: Alignment.topCenter,
-                  child: Container(
-                    width: 3,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDF6EB8),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-              ],
+            fillColor: Colors.white.withValues(alpha: 0.82),
+            placeholderStyle: const TextStyle(
+              color: Color(0xFF8F8990),
+              fontSize: 11,
+              height: 1.35,
+              fontStyle: FontStyle.italic,
             ),
+            viewerBuilder: (context, text, style) {
+              return _CharacterMarkdownText(
+                data: text,
+                style: style,
+              );
+            },
           ),
           const SizedBox(height: 12),
           _CharacterQuoteStrip(

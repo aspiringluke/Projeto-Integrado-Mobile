@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../widgets/funcoes_busca.dart';
+import '../widgets/synopsis_scroll_box.dart';
 
 part 'project_page_shell.dart';
 part 'project_page_characters.dart';

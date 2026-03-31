@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../pages/project_page.dart';
+import 'synopsis_scroll_box.dart';
 
 class ProjectCard extends StatefulWidget {
   final String title;
@@ -14,12 +16,17 @@ class ProjectCard extends StatefulWidget {
 }
 
 class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStateMixin {
+  static const String _initialSynopsis = '';
+
   bool _isExpanded = false;
+  bool _isEditing = false;
   _ProjectDateType _activeDateType = _ProjectDateType.lastModified;
   late final _ProjectDateEntries _dateEntries;
   late final AnimationController _expandController;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _detailsFadeAnimation;
+  late final ScrollController _synopsisScrollController;
+  late final TextEditingController _synopsisController;
 
   @override
   void initState() {
@@ -39,10 +46,14 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
       curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
       reverseCurve: const Interval(0.0, 0.8, curve: Curves.easeIn),
     );
+    _synopsisScrollController = ScrollController();
+    _synopsisController = TextEditingController(text: _initialSynopsis);
   }
 
   @override
   void dispose() {
+    _synopsisController.dispose();
+    _synopsisScrollController.dispose();
     _expandController.dispose();
     super.dispose();
   }
@@ -78,6 +89,13 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
   }
 
   _ProjectDateEntry get _currentDateEntry => _dateEntries.forType(_activeDateType);
+
+  void _toggleEditing() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isEditing = !_isEditing;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +168,11 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
                                   opacity: _detailsFadeAnimation,
                                   child: _ProjectDetails(
                                     dateEntry: _currentDateEntry,
+                                    isEditing: _isEditing,
+                                    synopsisController: _synopsisController,
                                     onCycleDateType: _cycleDateType,
+                                    onToggleEditing: _toggleEditing,
+                                    synopsisScrollController: _synopsisScrollController,
                                   ),
                                 ),
                               ),
@@ -439,11 +461,19 @@ class _ProjectDateEntries {
 
 class _ProjectDetails extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
+  final bool isEditing;
+  final TextEditingController synopsisController;
   final VoidCallback onCycleDateType;
+  final VoidCallback onToggleEditing;
+  final ScrollController synopsisScrollController;
 
   const _ProjectDetails({
     required this.dateEntry,
+    required this.isEditing,
+    required this.synopsisController,
     required this.onCycleDateType,
+    required this.onToggleEditing,
+    required this.synopsisScrollController,
   });
 
   @override
@@ -490,42 +520,44 @@ class _ProjectDetails extends StatelessWidget {
                 fillColor: const Color(0xFFF3EEF1).withValues(alpha: 0.34),
                 borderColor: Colors.white.withValues(alpha: 0.54),
                 borderWidth: 0.65,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: Colors.black54,
-                  ),
-                  onPressed: () {},
-                  padding: EdgeInsets.zero,
+                onTap: onToggleEditing,
+                child: Icon(
+                  isEditing ? Icons.check_rounded : Icons.edit_outlined,
+                  size: 18,
+                  color: Colors.black54,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7FB).withValues(alpha: 0.74),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.38),
-                width: 0.7,
-              ),
+          EditableSynopsisPanel(
+            controller: synopsisController,
+            scrollController: synopsisScrollController,
+            isEditing: isEditing,
+            placeholderText: synopsisPlaceholderText,
+            textStyle: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+              height: 1.4,
             ),
-            child: Container(
-              padding: const EdgeInsets.only(right: 8),
-              decoration: const BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Color(0xFFDF6EB8), width: 2),
-                ),
-              ),
-              child: const Text(
-                'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas, iaculis massa nisl malesuada lacinia integer nunc posuere.',
-                style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
-                textAlign: TextAlign.justify,
-              ),
+            fillColor: const Color(0xFFFFF7FB).withValues(alpha: 0.74),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.38),
+              width: 0.7,
             ),
+            placeholderStyle: const TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: Color(0xFF8F8990),
+              fontStyle: FontStyle.italic,
+            ),
+            viewerBuilder: (context, text, style) {
+              return _ProjectMarkdownText(
+                data: text,
+                style: style,
+              );
+            },
           ),
           const SizedBox(height: 16),
           Row(
@@ -716,6 +748,68 @@ class _TimeField extends StatelessWidget {
     final normalizedValue = value < 1 ? 1 : value;
     return normalizedValue == 1 ? '1 $singular' : '$normalizedValue $plural';
   }
+}
+
+class _ProjectMarkdownText extends StatelessWidget {
+  final String data;
+  final TextStyle style;
+
+  const _ProjectMarkdownText({
+    required this.data,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sanitizedData = _sanitizeProjectMarkdown(data);
+    final normalizedData = sanitizedData.trim().isEmpty ? ' ' : sanitizedData;
+    final styleSheet = MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+      p: style,
+      pPadding: EdgeInsets.zero,
+      blockSpacing: 0,
+      listIndent: 18,
+      listBullet: style,
+      listBulletPadding: const EdgeInsets.only(right: 6),
+      strong: style.copyWith(fontWeight: FontWeight.w700),
+      em: style.copyWith(fontStyle: FontStyle.italic),
+      code: style.copyWith(
+        fontFamily: 'monospace',
+        backgroundColor: Colors.transparent,
+      ),
+      blockquote: style,
+      blockquotePadding: EdgeInsets.zero,
+      blockquoteDecoration: const BoxDecoration(),
+    );
+
+    return MarkdownBody(
+      data: normalizedData,
+      shrinkWrap: true,
+      softLineBreak: true,
+      styleSheet: styleSheet,
+    );
+  }
+}
+
+String _sanitizeProjectMarkdown(String data) {
+  final withoutHtml = data.replaceAll(RegExp(r'<[^>]*>'), '');
+  final rawLines = withoutHtml.split('\n');
+  final sanitizedLines = <String>[];
+  final atxHeadingPattern = RegExp(r'^\s{0,3}#{1,6}\s*');
+  final setextHeadingPattern = RegExp(r'^\s{0,3}(=+|-+)\s*$');
+
+  for (final line in rawLines) {
+    final normalizedLine = line.replaceFirst(atxHeadingPattern, '');
+
+    if (setextHeadingPattern.hasMatch(normalizedLine) &&
+        sanitizedLines.isNotEmpty &&
+        sanitizedLines.last.trim().isNotEmpty) {
+      continue;
+    }
+
+    sanitizedLines.add(normalizedLine);
+  }
+
+  return sanitizedLines.join('\n');
 }
 
 class _GlassSurface extends StatelessWidget {
