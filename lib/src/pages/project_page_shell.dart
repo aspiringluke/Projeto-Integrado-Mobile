@@ -279,35 +279,24 @@ class _HeaderCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.1),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.42),
-              width: 0.95,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xFFF6EDF3),
-            size: 17,
-          ),
+    return GlassCircleButton(
+      diameter: 34,
+      onTap: onTap,
+      blurSigma: 7,
+      fillColor: Colors.white.withValues(alpha: 0.12),
+      borderColor: Colors.white.withValues(alpha: 0.44),
+      borderWidth: 0.95,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.08),
+          blurRadius: 9,
+          offset: const Offset(0, 2),
         ),
+      ],
+      child: Icon(
+        icon,
+        color: const Color(0xFFF6EDF3),
+        size: 17,
       ),
     );
   }
@@ -808,47 +797,46 @@ class _ProjectCreateFab extends StatelessWidget {
             ),
           ),
         ),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
+        AnimatedScale(
+          scale: open ? 1.04 : 1,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          child: GlassCircleButton(
+            diameter: 52,
             onTap: onToggle,
-            customBorder: const CircleBorder(),
-            child: Ink(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.88),
-                    const Color(0xFFF0D3E1).withValues(alpha: 0.92),
-                  ],
-                ),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.88),
-                  width: 0.9,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+            blurSigma: 10,
+            fillColor: const Color(0xFFF3D5E3).withValues(alpha: 0.58),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.88),
+                const Color(0xFFF1D1E2).withValues(alpha: 0.92),
+                const Color(0xFFE8BAD3).withValues(alpha: 0.98),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+            borderColor: Colors.white.withValues(alpha: 0.9),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFDF6EB8).withValues(alpha: open ? 0.18 : 0.12),
+                blurRadius: open ? 18 : 14,
+                offset: const Offset(0, 6),
               ),
-              child: Center(
-                child: AnimatedRotation(
-                  turns: open ? 0.125 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  child: const Icon(
-                    Icons.add_rounded,
-                    color: Color(0xFF171419),
-                    size: 28,
-                  ),
-                ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            child: AnimatedRotation(
+              turns: open ? 0.125 : 0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              child: const Icon(
+                Icons.add_rounded,
+                color: Color(0xFF171419),
+                size: 28,
               ),
             ),
           ),
@@ -873,38 +861,25 @@ class _CreateActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Ink(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: tint.withValues(alpha: 0.92),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.9),
-                width: 0.85,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              size: 21,
-              color: const Color(0xFF171419),
-            ),
-          ),
+    return GlassCircleButton(
+      diameter: 44,
+      onTap: onTap,
+      tooltip: tooltip,
+      blurSigma: 8,
+      fillColor: tint.withValues(alpha: 0.82),
+      borderColor: Colors.white.withValues(alpha: 0.88),
+      borderWidth: 0.85,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
         ),
+      ],
+      child: Icon(
+        icon,
+        size: 21,
+        color: const Color(0xFF171419),
       ),
     );
   }

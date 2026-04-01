@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -258,6 +259,8 @@ class EditableSynopsisPanel extends StatelessWidget {
   final BorderRadiusGeometry borderRadius;
   final BoxBorder? border;
   final TextStyle? placeholderStyle;
+  final double blurSigma;
+  final Gradient? backgroundGradient;
 
   const EditableSynopsisPanel({
     super.key,
@@ -274,6 +277,8 @@ class EditableSynopsisPanel extends StatelessWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
     this.border,
     this.placeholderStyle,
+    this.blurSigma = 0,
+    this.backgroundGradient,
   });
 
   @override
@@ -286,10 +291,11 @@ class EditableSynopsisPanel extends StatelessWidget {
         );
     final isEmpty = controller.text.trim().isEmpty;
 
-    return Container(
+    final content = Container(
       padding: panelPadding,
       decoration: BoxDecoration(
         color: fillColor,
+        gradient: backgroundGradient,
         borderRadius: borderRadius,
         border: border,
       ),
@@ -321,6 +327,18 @@ class EditableSynopsisPanel extends StatelessWidget {
                 style: effectivePlaceholderStyle,
               )
             : viewerBuilder(context, controller.text, textStyle),
+      ),
+    );
+
+    if (blurSigma <= 0) {
+      return content;
+    }
+
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        child: content,
       ),
     );
   }

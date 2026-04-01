@@ -23,7 +23,7 @@ class IdeasToggleButton extends StatelessWidget {
         borderRadius: borderRadius,
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           height: 48,
           decoration: BoxDecoration(
@@ -51,7 +51,7 @@ class IdeasToggleButton extends StatelessWidget {
           ),
           child: Center(
             child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 180),
+              duration: const Duration(milliseconds: 200),
               curve: Curves.easeOut,
               style: TextStyle(
                 color: isActive ? Colors.white : const Color(0xFF4A4348),

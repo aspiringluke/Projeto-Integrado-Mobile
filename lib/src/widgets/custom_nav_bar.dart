@@ -22,40 +22,85 @@ class CustomNavBar extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
             child: Container(
               height: 60,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withOpacity(0.35)),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.34),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.10),
-                    blurRadius: 12,
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _NavItem(
-                      isActive: activeTab == NavTab.projects,
-                      label: "Projetos",
-                      icon: Icons.edit,
-                      onTap: () => onTabSelected(NavTab.projects),
-                    ),
-                  ),
-                  Expanded(
-                    child: _NavItem(
-                      isActive: activeTab == NavTab.ideas,
-                      label: "Ideias",
-                      icon: Icons.lightbulb_outline,
-                      onTap: () => onTabSelected(NavTab.ideas),
-                    ),
-                  ),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const indicatorWidth = 26.0;
+                  final tabWidth = constraints.maxWidth / 2;
+                  const projectsUnderlineOffset = 16.0;
+                  const ideasUnderlineOffset = 12.0;
+                  final indicatorLeft = (activeTab == NavTab.projects ? 0 : 1) * tabWidth +
+                      ((tabWidth - indicatorWidth) / 2) +
+                      (activeTab == NavTab.projects
+                          ? projectsUnderlineOffset
+                          : ideasUnderlineOffset);
+
+                  return Stack(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _NavItem(
+                              isActive: activeTab == NavTab.projects,
+                              label: 'Projetos',
+                              icon: Icons.edit,
+                              onTap: () => onTabSelected(NavTab.projects),
+                            ),
+                          ),
+                          Expanded(
+                            child: _NavItem(
+                              isActive: activeTab == NavTab.ideas,
+                              label: 'Ideias',
+                              icon: Icons.lightbulb_outline,
+                              onTap: () => onTabSelected(NavTab.ideas),
+                            ),
+                          ),
+                        ],
+                      ),
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        left: indicatorLeft,
+                        bottom: 10,
+                        child: IgnorePointer(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            height: 2.4,
+                            width: indicatorWidth,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEB76AE),
+                              borderRadius: BorderRadius.circular(999),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFEB76AE).withValues(alpha: 0.26),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -80,60 +125,41 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? Colors.white : Colors.black54;
+    final foregroundColor = isActive
+        ? const Color(0xFF544959)
+        : const Color(0xFF544959).withValues(alpha: 0.46);
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 220),
-      opacity: isActive ? 1.0 : 0.55,
+      curve: Curves.easeOutCubic,
+      opacity: isActive ? 1.0 : 0.58,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(30),
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
-          splashColor: Colors.pinkAccent.withOpacity(0.24),
+          splashColor: const Color(0xFFEB76AE).withValues(alpha: 0.16),
           onTap: onTap,
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: isActive
-                  ? const LinearGradient(
-                      colors: [Color(0xFF9E8A98), Color(0xFFD97EB6)],
-                    )
-                  : null,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Center(
-              child: Column(
+          child: Center(
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              style: TextStyle(
+                color: foregroundColor,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, color: color, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  AnimatedScale(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    scale: isActive ? 1.0 : 0.96,
+                    child: Icon(icon, color: foregroundColor, size: 20),
                   ),
-                  if (isActive) ...[
-                    const SizedBox(height: 5),
-                    Container(
-                      height: 2,
-                      width: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade200,
-                        borderRadius: BorderRadius.circular(999),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.pink.shade100.withOpacity(0.55),
-                            blurRadius: 6,
-                            spreadRadius: 0.5,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  const SizedBox(width: 8),
+                  Text(label),
                 ],
               ),
             ),

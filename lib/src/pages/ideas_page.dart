@@ -42,7 +42,7 @@ class _IdeasContentState extends State<IdeasContent> {
         ),
         const SizedBox(height: 14),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 200),
           child: Text(
             isNotes ? "Notas recentes" : "Grupos de diagramas",
             key: ValueKey(_activeView),
@@ -56,19 +56,48 @@ class _IdeasContentState extends State<IdeasContent> {
         ),
         const SizedBox(height: 10),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 200),
           switchInCurve: Curves.easeOutCubic,
           switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (currentChild, previousChildren) {
+            return Stack(
+              alignment: Alignment.topCenter,
+              children: [
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
+            );
+          },
           transitionBuilder: (child, animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.03),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
+            final isIncoming = child.key == ValueKey(_activeView);
+            final directionAwareAnimation = isIncoming
+                ? animation
+                : ReverseAnimation(animation);
+            final curved = CurvedAnimation(
+              parent: directionAwareAnimation,
+              curve: Curves.easeOutCubic,
+            );
+            final offsetAnimation = Tween<double>(
+              begin: isIncoming ? 8.0 : 0.0,
+              end: isIncoming ? 0.0 : -8.0,
+            ).animate(curved);
+            final opacityAnimation = Tween<double>(
+              begin: isIncoming ? 0.0 : 1.0,
+              end: isIncoming ? 1.0 : 0.0,
+            ).animate(curved);
+
+            return AnimatedBuilder(
+              animation: curved,
+              child: child,
+              builder: (context, builtChild) {
+                return Opacity(
+                  opacity: opacityAnimation.value,
+                  child: Transform.translate(
+                    offset: Offset(0, offsetAnimation.value),
+                    child: builtChild,
+                  ),
+                );
+              },
             );
           },
           child: _activeView == IdeasView.notes

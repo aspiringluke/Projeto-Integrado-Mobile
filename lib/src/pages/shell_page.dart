@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import './ideas_page.dart';
 import '../widgets/custom_nav_bar.dart';
 import '../widgets/funcoes_busca.dart';
+import '../widgets/glass_circle_button.dart';
 import '../widgets/main_header.dart';
 import '../widgets/project_card.dart';
 
@@ -44,11 +45,39 @@ class _ShellPageState extends State<ShellPage> {
         activeTab: _activeTab,
         onTabSelected: _onTabSelected,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFFF4B8D8),
-        elevation: 4,
-        child: const Icon(Icons.add, color: Colors.black87),
+      floatingActionButton: GlassCircleButton(
+        diameter: 56,
+        onTap: () {},
+        blurSigma: 10,
+        fillColor: const Color(0xFFF2D5E3).withValues(alpha: 0.58),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.88),
+            const Color(0xFFF1D1E2).withValues(alpha: 0.92),
+            const Color(0xFFE9B8D4).withValues(alpha: 0.98),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ),
+        borderColor: Colors.white.withValues(alpha: 0.92),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFDF6EB8).withValues(alpha: 0.14),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        child: const Icon(
+          Icons.add_rounded,
+          color: Color(0xFF171419),
+          size: 31,
+        ),
       ),
       body: Stack(
         children: [
@@ -85,7 +114,7 @@ class _AnimatedTabContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       layoutBuilder: (currentChild, previousChildren) {
@@ -100,37 +129,41 @@ class _AnimatedTabContent extends StatelessWidget {
       },
       transitionBuilder: (child, animation) {
         final isIncoming = child.key == ValueKey(activeTab);
-        final incomingOffset = toIdeas ? const Offset(1, 0) : const Offset(-1, 0);
-        final outgoingOffset = toIdeas ? const Offset(-1, 0) : const Offset(1, 0);
-
-        final slideAnimation = Tween<Offset>(
-          begin: isIncoming ? incomingOffset : Offset.zero,
-          end: isIncoming ? Offset.zero : outgoingOffset,
-        ).animate(
-          CurvedAnimation(
-            parent: isIncoming ? animation : ReverseAnimation(animation),
-            curve: Curves.easeInOutCubic,
-          ),
+        final directionAwareAnimation = isIncoming
+            ? animation
+            : ReverseAnimation(animation);
+        final curved = CurvedAnimation(
+          parent: directionAwareAnimation,
+          curve: Curves.easeOutCubic,
         );
+        final beginX = isIncoming
+            ? (toIdeas ? 20.0 : -20.0)
+            : 0.0;
+        final endX = isIncoming
+            ? 0.0
+            : (toIdeas ? -20.0 : 20.0);
 
-        final fadeAnimation = Tween<double>(
-          begin: isIncoming ? 0.96 : 1,
-          end: isIncoming ? 1 : 0.92,
-        ).animate(
-          CurvedAnimation(
-            parent: isIncoming ? animation : ReverseAnimation(animation),
-            curve: Curves.easeInOut,
-          ),
-        );
+        final offsetAnimation = Tween<double>(
+          begin: beginX,
+          end: endX,
+        ).animate(curved);
+        final opacityAnimation = Tween<double>(
+          begin: isIncoming ? 0.0 : 1.0,
+          end: isIncoming ? 1.0 : 0.0,
+        ).animate(curved);
 
-        return ClipRect(
-          child: SlideTransition(
-            position: slideAnimation,
-            child: FadeTransition(
-              opacity: fadeAnimation,
-              child: child,
-            ),
-          ),
+        return AnimatedBuilder(
+          animation: curved,
+          child: child,
+          builder: (context, builtChild) {
+            return Opacity(
+              opacity: opacityAnimation.value,
+              child: Transform.translate(
+                offset: Offset(offsetAnimation.value, 0),
+                child: builtChild,
+              ),
+            );
+          },
         );
       },
       child: KeyedSubtree(
@@ -232,6 +265,38 @@ class _ProjectsContentState extends State<_ProjectsContent> {
 
   @override
   Widget build(BuildContext context) {
+    Widget buildProjectCard(BuildContext context, int index) {
+      final project = _projects[index];
+      final card = RepaintBoundary(
+        child: ProjectCard(
+          title: project.title,
+          isPinned: project.isPinned,
+          onTogglePinned: () => _togglePinned(project),
+        ),
+      );
+
+      if (_isMobileReorderEnabled) {
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey(project.title),
+          index: index,
+          child: card,
+        );
+      }
+
+      return KeyedSubtree(
+        key: ValueKey(project.title),
+        child: card,
+      );
+    }
+
+    if (!_isMobileReorderEnabled) {
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: _projects.length,
+        itemBuilder: buildProjectCard,
+      );
+    }
+
     return ReorderableListView.builder(
       buildDefaultDragHandles: false,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -263,27 +328,7 @@ class _ProjectsContentState extends State<_ProjectsContent> {
           ),
         );
       },
-      itemBuilder: (context, index) {
-        final project = _projects[index];
-        final card = ProjectCard(
-          title: project.title,
-          isPinned: project.isPinned,
-          onTogglePinned: () => _togglePinned(project),
-        );
-
-        if (_isMobileReorderEnabled) {
-          return ReorderableDelayedDragStartListener(
-            key: ValueKey(project.title),
-            index: index,
-            child: card,
-          );
-        }
-
-        return KeyedSubtree(
-          key: ValueKey(project.title),
-          child: card,
-        );
-      },
+      itemBuilder: buildProjectCard,
     );
   }
 }

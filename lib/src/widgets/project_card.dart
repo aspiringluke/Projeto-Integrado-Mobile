@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../pages/project_page.dart';
+import 'glass_circle_button.dart';
+import 'outlined_tag_pill.dart';
 import 'synopsis_scroll_box.dart';
 
 class ProjectCard extends StatefulWidget {
@@ -22,7 +24,7 @@ class ProjectCard extends StatefulWidget {
   State<ProjectCard> createState() => _ProjectCardState();
 }
 
-class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStateMixin {
+class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin {
   static const String _initialSynopsis = '';
 
   bool _isExpanded = false;
@@ -32,6 +34,8 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
   late final AnimationController _expandController;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _detailsFadeAnimation;
+  late final AnimationController _entranceController;
+  late final Animation<double> _entranceAnimation;
   late final ScrollController _synopsisScrollController;
   late final TextEditingController _synopsisController;
 
@@ -39,28 +43,38 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _dateEntries = _ProjectDateEntries.fromSeed(widget.title.hashCode);
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _entranceAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutCubic,
+    );
     _expandController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 360),
+      duration: const Duration(milliseconds: 300),
     );
     _expandAnimation = CurvedAnimation(
       parent: _expandController,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
+      curve: Curves.easeInOut,
+      reverseCurve: Curves.easeInOut,
     );
     _detailsFadeAnimation = CurvedAnimation(
       parent: _expandController,
-      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      reverseCurve: const Interval(0.0, 0.8, curve: Curves.easeIn),
+      curve: Curves.easeInOut,
+      reverseCurve: Curves.easeInOut,
     );
     _synopsisScrollController = ScrollController();
     _synopsisController = TextEditingController(text: _initialSynopsis);
+    _entranceController.forward();
   }
 
   @override
   void dispose() {
     _synopsisController.dispose();
     _synopsisScrollController.dispose();
+    _entranceController.dispose();
     _expandController.dispose();
     super.dispose();
   }
@@ -108,49 +122,73 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: AnimatedScale(
-        scale: _isExpanded ? 1.006 : 1.0,
-        duration: const Duration(milliseconds: 230),
-        curve: Curves.easeOutCubic,
+      child: AnimatedBuilder(
+        animation: _entranceAnimation,
+        builder: (context, child) {
+          final offsetY = (1 - _entranceAnimation.value) * 10;
+          return Opacity(
+            opacity: _entranceAnimation.value,
+            child: Transform.translate(
+              offset: Offset(0, offsetY),
+              child: child,
+            ),
+          );
+        },
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              padding: const EdgeInsets.only(left: 16, top: 2),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _isExpanded ? 0.08 : 0.06),
+                      blurRadius: _isExpanded ? 11 : 9,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: _isExpanded
-                            ? const [
-                                Color(0xA6F1D1E2),
-                                Color(0x7DFFF7FB),
-                                Color(0x88E4BECF),
+                            ? [
+                                const Color(0x7FECE1E9),
+                                const Color(0x9CFBF7FB),
+                                const Color(0x86E7DCE5),
                               ]
-                            : const [
-                                Color(0x90E2DDE2),
-                                Color(0x72FBFAFB),
-                                Color(0x80C7C2C9),
+                            : [
+                                const Color(0x78E5DCE5),
+                                const Color(0x98FAF7FA),
+                                const Color(0x80DDD4DE),
                               ],
                         stops: const [0.0, 0.5, 1.0],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.32),
+                        color: Colors.white.withValues(alpha: 0.48),
                         width: 0.75,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 11,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                    ),
+                    foregroundDecoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.13),
+                          Colors.transparent,
+                          Colors.white.withValues(alpha: 0.08),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.28, 0.56, 1.0],
+                      ),
                     ),
                     child: AnimatedBuilder(
                       animation: _expandAnimation,
@@ -193,8 +231,8 @@ class _ProjectCardState extends State<ProjectCard> with SingleTickerProviderStat
               ),
             ),
             Positioned(
-              left: 6,
-              top: 6,
+              left: 0,
+              top: -4,
               child: _PinBadge(
                 isActive: widget.isPinned,
                 onTap: widget.onTogglePinned,
@@ -224,58 +262,23 @@ class _ProjectHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 60,
+    return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.vertical(
           top: const Radius.circular(16),
           bottom: bottomRadius,
         ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isExpanded
-              ? const [
-                  Color(0xC6F1D4E2),
-                  Color(0xA3FFF9FC),
-                  Color(0xB8E6BED1),
-                ]
-              : const [
-                  Color(0xC7DDD7DE),
-                  Color(0xB6FBFAFB),
-                  Color(0xB4C8C2CB),
-                ],
-          stops: const [0.0, 0.52, 1.0],
+        border: Border(
+          bottom: BorderSide(
+            color: isExpanded
+                ? Colors.white.withValues(alpha: 0.22)
+                : Colors.transparent,
+            width: 0.7,
+          ),
         ),
       ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.vertical(
-            top: const Radius.circular(16),
-            bottom: bottomRadius,
-          ),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isExpanded
-                ? [
-                    Colors.white.withValues(alpha: 0.22),
-                    Colors.white.withValues(alpha: 0.06),
-                    const Color(0x54D7AFC2),
-                  ]
-                : [
-                    Colors.white.withValues(alpha: 0.18),
-                    Colors.white.withValues(alpha: 0.05),
-                    const Color(0x46AFA7B3),
-                  ],
-            stops: const [0.0, 0.48, 1.0],
-          ),
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.white.withValues(alpha: 0.24),
-            ),
-          ),
-        ),
+      child: SizedBox(
+        height: 60,
         child: Stack(
           children: [
             Positioned.fill(
@@ -285,7 +288,7 @@ class _ProjectHeader extends StatelessWidget {
                 child: InkWell(
                   onTap: onOpenProject,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 40, right: 20),
+                    padding: const EdgeInsets.only(left: 50, right: 18),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -294,15 +297,15 @@ class _ProjectHeader extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.left,
                         style: TextStyle(
-                          color: isExpanded ? const Color(0xFFFDF9FC) : const Color(0xFFF8F7F9),
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          color: isExpanded ? const Color(0xFFF9F6FA) : const Color(0xFFF7F4F8),
+                          fontSize: 17.5,
+                          fontWeight: FontWeight.w700,
                           fontStyle: FontStyle.italic,
                           shadows: [
                             Shadow(
-                              color: Colors.black.withValues(alpha: 0.28),
-                              blurRadius: 6,
-                              offset: const Offset(0, 1.5),
+                              color: Colors.black.withValues(alpha: 0.22),
+                              blurRadius: 5,
+                              offset: const Offset(0, 1.2),
                             ),
                           ],
                         ),
@@ -313,21 +316,26 @@ class _ProjectHeader extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: 14,
-              right: 20,
-              top: 4,
-              height: 18,
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 26,
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.vertical(
+                      top: const Radius.circular(16),
+                      bottom: Radius.circular(bottomRadius.x),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.02),
+                        Colors.white.withValues(alpha: 0.2),
+                        Colors.white.withValues(alpha: 0.05),
+                        Colors.transparent,
                       ],
+                      stops: const [0.0, 0.45, 1.0],
                     ),
                   ),
                 ),
@@ -346,8 +354,8 @@ class _ProjectHeader extends StatelessWidget {
                     padding: const EdgeInsets.all(8),
                     child: AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
                         color: Colors.black.withValues(alpha: 0.48),
@@ -381,55 +389,56 @@ class _PinBadge extends StatelessWidget {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: AnimatedContainer(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
+            gradient: isActive
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFF6D3E5).withValues(alpha: 0.96),
+                      const Color(0xFFF0BEDB).withValues(alpha: 0.9),
+                    ],
+                  )
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.72),
+                      const Color(0xFFF0E7EE).withValues(alpha: 0.82),
+                    ],
+                  ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
+              width: 0.65,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isActive
+                    ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
+                    : Colors.black.withValues(alpha: 0.05),
+                blurRadius: isActive ? 10 : 5,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Center(
+            child: AnimatedScale(
+              scale: isActive ? 1.06 : 1,
               duration: const Duration(milliseconds: 160),
               curve: Curves.easeOutCubic,
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
-                gradient: isActive
-                    ? LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFF6D3E5).withValues(alpha: 0.96),
-                          const Color(0xFFF0BEDB).withValues(alpha: 0.9),
-                        ],
-                      )
-                    : null,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
-                  width: 0.65,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isActive
-                        ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
-                        : Colors.black.withValues(alpha: 0.05),
-                    blurRadius: isActive ? 10 : 5,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: AnimatedScale(
-                  scale: isActive ? 1.06 : 1,
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOutCubic,
-                  child: Transform.rotate(
-                    angle: -0.32,
-                    child: Icon(
-                      isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                      size: isActive ? 16 : 15,
-                      color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
-                    ),
-                  ),
+              child: Transform.rotate(
+                angle: -0.32,
+                child: Icon(
+                  isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                  size: isActive ? 16 : 15,
+                  color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
                 ),
               ),
             ),
@@ -523,22 +532,8 @@ class _ProjectDetails extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xCCF5E0E9),
-            Color(0xB8FBEFF5),
-            Color(0xC3E6C6D8),
-          ],
-          stops: [0.0, 0.54, 1.0],
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.28), width: 0.7),
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.22), width: 0.7),
         ),
       ),
       child: Column(
@@ -553,20 +548,32 @@ class _ProjectDetails extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              _GlassSurface(
-                width: 36,
-                height: 36,
-                radius: 10,
-                padding: EdgeInsets.zero,
-                blurSigma: 4,
-                fillColor: const Color(0xFFF3EEF1).withValues(alpha: 0.34),
-                borderColor: Colors.white.withValues(alpha: 0.54),
-                borderWidth: 0.65,
+              GlassCircleButton(
+                diameter: 36,
                 onTap: onToggleEditing,
+                blurSigma: 8,
+                fillColor: Colors.white.withValues(alpha: 0.32),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.58),
+                    const Color(0xFFF7EEF5).withValues(alpha: 0.28),
+                    const Color(0xFFE4D4E1).withValues(alpha: 0.14),
+                  ],
+                ),
+                borderColor: Colors.white.withValues(alpha: 0.8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
                 child: Icon(
                   isEditing ? Icons.check_rounded : Icons.edit_outlined,
                   size: 18,
-                  color: Colors.black54,
+                  color: const Color(0xFF544959),
                 ),
               ),
             ],
@@ -579,13 +586,24 @@ class _ProjectDetails extends StatelessWidget {
             placeholderText: synopsisPlaceholderText,
             textStyle: const TextStyle(
               fontSize: 12,
-              color: Colors.black87,
+              color: Color(0xFF8F8990),
               height: 1.4,
             ),
-            fillColor: const Color(0xFFFFF7FB).withValues(alpha: 0.74),
+            fillColor: Colors.white.withValues(alpha: 0.72),
+            blurSigma: 5,
+            backgroundGradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.8),
+                const Color(0xFFFFF8FC).withValues(alpha: 0.68),
+                const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+              ],
+              stops: const [0.0, 0.55, 1.0],
+            ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.38),
+              color: Colors.white.withValues(alpha: 0.78),
               width: 0.7,
             ),
             placeholderStyle: const TextStyle(
@@ -604,9 +622,15 @@ class _ProjectDetails extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildTag('Tag 1', const Color(0xFFF8BBD0)),
+              const OutlinedTagPill(
+                label: 'Tag 1',
+                color: Color(0xFFEB76AE),
+              ),
               const SizedBox(width: 8),
-              _buildTag('Tag 2', const Color(0xFFBBDEFB)),
+              const OutlinedTagPill(
+                label: 'Tag 2',
+                color: Color(0xFF8EAFF1),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -622,20 +646,21 @@ class _ProjectDetails extends StatelessWidget {
                   _buildCircle(),
                 ],
               ),
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F1F4).withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(17),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.32),
-                    width: 0.7,
+              GlassCircleButton(
+                diameter: 34,
+                blurSigma: 6,
+                fillColor: Colors.white.withValues(alpha: 0.28),
+                borderColor: Colors.white.withValues(alpha: 0.62),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
                   ),
-                ),
+                ],
                 child: const Icon(
                   Icons.swap_horiz,
-                  color: Colors.black54,
+                  color: Color(0xFF544959),
                   size: 18,
                 ),
               ),
@@ -646,30 +671,24 @@ class _ProjectDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildTag(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.44),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.black54,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
   Widget _buildCircle() {
     return Container(
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: const Color(0xFFC9C7CC).withValues(alpha: 0.5),
+        color: const Color(0xFFC9C7CC).withValues(alpha: 0.54),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.48),
+            const Color(0xFFD7D3D9).withValues(alpha: 0.36),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.62),
+          width: 0.75,
+        ),
         borderRadius: BorderRadius.circular(999),
       ),
     );
@@ -687,28 +706,32 @@ class _TimeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const circleDiameter = 38.0;
+    const fieldHeight = 38.0;
+    const pillLeftInset = 8.0;
+
     return SizedBox(
-      height: 42,
+      height: fieldHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned.fill(
-            left: 18,
+            left: pillLeftInset,
             child: _GlassSurface(
-              radius: 21,
-              blurSigma: 8,
-              padding: const EdgeInsets.only(left: 36, right: 14),
-              fillColor: const Color(0xFFE1DCE2).withValues(alpha: 0.52),
-              borderColor: Colors.white.withValues(alpha: 0.7),
+              radius: fieldHeight / 2,
+              blurSigma: 9,
+              padding: const EdgeInsets.only(left: 40, right: 31),
+              fillColor: const Color(0xFFF3EEF3).withValues(alpha: 0.3),
+              borderColor: Colors.white.withValues(alpha: 0.84),
               borderWidth: 0.75,
               alignment: Alignment.centerLeft,
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xCCFFFFFF),
-                  Color(0xB5E7E1E7),
-                  Color(0x9CCEC6CF),
+                  Colors.white.withValues(alpha: 0.64),
+                  const Color(0xFFF6EEF3).withValues(alpha: 0.32),
+                  const Color(0xFFE3D8E0).withValues(alpha: 0.16),
                 ],
                 stops: [0.0, 0.48, 1.0],
               ),
@@ -717,7 +740,7 @@ class _TimeField extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 10.5,
                   color: Color(0xFF2C262C),
                   fontStyle: FontStyle.italic,
                 ),
@@ -726,21 +749,38 @@ class _TimeField extends StatelessWidget {
           ),
           Positioned(
             left: 0,
-            top: 3,
-            bottom: 3,
-            child: _GlassSurface(
-              width: 36,
-              height: 36,
-              radius: 18,
-              padding: EdgeInsets.zero,
-              blurSigma: 6,
-              fillColor: const Color(0xFFF0BEDB).withValues(alpha: 0.42),
-              borderColor: Colors.white.withValues(alpha: 0.66),
-              borderWidth: 0.7,
+            top: 0,
+            bottom: 0,
+            child: GlassCircleButton(
+              diameter: circleDiameter,
               onTap: onTapClock,
+              blurSigma: 8,
+              fillColor: const Color(0xFFF0BEDB).withValues(alpha: 0.5),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.7),
+                  const Color(0xFFF4D5E6).withValues(alpha: 0.52),
+                  const Color(0xFFE8C4D9).withValues(alpha: 0.36),
+                ],
+              ),
+              borderColor: Colors.white.withValues(alpha: 0.84),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFDF6EB8).withValues(alpha: 0.08),
+                  blurRadius: 9,
+                  offset: const Offset(0, 3),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
               child: const Icon(
                 Icons.history_rounded,
-                size: 18,
+                size: 19,
                 color: Color(0xFF171419),
               ),
             ),
@@ -920,7 +960,7 @@ class _GlassSurface extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.white.withValues(alpha: 0.12),
+            Colors.white.withValues(alpha: 0.10),
             Colors.white.withValues(alpha: 0.03),
             Colors.transparent,
           ],

@@ -48,7 +48,6 @@ class _CharactersSection extends StatefulWidget {
       quote: 'Frase de efeito do personagem.',
       synopsis: '',
       seed: 37,
-      initiallyExpanded: true,
     ),
   ];
 
@@ -714,13 +713,12 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+      child: RepaintBoundary(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -919,16 +917,16 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: -4,
-            top: -4,
-            child: _CharacterPinBadge(
-              isActive: widget.isPinned,
-              onTap: widget.onTogglePinned,
+            Positioned(
+              left: -4,
+              top: -4,
+              child: _CharacterPinBadge(
+                isActive: widget.isPinned,
+                onTap: widget.onTogglePinned,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -958,7 +956,7 @@ class _CharacterAvatarTile extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
-                bottomLeft: Radius.circular(isExpanded ? 0 : 16),
+                bottomLeft: const Radius.circular(16),
                 topRight: const Radius.circular(14),
                 bottomRight: const Radius.circular(14),
               ),
@@ -1039,55 +1037,56 @@ class _CharacterPinBadge extends StatelessWidget {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: AnimatedContainer(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
+            gradient: isActive
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFF6D3E5).withValues(alpha: 0.96),
+                      const Color(0xFFF0BEDB).withValues(alpha: 0.9),
+                    ],
+                  )
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.72),
+                      const Color(0xFFF0E7EE).withValues(alpha: 0.82),
+                    ],
+                  ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
+              width: 0.65,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isActive
+                    ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
+                    : Colors.black.withValues(alpha: 0.05),
+                blurRadius: isActive ? 10 : 5,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Center(
+            child: AnimatedScale(
+              scale: isActive ? 1.06 : 1,
               duration: const Duration(milliseconds: 160),
               curve: Curves.easeOutCubic,
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
-                gradient: isActive
-                    ? LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFF6D3E5).withValues(alpha: 0.96),
-                          const Color(0xFFF0BEDB).withValues(alpha: 0.9),
-                        ],
-                      )
-                    : null,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
-                  width: 0.65,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isActive
-                        ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
-                        : Colors.black.withValues(alpha: 0.05),
-                    blurRadius: isActive ? 10 : 5,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: AnimatedScale(
-                  scale: isActive ? 1.06 : 1,
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOutCubic,
-                  child: Transform.rotate(
-                    angle: -0.32,
-                    child: Icon(
-                      isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                      size: isActive ? 16 : 15,
-                      color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
-                    ),
-                  ),
+              child: Transform.rotate(
+                angle: -0.32,
+                child: Icon(
+                  isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                  size: isActive ? 16 : 15,
+                  color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
                 ),
               ),
             ),
@@ -1166,7 +1165,6 @@ class _ExpandedCharacterBody extends StatelessWidget {
               _MiniGlassButton(
                 icon: isEditing ? Icons.check_rounded : Icons.edit_outlined,
                 onTap: onToggleEditing,
-                radius: 12,
                 fillColor: Colors.white.withValues(alpha: 0.34),
               ),
             ],
@@ -1178,11 +1176,27 @@ class _ExpandedCharacterBody extends StatelessWidget {
             isEditing: isEditing,
             placeholderText: synopsisPlaceholderText,
             textStyle: const TextStyle(
-              color: Color(0xFF171419),
+              color: Color(0xFF8F8990),
               fontSize: 11,
               height: 1.35,
             ),
-            fillColor: Colors.white.withValues(alpha: 0.82),
+            fillColor: Colors.white.withValues(alpha: 0.72),
+            blurSigma: 4,
+            backgroundGradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.8),
+                const Color(0xFFFFF8FC).withValues(alpha: 0.68),
+                const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+              ],
+              stops: const [0.0, 0.55, 1.0],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.78),
+              width: 0.7,
+            ),
             placeholderStyle: const TextStyle(
               color: Color(0xFF8F8990),
               fontSize: 11,
@@ -1241,9 +1255,9 @@ class _ExpandedCharacterBody extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: const [
-              _TagPill(label: 'Tag 1', color: Color(0xFFF4B8D8)),
+              OutlinedTagPill(label: 'Tag 1', color: Color(0xFFEB76AE)),
               SizedBox(width: 8),
-              _TagPill(label: 'Tag 2', color: Color(0xFFAEC8F6)),
+              OutlinedTagPill(label: 'Tag 2', color: Color(0xFF8EAFF1)),
             ],
           ),
         ],
@@ -1263,22 +1277,41 @@ class _CharacterTimeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const circleDiameter = 38.0;
+    const fieldHeight = 38.0;
+    const pillLeftInset = 8.0;
+
     return SizedBox(
-      height: 36,
+      height: fieldHeight,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           Positioned.fill(
-            left: 16,
-            child: _SoftGlassContainer(
-              radius: 18,
-              padding: const EdgeInsets.only(left: 32, right: 12),
+            left: pillLeftInset,
+            child: _CharacterPillSurface(
+              radius: fieldHeight / 2,
+              blurSigma: 9,
+              padding: const EdgeInsets.only(left: 40, right: 31),
+              fillColor: const Color(0xFFF3EEF3).withValues(alpha: 0.3),
+              borderColor: Colors.white.withValues(alpha: 0.84),
+              borderWidth: 0.75,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.64),
+                  const Color(0xFFF6EEF3).withValues(alpha: 0.32),
+                  const Color(0xFFE3D8E0).withValues(alpha: 0.16),
+                ],
+                stops: const [0.0, 0.48, 1.0],
+              ),
               child: Text(
                 '${dateEntry.label}: ${_formatDateTime(dateEntry.value)}, ${_formatRelativePhrase(dateEntry.value)}.',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.black.withValues(alpha: 0.62),
-                  fontSize: 10,
+                style: const TextStyle(
+                  color: Color(0xFF2C262C),
+                  fontSize: 10.5,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -1286,13 +1319,40 @@ class _CharacterTimeField extends StatelessWidget {
           ),
           Positioned(
             left: 0,
-            top: 2,
-            bottom: 2,
-            child: _MiniGlassButton(
-              diameter: 32,
-              icon: Icons.history_rounded,
+            top: 0,
+            bottom: 0,
+            child: GlassCircleButton(
+              diameter: circleDiameter,
               onTap: onTapClock,
+              blurSigma: 8,
               fillColor: const Color(0xFFF0BEDB).withValues(alpha: 0.5),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.7),
+                  const Color(0xFFF4D5E6).withValues(alpha: 0.52),
+                  const Color(0xFFE8C4D9).withValues(alpha: 0.36),
+                ],
+              ),
+              borderColor: Colors.white.withValues(alpha: 0.84),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFDF6EB8).withValues(alpha: 0.08),
+                  blurRadius: 9,
+                  offset: const Offset(0, 3),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              child: const Icon(
+                Icons.history_rounded,
+                size: 19,
+                color: Color(0xFF171419),
+              ),
             ),
           ),
         ],
@@ -1305,105 +1365,145 @@ class _MiniGlassButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final double diameter;
-  final double radius;
   final Color fillColor;
 
   const _MiniGlassButton({
     required this.icon,
     required this.onTap,
     this.diameter = 34,
-    this.radius = 999,
     this.fillColor = const Color(0x6BFFFFFF),
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          width: diameter,
-          height: diameter,
-          decoration: BoxDecoration(
-            color: fillColor,
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.68),
-              width: 0.8,
-            ),
+    return GlassCircleButton(
+      diameter: diameter,
+      onTap: onTap,
+      blurSigma: 8,
+      fillColor: fillColor,
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.58),
+          Color.alphaBlend(
+            const Color(0xFFF7EEF5).withValues(alpha: 0.42),
+            fillColor,
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF544959),
-            size: diameter * 0.48,
+          Color.alphaBlend(
+            const Color(0xFFE4D4E1).withValues(alpha: 0.2),
+            fillColor,
           ),
+        ],
+      ),
+      borderColor: Colors.white.withValues(alpha: 0.8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.06),
+          blurRadius: 9,
+          offset: const Offset(0, 3),
         ),
+      ],
+      child: Icon(
+        icon,
+        color: const Color(0xFF544959),
+        size: diameter * 0.5,
       ),
     );
   }
 }
 
-class _SoftGlassContainer extends StatelessWidget {
+class _CharacterPillSurface extends StatelessWidget {
   final Widget child;
   final double radius;
+  final double? width;
+  final double? height;
+  final double blurSigma;
   final EdgeInsetsGeometry padding;
+  final Color fillColor;
+  final Color borderColor;
+  final double borderWidth;
+  final Gradient? gradient;
+  final AlignmentGeometry alignment;
 
-  const _SoftGlassContainer({
+  const _CharacterPillSurface({
     required this.child,
     required this.radius,
+    this.width,
+    this.height,
+    this.blurSigma = 0,
     this.padding = EdgeInsets.zero,
+    this.fillColor = const Color(0x6BFFFFFF),
+    this.borderColor = const Color(0xAAFFFFFF),
+    this.borderWidth = 0.8,
+    this.gradient,
+    this.alignment = Alignment.centerLeft,
   });
 
   @override
   Widget build(BuildContext context) {
+    final content = Container(
+      width: width,
+      height: height,
+      alignment: alignment,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: fillColor,
+        gradient: gradient ??
+            LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.66),
+                Color.alphaBlend(
+                  const Color(0xFFF6EEF3).withValues(alpha: 0.32),
+                  fillColor,
+                ),
+                Color.alphaBlend(
+                  const Color(0xFFE3D8E0).withValues(alpha: 0.18),
+                  fillColor,
+                ),
+              ],
+              stops: const [0.0, 0.52, 1.0],
+            ),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: borderColor,
+          width: borderWidth,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.03),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.22, 0.52],
+        ),
+      ),
+      child: child,
+    );
+
+    if (blurSigma <= 0) {
+      return content;
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          alignment: Alignment.centerLeft,
-          padding: padding,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.34),
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.68),
-              width: 0.8,
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _TagPill extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _TagPill({
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Colors.black.withValues(alpha: 0.38),
-          fontSize: 11,
-          fontStyle: FontStyle.italic,
-        ),
+        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        child: content,
       ),
     );
   }
@@ -1420,15 +1520,19 @@ class _CharacterQuoteStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return _CharacterPillSurface(
+      radius: 999,
       padding: const EdgeInsets.fromLTRB(0, 0, 12, 0),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.6),
-          width: 0.8,
-        ),
+      fillColor: Colors.white.withValues(alpha: 0.34),
+      borderColor: Colors.white.withValues(alpha: 0.68),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.56),
+          const Color(0xFFF7EEF5).withValues(alpha: 0.28),
+          const Color(0xFFE4D4E1).withValues(alpha: 0.16),
+        ],
       ),
       child: Row(
         children: [
@@ -1570,16 +1674,11 @@ class _CharacterBirthdayField extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: isEditing ? onTapBirthday : null,
-              child: Container(
-                padding: const EdgeInsets.only(left: 12, right: 56),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.42),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.62),
-                    width: 0.75,
-                  ),
-                ),
+              child: _CharacterPillSurface(
+                radius: 999,
+                padding: const EdgeInsets.only(left: 12, right: 52),
+                fillColor: Colors.white.withValues(alpha: 0.42),
+                borderColor: Colors.white.withValues(alpha: 0.62),
                 child: Row(
                   children: [
                     Icon(
@@ -1638,9 +1737,9 @@ class _CharacterBirthdayField extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: 4,
-            top: 4,
-            bottom: 4,
+            right: 3,
+            top: 5,
+            bottom: 5,
             child: _CharacterSignButton(
               signData: signData,
               onTap: onTapSign,
@@ -1678,16 +1777,11 @@ class _CharacterHeightField extends StatelessWidget {
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
-              child: Ink(
+              child: _CharacterPillSurface(
+                radius: 999,
                 padding: const EdgeInsets.only(left: 12, right: 74),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.42),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.62),
-                    width: 0.75,
-                  ),
-                ),
+                fillColor: Colors.white.withValues(alpha: 0.42),
+                borderColor: Colors.white.withValues(alpha: 0.62),
                 child: Row(
                   children: [
                     const Icon(
@@ -1778,16 +1872,11 @@ class _CharacterWeightField extends StatelessWidget {
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
-              child: Ink(
+              child: _CharacterPillSurface(
+                radius: 999,
                 padding: const EdgeInsets.only(left: 12, right: 54),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.42),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.62),
-                    width: 0.75,
-                  ),
-                ),
+                fillColor: Colors.white.withValues(alpha: 0.42),
+                borderColor: Colors.white.withValues(alpha: 0.62),
                 child: Row(
                   children: [
                     const Icon(
@@ -1870,18 +1959,14 @@ class _CharacterSignButton extends StatelessWidget {
           child: InkWell(
             onTap: () => onTap(_rectFromContext(buttonContext)),
             borderRadius: BorderRadius.circular(999),
-            child: Ink(
-              width: 52,
-              height: 30,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3D7E6).withValues(alpha: 0.88),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.82),
-                  width: 0.75,
-                ),
-              ),
+            child: _CharacterPillSurface(
+              radius: 999,
+              width: 40,
+              height: 28,
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              fillColor: const Color(0xFFF3D7E6).withValues(alpha: 0.88),
+              borderColor: Colors.white.withValues(alpha: 0.82),
+              alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1889,7 +1974,7 @@ class _CharacterSignButton extends StatelessWidget {
                   Text(
                     signData.symbol,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       height: 0.9,
                       color: Color(0xFF544959),
                     ),
@@ -1904,7 +1989,7 @@ class _CharacterSignButton extends StatelessWidget {
                         softWrap: false,
                         style: TextStyle(
                           color: Colors.black.withValues(alpha: 0.48),
-                          fontSize: 7.1,
+                          fontSize: 6.6,
                           height: 0.9,
                           fontStyle: FontStyle.italic,
                         ),
@@ -1971,17 +2056,13 @@ class _CharacterUnitButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-        child: Ink(
+        child: _CharacterPillSurface(
+          radius: 999,
           height: 30,
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF0E2EA).withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.82),
-              width: 0.75,
-            ),
-          ),
+          fillColor: const Color(0xFFF0E2EA).withValues(alpha: 0.9),
+          borderColor: Colors.white.withValues(alpha: 0.82),
+          alignment: Alignment.center,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
