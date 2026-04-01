@@ -151,7 +151,7 @@ class _ProjectsContent extends StatefulWidget {
 }
 
 class _ProjectsContentState extends State<_ProjectsContent> {
-  late List<String> _projects;
+  late List<_ProjectListItem> _projects;
 
   bool get _isMobileReorderEnabled {
     if (kIsWeb) return false;
@@ -165,7 +165,69 @@ class _ProjectsContentState extends State<_ProjectsContent> {
   @override
   void initState() {
     super.initState();
-    _projects = List.generate(4, (index) => 'Projeto ${index + 1}');
+    _projects = List.generate(
+      4,
+      (index) => _ProjectListItem(
+        title: 'Projeto ${index + 1}',
+        unpinnedIndex: index,
+      ),
+    );
+  }
+
+  void _togglePinned(_ProjectListItem project) {
+    setState(() {
+      final currentIndex = _projects.indexOf(project);
+      if (currentIndex == -1) return;
+
+      if (!project.isPinned) {
+        project.unpinnedIndex = _unpinnedIndexAt(currentIndex);
+      }
+
+      _projects.removeAt(currentIndex);
+      project.isPinned = !project.isPinned;
+
+      if (project.isPinned) {
+        _projects.insert(0, project);
+      } else {
+        final pinnedCount = _projects.where((item) => item.isPinned).length;
+        final unpinnedCount = _projects.length - pinnedCount;
+        final targetUnpinnedIndex = project.unpinnedIndex.clamp(0, unpinnedCount) as int;
+        _projects.insert(pinnedCount + targetUnpinnedIndex, project);
+        _updateUnpinnedSlots();
+      }
+    });
+  }
+
+  int _unpinnedIndexAt(int listIndex) {
+    var count = 0;
+
+    for (var index = 0; index < listIndex; index += 1) {
+      if (!_projects[index].isPinned) {
+        count += 1;
+      }
+    }
+
+    return count;
+  }
+
+  void _normalizePinnedGroups() {
+    final pinned = _projects.where((item) => item.isPinned).toList(growable: false);
+    final unpinned = _projects.where((item) => !item.isPinned).toList(growable: false);
+    _projects = <_ProjectListItem>[
+      ...pinned,
+      ...unpinned,
+    ];
+  }
+
+  void _updateUnpinnedSlots() {
+    var unpinnedIndex = 0;
+
+    for (final project in _projects) {
+      if (!project.isPinned) {
+        project.unpinnedIndex = unpinnedIndex;
+        unpinnedIndex += 1;
+      }
+    }
   }
 
   @override
@@ -183,6 +245,8 @@ class _ProjectsContentState extends State<_ProjectsContent> {
         setState(() {
           final item = _projects.removeAt(oldIndex);
           _projects.insert(newIndex, item);
+          _normalizePinnedGroups();
+          _updateUnpinnedSlots();
         });
       },
       proxyDecorator: (widget, index, animation) {
@@ -201,21 +265,37 @@ class _ProjectsContentState extends State<_ProjectsContent> {
       },
       itemBuilder: (context, index) {
         final project = _projects[index];
-        final card = ProjectCard(title: project);
+        final card = ProjectCard(
+          title: project.title,
+          isPinned: project.isPinned,
+          onTogglePinned: () => _togglePinned(project),
+        );
 
         if (_isMobileReorderEnabled) {
           return ReorderableDelayedDragStartListener(
-            key: ValueKey(project),
+            key: ValueKey(project.title),
             index: index,
             child: card,
           );
         }
 
         return KeyedSubtree(
-          key: ValueKey(project),
+          key: ValueKey(project.title),
           child: card,
         );
       },
     );
   }
+}
+
+class _ProjectListItem {
+  final String title;
+  bool isPinned;
+  int unpinnedIndex;
+
+  _ProjectListItem({
+    required this.title,
+    this.isPinned = false,
+    required this.unpinnedIndex,
+  });
 }

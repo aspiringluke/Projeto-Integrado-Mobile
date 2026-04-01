@@ -1,9 +1,9 @@
 part of 'project_page.dart';
 
-class _CharactersSection extends StatelessWidget {
+class _CharactersSection extends StatefulWidget {
   const _CharactersSection();
 
-  static const List<_CharacterCardData> _characters = <_CharacterCardData>[
+  static const List<_CharacterCardData> _initialCharacters = <_CharacterCardData>[
     _CharacterCardData(
       name: 'Personagem 1',
       alias: 'Vulgo Personagem 1',
@@ -53,15 +53,101 @@ class _CharactersSection extends StatelessWidget {
   ];
 
   @override
+  State<_CharactersSection> createState() => _CharactersSectionState();
+}
+
+class _CharactersSectionState extends State<_CharactersSection> {
+  late List<_CharacterListItem> _characters;
+
+  @override
+  void initState() {
+    super.initState();
+    _characters = _CharactersSection._initialCharacters
+        .indexed
+        .map(
+          (entry) => _CharacterListItem(
+            data: entry.$2,
+            unpinnedIndex: entry.$1,
+          ),
+        )
+        .toList(growable: true);
+  }
+
+  void _togglePinned(_CharacterListItem character) {
+    setState(() {
+      final currentIndex = _characters.indexOf(character);
+      if (currentIndex == -1) return;
+
+      if (!character.isPinned) {
+        character.unpinnedIndex = _unpinnedIndexAt(currentIndex);
+      }
+
+      _characters.removeAt(currentIndex);
+      character.isPinned = !character.isPinned;
+
+      if (character.isPinned) {
+        _characters.insert(0, character);
+      } else {
+        final pinnedCount = _characters.where((item) => item.isPinned).length;
+        final unpinnedCount = _characters.length - pinnedCount;
+        final targetUnpinnedIndex = character.unpinnedIndex.clamp(0, unpinnedCount) as int;
+        _characters.insert(pinnedCount + targetUnpinnedIndex, character);
+        _updateUnpinnedSlots();
+      }
+    });
+  }
+
+  int _unpinnedIndexAt(int listIndex) {
+    var count = 0;
+
+    for (var index = 0; index < listIndex; index += 1) {
+      if (!_characters[index].isPinned) {
+        count += 1;
+      }
+    }
+
+    return count;
+  }
+
+  void _updateUnpinnedSlots() {
+    var unpinnedIndex = 0;
+
+    for (final character in _characters) {
+      if (!character.isPinned) {
+        character.unpinnedIndex = unpinnedIndex;
+        unpinnedIndex += 1;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 160),
       itemCount: _characters.length,
       itemBuilder: (context, index) {
-        return _CharacterCard(data: _characters[index]);
+        final character = _characters[index];
+        return _CharacterCard(
+          key: ValueKey(character.data.seed),
+          data: character.data,
+          isPinned: character.isPinned,
+          onTogglePinned: () => _togglePinned(character),
+        );
       },
     );
   }
+}
+
+class _CharacterListItem {
+  final _CharacterCardData data;
+  bool isPinned;
+  int unpinnedIndex;
+
+  _CharacterListItem({
+    required this.data,
+    this.isPinned = false,
+    required this.unpinnedIndex,
+  });
 }
 
 class _CharacterCardData {
@@ -177,8 +263,15 @@ class _ZodiacSignData {
 
 class _CharacterCard extends StatefulWidget {
   final _CharacterCardData data;
+  final bool isPinned;
+  final VoidCallback onTogglePinned;
 
-  const _CharacterCard({required this.data});
+  const _CharacterCard({
+    super.key,
+    required this.data,
+    required this.isPinned,
+    required this.onTogglePinned,
+  });
 
   @override
   State<_CharacterCard> createState() => _CharacterCardState();
@@ -827,10 +920,13 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             left: -4,
             top: -4,
-            child: _CharacterPinBadge(),
+            child: _CharacterPinBadge(
+              isActive: widget.isPinned,
+              onTap: widget.onTogglePinned,
+            ),
           ),
         ],
       ),
@@ -928,39 +1024,71 @@ class _CharacterAvatarTile extends StatelessWidget {
 }
 
 class _CharacterPinBadge extends StatelessWidget {
-  const _CharacterPinBadge();
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _CharacterPinBadge({
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4EEF3).withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.7),
-              width: 0.65,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
+                gradient: isActive
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFFF6D3E5).withValues(alpha: 0.96),
+                          const Color(0xFFF0BEDB).withValues(alpha: 0.9),
+                        ],
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
+                  width: 0.65,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isActive
+                        ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
+                        : Colors.black.withValues(alpha: 0.05),
+                    blurRadius: isActive ? 10 : 5,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Center(
-            child: Transform.rotate(
-              angle: -0.32,
-              child: const Icon(
-                Icons.push_pin_outlined,
-                size: 15,
-                color: Color(0xFF8A828C),
+              child: Center(
+                child: AnimatedScale(
+                  scale: isActive ? 1.06 : 1,
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOutCubic,
+                  child: Transform.rotate(
+                    angle: -0.32,
+                    child: Icon(
+                      isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                      size: isActive ? 16 : 15,
+                      color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
