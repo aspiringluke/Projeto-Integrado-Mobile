@@ -1,3 +1,30 @@
 @startuml diagrama_UC16
 
+|Usuário|
+start
+:Acessar menu de segurança;
+
+if (Ação?) then (Alterar Senha)
+  |Sistema|
+  :Solicitar senha antiga;
+  |Usuário|
+  :Inserir senha atual;
+  |Sistema|
+  if (Senha correta?) then (sim)
+    |Usuário|
+    :Inserir e confirmar nova senha;
+    |Sistema|
+    :Criptografar e salvar nova credencial;
+  else (não)
+    :Exibir erro de validação;
+  endif
+else (Remover Senha)
+  |Usuário|
+  :Selecionar "Desativar Proteção";
+  :Confirmar identidade;
+  |Sistema|
+  :Remover obrigatoriedade de senha;
+endif
+
+stop
 @enduml

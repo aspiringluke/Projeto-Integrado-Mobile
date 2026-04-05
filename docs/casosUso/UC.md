@@ -239,12 +239,15 @@
 - **A1 — Remoção de nó do grupo:**
 
     1. O usuário seleciona um nó dentro do grupo.
-    2. O usuário aciona "Remover do Grupo", mantendo o nó no diagrama de forma independente.
+    2. O usuário aciona "Remover do Grupo". 
+    3. O sistema mantém o nó no diagrama de forma independente.
 
 - **A2 — Exclusão de grupo:**
 
-    1. O usuário seleciona o grupo
-    2. O usuário aciona "Excluir Grupo"
+    1. O usuário seleciona o grupo.
+    2. O usuário aciona "Excluir Grupo".
+    3. O sistema remove o grupo do diagrama.
+    4. O sistema mantém os nós do grupo no diagrama de forma independente.
 
 ### RF Relacionadas
 

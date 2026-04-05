@@ -1,3 +1,32 @@
 @startuml diagrama_UC09
 
+|Usuário|
+start
+:Acessar "Gerenciamento de Ideias";
+:Criar nova ideia e inserir título;
+fork
+  :Escrever texto em Markdown;
+fork again
+  :Adicionar tags de categoria;
+
+  if (Deseja adicionar imagem?) then (sim)
+    |Usuário|
+    :Escolher "Tirar foto" ou "Galeria";
+    |Sistema|
+    :Capturar arquivo;
+    if (Tamanho respeita RNF05?) then (sim)
+      :Adicionar imagem ao corpo da ideia;
+    else (não)
+      :Bloquear e exibir erro;
+    endif
+  else (não)
+  endif
+end fork
+
+|Usuário|
+:Clicar em "Salvar";
+|Sistema|
+:Persistir ideia com formatação e tags;
+
+stop
 @enduml

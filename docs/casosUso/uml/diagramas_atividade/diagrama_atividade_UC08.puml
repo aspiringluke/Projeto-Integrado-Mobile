@@ -1,3 +1,22 @@
 @startuml diagrama_UC08
 
+|Usuário|
+start
+:Clicar na área de imagem do personagem;
+:Selecionar imagem da galeria;
+|Sistema|
+
+if (Tamanho do arquivo maior que 5MB?) then (sim)
+  :Exibir mensagem de erro;
+  stop
+else (não)
+  :Realizar compressão lossy em segundo plano;
+  :Salvar versão otimizada no storage local;
+  :Exibir miniatura da imagem;
+endif
+
+|Usuário|
+:Confirmar edição e salvar personagem;
+stop
+
 @enduml

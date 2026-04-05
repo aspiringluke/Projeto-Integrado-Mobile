@@ -1,3 +1,30 @@
 @startuml diagrama_UC11
 
+|Usuário|
+start
+
+if (Ação selecionada) then (Excluir Nó)
+  :Selecionar nó no editor;
+  :Clicar em "Excluir";
+  |Sistema|
+  :Identificar arestas vinculadas ao nó;
+  fork
+    :Remover o nó selecionado;
+  fork again
+    :Remover todas as arestas órfãs;
+  end fork
+else (Excluir Aresta Individual)
+  |Usuário|
+  :Selecionar apenas a aresta;
+  :Clicar em "Excluir";
+  |Sistema|
+  :Remover aresta mantendo os nós;
+endif
+
+|Usuário|
+:Confirmar e Salvar alteração;
+|Sistema|
+:Persistir estado do diagrama;
+stop
+
 @enduml
