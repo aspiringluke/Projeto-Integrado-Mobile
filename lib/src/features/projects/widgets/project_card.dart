@@ -898,29 +898,23 @@ class _GlassSurface extends StatelessWidget {
   final Widget? child;
   final double radius;
   final double blurSigma;
-  final double? width;
-  final double? height;
   final EdgeInsetsGeometry padding;
   final AlignmentGeometry alignment;
   final Color fillColor;
   final Color borderColor;
   final double borderWidth;
   final Gradient? gradient;
-  final VoidCallback? onTap;
 
   const _GlassSurface({
     this.child,
     required this.radius,
     this.blurSigma = 8,
-    this.width,
-    this.height,
     this.padding = const EdgeInsets.all(0),
     this.alignment = Alignment.center,
     required this.fillColor,
     required this.borderColor,
     this.borderWidth = 0.8,
     this.gradient,
-    this.onTap,
   });
 
   @override
@@ -937,8 +931,6 @@ class _GlassSurface extends StatelessWidget {
           stops: const [0.0, 0.52, 1.0],
         );
     final surface = Container(
-      width: width,
-      height: height,
       alignment: alignment,
       padding: padding,
       decoration: BoxDecoration(
@@ -974,16 +966,7 @@ class _GlassSurface extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-        child: onTap == null
-            ? surface
-            : Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(radius),
-                  onTap: onTap,
-                  child: surface,
-                ),
-              ),
+        child: surface,
       ),
     );
   }
