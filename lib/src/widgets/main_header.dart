@@ -6,44 +6,132 @@ import './buttons/botao_voltar.dart';
 
 class MainHeader extends StatelessWidget {
   final bool asSliver;
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onBackPressed;
+  final VoidCallback? onConfigPressed;
+  final double headerHeight;
+  final double titleFontSize;
+  final double titleLetterSpacing;
+  final EdgeInsetsGeometry contentPadding;
+  final double buttonTop;
+  final double titleHorizontalPadding;
+  final bool titleShadow;
+  final bool surroundSubtitleWithDots;
 
-  const MainHeader({super.key, this.asSliver = true});
+  const MainHeader({
+    super.key,
+    this.asSliver = true,
+    this.title = 'WIREFRAME',
+    this.subtitle,
+    this.onBackPressed,
+    this.onConfigPressed,
+    this.headerHeight = 106,
+    this.titleFontSize = 33,
+    this.titleLetterSpacing = 3.6,
+    this.contentPadding = const EdgeInsets.fromLTRB(14, 16, 14, 18),
+    this.buttonTop = 0,
+    this.titleHorizontalPadding = 0,
+    this.titleShadow = false,
+    this.surroundSubtitleWithDots = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (!asSliver) {
-      return const SizedBox(
-        height: 106,
-        child: _HeaderContent(),
+      return SizedBox(
+        height: headerHeight,
+        child: _HeaderContent(
+          title: title,
+          subtitle: subtitle,
+          onBackPressed: onBackPressed,
+          onConfigPressed: onConfigPressed,
+          titleFontSize: titleFontSize,
+          titleLetterSpacing: titleLetterSpacing,
+          contentPadding: contentPadding,
+          buttonTop: buttonTop,
+          titleHorizontalPadding: titleHorizontalPadding,
+          titleShadow: titleShadow,
+          surroundSubtitleWithDots: surroundSubtitleWithDots,
+        ),
       );
     }
 
-    return const SliverAppBar(
-      expandedHeight: 106,
-      toolbarHeight: 106,
+    return SliverAppBar(
+      expandedHeight: headerHeight,
+      toolbarHeight: headerHeight,
       floating: false,
       pinned: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
-        background: _HeaderContent(),
+        background: _HeaderContent(
+          title: title,
+          subtitle: subtitle,
+          onBackPressed: onBackPressed,
+          onConfigPressed: onConfigPressed,
+          titleFontSize: titleFontSize,
+          titleLetterSpacing: titleLetterSpacing,
+          contentPadding: contentPadding,
+          buttonTop: buttonTop,
+          titleHorizontalPadding: titleHorizontalPadding,
+          titleShadow: titleShadow,
+          surroundSubtitleWithDots: surroundSubtitleWithDots,
+        ),
       ),
     );
   }
 }
 
 class _HeaderContent extends StatelessWidget {
-  const _HeaderContent();
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onBackPressed;
+  final VoidCallback? onConfigPressed;
+  final double titleFontSize;
+  final double titleLetterSpacing;
+  final EdgeInsetsGeometry contentPadding;
+  final double buttonTop;
+  final double titleHorizontalPadding;
+  final bool titleShadow;
+  final bool surroundSubtitleWithDots;
+
+  const _HeaderContent({
+    required this.title,
+    required this.subtitle,
+    required this.onBackPressed,
+    required this.onConfigPressed,
+    required this.titleFontSize,
+    required this.titleLetterSpacing,
+    required this.contentPadding,
+    required this.buttonTop,
+    required this.titleHorizontalPadding,
+    required this.titleShadow,
+    required this.surroundSubtitleWithDots,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
+    final effectiveSubtitle = hasSubtitle
+        ? (surroundSubtitleWithDots ? '...${subtitle!}...' : subtitle!)
+        : '';
     final titleStyle = GoogleFonts.ralewayDots(
       color: const Color(0xFFF8EFF5),
-      fontSize: 33,
+      fontSize: titleFontSize,
       fontWeight: FontWeight.w400,
-      letterSpacing: 3.6,
+      letterSpacing: titleLetterSpacing,
       height: 1,
+      shadows: titleShadow
+          ? [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 1.5),
+              ),
+            ]
+          : null,
     );
 
     return Container(
@@ -91,24 +179,56 @@ class _HeaderContent extends StatelessWidget {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 16, 14, 18),
+              padding: contentPadding,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Positioned(
-                    left: 0,
-                    child: BotaoVoltar(),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Transform.translate(
+                      offset: Offset(0, buttonTop),
+                      child: BotaoVoltar(onPressed: onBackPressed),
+                    ),
                   ),
-                  Text(
-                    'WIREFRAME',
-                    maxLines: 1,
-                    overflow: TextOverflow.fade,
-                    softWrap: false,
-                    style: titleStyle,
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Transform.translate(
+                      offset: Offset(0, buttonTop),
+                      child: BotaoConfig(onPressed: onConfigPressed),
+                    ),
                   ),
-                  const Positioned(
-                    right: 0,
-                    child: BotaoConfig(),
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: titleHorizontalPadding),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              title.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                              style: titleStyle,
+                            ),
+                          ),
+                          if (hasSubtitle) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              effectiveSubtitle,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFFF7EEF4).withValues(alpha: 0.9),
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -134,9 +134,19 @@ class _ProjectPageState extends State<ProjectPage> {
           ),
           Column(
             children: [
-              _ProjectHeaderBar(
+              MainHeader(
+                asSliver: false,
                 title: widget.title,
                 subtitle: _activeSectionLabel,
+                onBackPressed: () => Navigator.of(context).pop(),
+                onConfigPressed: () {},
+                headerHeight: 118,
+                titleFontSize: 31,
+                titleLetterSpacing: 2.8,
+                contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                titleHorizontalPadding: 60,
+                titleShadow: true,
+                surroundSubtitleWithDots: true,
               ),
               const FuncoesBusca(),
               Expanded(
@@ -163,104 +173,6 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ProjectHeaderBar extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _ProjectHeaderBar({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final titleStyle = GoogleFonts.ralewayDots(
-      color: const Color(0xFFF8EFF5),
-      fontSize: 31,
-      fontWeight: FontWeight.w400,
-      letterSpacing: 2.8,
-      height: 1,
-      shadows: [
-        Shadow(
-          color: Colors.black.withValues(alpha: 0.1),
-          blurRadius: 10,
-          offset: const Offset(0, 1.5),
-        ),
-      ],
-    );
-
-    return Container(
-      height: 118,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0xFF726876),
-            Color(0xFFB083AA),
-            Color(0xFFDF6EB8),
-          ],
-          stops: [0, 0.56, 1],
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              Positioned(
-                left: 0,
-                top: 10,
-                child: BotaoVoltar(
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 10,
-                child: BotaoConfig(
-                  onPressed: () {},
-                ),
-              ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 60),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          title.toUpperCase(),
-                          maxLines: 1,
-                          style: titleStyle,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '...$subtitle...',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: const Color(0xFFF7EEF4).withValues(alpha: 0.9),
-                          fontSize: 13,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
