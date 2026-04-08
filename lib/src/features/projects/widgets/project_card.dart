@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../pages/project_page.dart';
-import './buttons/glass_circle_button.dart';
-import 'outlined_tag_pill.dart';
-import 'synopsis_scroll_box.dart';
+import '../../../shared/widgets/buttons/glass_circle_button.dart';
+import '../../../shared/widgets/outlined_tag_pill.dart';
+import '../../../shared/widgets/synopsis_scroll_box.dart';
 
 class ProjectCard extends StatefulWidget {
   final String title;

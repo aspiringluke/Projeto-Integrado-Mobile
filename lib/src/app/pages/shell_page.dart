@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import './idea_list_page.dart';
-import './project_list_page.dart';
+import '../../features/ideas/pages/idea_list_page.dart';
+import '../../features/projects/pages/project_list_page.dart';
 import '../widgets/custom_nav_bar.dart';
-import '../widgets/funcoes_busca.dart';
-import '../widgets/buttons/glass_circle_button.dart';
-import '../widgets/main_header.dart';
+import '../../shared/widgets/funcoes_busca.dart';
+import '../../shared/widgets/buttons/glass_circle_button.dart';
+import '../../shared/widgets/main_header.dart';
 
 class ShellPage extends StatefulWidget {
   final NavTab initialTab;
