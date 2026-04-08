@@ -2888,9 +2888,8 @@ class _CharacterPlaceholderPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _HeaderCircleButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.of(context).pop(),
+                  BotaoVoltar(
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(height: 26),
                   Text(

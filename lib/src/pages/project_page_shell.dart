@@ -218,17 +218,15 @@ class _ProjectHeaderBar extends StatelessWidget {
               Positioned(
                 left: 0,
                 top: 10,
-                child: _HeaderCircleButton(
-                  icon: Icons.arrow_back_ios_new_rounded,
-                  onTap: () => Navigator.of(context).pop(),
+                child: BotaoVoltar(
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
               Positioned(
                 right: 0,
                 top: 10,
-                child: _HeaderCircleButton(
-                  icon: Icons.settings_outlined,
-                  onTap: () {},
+                child: BotaoConfig(
+                  onPressed: () {},
                 ),
               ),
               Center(
@@ -263,40 +261,6 @@ class _ProjectHeaderBar extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HeaderCircleButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeaderCircleButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCircleButton(
-      diameter: 34,
-      onTap: onTap,
-      blurSigma: 7,
-      fillColor: Colors.white.withValues(alpha: 0.12),
-      borderColor: Colors.white.withValues(alpha: 0.44),
-      borderWidth: 0.95,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 9,
-          offset: const Offset(0, 2),
-        ),
-      ],
-      child: Icon(
-        icon,
-        color: const Color(0xFFF6EDF3),
-        size: 17,
       ),
     );
   }
