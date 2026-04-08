@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/ideas_toggle_button.dart';
+import '../widgets/buttons/ideas_toggle_button.dart';
 
 enum IdeasView { notes, diagrams }
 

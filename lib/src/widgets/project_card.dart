@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../pages/project_page.dart';
-import 'glass_circle_button.dart';
+import './buttons/glass_circle_button.dart';
 import 'outlined_tag_pill.dart';
 import 'synopsis_scroll_box.dart';
 

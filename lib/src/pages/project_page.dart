@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../widgets/funcoes_busca.dart';
-import '../widgets/glass_circle_button.dart';
+import '../widgets/buttons/glass_circle_button.dart';
 import '../widgets/main_header.dart';
 import '../widgets/outlined_tag_pill.dart';
 import '../widgets/synopsis_scroll_box.dart';

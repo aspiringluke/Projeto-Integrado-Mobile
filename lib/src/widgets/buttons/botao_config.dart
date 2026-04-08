@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../glass_circle_button.dart';
+import './glass_circle_button.dart';
 
 class BotaoConfig extends StatelessWidget {
   final VoidCallback? onPressed;

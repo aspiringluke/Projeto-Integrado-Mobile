@@ -4,7 +4,7 @@ import './idea_list_page.dart';
 import './project_list_page.dart';
 import '../widgets/custom_nav_bar.dart';
 import '../widgets/funcoes_busca.dart';
-import '../widgets/glass_circle_button.dart';
+import '../widgets/buttons/glass_circle_button.dart';
 import '../widgets/main_header.dart';
 
 class ShellPage extends StatefulWidget {
