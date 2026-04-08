@@ -14,7 +14,6 @@ class MainHeader extends StatelessWidget {
   final double titleFontSize;
   final double titleLetterSpacing;
   final EdgeInsetsGeometry contentPadding;
-  final double buttonTop;
   final double titleHorizontalPadding;
   final bool titleShadow;
   final bool surroundSubtitleWithDots;
@@ -30,7 +29,6 @@ class MainHeader extends StatelessWidget {
     this.titleFontSize = 33,
     this.titleLetterSpacing = 3.6,
     this.contentPadding = const EdgeInsets.fromLTRB(14, 16, 14, 18),
-    this.buttonTop = 0,
     this.titleHorizontalPadding = 0,
     this.titleShadow = false,
     this.surroundSubtitleWithDots = false,
@@ -49,7 +47,6 @@ class MainHeader extends StatelessWidget {
           titleFontSize: titleFontSize,
           titleLetterSpacing: titleLetterSpacing,
           contentPadding: contentPadding,
-          buttonTop: buttonTop,
           titleHorizontalPadding: titleHorizontalPadding,
           titleShadow: titleShadow,
           surroundSubtitleWithDots: surroundSubtitleWithDots,
@@ -74,7 +71,6 @@ class MainHeader extends StatelessWidget {
           titleFontSize: titleFontSize,
           titleLetterSpacing: titleLetterSpacing,
           contentPadding: contentPadding,
-          buttonTop: buttonTop,
           titleHorizontalPadding: titleHorizontalPadding,
           titleShadow: titleShadow,
           surroundSubtitleWithDots: surroundSubtitleWithDots,
@@ -92,7 +88,6 @@ class _HeaderContent extends StatelessWidget {
   final double titleFontSize;
   final double titleLetterSpacing;
   final EdgeInsetsGeometry contentPadding;
-  final double buttonTop;
   final double titleHorizontalPadding;
   final bool titleShadow;
   final bool surroundSubtitleWithDots;
@@ -105,7 +100,6 @@ class _HeaderContent extends StatelessWidget {
     required this.titleFontSize,
     required this.titleLetterSpacing,
     required this.contentPadding,
-    required this.buttonTop,
     required this.titleHorizontalPadding,
     required this.titleShadow,
     required this.surroundSubtitleWithDots,
@@ -185,17 +179,11 @@ class _HeaderContent extends StatelessWidget {
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Transform.translate(
-                      offset: Offset(0, buttonTop),
-                      child: BotaoVoltar(onPressed: onBackPressed),
-                    ),
+                    child: BotaoVoltar(onPressed: onBackPressed),
                   ),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Transform.translate(
-                      offset: Offset(0, buttonTop),
-                      child: BotaoConfig(onPressed: onConfigPressed),
-                    ),
+                    child: BotaoConfig(onPressed: onConfigPressed),
                   ),
                   Center(
                     child: Padding(

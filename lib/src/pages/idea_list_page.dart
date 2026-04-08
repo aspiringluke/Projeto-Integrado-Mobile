@@ -64,7 +64,7 @@ class _IdeasContentState extends State<IdeasContent> {
               alignment: Alignment.topCenter,
               children: [
                 ...previousChildren,
-                if (currentChild != null) currentChild,
+                ?currentChild,
               ],
             );
           },
