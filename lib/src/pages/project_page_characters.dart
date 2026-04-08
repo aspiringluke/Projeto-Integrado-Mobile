@@ -89,7 +89,7 @@ class _CharactersSectionState extends State<_CharactersSection> {
       } else {
         final pinnedCount = _characters.where((item) => item.isPinned).length;
         final unpinnedCount = _characters.length - pinnedCount;
-        final targetUnpinnedIndex = character.unpinnedIndex.clamp(0, unpinnedCount) as int;
+        final targetUnpinnedIndex = character.unpinnedIndex.clamp(0, unpinnedCount);
         _characters.insert(pinnedCount + targetUnpinnedIndex, character);
         _updateUnpinnedSlots();
       }
@@ -139,12 +139,11 @@ class _CharactersSectionState extends State<_CharactersSection> {
 
 class _CharacterListItem {
   final _CharacterCardData data;
-  bool isPinned;
+  bool isPinned = false;
   int unpinnedIndex;
 
   _CharacterListItem({
     required this.data,
-    this.isPinned = false,
     required this.unpinnedIndex,
   });
 }
@@ -163,7 +162,6 @@ class _CharacterCardData {
   final String quote;
   final String synopsis;
   final int seed;
-  final bool initiallyExpanded;
 
   const _CharacterCardData({
     required this.name,
@@ -179,7 +177,6 @@ class _CharacterCardData {
     required this.quote,
     required this.synopsis,
     required this.seed,
-    this.initiallyExpanded = false,
   });
 }
 
@@ -298,7 +295,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   @override
   void initState() {
     super.initState();
-    _isExpanded = widget.data.initiallyExpanded;
+    _isExpanded = false;
     _dateEntries = _CharacterDateEntries.fromSeed(widget.data.seed);
     _birthdayValue = DateTime(
       widget.data.birthYear,
@@ -1364,20 +1361,18 @@ class _CharacterTimeField extends StatelessWidget {
 class _MiniGlassButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  final double diameter;
   final Color fillColor;
 
   const _MiniGlassButton({
     required this.icon,
     required this.onTap,
-    this.diameter = 34,
     this.fillColor = const Color(0x6BFFFFFF),
   });
 
   @override
   Widget build(BuildContext context) {
     return GlassCircleButton(
-      diameter: diameter,
+      diameter: 34,
       onTap: onTap,
       blurSigma: 8,
       fillColor: fillColor,
@@ -1407,7 +1402,7 @@ class _MiniGlassButton extends StatelessWidget {
       child: Icon(
         icon,
         color: const Color(0xFF544959),
-        size: diameter * 0.5,
+        size: 17,
       ),
     );
   }
@@ -1594,52 +1589,6 @@ class _CharacterQuoteStrip extends StatelessWidget {
                       fontStyle: FontStyle.italic,
                     ),
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CharacterMetricField extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _CharacterMetricField({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.62),
-          width: 0.75,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF171419)),
-          Container(
-            width: 1.3,
-            height: 18,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFFDF6EB8),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.68),
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
           ),
         ],
       ),
