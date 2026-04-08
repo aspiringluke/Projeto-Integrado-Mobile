@@ -1,13 +1,17 @@
-part of '../pages/characters_section.dart';
+import 'dart:ui';
 
-Rect _rectFromContext(BuildContext context) {
+import 'package:flutter/material.dart';
+
+import '../../../shared/widgets/buttons/botao_voltar.dart';
+
+Rect rectFromContext(BuildContext context) {
   final box = context.findRenderObject() as RenderBox;
   final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
   final offset = box.localToGlobal(Offset.zero, ancestor: overlay);
   return offset & box.size;
 }
 
-Future<void> _showAnchoredInfoBubble({
+Future<void> showAnchoredInfoBubble({
   required BuildContext context,
   required Rect anchorRect,
   required Widget child,
@@ -192,10 +196,10 @@ class _BubbleArrowPainter extends CustomPainter {
   }
 }
 
-class _DashedUnderlinePainter extends CustomPainter {
+class DashedUnderlinePainter extends CustomPainter {
   final Color color;
 
-  const _DashedUnderlinePainter({
+  const DashedUnderlinePainter({
     required this.color,
   });
 
@@ -219,15 +223,18 @@ class _DashedUnderlinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DashedUnderlinePainter oldDelegate) {
+  bool shouldRepaint(covariant DashedUnderlinePainter oldDelegate) {
     return oldDelegate.color != color;
   }
 }
 
-class _CharacterPlaceholderPage extends StatelessWidget {
+class CharacterPlaceholderPage extends StatelessWidget {
   final String title;
 
-  const _CharacterPlaceholderPage({required this.title});
+  const CharacterPlaceholderPage({
+    super.key,
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {

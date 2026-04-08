@@ -1,6 +1,6 @@
-part of '../pages/characters_section.dart';
+import '../models/characters_models.dart';
 
-String _sanitizeCharacterMarkdown(String data) {
+String sanitizeCharacterMarkdown(String data) {
   final withoutHtml = data.replaceAll(RegExp(r'<[^>]*>'), '');
   final rawLines = withoutHtml.split('\n');
   final sanitizedLines = <String>[];
@@ -22,13 +22,13 @@ String _sanitizeCharacterMarkdown(String data) {
   return sanitizedLines.join('\n');
 }
 
-String _formatBirthdayLabel(int day, int month) {
+String formatBirthdayLabel(int day, int month) {
   final dayLabel = day.toString().padLeft(2, '0');
   final monthLabel = month.toString().padLeft(2, '0');
   return '$dayLabel/$monthLabel';
 }
 
-int _calculateAge(DateTime birthday) {
+int calculateAge(DateTime birthday) {
   final now = DateTime.now();
   var age = now.year - birthday.year;
   final hadBirthdayThisYear =
@@ -42,7 +42,7 @@ int _calculateAge(DateTime birthday) {
   return age;
 }
 
-const List<String> _monthLabels = <String>[
+const List<String> monthLabels = <String>[
   'Jan',
   'Fev',
   'Mar',
@@ -57,24 +57,24 @@ const List<String> _monthLabels = <String>[
   'Dez',
 ];
 
-int _daysInMonth(int month) {
+int daysInMonth(int month) {
   return DateTime(2000, month + 1, 0).day;
 }
 
-String _formatHeightEditorValue(double heightCm, _HeightUnit unit) {
+String formatHeightEditorValue(double heightCm, HeightUnit unit) {
   switch (unit) {
-    case _HeightUnit.centimeters:
+    case HeightUnit.centimeters:
       return heightCm.toStringAsFixed(0);
-    case _HeightUnit.meters:
+    case HeightUnit.meters:
       return (heightCm / 100).toStringAsFixed(2);
-    case _HeightUnit.feetAndInches:
+    case HeightUnit.feetAndInches:
       return _formatFeetAndInches(heightCm);
   }
 }
 
-double? _parseHeightToCm(String rawValue, _HeightUnit unit) {
+double? parseHeightToCm(String rawValue, HeightUnit unit) {
   switch (unit) {
-    case _HeightUnit.centimeters:
+    case HeightUnit.centimeters:
       final normalized = rawValue.replaceAll(',', '.').trim();
       final parsed = double.tryParse(normalized);
 
@@ -83,7 +83,7 @@ double? _parseHeightToCm(String rawValue, _HeightUnit unit) {
       }
 
       return parsed;
-    case _HeightUnit.meters:
+    case HeightUnit.meters:
       final normalized = rawValue.replaceAll(',', '.').trim();
       final parsed = double.tryParse(normalized);
 
@@ -92,25 +92,25 @@ double? _parseHeightToCm(String rawValue, _HeightUnit unit) {
       }
 
       return parsed * 100;
-    case _HeightUnit.feetAndInches:
+    case HeightUnit.feetAndInches:
       return _parseFeetAndInchesToCm(rawValue);
   }
 }
 
-String _formatWeightEditorValue(double weightKg, _WeightUnit unit) {
+String formatWeightEditorValue(double weightKg, WeightUnit unit) {
   switch (unit) {
-    case _WeightUnit.kilograms:
+    case WeightUnit.kilograms:
       return _formatCompactDecimal(weightKg);
-    case _WeightUnit.grams:
+    case WeightUnit.grams:
       return _formatCompactDecimal(weightKg * 1000);
-    case _WeightUnit.pounds:
+    case WeightUnit.pounds:
       return _formatCompactDecimal(weightKg * 2.2046226218);
-    case _WeightUnit.ounces:
+    case WeightUnit.ounces:
       return _formatCompactDecimal(weightKg * 35.27396195);
   }
 }
 
-double? _parseWeightToKg(String rawValue, _WeightUnit unit) {
+double? parseWeightToKg(String rawValue, WeightUnit unit) {
   final normalized = rawValue.replaceAll(',', '.').trim();
   final parsed = double.tryParse(normalized);
 
@@ -119,19 +119,19 @@ double? _parseWeightToKg(String rawValue, _WeightUnit unit) {
   }
 
   return switch (unit) {
-    _WeightUnit.kilograms => parsed,
-    _WeightUnit.grams => parsed / 1000,
-    _WeightUnit.pounds => parsed / 2.2046226218,
-    _WeightUnit.ounces => parsed / 35.27396195,
+    WeightUnit.kilograms => parsed,
+    WeightUnit.grams => parsed / 1000,
+    WeightUnit.pounds => parsed / 2.2046226218,
+    WeightUnit.ounces => parsed / 35.27396195,
   };
 }
 
-String _formatHeightLabel(double heightCm, _HeightUnit unit) {
-  return _formatHeightEditorValue(heightCm, unit);
+String formatHeightLabel(double heightCm, HeightUnit unit) {
+  return formatHeightEditorValue(heightCm, unit);
 }
 
-String _formatWeightLabel(double weightKg, _WeightUnit unit) {
-  return _formatWeightEditorValue(weightKg, unit);
+String formatWeightLabel(double weightKg, WeightUnit unit) {
+  return formatWeightEditorValue(weightKg, unit);
 }
 
 String _formatFeetAndInches(double heightCm) {
@@ -202,41 +202,41 @@ String _formatCompactDecimal(double value) {
   return hasFraction ? value.toStringAsFixed(1) : value.toStringAsFixed(0);
 }
 
-String _heightUnitCompactLabel(_HeightUnit unit) {
+String heightUnitCompactLabel(HeightUnit unit) {
   return switch (unit) {
-    _HeightUnit.centimeters => 'cm',
-    _HeightUnit.meters => 'm',
-    _HeightUnit.feetAndInches => 'ft/in',
+    HeightUnit.centimeters => 'cm',
+    HeightUnit.meters => 'm',
+    HeightUnit.feetAndInches => 'ft/in',
   };
 }
 
-String _heightUnitMenuLabel(_HeightUnit unit) {
+String heightUnitMenuLabel(HeightUnit unit) {
   return switch (unit) {
-    _HeightUnit.centimeters => 'Centimetros (cm)',
-    _HeightUnit.meters => 'Metros (m)',
-    _HeightUnit.feetAndInches => 'Pes e polegadas (ft/in)',
+    HeightUnit.centimeters => 'Centimetros (cm)',
+    HeightUnit.meters => 'Metros (m)',
+    HeightUnit.feetAndInches => 'Pes e polegadas (ft/in)',
   };
 }
 
-String _weightUnitCompactLabel(_WeightUnit unit) {
+String weightUnitCompactLabel(WeightUnit unit) {
   return switch (unit) {
-    _WeightUnit.kilograms => 'kg',
-    _WeightUnit.grams => 'g',
-    _WeightUnit.pounds => 'lb',
-    _WeightUnit.ounces => 'oz',
+    WeightUnit.kilograms => 'kg',
+    WeightUnit.grams => 'g',
+    WeightUnit.pounds => 'lb',
+    WeightUnit.ounces => 'oz',
   };
 }
 
-String _weightUnitMenuLabel(_WeightUnit unit) {
+String weightUnitMenuLabel(WeightUnit unit) {
   return switch (unit) {
-    _WeightUnit.kilograms => 'Quilogramas (kg)',
-    _WeightUnit.grams => 'Gramas (g)',
-    _WeightUnit.pounds => 'Libras (lb)',
-    _WeightUnit.ounces => 'Oncas (oz)',
+    WeightUnit.kilograms => 'Quilogramas (kg)',
+    WeightUnit.grams => 'Gramas (g)',
+    WeightUnit.pounds => 'Libras (lb)',
+    WeightUnit.ounces => 'Oncas (oz)',
   };
 }
 
-String _formatDateTime(DateTime value) {
+String formatDateTime(DateTime value) {
   final day = value.day.toString().padLeft(2, '0');
   final month = value.month.toString().padLeft(2, '0');
   final year = value.year.toString().padLeft(4, '0');
@@ -246,7 +246,7 @@ String _formatDateTime(DateTime value) {
   return '$day/$month/$year $hour:$minute';
 }
 
-String _formatRelativePhrase(DateTime value) {
+String formatRelativePhrase(DateTime value) {
   final difference = DateTime.now().difference(value);
 
   if (difference.inMinutes < 1) return 'ha menos de 1 minuto';
@@ -273,19 +273,19 @@ String _pluralizeCount(int value, String singular, String plural) {
   return normalizedValue == 1 ? '1 $singular' : '$normalizedValue $plural';
 }
 
-_ZodiacSignData _zodiacSignFor(DateTime birthday) {
+ZodiacSignData zodiacSignFor(DateTime birthday) {
   final month = birthday.month;
   final day = birthday.day;
 
   if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Áries',
       symbol: '\u2648',
       description: '21/03 - 20/04\niniciativa, impulsividade, assertividade, competitividade, ação direta.',
     );
   }
   if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Touro',
       symbol: '\u2649',
       description:
@@ -293,7 +293,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Gêmeos',
       symbol: '\u264A',
       description:
@@ -301,7 +301,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Câncer',
       symbol: '\u264B',
       description:
@@ -309,7 +309,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Leão',
       symbol: '\u264C',
       description:
@@ -317,7 +317,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Virgem',
       symbol: '\u264D',
       description:
@@ -325,7 +325,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Libra',
       symbol: '\u264E',
       description:
@@ -333,7 +333,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Escorpião',
       symbol: '\u264F',
       description:
@@ -341,7 +341,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Sagitário',
       symbol: '\u2650',
       description:
@@ -349,7 +349,7 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Capricórnio',
       symbol: '\u2651',
       description:
@@ -357,14 +357,14 @@ _ZodiacSignData _zodiacSignFor(DateTime birthday) {
     );
   }
   if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) {
-    return const _ZodiacSignData(
+    return const ZodiacSignData(
       name: 'Aquário',
       symbol: '\u2652',
       description:
           '21/01 - 18/02\ninovação, ruptura de padrões, pensamento coletivo, desapego, excentricidade funcional.',
     );
   }
-  return const _ZodiacSignData(
+  return const ZodiacSignData(
     name: 'Peixes',
     symbol: '\u2653',
     description:

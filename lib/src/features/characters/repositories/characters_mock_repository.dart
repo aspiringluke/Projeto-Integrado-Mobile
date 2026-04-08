@@ -1,11 +1,13 @@
-part of '../pages/characters_section.dart';
+import 'package:flutter/material.dart';
 
-class _CharactersMockRepository {
-  const _CharactersMockRepository();
+import '../models/characters_models.dart';
 
-  List<_CharacterCardData> fetchCharacters() {
-    return const <_CharacterCardData>[
-      _CharacterCardData(
+class CharactersMockRepository {
+  const CharactersMockRepository();
+
+  List<CharacterCardData> fetchCharacters() {
+    return const <CharacterCardData>[
+      CharacterCardData(
         name: 'Personagem 1',
         alias: 'Vulgo Personagem 1',
         accent: Color(0xFFE4C2D7),
@@ -20,7 +22,7 @@ class _CharactersMockRepository {
         synopsis: '',
         seed: 11,
       ),
-      _CharacterCardData(
+      CharacterCardData(
         name: 'Personagem 2',
         alias: 'Vulgo Personagem 2',
         accent: Color(0xFFD9D4E9),
@@ -35,7 +37,7 @@ class _CharactersMockRepository {
         synopsis: '',
         seed: 23,
       ),
-      _CharacterCardData(
+      CharacterCardData(
         name: 'Personagem 3',
         alias: 'Vulgo Personagem 3',
         accent: Color(0xFFE7E0B7),

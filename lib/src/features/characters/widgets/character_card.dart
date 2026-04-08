@@ -1,11 +1,19 @@
-part of '../pages/characters_section.dart';
+import 'package:flutter/material.dart';
 
-class _CharacterCard extends StatefulWidget {
-  final _CharacterCardData data;
+import '../../../shared/widgets/outlined_tag_pill.dart';
+import '../../../shared/widgets/synopsis_scroll_box.dart';
+import '../../projects/widgets/project_bottom_sheet_frame.dart';
+import '../models/characters_models.dart';
+import '../utils/characters_utils.dart';
+import 'character_fields.dart';
+import 'character_overlays.dart';
+
+class CharacterCard extends StatefulWidget {
+  final CharacterCardData data;
   final bool isPinned;
   final VoidCallback onTogglePinned;
 
-  const _CharacterCard({
+  const CharacterCard({
     super.key,
     required this.data,
     required this.isPinned,
@@ -13,16 +21,16 @@ class _CharacterCard extends StatefulWidget {
   });
 
   @override
-  State<_CharacterCard> createState() => _CharacterCardState();
+  State<CharacterCard> createState() => _CharacterCardState();
 }
 
-class _CharacterCardState extends State<_CharacterCard> with SingleTickerProviderStateMixin {
+class _CharacterCardState extends State<CharacterCard> with SingleTickerProviderStateMixin {
   late bool _isExpanded;
   late final AnimationController _controller;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _fadeAnimation;
   late final ScrollController _synopsisScrollController;
-  _CharacterDateEntries? _dateEntries;
+  CharacterDateEntries? _dateEntries;
   DateTime? _birthdayValue;
   double? _heightCmValue;
   double? _weightKgValue;
@@ -31,15 +39,15 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   TextEditingController? _quoteController;
   TextEditingController? _synopsisController;
   bool? _isEditing;
-  _CharacterDateType _dateType = _CharacterDateType.lastModified;
-  _HeightUnit _heightUnit = _HeightUnit.centimeters;
-  _WeightUnit _weightUnit = _WeightUnit.kilograms;
+  CharacterDateType _dateType = CharacterDateType.lastModified;
+  HeightUnit _heightUnit = HeightUnit.centimeters;
+  WeightUnit _weightUnit = WeightUnit.kilograms;
 
   @override
   void initState() {
     super.initState();
     _isExpanded = false;
-    _dateEntries = _CharacterDateEntries.fromSeed(widget.data.seed);
+    _dateEntries = CharacterDateEntries.fromSeed(widget.data.seed);
     _birthdayValue = DateTime(
       widget.data.birthYear,
       widget.data.birthMonth,
@@ -48,10 +56,10 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
     _heightCmValue = widget.data.heightCm;
     _weightKgValue = widget.data.weightKg;
     _heightController = TextEditingController(
-      text: _formatHeightEditorValue(widget.data.heightCm, _heightUnit),
+      text: formatHeightEditorValue(widget.data.heightCm, _heightUnit),
     );
     _weightController = TextEditingController(
-      text: _formatWeightEditorValue(widget.data.weightKg, _weightUnit),
+      text: formatWeightEditorValue(widget.data.weightKg, _weightUnit),
     );
     _quoteController = TextEditingController(text: widget.data.quote);
     _synopsisController = TextEditingController(text: widget.data.synopsis);
@@ -100,7 +108,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   void _openCharacterPage() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => _CharacterPlaceholderPage(title: widget.data.name),
+        builder: (_) => CharacterPlaceholderPage(title: widget.data.name),
       ),
     );
   }
@@ -108,9 +116,9 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   void _cycleDateType() {
     setState(() {
       _dateType = switch (_dateType) {
-        _CharacterDateType.lastModified => _CharacterDateType.lastAccessed,
-        _CharacterDateType.lastAccessed => _CharacterDateType.createdAt,
-        _CharacterDateType.createdAt => _CharacterDateType.lastModified,
+        CharacterDateType.lastModified => CharacterDateType.lastAccessed,
+        CharacterDateType.lastAccessed => CharacterDateType.createdAt,
+        CharacterDateType.createdAt => CharacterDateType.lastModified,
       };
     });
   }
@@ -126,7 +134,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
         .where((entry) => entry.isNotEmpty)
         .toList(growable: false);
 
-    await _showAnchoredInfoBubble(
+    await showAnchoredInfoBubble(
       context: context,
       anchorRect: anchorRect,
       width: 232,
@@ -160,7 +168,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final trait in traits) _ZodiacTraitPill(label: trait),
+                for (final trait in traits) ZodiacTraitPill(label: trait),
               ],
             ),
           ],
@@ -170,12 +178,12 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   }
 
   Future<void> _showCharacterAge(Rect anchorRect) async {
-    await _showAnchoredInfoBubble(
+    await showAnchoredInfoBubble(
       context: context,
       anchorRect: anchorRect,
       width: 150,
       child: Text(
-        'Idade: ${_calculateAge(_birthday)} anos',
+        'Idade: ${calculateAge(_birthday)} anos',
         style: TextStyle(
           color: Colors.black.withValues(alpha: 0.68),
           fontSize: 12,
@@ -186,7 +194,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   }
 
   Future<void> _selectHeightUnit() async {
-    final selectedUnit = await showModalBottomSheet<_HeightUnit>(
+    final selectedUnit = await showModalBottomSheet<HeightUnit>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
@@ -195,9 +203,9 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final unit in _HeightUnit.values)
-                _HeightUnitOption(
-                  label: _heightUnitMenuLabel(unit),
+              for (final unit in HeightUnit.values)
+                HeightUnitOption(
+                  label: heightUnitMenuLabel(unit),
                   isSelected: unit == _heightUnit,
                   onTap: () => Navigator.of(context).pop(unit),
                 ),
@@ -217,13 +225,13 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
       }
       _heightUnit = selectedUnit;
       if (_editing) {
-        _heightTextController.text = _formatHeightEditorValue(_heightCm, _heightUnit);
+        _heightTextController.text = formatHeightEditorValue(_heightCm, _heightUnit);
       }
     });
   }
 
   Future<void> _selectWeightUnit() async {
-    final selectedUnit = await showModalBottomSheet<_WeightUnit>(
+    final selectedUnit = await showModalBottomSheet<WeightUnit>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
@@ -232,9 +240,9 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final unit in _WeightUnit.values)
-                _HeightUnitOption(
-                  label: _weightUnitMenuLabel(unit),
+              for (final unit in WeightUnit.values)
+                HeightUnitOption(
+                  label: weightUnitMenuLabel(unit),
                   isSelected: unit == _weightUnit,
                   onTap: () => Navigator.of(context).pop(unit),
                 ),
@@ -254,7 +262,7 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
       }
       _weightUnit = selectedUnit;
       if (_editing) {
-        _weightTextController.text = _formatWeightEditorValue(_weightKg, _weightUnit);
+        _weightTextController.text = formatWeightEditorValue(_weightKg, _weightUnit);
       }
     });
   }
@@ -281,13 +289,13 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                     child: Row(
                       children: [
                         Expanded(
-                          child: _CharacterBirthdayWheel(
+                          child: CharacterBirthdayWheel(
                             label: 'Mes',
                             controller: monthController,
                             onSelectedItemChanged: (index) {
                               setModalState(() {
                                 tempMonth = index + 1;
-                                final maxDay = _daysInMonth(tempMonth);
+                                final maxDay = daysInMonth(tempMonth);
 
                                 if (tempDay > maxDay) {
                                   tempDay = maxDay;
@@ -296,10 +304,10 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                               });
                             },
                             children: [
-                              for (var index = 0; index < _monthLabels.length; index += 1)
+                              for (var index = 0; index < monthLabels.length; index += 1)
                                 Center(
                                   child: Text(
-                                    _monthLabels[index],
+                                    monthLabels[index],
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontStyle: FontStyle.italic,
@@ -312,14 +320,14 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _CharacterBirthdayWheel(
+                          child: CharacterBirthdayWheel(
                             label: 'Dia',
                             controller: dayController,
                             onSelectedItemChanged: (index) {
                               tempDay = index + 1;
                             },
                             children: [
-                              for (var day = 1; day <= _daysInMonth(tempMonth); day += 1)
+                              for (var day = 1; day <= daysInMonth(tempMonth); day += 1)
                                 Center(
                                   child: Text(
                                     day.toString().padLeft(2, '0'),
@@ -369,26 +377,26 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
   }
 
   void _commitHeightText({bool restoreText = true}) {
-    final parsedHeight = _parseHeightToCm(_heightTextController.text, _heightUnit);
+    final parsedHeight = parseHeightToCm(_heightTextController.text, _heightUnit);
 
     if (parsedHeight != null) {
       _heightCmValue = parsedHeight;
     }
 
     if (restoreText) {
-      _heightTextController.text = _formatHeightEditorValue(_heightCm, _heightUnit);
+      _heightTextController.text = formatHeightEditorValue(_heightCm, _heightUnit);
     }
   }
 
   void _commitWeightText({bool restoreText = true}) {
-    final parsedWeight = _parseWeightToKg(_weightTextController.text, _weightUnit);
+    final parsedWeight = parseWeightToKg(_weightTextController.text, _weightUnit);
 
     if (parsedWeight != null) {
       _weightKgValue = parsedWeight;
     }
 
     if (restoreText) {
-      _weightTextController.text = _formatWeightEditorValue(_weightKg, _weightUnit);
+      _weightTextController.text = formatWeightEditorValue(_weightKg, _weightUnit);
     }
   }
 
@@ -401,8 +409,8 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
         _commitHeightText();
         _commitWeightText();
       } else {
-        _heightTextController.text = _formatHeightEditorValue(_heightCm, _heightUnit);
-        _weightTextController.text = _formatWeightEditorValue(_weightKg, _weightUnit);
+        _heightTextController.text = formatHeightEditorValue(_heightCm, _heightUnit);
+        _weightTextController.text = formatWeightEditorValue(_weightKg, _weightUnit);
       }
 
       _isEditing = !wasEditing;
@@ -419,13 +427,13 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
 
   TextEditingController get _heightTextController {
     return _heightController ??= TextEditingController(
-      text: _formatHeightEditorValue(_heightCm, _heightUnit),
+      text: formatHeightEditorValue(_heightCm, _heightUnit),
     );
   }
 
   TextEditingController get _weightTextController {
     return _weightController ??= TextEditingController(
-      text: _formatWeightEditorValue(_weightKg, _weightUnit),
+      text: formatWeightEditorValue(_weightKg, _weightUnit),
     );
   }
 
@@ -441,13 +449,13 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
 
   double get _weightKg => _weightKgValue ??= widget.data.weightKg;
 
-  _ZodiacSignData get _signData => _zodiacSignFor(_birthday);
+  ZodiacSignData get _signData => zodiacSignFor(_birthday);
 
-  _CharacterDateEntries get _effectiveDateEntries {
-    return _dateEntries ??= _CharacterDateEntries.fromSeed(widget.data.seed);
+  CharacterDateEntries get _effectiveDateEntries {
+    return _dateEntries ??= CharacterDateEntries.fromSeed(widget.data.seed);
   }
 
-  _CharacterDateEntry get _currentDateEntry => _effectiveDateEntries.forType(_dateType);
+  CharacterDateEntry get _currentDateEntry => _effectiveDateEntries.forType(_dateType);
 
   @override
   Widget build(BuildContext context) {
@@ -619,9 +627,9 @@ class _CharacterCardState extends State<_CharacterCard> with SingleTickerProvide
                               child: _ExpandedCharacterBody(
                                 dateEntry: _currentDateEntry,
                                 isEditing: _editing,
-                                birthdayLabel: _formatBirthdayLabel(_birthday.day, _birthday.month),
-                                heightLabel: _formatHeightLabel(_heightCm, _heightUnit),
-                                weightLabel: _formatWeightLabel(_weightKg, _weightUnit),
+                                birthdayLabel: formatBirthdayLabel(_birthday.day, _birthday.month),
+                                heightLabel: formatHeightLabel(_heightCm, _heightUnit),
+                                weightLabel: formatWeightLabel(_weightKg, _weightUnit),
                                 heightUnit: _heightUnit,
                                 weightUnit: _weightUnit,
                                 signData: _signData,
@@ -838,14 +846,14 @@ class _CharacterPinBadge extends StatelessWidget {
 }
 
 class _ExpandedCharacterBody extends StatelessWidget {
-  final _CharacterDateEntry dateEntry;
+  final CharacterDateEntry dateEntry;
   final bool isEditing;
   final String birthdayLabel;
   final String heightLabel;
   final String weightLabel;
-  final _HeightUnit heightUnit;
-  final _WeightUnit weightUnit;
-  final _ZodiacSignData signData;
+  final HeightUnit heightUnit;
+  final WeightUnit weightUnit;
+  final ZodiacSignData signData;
   final TextEditingController synopsisController;
   final ScrollController synopsisScrollController;
   final TextEditingController quoteController;
@@ -896,13 +904,13 @@ class _ExpandedCharacterBody extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _CharacterTimeField(
+                child: CharacterTimeField(
                   dateEntry: dateEntry,
                   onTapClock: onCycleDateType,
                 ),
               ),
               const SizedBox(width: 12),
-              _MiniGlassButton(
+              MiniGlassButton(
                 icon: isEditing ? Icons.check_rounded : Icons.edit_outlined,
                 onTap: onToggleEditing,
                 fillColor: Colors.white.withValues(alpha: 0.34),
@@ -944,14 +952,14 @@ class _ExpandedCharacterBody extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
             viewerBuilder: (context, text, style) {
-              return _CharacterMarkdownText(
+              return CharacterMarkdownText(
                 data: text,
                 style: style,
               );
             },
           ),
           const SizedBox(height: 12),
-          _CharacterQuoteStrip(
+          CharacterQuoteStrip(
             controller: quoteController,
             isEditing: isEditing,
           ),
@@ -959,7 +967,7 @@ class _ExpandedCharacterBody extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _CharacterBirthdayField(
+                child: CharacterBirthdayField(
                   birthdayLabel: birthdayLabel,
                   signData: signData,
                   isEditing: isEditing,
@@ -970,9 +978,9 @@ class _ExpandedCharacterBody extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _CharacterHeightField(
+                child: CharacterHeightField(
                   heightLabel: heightLabel,
-                  unitLabel: _heightUnitCompactLabel(heightUnit),
+                  unitLabel: heightUnitCompactLabel(heightUnit),
                   controller: heightController,
                   isEditing: isEditing,
                   onTapUnit: onTapHeightUnit,
@@ -981,9 +989,9 @@ class _ExpandedCharacterBody extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _CharacterWeightField(
+                child: CharacterWeightField(
                   weightLabel: weightLabel,
-                  unitLabel: _weightUnitCompactLabel(weightUnit),
+                  unitLabel: weightUnitCompactLabel(weightUnit),
                   controller: weightController,
                   isEditing: isEditing,
                   onTapUnit: onTapWeightUnit,
@@ -1005,4 +1013,3 @@ class _ExpandedCharacterBody extends StatelessWidget {
     );
   }
 }
-

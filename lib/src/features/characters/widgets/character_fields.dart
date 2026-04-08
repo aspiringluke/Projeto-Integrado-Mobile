@@ -1,10 +1,20 @@
-part of '../pages/characters_section.dart';
+import 'dart:ui';
 
-class _CharacterTimeField extends StatelessWidget {
-  final _CharacterDateEntry dateEntry;
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+
+import '../../../shared/widgets/buttons/glass_circle_button.dart';
+import '../models/characters_models.dart';
+import '../utils/characters_utils.dart';
+import 'character_overlays.dart';
+
+class CharacterTimeField extends StatelessWidget {
+  final CharacterDateEntry dateEntry;
   final VoidCallback onTapClock;
 
-  const _CharacterTimeField({
+  const CharacterTimeField({
+    super.key,
     required this.dateEntry,
     required this.onTapClock,
   });
@@ -40,7 +50,7 @@ class _CharacterTimeField extends StatelessWidget {
                 stops: const [0.0, 0.48, 1.0],
               ),
               child: Text(
-                '${dateEntry.label}: ${_formatDateTime(dateEntry.value)}, ${_formatRelativePhrase(dateEntry.value)}.',
+                '${dateEntry.label}: ${formatDateTime(dateEntry.value)}, ${formatRelativePhrase(dateEntry.value)}.',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -95,12 +105,13 @@ class _CharacterTimeField extends StatelessWidget {
   }
 }
 
-class _MiniGlassButton extends StatelessWidget {
+class MiniGlassButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final Color fillColor;
 
-  const _MiniGlassButton({
+  const MiniGlassButton({
+    super.key,
     required this.icon,
     required this.onTap,
     this.fillColor = const Color(0x6BFFFFFF),
@@ -241,11 +252,12 @@ class _CharacterPillSurface extends StatelessWidget {
   }
 }
 
-class _CharacterQuoteStrip extends StatelessWidget {
+class CharacterQuoteStrip extends StatelessWidget {
   final TextEditingController controller;
   final bool isEditing;
 
-  const _CharacterQuoteStrip({
+  const CharacterQuoteStrip({
+    super.key,
     required this.controller,
     required this.isEditing,
   });
@@ -318,7 +330,7 @@ class _CharacterQuoteStrip extends StatelessWidget {
                       fontStyle: FontStyle.italic,
                     ),
                   )
-                : _CharacterMarkdownText(
+                : CharacterMarkdownText(
                     data: '"${controller.text}"',
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.5),
@@ -333,15 +345,16 @@ class _CharacterQuoteStrip extends StatelessWidget {
   }
 }
 
-class _CharacterBirthdayField extends StatelessWidget {
+class CharacterBirthdayField extends StatelessWidget {
   final String birthdayLabel;
-  final _ZodiacSignData signData;
+  final ZodiacSignData signData;
   final bool isEditing;
   final ValueChanged<Rect> onTapAge;
   final VoidCallback onTapBirthday;
   final ValueChanged<Rect> onTapSign;
 
-  const _CharacterBirthdayField({
+  const CharacterBirthdayField({
+    super.key,
     required this.birthdayLabel,
     required this.signData,
     required this.isEditing,
@@ -387,7 +400,7 @@ class _CharacterBirthdayField extends StatelessWidget {
                               behavior: HitTestBehavior.translucent,
                               onTap: isEditing
                                   ? null
-                                  : () => onTapAge(_rectFromContext(textContext)),
+                                  : () => onTapAge(rectFromContext(textContext)),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +418,7 @@ class _CharacterBirthdayField extends StatelessWidget {
                                     width: 34,
                                     height: 2,
                                     child: CustomPaint(
-                                      painter: _DashedUnderlinePainter(
+                                      painter: DashedUnderlinePainter(
                                         color: const Color(0xFF8A828C).withValues(alpha: 0.58),
                                       ),
                                     ),
@@ -437,7 +450,7 @@ class _CharacterBirthdayField extends StatelessWidget {
   }
 }
 
-class _CharacterHeightField extends StatelessWidget {
+class CharacterHeightField extends StatelessWidget {
   final String heightLabel;
   final String unitLabel;
   final TextEditingController controller;
@@ -445,7 +458,8 @@ class _CharacterHeightField extends StatelessWidget {
   final VoidCallback onTapUnit;
   final VoidCallback onCommitHeight;
 
-  const _CharacterHeightField({
+  const CharacterHeightField({
+    super.key,
     required this.heightLabel,
     required this.unitLabel,
     required this.controller,
@@ -532,7 +546,7 @@ class _CharacterHeightField extends StatelessWidget {
   }
 }
 
-class _CharacterWeightField extends StatelessWidget {
+class CharacterWeightField extends StatelessWidget {
   final String weightLabel;
   final String unitLabel;
   final TextEditingController controller;
@@ -540,7 +554,8 @@ class _CharacterWeightField extends StatelessWidget {
   final VoidCallback onTapUnit;
   final VoidCallback onCommitWeight;
 
-  const _CharacterWeightField({
+  const CharacterWeightField({
+    super.key,
     required this.weightLabel,
     required this.unitLabel,
     required this.controller,
@@ -628,7 +643,7 @@ class _CharacterWeightField extends StatelessWidget {
 }
 
 class _CharacterSignButton extends StatelessWidget {
-  final _ZodiacSignData signData;
+  final ZodiacSignData signData;
   final ValueChanged<Rect> onTap;
 
   const _CharacterSignButton({
@@ -643,7 +658,7 @@ class _CharacterSignButton extends StatelessWidget {
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => onTap(_rectFromContext(buttonContext)),
+            onTap: () => onTap(rectFromContext(buttonContext)),
             borderRadius: BorderRadius.circular(999),
             child: _CharacterPillSurface(
               radius: 999,
@@ -692,10 +707,11 @@ class _CharacterSignButton extends StatelessWidget {
   }
 }
 
-class _ZodiacTraitPill extends StatelessWidget {
+class ZodiacTraitPill extends StatelessWidget {
   final String label;
 
-  const _ZodiacTraitPill({
+  const ZodiacTraitPill({
+    super.key,
     required this.label,
   });
 
@@ -789,12 +805,13 @@ class _CharacterUnitButton extends StatelessWidget {
   }
 }
 
-class _HeightUnitOption extends StatelessWidget {
+class HeightUnitOption extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _HeightUnitOption({
+  const HeightUnitOption({
+    super.key,
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -843,13 +860,14 @@ class _HeightUnitOption extends StatelessWidget {
   }
 }
 
-class _CharacterBirthdayWheel extends StatelessWidget {
+class CharacterBirthdayWheel extends StatelessWidget {
   final String label;
   final FixedExtentScrollController controller;
   final ValueChanged<int> onSelectedItemChanged;
   final List<Widget> children;
 
-  const _CharacterBirthdayWheel({
+  const CharacterBirthdayWheel({
+    super.key,
     required this.label,
     required this.controller,
     required this.onSelectedItemChanged,
@@ -912,18 +930,19 @@ class _CharacterBirthdayWheel extends StatelessWidget {
   }
 }
 
-class _CharacterMarkdownText extends StatelessWidget {
+class CharacterMarkdownText extends StatelessWidget {
   final String data;
   final TextStyle style;
 
-  const _CharacterMarkdownText({
+  const CharacterMarkdownText({
+    super.key,
     required this.data,
     required this.style,
   });
 
   @override
   Widget build(BuildContext context) {
-    final sanitizedData = _sanitizeCharacterMarkdown(data);
+    final sanitizedData = sanitizeCharacterMarkdown(data);
     final normalizedData = sanitizedData.trim().isEmpty ? ' ' : sanitizedData;
     final styleSheet = MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
       p: style,
@@ -954,4 +973,3 @@ class _CharacterMarkdownText extends StatelessWidget {
     );
   }
 }
-

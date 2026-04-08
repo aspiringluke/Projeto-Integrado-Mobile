@@ -1,6 +1,6 @@
-part of '../pages/characters_section.dart';
+import 'package:flutter/material.dart';
 
-class _CharacterCardData {
+class CharacterCardData {
   final String name;
   final String alias;
   final Color accent;
@@ -15,7 +15,7 @@ class _CharacterCardData {
   final String synopsis;
   final int seed;
 
-  const _CharacterCardData({
+  const CharacterCardData({
     required this.name,
     required this.alias,
     required this.accent,
@@ -32,34 +32,34 @@ class _CharacterCardData {
   });
 }
 
-enum _CharacterDateType { lastModified, lastAccessed, createdAt }
+enum CharacterDateType { lastModified, lastAccessed, createdAt }
 
-enum _HeightUnit { centimeters, meters, feetAndInches }
+enum HeightUnit { centimeters, meters, feetAndInches }
 
-enum _WeightUnit { kilograms, grams, pounds, ounces }
+enum WeightUnit { kilograms, grams, pounds, ounces }
 
-class _CharacterDateEntry {
+class CharacterDateEntry {
   final String label;
   final DateTime value;
 
-  const _CharacterDateEntry({
+  const CharacterDateEntry({
     required this.label,
     required this.value,
   });
 }
 
-class _CharacterDateEntries {
-  final _CharacterDateEntry lastModified;
-  final _CharacterDateEntry lastAccessed;
-  final _CharacterDateEntry createdAt;
+class CharacterDateEntries {
+  final CharacterDateEntry lastModified;
+  final CharacterDateEntry lastAccessed;
+  final CharacterDateEntry createdAt;
 
-  const _CharacterDateEntries({
+  const CharacterDateEntries({
     required this.lastModified,
     required this.lastAccessed,
     required this.createdAt,
   });
 
-  factory _CharacterDateEntries.fromSeed(int seed) {
+  factory CharacterDateEntries.fromSeed(int seed) {
     final normalizedSeed = seed.abs();
     final now = DateTime.now();
     final createdAt = now.subtract(
@@ -72,39 +72,50 @@ class _CharacterDateEntries {
       Duration(hours: 4 + (normalizedSeed % 18), minutes: 8 + (normalizedSeed % 40)),
     );
 
-    return _CharacterDateEntries(
-      lastModified: _CharacterDateEntry(
+    return CharacterDateEntries(
+      lastModified: CharacterDateEntry(
         label: 'Ultima modificacao',
         value: lastModified,
       ),
-      lastAccessed: _CharacterDateEntry(
+      lastAccessed: CharacterDateEntry(
         label: 'Ultimo acesso',
         value: lastAccessed,
       ),
-      createdAt: _CharacterDateEntry(
+      createdAt: CharacterDateEntry(
         label: 'Criado em',
         value: createdAt,
       ),
     );
   }
 
-  _CharacterDateEntry forType(_CharacterDateType type) {
+  CharacterDateEntry forType(CharacterDateType type) {
     return switch (type) {
-      _CharacterDateType.lastModified => lastModified,
-      _CharacterDateType.lastAccessed => lastAccessed,
-      _CharacterDateType.createdAt => createdAt,
+      CharacterDateType.lastModified => lastModified,
+      CharacterDateType.lastAccessed => lastAccessed,
+      CharacterDateType.createdAt => createdAt,
     };
   }
 }
 
-class _ZodiacSignData {
+class ZodiacSignData {
   final String name;
   final String symbol;
   final String description;
 
-  const _ZodiacSignData({
+  const ZodiacSignData({
     required this.name,
     required this.symbol,
     required this.description,
+  });
+}
+
+class CharacterListItem {
+  final CharacterCardData data;
+  bool isPinned = false;
+  int unpinnedIndex;
+
+  CharacterListItem({
+    required this.data,
+    required this.unpinnedIndex,
   });
 }

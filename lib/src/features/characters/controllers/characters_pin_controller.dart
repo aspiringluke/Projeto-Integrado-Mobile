@@ -1,12 +1,12 @@
-part of '../pages/characters_section.dart';
+import '../models/characters_models.dart';
 
-class _CharactersPinController {
-  const _CharactersPinController();
+class CharactersPinController {
+  const CharactersPinController();
 
-  List<_CharacterListItem> toListItems(List<_CharacterCardData> characters) {
+  List<CharacterListItem> toListItems(List<CharacterCardData> characters) {
     return characters.indexed
         .map(
-          (entry) => _CharacterListItem(
+          (entry) => CharacterListItem(
             data: entry.$2,
             unpinnedIndex: entry.$1,
           ),
@@ -14,7 +14,7 @@ class _CharactersPinController {
         .toList(growable: true);
   }
 
-  void togglePinned(List<_CharacterListItem> characters, _CharacterListItem character) {
+  void togglePinned(List<CharacterListItem> characters, CharacterListItem character) {
     final currentIndex = characters.indexOf(character);
     if (currentIndex == -1) return;
 
@@ -37,7 +37,7 @@ class _CharactersPinController {
     _updateUnpinnedSlots(characters);
   }
 
-  int _unpinnedIndexAt(List<_CharacterListItem> characters, int listIndex) {
+  int _unpinnedIndexAt(List<CharacterListItem> characters, int listIndex) {
     var count = 0;
 
     for (var index = 0; index < listIndex; index += 1) {
@@ -49,7 +49,7 @@ class _CharactersPinController {
     return count;
   }
 
-  void _updateUnpinnedSlots(List<_CharacterListItem> characters) {
+  void _updateUnpinnedSlots(List<CharacterListItem> characters) {
     var unpinnedIndex = 0;
 
     for (final character in characters) {
