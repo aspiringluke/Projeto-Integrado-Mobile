@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
@@ -707,41 +706,6 @@ class _CharacterSignButton extends StatelessWidget {
   }
 }
 
-class ZodiacTraitPill extends StatelessWidget {
-  final String label;
-
-  const ZodiacTraitPill({
-    super.key,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4EEF3).withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.82),
-          width: 0.7,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: Colors.black.withValues(alpha: 0.6),
-            fontSize: 10.5,
-            fontStyle: FontStyle.italic,
-            height: 1,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _CharacterUnitButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -801,131 +765,6 @@ class _CharacterUnitButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class HeightUnitOption extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const HeightUnitOption({
-    super.key,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.42),
-                width: 0.8,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2C262C),
-                    ),
-                  ),
-                ),
-                Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isSelected ? const Color(0xFFDF6EB8) : const Color(0xFF544959),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CharacterBirthdayWheel extends StatelessWidget {
-  final String label;
-  final FixedExtentScrollController controller;
-  final ValueChanged<int> onSelectedItemChanged;
-  final List<Widget> children;
-
-  const CharacterBirthdayWheel({
-    super.key,
-    required this.label,
-    required this.controller,
-    required this.onSelectedItemChanged,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 10, bottom: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.5),
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.32),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.58),
-                    width: 0.8,
-                  ),
-                ),
-                child: CupertinoTheme(
-                  data: const CupertinoThemeData(
-                    brightness: Brightness.light,
-                  ),
-                  child: CupertinoPicker(
-                    scrollController: controller,
-                    itemExtent: 36,
-                    diameterRatio: 1.25,
-                    useMagnifier: true,
-                    magnification: 1.06,
-                    selectionOverlay: CupertinoPickerDefaultSelectionOverlay(
-                      background: const Color(0x1CFFFFFF),
-                    ),
-                    onSelectedItemChanged: onSelectedItemChanged,
-                    children: children,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

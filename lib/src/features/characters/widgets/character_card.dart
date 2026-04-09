@@ -1,12 +1,14 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/buttons/botao_voltar.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
 import 'character_card_expanded_body.dart';
 import 'character_card_visuals.dart';
-import 'character_fields.dart';
-import 'character_overlays.dart';
 
 class CharacterCard extends StatefulWidget {
   final CharacterCardData data;
@@ -108,7 +110,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
   void _openCharacterPage() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => CharacterPlaceholderPage(title: widget.data.name),
+        builder: (_) => _CharacterPlaceholderPage(title: widget.data.name),
       ),
     );
   }
@@ -134,7 +136,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
         .where((entry) => entry.isNotEmpty)
         .toList(growable: false);
 
-    await showAnchoredInfoBubble(
+    await _showAnchoredInfoBubble(
       context: context,
       anchorRect: anchorRect,
       width: 232,
@@ -168,7 +170,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final trait in traits) ZodiacTraitPill(label: trait),
+                for (final trait in traits) _ZodiacTraitPill(label: trait),
               ],
             ),
           ],
@@ -178,7 +180,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
   }
 
   Future<void> _showCharacterAge(Rect anchorRect) async {
-    await showAnchoredInfoBubble(
+    await _showAnchoredInfoBubble(
       context: context,
       anchorRect: anchorRect,
       width: 150,
@@ -204,7 +206,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final unit in HeightUnit.values)
-                HeightUnitOption(
+                _HeightUnitOption(
                   label: heightUnitMenuLabel(unit),
                   isSelected: unit == _heightUnit,
                   onTap: () => Navigator.of(context).pop(unit),
@@ -241,7 +243,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final unit in WeightUnit.values)
-                HeightUnitOption(
+                _HeightUnitOption(
                   label: weightUnitMenuLabel(unit),
                   isSelected: unit == _weightUnit,
                   onTap: () => Navigator.of(context).pop(unit),
@@ -289,7 +291,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                     child: Row(
                       children: [
                         Expanded(
-                          child: CharacterBirthdayWheel(
+                          child: _CharacterBirthdayWheel(
                             label: 'Mes',
                             controller: monthController,
                             onSelectedItemChanged: (index) {
@@ -320,7 +322,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: CharacterBirthdayWheel(
+                          child: _CharacterBirthdayWheel(
                             label: 'Dia',
                             controller: dayController,
                             onSelectedItemChanged: (index) {
@@ -674,6 +676,402 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ZodiacTraitPill extends StatelessWidget {
+  final String label;
+
+  const _ZodiacTraitPill({
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4EEF3).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.82),
+          width: 0.7,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.black.withValues(alpha: 0.6),
+            fontSize: 10.5,
+            fontStyle: FontStyle.italic,
+            height: 1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeightUnitOption extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _HeightUnitOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.42),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2C262C),
+                    ),
+                  ),
+                ),
+                Icon(
+                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: isSelected ? const Color(0xFFDF6EB8) : const Color(0xFF544959),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterBirthdayWheel extends StatelessWidget {
+  final String label;
+  final FixedExtentScrollController controller;
+  final ValueChanged<int> onSelectedItemChanged;
+  final List<Widget> children;
+
+  const _CharacterBirthdayWheel({
+    required this.label,
+    required this.controller,
+    required this.onSelectedItemChanged,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 10, bottom: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.black.withValues(alpha: 0.5),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.32),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.58),
+                    width: 0.8,
+                  ),
+                ),
+                child: CupertinoTheme(
+                  data: const CupertinoThemeData(
+                    brightness: Brightness.light,
+                  ),
+                  child: CupertinoPicker(
+                    scrollController: controller,
+                    itemExtent: 36,
+                    diameterRatio: 1.25,
+                    useMagnifier: true,
+                    magnification: 1.06,
+                    selectionOverlay: CupertinoPickerDefaultSelectionOverlay(
+                      background: const Color(0x1CFFFFFF),
+                    ),
+                    onSelectedItemChanged: onSelectedItemChanged,
+                    children: children,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> _showAnchoredInfoBubble({
+  required BuildContext context,
+  required Rect anchorRect,
+  required Widget child,
+  double width = 180,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierLabel: 'Info',
+    barrierDismissible: true,
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 140),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      final screenSize = MediaQuery.of(context).size;
+      const horizontalPadding = 12.0;
+      const arrowSize = 12.0;
+      const verticalGap = 8.0;
+      const estimatedHeight = 110.0;
+      final left = (anchorRect.center.dx - (width / 2))
+          .clamp(
+            horizontalPadding,
+            screenSize.width - width - horizontalPadding,
+          )
+          .toDouble();
+      final showAbove = anchorRect.bottom + estimatedHeight > screenSize.height - 24;
+      final top = (showAbove
+              ? anchorRect.top - estimatedHeight - arrowSize - verticalGap
+              : anchorRect.bottom + verticalGap)
+          .clamp(12.0, screenSize.height - estimatedHeight - 12.0)
+          .toDouble();
+      final pointerLeft = (anchorRect.center.dx - left - (arrowSize / 2))
+          .clamp(
+            18.0,
+            width - 18.0,
+          )
+          .toDouble();
+
+      return Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => Navigator.of(context).pop(),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Positioned(
+              left: left,
+              top: top,
+              width: width,
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 140),
+                tween: Tween<double>(begin: 0.96, end: 1),
+                builder: (context, scale, dialogChild) {
+                  return Transform.scale(
+                    scale: scale,
+                    alignment: showAbove ? Alignment.bottomCenter : Alignment.topCenter,
+                    child: dialogChild,
+                  );
+                },
+                child: _AnchoredInfoBubble(
+                  showAbove: showAbove,
+                  pointerLeft: pointerLeft,
+                  arrowSize: arrowSize,
+                  child: child,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+}
+
+class _AnchoredInfoBubble extends StatelessWidget {
+  final bool showAbove;
+  final double pointerLeft;
+  final double arrowSize;
+  final Widget child;
+
+  const _AnchoredInfoBubble({
+    required this.showAbove,
+    required this.pointerLeft,
+    required this.arrowSize,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bubble = ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.86),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+
+    final arrow = Positioned(
+      left: pointerLeft,
+      top: showAbove ? null : 0,
+      bottom: showAbove ? 0 : null,
+      child: CustomPaint(
+        size: Size(arrowSize, arrowSize),
+        painter: _BubbleArrowPainter(
+          color: Colors.white.withValues(alpha: 0.9),
+          pointUp: !showAbove,
+        ),
+      ),
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Padding(
+          padding: showAbove
+              ? EdgeInsets.only(bottom: arrowSize - 1)
+              : EdgeInsets.only(top: arrowSize - 1),
+          child: bubble,
+        ),
+        arrow,
+      ],
+    );
+  }
+}
+
+class _BubbleArrowPainter extends CustomPainter {
+  final Color color;
+  final bool pointUp;
+
+  const _BubbleArrowPainter({
+    required this.color,
+    required this.pointUp,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+
+    if (pointUp) {
+      path
+        ..moveTo(size.width / 2, 0)
+        ..lineTo(0, size.height)
+        ..lineTo(size.width, size.height)
+        ..close();
+    } else {
+      path
+        ..moveTo(0, 0)
+        ..lineTo(size.width, 0)
+        ..lineTo(size.width / 2, size.height)
+        ..close();
+    }
+
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleArrowPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.pointUp != pointUp;
+  }
+}
+
+class _CharacterPlaceholderPage extends StatelessWidget {
+  final String title;
+
+  const _CharacterPlaceholderPage({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDF2F8),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/FUNDO.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BotaoVoltar(
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(height: 26),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic,
+                      color: Color(0xFF2C262C),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pagina interna do personagem em construcao.',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.black.withValues(alpha: 0.58),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
