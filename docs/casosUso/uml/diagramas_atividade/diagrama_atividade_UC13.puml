@@ -1,0 +1,25 @@
+@startuml diagrama_UC13
+
+|Usuário|
+start
+if (Elemento selecionado?) then (Aresta)
+  :Duplo clique ou pressão longa;
+  |Sistema|
+  :Abrir janela flutuante de texto;
+  |Usuário|
+  :Descrever relação;
+else (Nó)
+  :Clicar e selecionar "Adicionar Descrição";
+  |Sistema|
+  :Abrir campo de notas rápidas;
+  |Usuário|
+  :Inserir notas;
+endif
+
+:Salvar alterações;
+|Sistema|
+:Armazenar metadados;
+:Exibir ícone indicativo no elemento;
+stop
+
+@enduml

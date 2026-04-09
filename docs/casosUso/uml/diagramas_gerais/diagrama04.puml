@@ -1,0 +1,13 @@
+@startuml Diagrama04
+left to right direction
+
+actor "Usuário" as U
+actor "Serviço de IA" as IA <<system>>
+
+rectangle "Sistema de Escrita Criativa - Serviço de IA" {
+    usecase "UC17: Gerar Insights Contextuais via IA" as UC17
+}
+
+U --> UC17
+UC17 --> IA
+@enduml

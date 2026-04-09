@@ -1,0 +1,24 @@
+@startuml diagrama_UC06
+
+|Usuário|
+start
+:Acessa aba de "Configurações Gerais";
+:Ativa o botão "Modo Desempenho";
+
+|Sistema|
+:Desabilita sombras dinâmicas, transparências e animações complexas;
+:Limita o uso da memória para o teto definido;
+
+if (Desativação do modo?) then (Sim)
+  |Usuário|
+  :Desativa o "Modo Desempenho";
+  
+  |Sistema|
+  :Restaura as configurações gráficas para o padrão;
+else (Não)
+    |Usuário|
+    :Mantém o "Modo Desempenho" ativado;
+endif
+
+stop
+@enduml

@@ -1,0 +1,23 @@
+@startuml diagrama_UC10
+
+|Usuário|
+start
+:Acessar "Configurações Gerais";
+:Selecionar "Definir Senha de Acesso";
+:Inserir e confirmar senha;
+|Sistema|
+:Criptografar e salvar senha;
+|Usuário|
+:Reiniciar aplicativo;
+|Sistema|
+repeat
+  :Solicitar senha de acesso;
+  |Usuário|
+  :Inserir senha;
+  |Sistema|
+backward:Exibir "Senha Incorreta";
+repeat while (Senha válida?) is (não)
+:Liberar acesso à Tela Inicial;
+stop
+
+@enduml

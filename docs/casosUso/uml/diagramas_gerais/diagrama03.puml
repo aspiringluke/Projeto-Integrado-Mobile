@@ -1,0 +1,19 @@
+@startuml Diagrama03
+left to right direction
+
+actor "Usuário" as U
+
+rectangle "Sistema de Escrita Criativa - Configurações" {
+    usecase "UC06: Configurar e Utilizar Modo Desempenho" as UC06
+    usecase "UC10: Proteção de Acesso ao Aplicativo" as UC10
+    usecase "UC14: Personalização e Configurações de Escrita" as UC14
+    usecase "UC16: Gerenciamento de Segurança" as UC16
+}
+
+UC14 <.-. UC16: <<extends>>
+
+U --> UC06
+U --> UC10
+U --> UC14
+U --> UC16
+@enduml

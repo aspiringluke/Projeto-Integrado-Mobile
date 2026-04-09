@@ -1,0 +1,27 @@
+@startuml diagrama_UC15
+
+|Usuário|
+start
+
+if (Deseja facilitar busca?) then (sim)
+  :Utilizar função de ordenação/filtro;
+else (não)
+endif
+:Localizar item (Ideia, Personagem ou Diagrama);
+:Clicar em "Excluir";
+|Sistema|
+:Exibir alerta de confirmação irreversível;
+|Usuário|
+
+if (Confirma exclusão?) then (sim)
+  |Sistema|
+  :Remover registro do Banco de Dados;
+  :Liberar memória;
+  :Atualizar interface instantaneamente;
+else (não)
+  :Cancelar exclusão;
+  :Manter registro no Banco de Dados;
+endif
+
+stop
+@enduml
