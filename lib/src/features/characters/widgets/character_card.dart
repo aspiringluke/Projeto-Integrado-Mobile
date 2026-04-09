@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/outlined_tag_pill.dart';
-import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
+import 'character_card_expanded_body.dart';
+import 'character_card_visuals.dart';
 import 'character_fields.dart';
 import 'character_overlays.dart';
 
@@ -540,11 +540,10 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                           ),
                           child: Row(
                             children: [
-                              _CharacterAvatarTile(
+                              CharacterAvatarTile(
                                 accent: widget.data.accent,
                                 avatarColor: widget.data.avatarColor,
                                 icon: widget.data.icon,
-                                isExpanded: _isExpanded,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -624,7 +623,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                             axisAlignment: -1,
                             child: FadeTransition(
                               opacity: _fadeAnimation,
-                              child: _ExpandedCharacterBody(
+                              child: ExpandedCharacterBody(
                                 dateEntry: _currentDateEntry,
                                 isEditing: _editing,
                                 birthdayLabel: formatBirthdayLabel(_birthday.day, _birthday.month),
@@ -668,347 +667,13 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
             Positioned(
               left: -4,
               top: -4,
-              child: _CharacterPinBadge(
+              child: CharacterPinBadge(
                 isActive: widget.isPinned,
                 onTap: widget.onTogglePinned,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CharacterAvatarTile extends StatelessWidget {
-  final Color accent;
-  final Color avatarColor;
-  final IconData icon;
-  final bool isExpanded;
-
-  const _CharacterAvatarTile({
-    required this.accent,
-    required this.avatarColor,
-    required this.icon,
-    required this.isExpanded,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 78,
-      height: 60,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(16),
-                bottomLeft: const Radius.circular(16),
-                topRight: const Radius.circular(14),
-                bottomRight: const Radius.circular(14),
-              ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      accent.withValues(alpha: 0.76),
-                      avatarColor.withValues(alpha: 0.94),
-                      Colors.white.withValues(alpha: 0.2),
-                    ],
-                    stops: const [0.0, 0.58, 1.0],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.24),
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.08),
-                            ],
-                            stops: const [0.0, 0.38, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        width: 58,
-                        height: 22,
-                        margin: const EdgeInsets.only(bottom: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.26),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Icon(
-                        icon,
-                        size: 33,
-                        color: const Color(0xFF171419),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CharacterPinBadge extends StatelessWidget {
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _CharacterPinBadge({
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
-            gradient: isActive
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFF6D3E5).withValues(alpha: 0.96),
-                      const Color(0xFFF0BEDB).withValues(alpha: 0.9),
-                    ],
-                  )
-                : LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.72),
-                      const Color(0xFFF0E7EE).withValues(alpha: 0.82),
-                    ],
-                  ),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
-              width: 0.65,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isActive
-                    ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
-                    : Colors.black.withValues(alpha: 0.05),
-                blurRadius: isActive ? 10 : 5,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Center(
-            child: AnimatedScale(
-              scale: isActive ? 1.06 : 1,
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              child: Transform.rotate(
-                angle: -0.32,
-                child: Icon(
-                  isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                  size: isActive ? 16 : 15,
-                  color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExpandedCharacterBody extends StatelessWidget {
-  final CharacterDateEntry dateEntry;
-  final bool isEditing;
-  final String birthdayLabel;
-  final String heightLabel;
-  final String weightLabel;
-  final HeightUnit heightUnit;
-  final WeightUnit weightUnit;
-  final ZodiacSignData signData;
-  final TextEditingController synopsisController;
-  final ScrollController synopsisScrollController;
-  final TextEditingController quoteController;
-  final TextEditingController heightController;
-  final TextEditingController weightController;
-  final VoidCallback onCycleDateType;
-  final ValueChanged<Rect> onTapSign;
-  final ValueChanged<Rect> onTapAge;
-  final VoidCallback onTapBirthday;
-  final VoidCallback onTapHeightUnit;
-  final VoidCallback onTapWeightUnit;
-  final VoidCallback onCommitHeight;
-  final VoidCallback onCommitWeight;
-  final VoidCallback onToggleEditing;
-
-  const _ExpandedCharacterBody({
-    required this.dateEntry,
-    required this.isEditing,
-    required this.birthdayLabel,
-    required this.heightLabel,
-    required this.weightLabel,
-    required this.heightUnit,
-    required this.weightUnit,
-    required this.signData,
-    required this.synopsisController,
-    required this.synopsisScrollController,
-    required this.quoteController,
-    required this.heightController,
-    required this.weightController,
-    required this.onCycleDateType,
-    required this.onTapSign,
-    required this.onTapAge,
-    required this.onTapBirthday,
-    required this.onTapHeightUnit,
-    required this.onTapWeightUnit,
-    required this.onCommitHeight,
-    required this.onCommitWeight,
-    required this.onToggleEditing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: CharacterTimeField(
-                  dateEntry: dateEntry,
-                  onTapClock: onCycleDateType,
-                ),
-              ),
-              const SizedBox(width: 12),
-              MiniGlassButton(
-                icon: isEditing ? Icons.check_rounded : Icons.edit_outlined,
-                onTap: onToggleEditing,
-                fillColor: Colors.white.withValues(alpha: 0.34),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          EditableSynopsisPanel(
-            controller: synopsisController,
-            scrollController: synopsisScrollController,
-            isEditing: isEditing,
-            placeholderText: synopsisPlaceholderText,
-            textStyle: const TextStyle(
-              color: Color(0xFF8F8990),
-              fontSize: 11,
-              height: 1.35,
-            ),
-            fillColor: Colors.white.withValues(alpha: 0.72),
-            blurSigma: 4,
-            backgroundGradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.8),
-                const Color(0xFFFFF8FC).withValues(alpha: 0.68),
-                const Color(0xFFF1E6EE).withValues(alpha: 0.42),
-              ],
-              stops: const [0.0, 0.55, 1.0],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.78),
-              width: 0.7,
-            ),
-            placeholderStyle: const TextStyle(
-              color: Color(0xFF8F8990),
-              fontSize: 11,
-              height: 1.35,
-              fontStyle: FontStyle.italic,
-            ),
-            viewerBuilder: (context, text, style) {
-              return CharacterMarkdownText(
-                data: text,
-                style: style,
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          CharacterQuoteStrip(
-            controller: quoteController,
-            isEditing: isEditing,
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: CharacterBirthdayField(
-                  birthdayLabel: birthdayLabel,
-                  signData: signData,
-                  isEditing: isEditing,
-                  onTapAge: onTapAge,
-                  onTapBirthday: onTapBirthday,
-                  onTapSign: onTapSign,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CharacterHeightField(
-                  heightLabel: heightLabel,
-                  unitLabel: heightUnitCompactLabel(heightUnit),
-                  controller: heightController,
-                  isEditing: isEditing,
-                  onTapUnit: onTapHeightUnit,
-                  onCommitHeight: onCommitHeight,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CharacterWeightField(
-                  weightLabel: weightLabel,
-                  unitLabel: weightUnitCompactLabel(weightUnit),
-                  controller: weightController,
-                  isEditing: isEditing,
-                  onTapUnit: onTapWeightUnit,
-                  onCommitWeight: onCommitWeight,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: const [
-              OutlinedTagPill(label: 'Tag 1', color: Color(0xFFEB76AE)),
-              SizedBox(width: 8),
-              OutlinedTagPill(label: 'Tag 2', color: Color(0xFF8EAFF1)),
-            ],
-          ),
-        ],
       ),
     );
   }
