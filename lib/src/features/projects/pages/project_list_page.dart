@@ -25,13 +25,7 @@ class _ProjectListPageState extends State<ProjectListPage> {
   @override
   void initState() {
     super.initState();
-    _projects = List.generate(
-      4,
-      (index) => _ProjectListItem(
-        title: 'Projeto ${index + 1}',
-        unpinnedIndex: index,
-      ),
-    );
+    _projects = <_ProjectListItem>[];
   }
 
   void _togglePinned(_ProjectListItem project) {
@@ -92,6 +86,23 @@ class _ProjectListPageState extends State<ProjectListPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_projects.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32),
+          child: Text(
+            'Nenhum projeto criado. Clique no botão de "+" para criar um novo!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF544959),
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
     Widget buildProjectCard(BuildContext context, int index) {
       final project = _projects[index];
       final card = RepaintBoundary(
