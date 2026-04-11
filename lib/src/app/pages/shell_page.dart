@@ -48,12 +48,16 @@ class _ShellPageState extends State<ShellPage> {
   Future<void> _onPrimaryActionPressed() async {
     if (_activeTab != NavTab.projects) return;
 
-    final draft = await showCreateProjectTextDialog(context);
+    final draft = await showCreateProjectTextDialog(
+      context,
+      availableTags: _projectListController.availableTags,
+    );
     if (!mounted || draft == null) return;
 
     _projectListController.addProject(
       title: draft.title,
       synopsis: draft.synopsis,
+      tagLabels: draft.tagLabels,
     );
   }
 

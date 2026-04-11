@@ -1,24 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../models/project_tag_data.dart';
+
 Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
-  BuildContext context,
-) {
+  BuildContext context, {
+  required List<ProjectTagData> availableTags,
+}) {
   return showDialog<CreateProjectTextDraft>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => const _CreateProjectDialog(),
+    builder: (_) => _CreateProjectDialog(availableTags: availableTags),
   );
 }
 
 class CreateProjectTextDraft {
   final String title;
   final String synopsis;
+  final List<String> tagLabels;
 
-  const CreateProjectTextDraft({required this.title, required this.synopsis});
+  const CreateProjectTextDraft({
+    required this.title,
+    required this.synopsis,
+    required this.tagLabels,
+  });
 }
 
 class _CreateProjectDialog extends StatefulWidget {
-  const _CreateProjectDialog();
+  final List<ProjectTagData> availableTags;
+
+  const _CreateProjectDialog({required this.availableTags});
 
   @override
   State<_CreateProjectDialog> createState() => _CreateProjectDialogState();
@@ -28,30 +38,84 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
+  late final TextEditingController _newTagController;
+  late List<ProjectTagData> _knownTags;
+  final Set<String> _selectedTags = <String>{};
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
     _synopsisController = TextEditingController();
+    _newTagController = TextEditingController();
+    _knownTags = List<ProjectTagData>.from(widget.availableTags);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _synopsisController.dispose();
+    _newTagController.dispose();
     super.dispose();
   }
 
+  void _toggleTag(ProjectTagData tag) {
+    final normalizedLabel = tag.normalizedLabel;
+
+    setState(() {
+      if (_selectedTags.contains(normalizedLabel)) {
+        _selectedTags.remove(normalizedLabel);
+      } else {
+        _selectedTags.add(normalizedLabel);
+      }
+    });
+  }
+
+  void _addTagFromInput() {
+    final sanitizedLabel = sanitizeProjectTagLabel(_newTagController.text);
+    final normalizedLabel = normalizeProjectTagLabel(_newTagController.text);
+    if (normalizedLabel.isEmpty) return;
+
+    final existingIndex = _knownTags.indexWhere(
+      (tag) => tag.normalizedLabel == normalizedLabel,
+    );
+
+    setState(() {
+      if (existingIndex != -1) {
+        _selectedTags.add(normalizedLabel);
+      } else {
+        final newTag = ProjectTagData(
+          label: sanitizedLabel,
+          color: projectTagColorAt(_knownTags.length),
+        );
+
+        _knownTags = <ProjectTagData>[..._knownTags, newTag];
+        _selectedTags.add(newTag.normalizedLabel);
+      }
+
+      _newTagController.clear();
+    });
+  }
+
   void _submit() {
+    if (_newTagController.text.trim().isNotEmpty) {
+      _addTagFromInput();
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
+
+    final selectedTagLabels = _knownTags
+        .where((tag) => _selectedTags.contains(tag.normalizedLabel))
+        .map((tag) => tag.label)
+        .toList(growable: false);
 
     Navigator.of(context).pop(
       CreateProjectTextDraft(
         title: _titleController.text.trim(),
         synopsis: _synopsisController.text.trim(),
+        tagLabels: selectedTagLabels,
       ),
     );
   }
@@ -113,7 +177,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Primeiro passo: criar o projeto apenas com nome e sinopse.',
+                    'Neste passo, o projeto pode ser criado com nome, sinopse e tags.',
                     style: TextStyle(
                       color: Color(0xFF6A6167),
                       fontSize: 13,
@@ -163,6 +227,90 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                       hintText:
                           'Opcional. Use este campo para resumir a historia.',
                     ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Tags',
+                          style: TextStyle(
+                            color: Color(0xFF3A3339),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Selecione ou crie novas',
+                        style: TextStyle(
+                          color: const Color(
+                            0xFF6A6167,
+                          ).withValues(alpha: 0.86),
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (_knownTags.isEmpty)
+                    _InfoSurface(
+                      child: const Text(
+                        'Nenhuma tag cadastrada ainda. Crie a primeira abaixo se quiser.',
+                        style: TextStyle(
+                          color: Color(0xFF6A6167),
+                          fontSize: 12.5,
+                          height: 1.4,
+                        ),
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final tag in _knownTags)
+                          _SelectableTagChip(
+                            tag: tag,
+                            isSelected: _selectedTags.contains(
+                              tag.normalizedLabel,
+                            ),
+                            onTap: () => _toggleTag(tag),
+                          ),
+                      ],
+                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _newTagController,
+                          textInputAction: TextInputAction.done,
+                          decoration: _buildInputDecoration(
+                            hintText: 'Adicionar tag',
+                          ),
+                          onFieldSubmitted: (_) => _addTagFromInput(),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: _addTagFromInput,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFDF6EB8),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                          ),
+                          child: const Icon(Icons.add_rounded, size: 22),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 22),
                   Row(
@@ -230,6 +378,82 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       ),
       focusedErrorBorder: border.copyWith(
         borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),
+      ),
+    );
+  }
+}
+
+class _InfoSurface extends StatelessWidget {
+  final Widget child;
+
+  const _InfoSurface({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.36),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.56)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SelectableTagChip extends StatelessWidget {
+  final ProjectTagData tag;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SelectableTagChip({
+    required this.tag,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? tag.color.withValues(alpha: 0.16)
+                : Colors.white.withValues(alpha: 0.24),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: tag.color.withValues(alpha: isSelected ? 0.98 : 0.78),
+              width: isSelected ? 1.2 : 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                Icon(Icons.check_rounded, size: 15, color: tag.color),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                tag.label,
+                style: TextStyle(
+                  color: tag.color.withValues(alpha: 0.98),
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

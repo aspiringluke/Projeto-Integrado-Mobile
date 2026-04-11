@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../models/project_tag_data.dart';
 import '../pages/project_page.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
@@ -11,6 +12,7 @@ import '../../../shared/widgets/synopsis_scroll_box.dart';
 class ProjectCard extends StatefulWidget {
   final String title;
   final String synopsis;
+  final List<ProjectTagData> tags;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
 
@@ -18,6 +20,7 @@ class ProjectCard extends StatefulWidget {
     super.key,
     this.title = 'Projeto 1',
     this.synopsis = '',
+    this.tags = const <ProjectTagData>[],
     this.isPinned = false,
     this.onTogglePinned,
   });
@@ -217,6 +220,7 @@ class _ProjectCardState extends State<ProjectCard>
                                   opacity: _detailsFadeAnimation,
                                   child: _ProjectDetails(
                                     dateEntry: _currentDateEntry,
+                                    tags: widget.tags,
                                     isEditing: _isEditing,
                                     synopsisController: _synopsisController,
                                     onCycleDateType: _cycleDateType,
@@ -523,6 +527,7 @@ class _ProjectDateEntries {
 
 class _ProjectDetails extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
+  final List<ProjectTagData> tags;
   final bool isEditing;
   final TextEditingController synopsisController;
   final VoidCallback onCycleDateType;
@@ -531,6 +536,7 @@ class _ProjectDetails extends StatelessWidget {
 
   const _ProjectDetails({
     required this.dateEntry,
+    required this.tags,
     required this.isEditing,
     required this.synopsisController,
     required this.onCycleDateType,
@@ -631,14 +637,17 @@ class _ProjectDetails extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              const OutlinedTagPill(label: 'Tag 1', color: Color(0xFFEB76AE)),
-              const SizedBox(width: 8),
-              const OutlinedTagPill(label: 'Tag 2', color: Color(0xFF8EAFF1)),
-            ],
-          ),
-          const SizedBox(height: 16),
+          if (tags.isNotEmpty) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final tag in tags)
+                  OutlinedTagPill(label: tag.label, color: tag.color),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

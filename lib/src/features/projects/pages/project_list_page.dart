@@ -1,28 +1,70 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/project_tag_data.dart';
 import '../widgets/project_card.dart';
 
 class ProjectListController extends ChangeNotifier {
   final List<_ProjectListItem> _projects = <_ProjectListItem>[];
+  final List<ProjectTagData> _availableTags = <ProjectTagData>[];
 
   bool get isEmpty => _projects.isEmpty;
+  List<ProjectTagData> get availableTags => List.unmodifiable(_availableTags);
 
-  void addProject({required String title, String synopsis = ''}) {
+  void addProject({
+    required String title,
+    String synopsis = '',
+    Iterable<String> tagLabels = const <String>[],
+  }) {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) return;
 
     final unpinnedCount = _projects.where((item) => !item.isPinned).length;
+    final resolvedTags = _resolveTags(tagLabels);
 
     _projects.add(
       _ProjectListItem(
         title: sanitizedTitle,
         synopsis: synopsis.trim(),
+        tags: resolvedTags,
         unpinnedIndex: unpinnedCount,
       ),
     );
 
     notifyListeners();
+  }
+
+  List<ProjectTagData> _resolveTags(Iterable<String> tagLabels) {
+    final resolvedTags = <ProjectTagData>[];
+    final seenLabels = <String>{};
+
+    for (final rawLabel in tagLabels) {
+      final sanitizedLabel = sanitizeProjectTagLabel(rawLabel);
+      final normalizedLabel = normalizeProjectTagLabel(rawLabel);
+
+      if (normalizedLabel.isEmpty || !seenLabels.add(normalizedLabel)) {
+        continue;
+      }
+
+      final existingIndex = _availableTags.indexWhere(
+        (tag) => tag.normalizedLabel == normalizedLabel,
+      );
+
+      if (existingIndex != -1) {
+        resolvedTags.add(_availableTags[existingIndex]);
+        continue;
+      }
+
+      final newTag = ProjectTagData(
+        label: sanitizedLabel,
+        color: projectTagColorAt(_availableTags.length),
+      );
+
+      _availableTags.add(newTag);
+      resolvedTags.add(newTag);
+    }
+
+    return List<ProjectTagData>.unmodifiable(resolvedTags);
   }
 
   void _togglePinned(_ProjectListItem project) {
@@ -124,7 +166,7 @@ class ProjectListPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        if (controller._projects.isEmpty) {
+        if (controller.isEmpty) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
@@ -147,6 +189,7 @@ class ProjectListPage extends StatelessWidget {
             child: ProjectCard(
               title: project.title,
               synopsis: project.synopsis,
+              tags: project.tags,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
             ),
@@ -197,12 +240,14 @@ class ProjectListPage extends StatelessWidget {
 class _ProjectListItem {
   final String title;
   final String synopsis;
+  final List<ProjectTagData> tags;
   bool isPinned = false;
   int unpinnedIndex;
 
   _ProjectListItem({
     required this.title,
     required this.synopsis,
+    required this.tags,
     required this.unpinnedIndex,
   });
 }
