@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/ideas/pages/idea_list_page.dart';
 import '../../features/projects/pages/project_list_page.dart';
+import '../../features/projects/widgets/create_project_dialog.dart';
 import '../widgets/custom_nav_bar.dart';
 import '../../shared/widgets/funcoes_busca.dart';
 import '../../shared/widgets/buttons/glass_circle_button.dart';
@@ -19,12 +20,20 @@ class ShellPage extends StatefulWidget {
 class _ShellPageState extends State<ShellPage> {
   late NavTab _activeTab;
   late bool _toIdeas;
+  late final ProjectListController _projectListController;
 
   @override
   void initState() {
     super.initState();
     _activeTab = widget.initialTab;
     _toIdeas = _activeTab == NavTab.ideas;
+    _projectListController = ProjectListController();
+  }
+
+  @override
+  void dispose() {
+    _projectListController.dispose();
+    super.dispose();
   }
 
   void _onTabSelected(NavTab tab) {
@@ -34,6 +43,18 @@ class _ShellPageState extends State<ShellPage> {
       _toIdeas = _activeTab == NavTab.projects && tab == NavTab.ideas;
       _activeTab = tab;
     });
+  }
+
+  Future<void> _onPrimaryActionPressed() async {
+    if (_activeTab != NavTab.projects) return;
+
+    final draft = await showCreateProjectTextDialog(context);
+    if (!mounted || draft == null) return;
+
+    _projectListController.addProject(
+      title: draft.title,
+      synopsis: draft.synopsis,
+    );
   }
 
   @override
@@ -46,7 +67,7 @@ class _ShellPageState extends State<ShellPage> {
       ),
       floatingActionButton: GlassCircleButton(
         diameter: 56,
-        onTap: () {},
+        onTap: _onPrimaryActionPressed,
         blurSigma: 10,
         fillColor: const Color(0xFFF2D5E3).withValues(alpha: 0.58),
         gradient: LinearGradient(
@@ -81,10 +102,7 @@ class _ShellPageState extends State<ShellPage> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/FUNDO.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
           ),
           Column(
             children: [
@@ -94,6 +112,7 @@ class _ShellPageState extends State<ShellPage> {
                 child: _AnimatedTabContent(
                   activeTab: _activeTab,
                   toIdeas: _toIdeas,
+                  projectListController: _projectListController,
                 ),
               ),
             ],
@@ -107,8 +126,13 @@ class _ShellPageState extends State<ShellPage> {
 class _AnimatedTabContent extends StatelessWidget {
   final NavTab activeTab;
   final bool toIdeas;
+  final ProjectListController projectListController;
 
-  const _AnimatedTabContent({required this.activeTab, required this.toIdeas});
+  const _AnimatedTabContent({
+    required this.activeTab,
+    required this.toIdeas,
+    required this.projectListController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,10 +143,7 @@ class _AnimatedTabContent extends StatelessWidget {
       layoutBuilder: (currentChild, previousChildren) {
         return Stack(
           fit: StackFit.expand,
-          children: [
-            ...previousChildren,
-            ?currentChild,
-          ],
+          children: [...previousChildren, ?currentChild],
         );
       },
       transitionBuilder: (child, animation) {
@@ -163,7 +184,7 @@ class _AnimatedTabContent extends StatelessWidget {
       child: KeyedSubtree(
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
-            ? const ProjectListPage()
+            ? ProjectListPage(controller: projectListController)
             : const IdeasContent(),
       ),
     );

@@ -10,12 +10,14 @@ import '../../../shared/widgets/synopsis_scroll_box.dart';
 
 class ProjectCard extends StatefulWidget {
   final String title;
+  final String synopsis;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
 
   const ProjectCard({
     super.key,
     this.title = 'Projeto 1',
+    this.synopsis = '',
     this.isPinned = false,
     this.onTogglePinned,
   });
@@ -24,9 +26,8 @@ class ProjectCard extends StatefulWidget {
   State<ProjectCard> createState() => _ProjectCardState();
 }
 
-class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin {
-  static const String _initialSynopsis = '';
-
+class _ProjectCardState extends State<ProjectCard>
+    with TickerProviderStateMixin {
   bool _isExpanded = false;
   bool _isEditing = false;
   _ProjectDateType _activeDateType = _ProjectDateType.lastModified;
@@ -66,7 +67,7 @@ class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin
       reverseCurve: Curves.easeInOut,
     );
     _synopsisScrollController = ScrollController();
-    _synopsisController = TextEditingController(text: _initialSynopsis);
+    _synopsisController = TextEditingController(text: widget.synopsis);
     _entranceController.forward();
   }
 
@@ -93,9 +94,7 @@ class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin
 
   void _openProject() {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ProjectPage(title: widget.title),
-      ),
+      MaterialPageRoute<void>(builder: (_) => ProjectPage(title: widget.title)),
     );
   }
 
@@ -109,7 +108,8 @@ class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin
     });
   }
 
-  _ProjectDateEntry get _currentDateEntry => _dateEntries.forType(_activeDateType);
+  _ProjectDateEntry get _currentDateEntry =>
+      _dateEntries.forType(_activeDateType);
 
   void _toggleEditing() {
     FocusScope.of(context).unfocus();
@@ -144,7 +144,9 @@ class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: _isExpanded ? 0.08 : 0.06),
+                      color: Colors.black.withValues(
+                        alpha: _isExpanded ? 0.08 : 0.06,
+                      ),
                       blurRadius: _isExpanded ? 11 : 9,
                       offset: const Offset(0, 4),
                     ),
@@ -193,7 +195,9 @@ class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin
                     child: AnimatedBuilder(
                       animation: _expandAnimation,
                       builder: (context, child) {
-                        final bottomRadius = Radius.circular(16 * (1 - _expandAnimation.value));
+                        final bottomRadius = Radius.circular(
+                          16 * (1 - _expandAnimation.value),
+                        );
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -217,7 +221,8 @@ class _ProjectCardState extends State<ProjectCard> with TickerProviderStateMixin
                                     synopsisController: _synopsisController,
                                     onCycleDateType: _cycleDateType,
                                     onToggleEditing: _toggleEditing,
-                                    synopsisScrollController: _synopsisScrollController,
+                                    synopsisScrollController:
+                                        _synopsisScrollController,
                                   ),
                                 ),
                               ),
@@ -297,7 +302,9 @@ class _ProjectHeader extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.left,
                         style: TextStyle(
-                          color: isExpanded ? const Color(0xFFF9F6FA) : const Color(0xFFF7F4F8),
+                          color: isExpanded
+                              ? const Color(0xFFF9F6FA)
+                              : const Color(0xFFF7F4F8),
                           fontSize: 17.5,
                           fontWeight: FontWeight.w700,
                           fontStyle: FontStyle.italic,
@@ -377,10 +384,7 @@ class _PinBadge extends StatelessWidget {
   final bool isActive;
   final VoidCallback? onTap;
 
-  const _PinBadge({
-    required this.isActive,
-    required this.onTap,
-  });
+  const _PinBadge({required this.isActive, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +399,9 @@ class _PinBadge extends StatelessWidget {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
+            color: const Color(
+              0xFFF4EEF3,
+            ).withValues(alpha: isActive ? 0.9 : 0.78),
             gradient: isActive
                 ? LinearGradient(
                     begin: Alignment.topLeft,
@@ -438,7 +444,9 @@ class _PinBadge extends StatelessWidget {
                 child: Icon(
                   isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
                   size: isActive ? 16 : 15,
-                  color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
+                  color: Color(
+                    0xFF8A828C,
+                  ).withValues(alpha: isActive ? 0.98 : 0.56),
                 ),
               ),
             ),
@@ -455,10 +463,7 @@ class _ProjectDateEntry {
   final String label;
   final DateTime value;
 
-  const _ProjectDateEntry({
-    required this.label,
-    required this.value,
-  });
+  const _ProjectDateEntry({required this.label, required this.value});
 }
 
 class _ProjectDateEntries {
@@ -476,13 +481,22 @@ class _ProjectDateEntries {
     final normalizedSeed = seed.abs();
     final now = DateTime.now();
     final createdAt = now.subtract(
-      Duration(days: 220 + (normalizedSeed % 290), hours: 2 + (normalizedSeed % 11)),
+      Duration(
+        days: 220 + (normalizedSeed % 290),
+        hours: 2 + (normalizedSeed % 11),
+      ),
     );
     final lastModified = now.subtract(
-      Duration(days: 2 + (normalizedSeed % 18), hours: 4 + (normalizedSeed % 8)),
+      Duration(
+        days: 2 + (normalizedSeed % 18),
+        hours: 4 + (normalizedSeed % 8),
+      ),
     );
     final lastAccessed = now.subtract(
-      Duration(hours: 7 + (normalizedSeed % 20), minutes: 14 + (normalizedSeed % 33)),
+      Duration(
+        hours: 7 + (normalizedSeed % 20),
+        minutes: 14 + (normalizedSeed % 33),
+      ),
     );
 
     return _ProjectDateEntries(
@@ -494,10 +508,7 @@ class _ProjectDateEntries {
         label: '\u00DAltimo acesso',
         value: lastAccessed,
       ),
-      createdAt: _ProjectDateEntry(
-        label: 'Criado em',
-        value: createdAt,
-      ),
+      createdAt: _ProjectDateEntry(label: 'Criado em', value: createdAt),
     );
   }
 
@@ -533,7 +544,10 @@ class _ProjectDetails extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.22), width: 0.7),
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.22),
+            width: 0.7,
+          ),
         ),
       ),
       child: Column(
@@ -613,24 +627,15 @@ class _ProjectDetails extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
             viewerBuilder: (context, text, style) {
-              return _ProjectMarkdownText(
-                data: text,
-                style: style,
-              );
+              return _ProjectMarkdownText(data: text, style: style);
             },
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              const OutlinedTagPill(
-                label: 'Tag 1',
-                color: Color(0xFFEB76AE),
-              ),
+              const OutlinedTagPill(label: 'Tag 1', color: Color(0xFFEB76AE)),
               const SizedBox(width: 8),
-              const OutlinedTagPill(
-                label: 'Tag 2',
-                color: Color(0xFF8EAFF1),
-              ),
+              const OutlinedTagPill(label: 'Tag 2', color: Color(0xFF8EAFF1)),
             ],
           ),
           const SizedBox(height: 16),
@@ -699,10 +704,7 @@ class _TimeField extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
   final VoidCallback onTapClock;
 
-  const _TimeField({
-    required this.dateEntry,
-    required this.onTapClock,
-  });
+  const _TimeField({required this.dateEntry, required this.onTapClock});
 
   @override
   Widget build(BuildContext context) {
@@ -836,10 +838,7 @@ class _ProjectMarkdownText extends StatelessWidget {
   final String data;
   final TextStyle style;
 
-  const _ProjectMarkdownText({
-    required this.data,
-    required this.style,
-  });
+  const _ProjectMarkdownText({required this.data, required this.style});
 
   @override
   Widget build(BuildContext context) {
@@ -919,7 +918,8 @@ class _GlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveGradient = gradient ??
+    final effectiveGradient =
+        gradient ??
         LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
