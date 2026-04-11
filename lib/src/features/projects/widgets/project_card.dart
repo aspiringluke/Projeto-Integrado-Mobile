@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../models/project_tag_data.dart';
+import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
@@ -13,6 +14,7 @@ class ProjectCard extends StatefulWidget {
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
+  final Color accentColor;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
 
@@ -21,6 +23,7 @@ class ProjectCard extends StatefulWidget {
     this.title = 'Projeto 1',
     this.synopsis = '',
     this.tags = const <ProjectTagData>[],
+    this.accentColor = defaultProjectAccentColor,
     this.isPinned = false,
     this.onTogglePinned,
   });
@@ -147,11 +150,18 @@ class _ProjectCardState extends State<ProjectCard>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: _isExpanded ? 0.08 : 0.06,
+                      color: widget.accentColor.withValues(
+                        alpha: _isExpanded ? 0.12 : 0.08,
                       ),
-                      blurRadius: _isExpanded ? 11 : 9,
+                      blurRadius: _isExpanded ? 12 : 10,
                       offset: const Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: _isExpanded ? 0.08 : 0.05,
+                      ),
+                      blurRadius: _isExpanded ? 12 : 9,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
@@ -159,26 +169,16 @@ class _ProjectCardState extends State<ProjectCard>
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: _isExpanded
-                            ? [
-                                const Color(0x7FECE1E9),
-                                const Color(0x9CFBF7FB),
-                                const Color(0x86E7DCE5),
-                              ]
-                            : [
-                                const Color(0x78E5DCE5),
-                                const Color(0x98FAF7FA),
-                                const Color(0x80DDD4DE),
-                              ],
-                        stops: const [0.0, 0.5, 1.0],
+                      gradient: _buildProjectShellGradient(
+                        widget.accentColor,
+                        isExpanded: _isExpanded,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.48),
-                        width: 0.75,
+                        color: Colors.white.withValues(
+                          alpha: _isExpanded ? 0.7 : 0.58,
+                        ),
+                        width: 0.85,
                       ),
                     ),
                     foregroundDecoration: BoxDecoration(
@@ -221,6 +221,7 @@ class _ProjectCardState extends State<ProjectCard>
                                   child: _ProjectDetails(
                                     dateEntry: _currentDateEntry,
                                     tags: widget.tags,
+                                    accentColor: widget.accentColor,
                                     isEditing: _isEditing,
                                     synopsisController: _synopsisController,
                                     onCycleDateType: _cycleDateType,
@@ -528,6 +529,7 @@ class _ProjectDateEntries {
 class _ProjectDetails extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
   final List<ProjectTagData> tags;
+  final Color accentColor;
   final bool isEditing;
   final TextEditingController synopsisController;
   final VoidCallback onCycleDateType;
@@ -537,6 +539,7 @@ class _ProjectDetails extends StatelessWidget {
   const _ProjectDetails({
     required this.dateEntry,
     required this.tags,
+    required this.accentColor,
     required this.isEditing,
     required this.synopsisController,
     required this.onCycleDateType,
@@ -549,6 +552,21 @@ class _ProjectDetails extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              accentColor.withValues(alpha: 0.14),
+              Colors.white.withValues(alpha: 0.78),
+            ),
+            Colors.white.withValues(alpha: 0.72),
+            Color.alphaBlend(
+              accentColor.withValues(alpha: 0.2),
+              const Color(0xFFFFF8FC).withValues(alpha: 0.76),
+            ),
+          ],
+        ),
         border: Border(
           top: BorderSide(
             color: Colors.white.withValues(alpha: 0.22),
@@ -563,6 +581,7 @@ class _ProjectDetails extends StatelessWidget {
             children: [
               Expanded(
                 child: _TimeField(
+                  accentColor: accentColor,
                   dateEntry: dateEntry,
                   onTapClock: onCycleDateType,
                 ),
@@ -578,14 +597,14 @@ class _ProjectDetails extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     Colors.white.withValues(alpha: 0.58),
-                    const Color(0xFFF7EEF5).withValues(alpha: 0.28),
-                    const Color(0xFFE4D4E1).withValues(alpha: 0.14),
+                    accentColor.withValues(alpha: 0.2),
+                    _lighten(accentColor, 0.22).withValues(alpha: 0.16),
                   ],
                 ),
                 borderColor: Colors.white.withValues(alpha: 0.8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: accentColor.withValues(alpha: 0.14),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -663,11 +682,20 @@ class _ProjectDetails extends StatelessWidget {
               GlassCircleButton(
                 diameter: 34,
                 blurSigma: 6,
-                fillColor: Colors.white.withValues(alpha: 0.28),
+                fillColor: accentColor.withValues(alpha: 0.22),
                 borderColor: Colors.white.withValues(alpha: 0.62),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.56),
+                    accentColor.withValues(alpha: 0.22),
+                    _lighten(accentColor, 0.22).withValues(alpha: 0.18),
+                  ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: accentColor.withValues(alpha: 0.14),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -710,10 +738,15 @@ class _ProjectDetails extends StatelessWidget {
 }
 
 class _TimeField extends StatelessWidget {
+  final Color accentColor;
   final _ProjectDateEntry dateEntry;
   final VoidCallback onTapClock;
 
-  const _TimeField({required this.dateEntry, required this.onTapClock});
+  const _TimeField({
+    required this.accentColor,
+    required this.dateEntry,
+    required this.onTapClock,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -732,7 +765,7 @@ class _TimeField extends StatelessWidget {
               radius: fieldHeight / 2,
               blurSigma: 9,
               padding: const EdgeInsets.only(left: 40, right: 31),
-              fillColor: const Color(0xFFF3EEF3).withValues(alpha: 0.3),
+              fillColor: accentColor.withValues(alpha: 0.16),
               borderColor: Colors.white.withValues(alpha: 0.84),
               borderWidth: 0.75,
               alignment: Alignment.centerLeft,
@@ -741,8 +774,8 @@ class _TimeField extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   Colors.white.withValues(alpha: 0.64),
-                  const Color(0xFFF6EEF3).withValues(alpha: 0.32),
-                  const Color(0xFFE3D8E0).withValues(alpha: 0.16),
+                  accentColor.withValues(alpha: 0.18),
+                  _lighten(accentColor, 0.24).withValues(alpha: 0.12),
                 ],
                 stops: [0.0, 0.48, 1.0],
               ),
@@ -766,20 +799,20 @@ class _TimeField extends StatelessWidget {
               diameter: circleDiameter,
               onTap: onTapClock,
               blurSigma: 8,
-              fillColor: const Color(0xFFF0BEDB).withValues(alpha: 0.5),
+              fillColor: accentColor.withValues(alpha: 0.42),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
                   Colors.white.withValues(alpha: 0.7),
-                  const Color(0xFFF4D5E6).withValues(alpha: 0.52),
-                  const Color(0xFFE8C4D9).withValues(alpha: 0.36),
+                  _lighten(accentColor, 0.18).withValues(alpha: 0.52),
+                  accentColor.withValues(alpha: 0.42),
                 ],
               ),
               borderColor: Colors.white.withValues(alpha: 0.84),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFDF6EB8).withValues(alpha: 0.08),
+                  color: accentColor.withValues(alpha: 0.12),
                   blurRadius: 9,
                   offset: const Offset(0, 3),
                 ),
@@ -900,6 +933,33 @@ String _sanitizeProjectMarkdown(String data) {
   }
 
   return sanitizedLines.join('\n');
+}
+
+LinearGradient _buildProjectShellGradient(
+  Color accentColor, {
+  required bool isExpanded,
+}) {
+  final leading = Color.alphaBlend(
+    accentColor.withValues(alpha: isExpanded ? 0.16 : 0.08),
+    Colors.white.withValues(alpha: 0.84),
+  );
+  final center = Colors.white.withValues(alpha: isExpanded ? 0.82 : 0.76);
+  final trailing = Color.alphaBlend(
+    _lighten(accentColor, 0.22).withValues(alpha: isExpanded ? 0.18 : 0.1),
+    const Color(0xFFF8F2F6).withValues(alpha: 0.82),
+  );
+
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [leading, center, trailing],
+    stops: const [0.0, 0.48, 1.0],
+  );
+}
+
+Color _lighten(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
 }
 
 class _GlassSurface extends StatelessWidget {

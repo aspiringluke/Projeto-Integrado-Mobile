@@ -58,6 +58,7 @@ class _ShellPageState extends State<ShellPage> {
       title: draft.title,
       synopsis: draft.synopsis,
       tagLabels: draft.tagLabels,
+      accentColor: draft.accentColor,
     );
   }
 

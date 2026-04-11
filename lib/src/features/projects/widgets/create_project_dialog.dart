@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/project_tag_data.dart';
+import '../models/project_style_defaults.dart';
+import 'project_color_editor.dart';
 
 Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
   BuildContext context, {
@@ -17,11 +19,13 @@ class CreateProjectTextDraft {
   final String title;
   final String synopsis;
   final List<String> tagLabels;
+  final Color accentColor;
 
   const CreateProjectTextDraft({
     required this.title,
     required this.synopsis,
     required this.tagLabels,
+    required this.accentColor,
   });
 }
 
@@ -41,6 +45,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   late final TextEditingController _newTagController;
   late List<ProjectTagData> _knownTags;
   final Set<String> _selectedTags = <String>{};
+  HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
 
   @override
   void initState() {
@@ -116,6 +121,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         title: _titleController.text.trim(),
         synopsis: _synopsisController.text.trim(),
         tagLabels: selectedTagLabels,
+        accentColor: _accentColor.toColor(),
       ),
     );
   }
@@ -177,7 +183,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Neste passo, o projeto pode ser criado com nome, sinopse e tags.',
+                    'Neste passo, o projeto pode ser criado com nome, sinopse, tags e cor de realce.',
                     style: TextStyle(
                       color: Color(0xFF6A6167),
                       fontSize: 13,
@@ -311,6 +317,29 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 18),
+                  ProjectColorEditor(
+                    title: 'Cor de realce',
+                    description:
+                        'Aplica a cor selecionada no cartao completo, mantendo o mesmo padrao visual.',
+                    color: _accentColor.toColor(),
+                    hslColor: _accentColor,
+                    onHueChanged: (value) {
+                      setState(() {
+                        _accentColor = _accentColor.withHue(value);
+                      });
+                    },
+                    onSaturationChanged: (value) {
+                      setState(() {
+                        _accentColor = _accentColor.withSaturation(value);
+                      });
+                    },
+                    onLightnessChanged: (value) {
+                      setState(() {
+                        _accentColor = _accentColor.withLightness(value);
+                      });
+                    },
                   ),
                   const SizedBox(height: 22),
                   Row(

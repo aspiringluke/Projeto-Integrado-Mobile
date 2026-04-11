@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/project_tag_data.dart';
+import '../models/project_style_defaults.dart';
 import '../widgets/project_card.dart';
 
 class ProjectListController extends ChangeNotifier {
@@ -15,6 +16,7 @@ class ProjectListController extends ChangeNotifier {
     required String title,
     String synopsis = '',
     Iterable<String> tagLabels = const <String>[],
+    Color accentColor = defaultProjectAccentColor,
   }) {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) return;
@@ -27,6 +29,7 @@ class ProjectListController extends ChangeNotifier {
         title: sanitizedTitle,
         synopsis: synopsis.trim(),
         tags: resolvedTags,
+        accentColor: accentColor,
         unpinnedIndex: unpinnedCount,
       ),
     );
@@ -190,6 +193,7 @@ class ProjectListPage extends StatelessWidget {
               title: project.title,
               synopsis: project.synopsis,
               tags: project.tags,
+              accentColor: project.accentColor,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
             ),
@@ -241,6 +245,7 @@ class _ProjectListItem {
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
+  final Color accentColor;
   bool isPinned = false;
   int unpinnedIndex;
 
@@ -248,6 +253,7 @@ class _ProjectListItem {
     required this.title,
     required this.synopsis,
     required this.tags,
+    required this.accentColor,
     required this.unpinnedIndex,
   });
 }
