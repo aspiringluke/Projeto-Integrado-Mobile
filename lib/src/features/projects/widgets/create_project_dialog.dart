@@ -277,6 +277,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             textInputAction: TextInputAction.next,
                             decoration: _buildInputDecoration(
                               hintText: 'Nome do projeto',
+                              focusedColor: _accentColor.toColor(),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -320,6 +321,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 border: Border.all(
                                   color: Colors.white.withValues(alpha: 0.74),
                                 ),
+                                focusedBorderColor: _accentColor.toColor(),
                                 viewerBuilder: (context, text, style) {
                                   return Text(text, style: style);
                                 },
@@ -381,6 +383,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   textInputAction: TextInputAction.done,
                                   decoration: _buildInputDecoration(
                                     hintText: 'Nova tag',
+                                    focusedColor: _accentColor.toColor(),
                                   ),
                                   onChanged: (_) => setState(() {}),
                                   onFieldSubmitted: (_) => _addTagFromInput(),
@@ -588,7 +591,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     );
   }
 
-  InputDecoration _buildInputDecoration({required String hintText}) {
+  InputDecoration _buildInputDecoration({
+    required String hintText,
+    required Color focusedColor,
+  }) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
@@ -603,7 +609,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       enabledBorder: border,
       focusedBorder: border.copyWith(
-        borderSide: const BorderSide(color: Color(0xFFDF6EB8), width: 1.1),
+        borderSide: BorderSide(color: focusedColor, width: 1.1),
       ),
       errorBorder: border.copyWith(
         borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),

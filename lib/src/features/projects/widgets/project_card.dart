@@ -1,8 +1,10 @@
 import 'dart:ui';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../characters/widgets/character_overlays.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
@@ -19,6 +21,11 @@ class ProjectCard extends StatefulWidget {
   final Color accentColor;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
+  final DateTime createdAt;
+  final DateTime lastModified;
+  final DateTime lastAccessed;
+  final VoidCallback? onOpenProject;
+  final VoidCallback? onProjectEdited;
 
   const ProjectCard({
     super.key,
@@ -29,6 +36,11 @@ class ProjectCard extends StatefulWidget {
     this.accentColor = defaultProjectAccentColor,
     this.isPinned = false,
     this.onTogglePinned,
+    required this.createdAt,
+    required this.lastModified,
+    required this.lastAccessed,
+    this.onOpenProject,
+    this.onProjectEdited,
   });
 
   @override
@@ -40,7 +52,6 @@ class _ProjectCardState extends State<ProjectCard>
   bool _isExpanded = false;
   bool _isEditing = false;
   _ProjectDateType _activeDateType = _ProjectDateType.lastModified;
-  late final _ProjectDateEntries _dateEntries;
   late final AnimationController _expandController;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _detailsFadeAnimation;
@@ -52,7 +63,6 @@ class _ProjectCardState extends State<ProjectCard>
   @override
   void initState() {
     super.initState();
-    _dateEntries = _ProjectDateEntries.fromSeed(widget.title.hashCode);
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -102,8 +112,11 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   void _openProject() {
+    widget.onOpenProject?.call();
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ProjectPage(title: widget.title)),
+      MaterialPageRoute<void>(
+        builder: (_) => ProjectPage(title: widget.title),
+      ),
     );
   }
 
@@ -118,13 +131,23 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   _ProjectDateEntry get _currentDateEntry =>
-      _dateEntries.forType(_activeDateType);
+      _ProjectDateEntries.fromValues(
+        createdAt: widget.createdAt,
+        lastModified: widget.lastModified,
+        lastAccessed: widget.lastAccessed,
+      ).forType(_activeDateType);
 
   void _toggleEditing() {
     FocusScope.of(context).unfocus();
+
+    final willStopEditing = _isEditing;
     setState(() {
       _isEditing = !_isEditing;
     });
+
+    if (willStopEditing) {
+      widget.onProjectEdited?.call();
+    }
   }
 
   @override
@@ -223,6 +246,7 @@ class _ProjectCardState extends State<ProjectCard>
                                 child: FadeTransition(
                                   opacity: _detailsFadeAnimation,
                                   child: _ProjectDetails(
+                                    projectTitle: widget.title,
                                     dateEntry: _currentDateEntry,
                                     tags: widget.tags,
                                     accentColor: widget.accentColor,
@@ -497,28 +521,11 @@ class _ProjectDateEntries {
     required this.createdAt,
   });
 
-  factory _ProjectDateEntries.fromSeed(int seed) {
-    final normalizedSeed = seed.abs();
-    final now = DateTime.now();
-    final createdAt = now.subtract(
-      Duration(
-        days: 220 + (normalizedSeed % 290),
-        hours: 2 + (normalizedSeed % 11),
-      ),
-    );
-    final lastModified = now.subtract(
-      Duration(
-        days: 2 + (normalizedSeed % 18),
-        hours: 4 + (normalizedSeed % 8),
-      ),
-    );
-    final lastAccessed = now.subtract(
-      Duration(
-        hours: 7 + (normalizedSeed % 20),
-        minutes: 14 + (normalizedSeed % 33),
-      ),
-    );
-
+  factory _ProjectDateEntries.fromValues({
+    required DateTime createdAt,
+    required DateTime lastModified,
+    required DateTime lastAccessed,
+  }) {
     return _ProjectDateEntries(
       lastModified: _ProjectDateEntry(
         label: '\u00DAltima modifica\u00E7\u00E3o',
@@ -528,7 +535,7 @@ class _ProjectDateEntries {
         label: '\u00DAltimo acesso',
         value: lastAccessed,
       ),
-      createdAt: _ProjectDateEntry(label: 'Criado em', value: createdAt),
+      createdAt: _ProjectDateEntry(label: 'Criado', value: createdAt),
     );
   }
 
@@ -542,6 +549,7 @@ class _ProjectDateEntries {
 }
 
 class _ProjectDetails extends StatelessWidget {
+  final String projectTitle;
   final _ProjectDateEntry dateEntry;
   final List<ProjectTagData> tags;
   final Color accentColor;
@@ -552,6 +560,7 @@ class _ProjectDetails extends StatelessWidget {
   final ScrollController synopsisScrollController;
 
   const _ProjectDetails({
+    required this.projectTitle,
     required this.dateEntry,
     required this.tags,
     required this.accentColor,
@@ -637,6 +646,7 @@ class _ProjectDetails extends StatelessWidget {
             controller: synopsisController,
             scrollController: synopsisScrollController,
             isEditing: isEditing,
+            focusedBorderColor: accentColor,
             placeholderText: synopsisPlaceholderText,
             textStyle: const TextStyle(
               fontSize: 12,
@@ -685,14 +695,17 @@ class _ProjectDetails extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  _buildCircle(),
-                  const SizedBox(width: 4),
-                  _buildCircle(),
-                  const SizedBox(width: 4),
-                  _buildCircle(),
-                ],
+              Builder(
+                builder: (context) {
+                  return GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () => _showProjectCharacterInfo(
+                      context,
+                      rectFromContext(context),
+                    ),
+                    child: const _ProjectInfoButton(),
+                  );
+                },
               ),
               GlassCircleButton(
                 diameter: 34,
@@ -728,28 +741,323 @@ class _ProjectDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildCircle() {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: const Color(0xFFC9C7CC).withValues(alpha: 0.54),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.48),
-            const Color(0xFFD7D3D9).withValues(alpha: 0.36),
-          ],
-        ),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.62),
-          width: 0.75,
-        ),
-        borderRadius: BorderRadius.circular(999),
+  Future<void> _showProjectCharacterInfo(BuildContext context, Rect anchorRect) async {
+    final recognizer = TapGestureRecognizer()
+      ..onTap = () {
+        Navigator.of(context).pop();
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ProjectPage(
+              title: projectTitle,
+              initialSection: ProjectSectionId.configProjeto,
+            ),
+          ),
+        );
+      };
+
+    await _showAnchoredInfoBubble(
+      context: context,
+      anchorRect: anchorRect,
+      width: 260,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nenhum personagem exibido aqui.',
+            style: TextStyle(
+              color: Colors.black.withValues(alpha: 0.82),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Os 3 personagens de maior relevância são automaticamente exibidos, ou você pode escolher manualmente na',
+            style: TextStyle(
+              color: Colors.black.withValues(alpha: 0.72),
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(
+                color: Colors.black.withValues(alpha: 0.72),
+                fontSize: 12,
+                height: 1.4,
+              ),
+              children: [
+                TextSpan(
+                  text: 'página de configurações do projeto',
+                  style: const TextStyle(
+                    color: Color(0xFF5B33A8),
+                    decoration: TextDecoration.underline,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  recognizer: recognizer,
+                ),
+                const TextSpan(text: '.'),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+Future<void> _showAnchoredInfoBubble({
+  required BuildContext context,
+  required Rect anchorRect,
+  required Widget child,
+  double width = 180,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierLabel: 'Info',
+    barrierDismissible: true,
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 140),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      final screenSize = MediaQuery.of(context).size;
+      const horizontalPadding = 12.0;
+      const arrowSize = 12.0;
+      const verticalGap = 8.0;
+      const estimatedHeight = 130.0;
+      final left = (anchorRect.center.dx - (width / 2))
+          .clamp(
+            horizontalPadding,
+            screenSize.width - width - horizontalPadding,
+          )
+          .toDouble();
+      final showAbove = anchorRect.bottom + estimatedHeight > screenSize.height - 24;
+      final top = (showAbove
+              ? anchorRect.top - estimatedHeight - arrowSize - verticalGap
+              : anchorRect.bottom + verticalGap)
+          .clamp(12.0, screenSize.height - estimatedHeight - 12.0)
+          .toDouble();
+      final pointerLeft = (anchorRect.center.dx - left - (arrowSize / 2))
+          .clamp(
+            18.0,
+            width - 18.0,
+          )
+          .toDouble();
+
+      return Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => Navigator.of(context).pop(),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Positioned(
+              left: left,
+              top: top,
+              width: width,
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 140),
+                tween: Tween<double>(begin: 0.96, end: 1),
+                builder: (context, scale, dialogChild) {
+                  return Transform.scale(
+                    scale: scale,
+                    alignment: showAbove ? Alignment.bottomCenter : Alignment.topCenter,
+                    child: dialogChild,
+                  );
+                },
+                child: _AnchoredInfoBubble(
+                  showAbove: showAbove,
+                  pointerLeft: pointerLeft,
+                  arrowSize: arrowSize,
+                  child: child,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+}
+
+class _AnchoredInfoBubble extends StatelessWidget {
+  final bool showAbove;
+  final double pointerLeft;
+  final double arrowSize;
+  final Widget child;
+
+  const _AnchoredInfoBubble({
+    required this.showAbove,
+    required this.pointerLeft,
+    required this.arrowSize,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bubble = ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.86),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+
+    final arrow = Positioned(
+      left: pointerLeft,
+      top: showAbove ? null : 0,
+      bottom: showAbove ? 0 : null,
+      child: CustomPaint(
+        size: Size(arrowSize, arrowSize),
+        painter: _BubbleArrowPainter(
+          color: Colors.white.withValues(alpha: 0.9),
+          pointUp: !showAbove,
+        ),
+      ),
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Padding(
+          padding: showAbove
+              ? EdgeInsets.only(bottom: arrowSize - 1)
+              : EdgeInsets.only(top: arrowSize - 1),
+          child: bubble,
+        ),
+        arrow,
+      ],
+    );
+  }
+}
+
+class _BubbleArrowPainter extends CustomPainter {
+  final Color color;
+  final bool pointUp;
+
+  const _BubbleArrowPainter({
+    required this.color,
+    required this.pointUp,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+
+    if (pointUp) {
+      path
+        ..moveTo(size.width / 2, 0)
+        ..lineTo(0, size.height)
+        ..lineTo(size.width, size.height)
+        ..close();
+    } else {
+      path
+        ..moveTo(0, 0)
+        ..lineTo(size.width, 0)
+        ..lineTo(size.width / 2, size.height)
+        ..close();
+    }
+
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleArrowPainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.pointUp != pointUp;
+  }
+}
+
+class _ProjectInfoButton extends StatelessWidget {
+  const _ProjectInfoButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 38,
+      height: 38,
+      child: Center(
+        child: _DottedCircle(),
+      ),
+    );
+  }
+}
+
+class _DottedCircle extends StatelessWidget {
+  const _DottedCircle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 26,
+      height: 26,
+      child: CustomPaint(
+        painter: _DottedCirclePainter(
+          color: const Color(0xFFB0B0B0),
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+}
+
+class _DottedCirclePainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  _DottedCirclePainter({required this.color, required this.strokeWidth});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = (size.width - strokeWidth) / 2;
+    final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final dashLength = 5.0;
+    final gapLength = 4.0;
+    final circumference = 2 * 3.1415926535897932 * radius;
+    final dashAngle = dashLength / radius;
+    final gapAngle = gapLength / radius;
+
+    for (var startAngle = 0.0;
+        startAngle < 2 * 3.1415926535897932;
+        startAngle += dashAngle + gapAngle) {
+      canvas.drawArc(rect, startAngle, dashAngle, false, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _TimeField extends StatelessWidget {
@@ -766,7 +1074,7 @@ class _TimeField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const circleDiameter = 38.0;
-    const fieldHeight = 38.0;
+    const fieldHeight = 50.0;
     const pillLeftInset = 8.0;
 
     return SizedBox(
@@ -796,8 +1104,9 @@ class _TimeField extends StatelessWidget {
               ),
               child: Text(
                 _formatDateLabel(dateEntry),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                softWrap: true,
                 style: const TextStyle(
                   fontSize: 10.5,
                   color: Color(0xFF2C262C),
@@ -850,7 +1159,7 @@ class _TimeField extends StatelessWidget {
   }
 
   String _formatDateLabel(_ProjectDateEntry entry) {
-    return '${entry.label}: ${_formatDate(entry.value)}, ${_formatRelativePhrase(entry.value)}.';
+    return '${entry.label}: ${_formatRelativePhrase(entry.value)}\n${_formatDate(entry.value)}';
   }
 
   String _formatDate(DateTime value) {

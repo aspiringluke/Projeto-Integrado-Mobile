@@ -25,6 +25,8 @@ class ProjectListController extends ChangeNotifier {
     final unpinnedCount = _projects.where((item) => !item.isPinned).length;
     final resolvedTags = _resolveTags(tags);
 
+    final now = DateTime.now();
+
     _projects.add(
       _ProjectListItem(
         title: sanitizedTitle,
@@ -32,6 +34,9 @@ class ProjectListController extends ChangeNotifier {
         tags: resolvedTags,
         coverColor: coverColor,
         accentColor: accentColor,
+        createdAt: now,
+        lastModified: now,
+        lastAccessed: now,
         unpinnedIndex: unpinnedCount,
       ),
     );
@@ -199,6 +204,17 @@ class ProjectListPage extends StatelessWidget {
               accentColor: project.accentColor,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
+              createdAt: project.createdAt,
+              lastModified: project.lastModified,
+              lastAccessed: project.lastAccessed,
+              onOpenProject: () {
+                project.lastAccessed = DateTime.now();
+                controller.notifyListeners();
+              },
+              onProjectEdited: () {
+                project.lastModified = DateTime.now();
+                controller.notifyListeners();
+              },
             ),
           );
 
@@ -250,6 +266,9 @@ class _ProjectListItem {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
+  final DateTime createdAt;
+  DateTime lastModified;
+  DateTime lastAccessed;
   bool isPinned = false;
   int unpinnedIndex;
 
@@ -259,6 +278,9 @@ class _ProjectListItem {
     required this.tags,
     required this.coverColor,
     required this.accentColor,
+    required this.createdAt,
+    required this.lastModified,
+    required this.lastAccessed,
     required this.unpinnedIndex,
   });
 }

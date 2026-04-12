@@ -263,6 +263,7 @@ class EditableSynopsisPanel extends StatefulWidget {
   final TextStyle? placeholderStyle;
   final double blurSigma;
   final Gradient? backgroundGradient;
+  final Color? focusedBorderColor;
 
   const EditableSynopsisPanel({
     super.key,
@@ -281,6 +282,7 @@ class EditableSynopsisPanel extends StatefulWidget {
     this.placeholderStyle,
     this.blurSigma = 0,
     this.backgroundGradient,
+    this.focusedBorderColor,
   });
 
   @override
@@ -328,6 +330,8 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
         );
     final isEmpty = widget.controller.text.trim().isEmpty;
     final isFocused = _focusNode.hasFocus;
+    final focusedBorderColor =
+        widget.focusedBorderColor ?? const Color(0xFFDF6EB8);
 
     final content = Container(
       padding: widget.panelPadding,
@@ -337,7 +341,7 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
         borderRadius: widget.borderRadius,
         border: isFocused
             ? Border.all(
-                color: const Color(0xFFDF6EB8),
+                color: focusedBorderColor,
                 width: 1.1,
               )
             : widget.border ?? Border.all(
