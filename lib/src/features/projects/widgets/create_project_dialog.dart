@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/project_tag_data.dart';
+import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../models/project_style_defaults.dart';
+import '../models/project_tag_data.dart';
 import 'project_color_editor.dart';
 
 Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
@@ -19,12 +20,14 @@ class CreateProjectTextDraft {
   final String title;
   final String synopsis;
   final List<String> tagLabels;
+  final Color coverColor;
   final Color accentColor;
 
   const CreateProjectTextDraft({
     required this.title,
     required this.synopsis,
     required this.tagLabels,
+    required this.coverColor,
     required this.accentColor,
   });
 }
@@ -43,8 +46,11 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
   late final TextEditingController _newTagController;
+  late final ScrollController _contentScrollController;
+  late final ScrollController _synopsisScrollController;
   late List<ProjectTagData> _knownTags;
   final Set<String> _selectedTags = <String>{};
+  HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
 
   @override
@@ -53,6 +59,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _titleController = TextEditingController();
     _synopsisController = TextEditingController();
     _newTagController = TextEditingController();
+    _contentScrollController = ScrollController();
+    _synopsisScrollController = ScrollController();
     _knownTags = List<ProjectTagData>.from(widget.availableTags);
   }
 
@@ -61,6 +69,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _titleController.dispose();
     _synopsisController.dispose();
     _newTagController.dispose();
+    _contentScrollController.dispose();
+    _synopsisScrollController.dispose();
     super.dispose();
   }
 
@@ -121,6 +131,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         title: _titleController.text.trim(),
         synopsis: _synopsisController.text.trim(),
         tagLabels: selectedTagLabels,
+        coverColor: _coverColor.toColor(),
         accentColor: _accentColor.toColor(),
       ),
     );
@@ -134,7 +145,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 520),
+          constraints: BoxConstraints(
+            maxWidth: 500,
+            maxHeight: MediaQuery.sizeOf(context).height - 48,
+          ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -155,230 +169,293 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Novo projeto',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF2C262C),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                        color: const Color(0xFF544959),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Neste passo, o projeto pode ser criado com nome, sinopse, tags e cor de realce.',
-                    style: TextStyle(
-                      color: Color(0xFF6A6167),
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Nome do projeto *',
-                    style: TextStyle(
-                      color: Color(0xFF3A3339),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _titleController,
-                    textInputAction: TextInputAction.next,
-                    decoration: _buildInputDecoration(
-                      hintText: 'Ex.: Reino partido',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Informe um nome para o projeto.';
-                      }
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final viewportHeight = constraints.hasBoundedHeight
+                    ? constraints.maxHeight
+                    : MediaQuery.sizeOf(context).height - 96;
 
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Sinopse',
-                    style: TextStyle(
-                      color: Color(0xFF3A3339),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                return Form(
+                  key: _formKey,
+                  child: SynopsisScrollBox(
+                    controller: _contentScrollController,
+                    childIsScrollable: true,
+                    height: viewportHeight,
+                    contentPadding: const EdgeInsets.only(right: 10),
+                    child: SingleChildScrollView(
+                      controller: _contentScrollController,
+                      physics: const BouncingScrollPhysics(
+                        parent: ClampingScrollPhysics(),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Novo projeto',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF2C262C),
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.close_rounded),
+                                color: const Color(0xFF544959),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Nome, sinopse, tags e aparencia inicial do projeto.',
+                            style: TextStyle(
+                              color: Color(0xFF6A6167),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'Nome do projeto *',
+                            style: TextStyle(
+                              color: Color(0xFF3A3339),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _titleController,
+                            textInputAction: TextInputAction.next,
+                            decoration: _buildInputDecoration(
+                              hintText: 'Ex.: Reino partido',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Informe um nome para o projeto.';
+                              }
+
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Sinopse',
+                            style: TextStyle(
+                              color: Color(0xFF3A3339),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          EditableSynopsisPanel(
+                            controller: _synopsisController,
+                            scrollController: _synopsisScrollController,
+                            isEditing: true,
+                            placeholderText:
+                                'Opcional. Use este campo para resumir a historia.',
+                            textStyle: const TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xFF3A3339),
+                              height: 1.4,
+                            ),
+                            height: 72,
+                            panelPadding: const EdgeInsets.fromLTRB(
+                              12,
+                              10,
+                              12,
+                              10,
+                            ),
+                            scrollPadding: const EdgeInsets.only(right: 10),
+                            fillColor: Colors.white.withValues(alpha: 0.52),
+                            backgroundGradient: null,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                            viewerBuilder: (context, text, style) {
+                              return Text(text, style: style);
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Tags',
+                                  style: TextStyle(
+                                    color: Color(0xFF3A3339),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if (_knownTags.isEmpty)
+                            _InfoSurface(
+                              child: const Text(
+                                'Nenhuma tag cadastrada ainda. Crie a primeira abaixo se quiser.',
+                                style: TextStyle(
+                                  color: Color(0xFF6A6167),
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final tag in _knownTags)
+                                  _SelectableTagChip(
+                                    tag: tag,
+                                    isSelected: _selectedTags.contains(
+                                      tag.normalizedLabel,
+                                    ),
+                                    onTap: () => _toggleTag(tag),
+                                  ),
+                              ],
+                            ),
+                          const SizedBox(height: 10),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _newTagController,
+                                  textInputAction: TextInputAction.done,
+                                  decoration: _buildInputDecoration(
+                                    hintText: 'Adicionar tag',
+                                  ),
+                                  onFieldSubmitted: (_) => _addTagFromInput(),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                height: 44,
+                                child: FilledButton(
+                                  onPressed: _addTagFromInput,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFFDF6EB8),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                  ),
+                                  child: const Icon(Icons.add_rounded, size: 22),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          ProjectColorEditor(
+                            title: 'Cor da capa',
+                            description: 'Preenche o topo do cartao colapsado.',
+                            color: _coverColor.toColor(),
+                            hslColor: _coverColor,
+                            useSolidCoverPreview: true,
+                            onHueChanged: (value) {
+                              setState(() {
+                                _coverColor = _coverColor.withHue(value);
+                              });
+                            },
+                            onSaturationChanged: (value) {
+                              setState(() {
+                                _coverColor = _coverColor.withSaturation(value);
+                              });
+                            },
+                            onLightnessChanged: (value) {
+                              setState(() {
+                                _coverColor = _coverColor.withLightness(value);
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          ProjectColorEditor(
+                            title: 'Cor de realce',
+                            description: 'Aplica a base cromatica do cartao.',
+                            color: _accentColor.toColor(),
+                            hslColor: _accentColor,
+                            onHueChanged: (value) {
+                              setState(() {
+                                _accentColor = _accentColor.withHue(value);
+                              });
+                            },
+                            onSaturationChanged: (value) {
+                              setState(() {
+                                _accentColor = _accentColor.withSaturation(
+                                  value,
+                                );
+                              });
+                            },
+                            onLightnessChanged: (value) {
+                              setState(() {
+                                _accentColor = _accentColor.withLightness(
+                                  value,
+                                );
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF514752),
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text('Cancelar'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: _submit,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFFDF6EB8),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text('Criar projeto'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _synopsisController,
-                    minLines: 3,
-                    maxLines: 5,
-                    textInputAction: TextInputAction.newline,
-                    decoration: _buildInputDecoration(
-                      hintText:
-                          'Opcional. Use este campo para resumir a historia.',
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Tags',
-                          style: TextStyle(
-                            color: Color(0xFF3A3339),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'Selecione ou crie novas',
-                        style: TextStyle(
-                          color: const Color(
-                            0xFF6A6167,
-                          ).withValues(alpha: 0.86),
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  if (_knownTags.isEmpty)
-                    _InfoSurface(
-                      child: const Text(
-                        'Nenhuma tag cadastrada ainda. Crie a primeira abaixo se quiser.',
-                        style: TextStyle(
-                          color: Color(0xFF6A6167),
-                          fontSize: 12.5,
-                          height: 1.4,
-                        ),
-                      ),
-                    )
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final tag in _knownTags)
-                          _SelectableTagChip(
-                            tag: tag,
-                            isSelected: _selectedTags.contains(
-                              tag.normalizedLabel,
-                            ),
-                            onTap: () => _toggleTag(tag),
-                          ),
-                      ],
-                    ),
-                  const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _newTagController,
-                          textInputAction: TextInputAction.done,
-                          decoration: _buildInputDecoration(
-                            hintText: 'Adicionar tag',
-                          ),
-                          onFieldSubmitted: (_) => _addTagFromInput(),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        height: 48,
-                        child: FilledButton(
-                          onPressed: _addTagFromInput,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFDF6EB8),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                          ),
-                          child: const Icon(Icons.add_rounded, size: 22),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  ProjectColorEditor(
-                    title: 'Cor de realce',
-                    description:
-                        'Aplica a cor selecionada no cartao completo, mantendo o mesmo padrao visual.',
-                    color: _accentColor.toColor(),
-                    hslColor: _accentColor,
-                    onHueChanged: (value) {
-                      setState(() {
-                        _accentColor = _accentColor.withHue(value);
-                      });
-                    },
-                    onSaturationChanged: (value) {
-                      setState(() {
-                        _accentColor = _accentColor.withSaturation(value);
-                      });
-                    },
-                    onLightnessChanged: (value) {
-                      setState(() {
-                        _accentColor = _accentColor.withLightness(value);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 22),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF514752),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text('Cancelar'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: _submit,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFDF6EB8),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text('Criar projeto'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),

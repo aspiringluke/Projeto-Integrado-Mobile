@@ -4,11 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-typedef SynopsisViewerBuilder = Widget Function(
-  BuildContext context,
-  String text,
-  TextStyle style,
-);
+typedef SynopsisViewerBuilder =
+    Widget Function(BuildContext context, String text, TextStyle style);
 
 const String synopsisPlaceholderText =
     'Esse é o campo de síntese. Uma boa síntese encapsula o máximo de informações pertinentes quanto possível na menor quantidade de palavras que puder, criando uma imagem mental precisa de o que você está falando sobre. Fale tudo explicitamente importante e deixe tudo implicitamente importante inferível nas entrelinhas, na escolha cautelosa de palavras.';
@@ -94,6 +91,10 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
   @override
   Widget build(BuildContext context) {
     final scrollMetrics = _resolveMetrics();
+    final scrollBehavior = const _SynopsisNoScrollbarBehavior().copyWith(
+      scrollbars: false,
+      overscroll: false,
+    );
     final scrollableChild = NotificationListener<ScrollMetricsNotification>(
       onNotification: (_) {
         _refreshScrollbar();
@@ -105,12 +106,14 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
           return false;
         },
         child: ScrollConfiguration(
-          behavior: const _SynopsisNoScrollbarBehavior(),
+          behavior: scrollBehavior,
           child: widget.childIsScrollable
               ? widget.child
               : SingleChildScrollView(
                   controller: widget.controller,
-                  physics: const BouncingScrollPhysics(parent: ClampingScrollPhysics()),
+                  physics: const BouncingScrollPhysics(
+                    parent: ClampingScrollPhysics(),
+                  ),
                   child: Align(
                     alignment: Alignment.topLeft,
                     child: widget.child,
@@ -190,7 +193,11 @@ class _SynopsisNoScrollbarBehavior extends MaterialScrollBehavior {
   const _SynopsisNoScrollbarBehavior();
 
   @override
-  Widget buildScrollbar(BuildContext context, Widget child, ScrollableDetails details) {
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
     return child;
   }
 }
@@ -199,10 +206,7 @@ class _SynopsisScrollIndicator extends StatelessWidget {
   final double height;
   final _SynopsisScrollMetrics metrics;
 
-  const _SynopsisScrollIndicator({
-    required this.height,
-    required this.metrics,
-  });
+  const _SynopsisScrollIndicator({required this.height, required this.metrics});
 
   @override
   Widget build(BuildContext context) {
@@ -308,6 +312,7 @@ class EditableSynopsisPanel extends StatelessWidget {
             ? TextField(
                 controller: controller,
                 scrollController: scrollController,
+                scrollPhysics: const ClampingScrollPhysics(),
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
                 minLines: null,
@@ -322,10 +327,7 @@ class EditableSynopsisPanel extends StatelessWidget {
                 style: textStyle,
               )
             : isEmpty
-            ? Text(
-                placeholderText,
-                style: effectivePlaceholderStyle,
-              )
+            ? Text(placeholderText, style: effectivePlaceholderStyle)
             : viewerBuilder(context, controller.text, textStyle),
       ),
     );

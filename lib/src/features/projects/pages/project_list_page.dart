@@ -16,6 +16,7 @@ class ProjectListController extends ChangeNotifier {
     required String title,
     String synopsis = '',
     Iterable<String> tagLabels = const <String>[],
+    Color coverColor = defaultProjectCoverColor,
     Color accentColor = defaultProjectAccentColor,
   }) {
     final sanitizedTitle = title.trim();
@@ -29,6 +30,7 @@ class ProjectListController extends ChangeNotifier {
         title: sanitizedTitle,
         synopsis: synopsis.trim(),
         tags: resolvedTags,
+        coverColor: coverColor,
         accentColor: accentColor,
         unpinnedIndex: unpinnedCount,
       ),
@@ -193,6 +195,7 @@ class ProjectListPage extends StatelessWidget {
               title: project.title,
               synopsis: project.synopsis,
               tags: project.tags,
+              coverColor: project.coverColor,
               accentColor: project.accentColor,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
@@ -245,6 +248,7 @@ class _ProjectListItem {
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
+  final Color coverColor;
   final Color accentColor;
   bool isPinned = false;
   int unpinnedIndex;
@@ -253,6 +257,7 @@ class _ProjectListItem {
     required this.title,
     required this.synopsis,
     required this.tags,
+    required this.coverColor,
     required this.accentColor,
     required this.unpinnedIndex,
   });

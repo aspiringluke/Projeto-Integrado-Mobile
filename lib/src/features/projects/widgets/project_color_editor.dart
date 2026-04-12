@@ -5,6 +5,7 @@ class ProjectColorEditor extends StatelessWidget {
   final String description;
   final Color color;
   final HSLColor hslColor;
+  final bool useSolidCoverPreview;
   final ValueChanged<double> onHueChanged;
   final ValueChanged<double> onSaturationChanged;
   final ValueChanged<double> onLightnessChanged;
@@ -15,6 +16,7 @@ class ProjectColorEditor extends StatelessWidget {
     required this.description,
     required this.color,
     required this.hslColor,
+    this.useSolidCoverPreview = false,
     required this.onHueChanged,
     required this.onSaturationChanged,
     required this.onLightnessChanged,
@@ -38,20 +40,22 @@ class ProjectColorEditor extends StatelessWidget {
           description,
           style: const TextStyle(
             color: Color(0xFF6A6167),
-            fontSize: 12.5,
+            fontSize: 11.5,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Container(
-          height: 46,
+          height: 38,
           decoration: BoxDecoration(
-            gradient: _buildAccentPreviewGradient(color),
+            gradient: useSolidCoverPreview
+                ? _buildCoverPreviewGradient(color)
+                : _buildAccentPreviewGradient(color),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         _ColorSliderField(
           label: 'Matiz',
           value: hslColor.hue,
@@ -76,6 +80,22 @@ class ProjectColorEditor extends StatelessWidget {
       ],
     );
   }
+}
+
+LinearGradient _buildCoverPreviewGradient(Color coverColor) {
+  return LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Colors.white.withValues(alpha: 0.96),
+      Color.alphaBlend(
+        coverColor.withValues(alpha: 0.28),
+        const Color(0xFFF7F0F4),
+      ),
+      coverColor,
+    ],
+    stops: const [0.0, 0.56, 1.0],
+  );
 }
 
 class _ColorSliderField extends StatelessWidget {
@@ -104,14 +124,14 @@ class _ColorSliderField extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   color: Color(0xFF514752),
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
             Text(
               max == 1 ? value.toStringAsFixed(2) : value.toStringAsFixed(1),
-              style: const TextStyle(color: Color(0xFF7A7079), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF7A7079), fontSize: 11.5),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
+import 'project_cover_fill.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
 import '../../../shared/widgets/synopsis_scroll_box.dart';
@@ -14,6 +15,7 @@ class ProjectCard extends StatefulWidget {
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
+  final Color coverColor;
   final Color accentColor;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
@@ -23,6 +25,7 @@ class ProjectCard extends StatefulWidget {
     this.title = 'Projeto 1',
     this.synopsis = '',
     this.tags = const <ProjectTagData>[],
+    this.coverColor = defaultProjectCoverColor,
     this.accentColor = defaultProjectAccentColor,
     this.isPinned = false,
     this.onTogglePinned,
@@ -207,6 +210,7 @@ class _ProjectCardState extends State<ProjectCard>
                           children: [
                             _ProjectHeader(
                               title: widget.title,
+                              coverColor: widget.coverColor,
                               isExpanded: _isExpanded,
                               bottomRadius: bottomRadius,
                               onOpenProject: _openProject,
@@ -257,6 +261,7 @@ class _ProjectCardState extends State<ProjectCard>
 
 class _ProjectHeader extends StatelessWidget {
   final String title;
+  final Color coverColor;
   final bool isExpanded;
   final Radius bottomRadius;
   final VoidCallback onOpenProject;
@@ -264,6 +269,7 @@ class _ProjectHeader extends StatelessWidget {
 
   const _ProjectHeader({
     required this.title,
+    required this.coverColor,
     required this.isExpanded,
     required this.bottomRadius,
     required this.onOpenProject,
@@ -291,6 +297,15 @@ class _ProjectHeader extends StatelessWidget {
         height: 60,
         child: Stack(
           children: [
+            Positioned.fill(
+              child: ProjectCoverFill(
+                color: coverColor,
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(16),
+                  bottom: bottomRadius,
+                ),
+              ),
+            ),
             Positioned.fill(
               right: 52,
               child: Material(
