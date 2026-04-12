@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +20,10 @@ class ProjectListController extends ChangeNotifier {
     Iterable<ProjectTagData> tags = const <ProjectTagData>[],
     Color coverColor = defaultProjectCoverColor,
     Color accentColor = defaultProjectAccentColor,
+    Uint8List? coverImageBytes,
+    double coverImageScale = 1,
+    double coverImageOffsetX = 0,
+    double coverImageOffsetY = 0,
   }) {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) return;
@@ -34,6 +40,10 @@ class ProjectListController extends ChangeNotifier {
         tags: resolvedTags,
         coverColor: coverColor,
         accentColor: accentColor,
+        coverImageBytes: coverImageBytes,
+        coverImageScale: coverImageScale,
+        coverImageOffsetX: coverImageOffsetX,
+        coverImageOffsetY: coverImageOffsetY,
         createdAt: now,
         lastModified: now,
         lastAccessed: now,
@@ -202,6 +212,10 @@ class ProjectListPage extends StatelessWidget {
               tags: project.tags,
               coverColor: project.coverColor,
               accentColor: project.accentColor,
+              coverImageBytes: project.coverImageBytes,
+              coverImageScale: project.coverImageScale,
+              coverImageOffsetX: project.coverImageOffsetX,
+              coverImageOffsetY: project.coverImageOffsetY,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
               createdAt: project.createdAt,
@@ -266,6 +280,10 @@ class _ProjectListItem {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
+  final Uint8List? coverImageBytes;
+  final double coverImageScale;
+  final double coverImageOffsetX;
+  final double coverImageOffsetY;
   final DateTime createdAt;
   DateTime lastModified;
   DateTime lastAccessed;
@@ -278,6 +296,10 @@ class _ProjectListItem {
     required this.tags,
     required this.coverColor,
     required this.accentColor,
+    required this.coverImageBytes,
+    required this.coverImageScale,
+    required this.coverImageOffsetX,
+    required this.coverImageOffsetY,
     required this.createdAt,
     required this.lastModified,
     required this.lastAccessed,

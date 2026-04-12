@@ -1,8 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 
+import 'dart:typed_data';
+
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
+import '../utils/project_image_picker.dart';
+import 'project_image_transform_view.dart';
 import 'project_color_editor.dart';
 
 Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
@@ -22,6 +26,10 @@ class CreateProjectTextDraft {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
+  final Uint8List? coverImageBytes;
+  final double coverImageScale;
+  final double coverImageOffsetX;
+  final double coverImageOffsetY;
 
   const CreateProjectTextDraft({
     required this.title,
@@ -29,6 +37,10 @@ class CreateProjectTextDraft {
     required this.tags,
     required this.coverColor,
     required this.accentColor,
+    this.coverImageBytes,
+    this.coverImageScale = 1,
+    this.coverImageOffsetX = 0,
+    this.coverImageOffsetY = 0,
   });
 }
 
@@ -56,6 +68,11 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
   _ProjectColorTarget _activeColorTarget = _ProjectColorTarget.accent;
+  Uint8List? _coverImageBytes;
+  String? _coverImageName;
+  double _coverImageScale = 1;
+  double _coverImageOffsetX = 0;
+  double _coverImageOffsetY = 0;
 
   static const TextStyle _synopsisTextStyle = TextStyle(
     fontSize: 12,
@@ -171,8 +188,37 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         tags: selectedTags,
         coverColor: _coverColor.toColor(),
         accentColor: _accentColor.toColor(),
+        coverImageBytes: _coverImageBytes,
+        coverImageScale: _coverImageScale,
+        coverImageOffsetX: _coverImageOffsetX,
+        coverImageOffsetY: _coverImageOffsetY,
       ),
     );
+  }
+
+  Future<void> _pickCoverImage() async {
+    final result = await pickProjectImage();
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _coverImageBytes = result.bytes;
+      _coverImageName = result.name;
+      _coverImageScale = 1;
+      _coverImageOffsetX = 0;
+      _coverImageOffsetY = 0;
+    });
+  }
+
+  void _removeCoverImage() {
+    setState(() {
+      _coverImageBytes = null;
+      _coverImageName = null;
+      _coverImageScale = 1;
+      _coverImageOffsetX = 0;
+      _coverImageOffsetY = 0;
+    });
   }
 
   @override
@@ -536,6 +582,31 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               });
                             },
                           ),
+                          if (_activeColorTarget == _ProjectColorTarget.cover) ...[
+                            const SizedBox(height: 12),
+                            _CoverImagePickerCard(
+                              imageBytes: _coverImageBytes,
+                              imageName: _coverImageName,
+                              scale: _coverImageScale,
+                              offsetX: _coverImageOffsetX,
+                              offsetY: _coverImageOffsetY,
+                              onScaleChanged: (value) {
+                                setState(() {
+                                  _coverImageScale = value;
+                                });
+                              },
+                              onOffsetChanged: (dx, dy) {
+                                setState(() {
+                                  _coverImageOffsetX = dx.clamp(-1.0, 1.0);
+                                  _coverImageOffsetY = dy.clamp(-1.0, 1.0);
+                                });
+                              },
+                              onPick: _pickCoverImage,
+                              onRemove: _coverImageBytes == null
+                                  ? null
+                                  : _removeCoverImage,
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -617,6 +688,299 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       focusedErrorBorder: border.copyWith(
         borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),
       ),
+    );
+  }
+}
+
+class _CoverImagePickerCard extends StatelessWidget {
+  final Uint8List? imageBytes;
+  final String? imageName;
+  final double scale;
+  final double offsetX;
+  final double offsetY;
+  final ValueChanged<double> onScaleChanged;
+  final void Function(double offsetX, double offsetY) onOffsetChanged;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  const _CoverImagePickerCard({
+    required this.imageBytes,
+    required this.imageName,
+    required this.scale,
+    required this.offsetX,
+    required this.offsetY,
+    required this.onScaleChanged,
+    required this.onOffsetChanged,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.78)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Imagem da capa',
+            style: TextStyle(
+              color: Color(0xFF3A3339),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const _FieldDescription(
+            text:
+                'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
+          ),
+          const SizedBox(height: 8),
+          _CoverImageEditor(
+            imageBytes: imageBytes,
+            scale: scale,
+            offsetX: offsetX,
+            offsetY: offsetY,
+            onOffsetChanged: onOffsetChanged,
+          ),
+          if (imageName != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              imageName!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF6A6167),
+                fontSize: 11.5,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (imageBytes != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Text(
+                  'Zoom',
+                  style: TextStyle(
+                    color: Color(0xFF514752),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 8,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 8,
+                      ),
+                    ),
+                    child: Slider(
+                      value: scale,
+                      min: 1,
+                      max: 3,
+                      onChanged: onScaleChanged,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 36,
+                  child: Text(
+                    '${scale.toStringAsFixed(1)}x',
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      color: Color(0xFF7A7079),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onPick,
+                  icon: const Icon(Icons.upload_file_rounded, size: 18),
+                  label: Text(
+                    imageBytes == null ? 'Escolher imagem' : 'Trocar imagem',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF514752),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.82)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+              if (onRemove != null) ...[
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: onRemove,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF8B5668),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.82)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text('Remover'),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoverImageEditor extends StatelessWidget {
+  final Uint8List? imageBytes;
+  final double scale;
+  final double offsetX;
+  final double offsetY;
+  final void Function(double offsetX, double offsetY) onOffsetChanged;
+
+  const _CoverImageEditor({
+    required this.imageBytes,
+    required this.scale,
+    required this.offsetX,
+    required this.offsetY,
+    required this.onOffsetChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        const canvasHeight = 144.0;
+        const cropHeight = 74.0;
+        const cropHorizontalInset = 12.0;
+        final cropTop = (canvasHeight - cropHeight) / 2;
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            height: canvasHeight,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color(0xFFF4EDF2),
+                  Color(0xFFEAE2E8),
+                  Color(0xFFFFFFFF),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.82)),
+            ),
+            child: imageBytes == null
+                ? Center(
+                    child: Text(
+                      'Nenhuma imagem selecionada',
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  )
+                : GestureDetector(
+                    onPanUpdate: (details) {
+                      final dx = offsetX + (details.delta.dx / width) * 2;
+                      final dy = offsetY + (details.delta.dy / cropHeight) * 2;
+                      onOffsetChanged(dx, dy);
+                    },
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ProjectImageTransformView(
+                          imageBytes: imageBytes!,
+                          scale: scale,
+                          offsetX: offsetX,
+                          offsetY: offsetY,
+                          clipImage: false,
+                        ),
+                        IgnorePointer(
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                top: 0,
+                                height: cropTop,
+                                child: _EditorShade(),
+                              ),
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                height: cropTop,
+                                child: _EditorShade(),
+                              ),
+                              Positioned(
+                                left: cropHorizontalInset,
+                                right: cropHorizontalInset,
+                                top: cropTop,
+                                height: cropHeight,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.92),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                left: 0,
+                                top: cropTop,
+                                bottom: cropTop,
+                                width: cropHorizontalInset,
+                                child: const _EditorShade(),
+                              ),
+                              Positioned(
+                                right: 0,
+                                top: cropTop,
+                                bottom: cropTop,
+                                width: cropHorizontalInset,
+                                child: const _EditorShade(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EditorShade extends StatelessWidget {
+  const _EditorShade();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white.withValues(alpha: 0.34),
     );
   }
 }

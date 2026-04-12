@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -19,6 +20,10 @@ class ProjectCard extends StatefulWidget {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
+  final Uint8List? coverImageBytes;
+  final double coverImageScale;
+  final double coverImageOffsetX;
+  final double coverImageOffsetY;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
   final DateTime createdAt;
@@ -34,6 +39,10 @@ class ProjectCard extends StatefulWidget {
     this.tags = const <ProjectTagData>[],
     this.coverColor = defaultProjectCoverColor,
     this.accentColor = defaultProjectAccentColor,
+    this.coverImageBytes,
+    this.coverImageScale = 1,
+    this.coverImageOffsetX = 0,
+    this.coverImageOffsetY = 0,
     this.isPinned = false,
     this.onTogglePinned,
     required this.createdAt,
@@ -234,6 +243,10 @@ class _ProjectCardState extends State<ProjectCard>
                             _ProjectHeader(
                               title: widget.title,
                               coverColor: widget.coverColor,
+                              coverImageBytes: widget.coverImageBytes,
+                              coverImageScale: widget.coverImageScale,
+                              coverImageOffsetX: widget.coverImageOffsetX,
+                              coverImageOffsetY: widget.coverImageOffsetY,
                               isExpanded: _isExpanded,
                               bottomRadius: bottomRadius,
                               onOpenProject: _openProject,
@@ -286,6 +299,10 @@ class _ProjectCardState extends State<ProjectCard>
 class _ProjectHeader extends StatelessWidget {
   final String title;
   final Color coverColor;
+  final Uint8List? coverImageBytes;
+  final double coverImageScale;
+  final double coverImageOffsetX;
+  final double coverImageOffsetY;
   final bool isExpanded;
   final Radius bottomRadius;
   final VoidCallback onOpenProject;
@@ -294,6 +311,10 @@ class _ProjectHeader extends StatelessWidget {
   const _ProjectHeader({
     required this.title,
     required this.coverColor,
+    required this.coverImageBytes,
+    required this.coverImageScale,
+    required this.coverImageOffsetX,
+    required this.coverImageOffsetY,
     required this.isExpanded,
     required this.bottomRadius,
     required this.onOpenProject,
@@ -324,6 +345,10 @@ class _ProjectHeader extends StatelessWidget {
             Positioned.fill(
               child: ProjectCoverFill(
                 color: coverColor,
+                imageBytes: coverImageBytes,
+                imageScale: coverImageScale,
+                imageOffsetX: coverImageOffsetX,
+                imageOffsetY: coverImageOffsetY,
                 borderRadius: BorderRadius.vertical(
                   top: const Radius.circular(16),
                   bottom: bottomRadius,
