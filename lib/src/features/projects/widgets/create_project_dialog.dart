@@ -19,14 +19,14 @@ Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
 class CreateProjectTextDraft {
   final String title;
   final String synopsis;
-  final List<String> tagLabels;
+  final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
 
   const CreateProjectTextDraft({
     required this.title,
     required this.synopsis,
-    required this.tagLabels,
+    required this.tags,
     required this.coverColor,
     required this.accentColor,
   });
@@ -41,6 +41,8 @@ class _CreateProjectDialog extends StatefulWidget {
   State<_CreateProjectDialog> createState() => _CreateProjectDialogState();
 }
 
+enum _ProjectColorTarget { cover, accent }
+
 class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
@@ -50,8 +52,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   late final ScrollController _synopsisScrollController;
   late List<ProjectTagData> _knownTags;
   final Set<String> _selectedTags = <String>{};
+  late Color _newTagColor;
   HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
+  _ProjectColorTarget _activeColorTarget = _ProjectColorTarget.accent;
+
+  Color get _defaultNewTagColor => projectTagColorAt(_knownTags.length);
 
   @override
   void initState() {
@@ -62,6 +68,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
     _knownTags = List<ProjectTagData>.from(widget.availableTags);
+    _newTagColor = _defaultNewTagColor;
   }
 
   @override
@@ -101,7 +108,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       } else {
         final newTag = ProjectTagData(
           label: sanitizedLabel,
-          color: projectTagColorAt(_knownTags.length),
+          color: _newTagColor,
         );
 
         _knownTags = <ProjectTagData>[..._knownTags, newTag];
@@ -109,6 +116,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       }
 
       _newTagController.clear();
+      _newTagColor = _defaultNewTagColor;
     });
   }
 
@@ -121,16 +129,15 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       return;
     }
 
-    final selectedTagLabels = _knownTags
+    final selectedTags = _knownTags
         .where((tag) => _selectedTags.contains(tag.normalizedLabel))
-        .map((tag) => tag.label)
         .toList(growable: false);
 
     Navigator.of(context).pop(
       CreateProjectTextDraft(
         title: _titleController.text.trim(),
         synopsis: _synopsisController.text.trim(),
-        tagLabels: selectedTagLabels,
+        tags: selectedTags,
         coverColor: _coverColor.toColor(),
         accentColor: _accentColor.toColor(),
       ),
@@ -141,12 +148,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: 500,
+            maxWidth: 470,
             maxHeight: MediaQuery.sizeOf(context).height - 48,
           ),
           decoration: BoxDecoration(
@@ -155,8 +162,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
               end: Alignment.bottomRight,
               colors: [
                 Colors.white.withValues(alpha: 0.98),
-                const Color(0xFFF7EBF2).withValues(alpha: 0.96),
-                const Color(0xFFF0D9E7).withValues(alpha: 0.92),
+                const Color(0xFFF9EEF4).withValues(alpha: 0.97),
+                const Color(0xFFF1DCE8).withValues(alpha: 0.93),
               ],
             ),
             border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
@@ -169,7 +176,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final viewportHeight = constraints.hasBoundedHeight
@@ -182,7 +189,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                     controller: _contentScrollController,
                     childIsScrollable: true,
                     height: viewportHeight,
-                    contentPadding: const EdgeInsets.only(right: 10),
+                    contentPadding: const EdgeInsets.only(right: 8),
                     child: SingleChildScrollView(
                       controller: _contentScrollController,
                       physics: const BouncingScrollPhysics(
@@ -198,7 +205,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 child: Text(
                                   'Novo projeto',
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: 19,
                                     fontWeight: FontWeight.w800,
                                     color: Color(0xFF2C262C),
                                   ),
@@ -213,28 +220,28 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Nome, sinopse, tags e aparencia inicial do projeto.',
+                            'Base rapida, tags e identidade visual.',
                             style: TextStyle(
                               color: Color(0xFF6A6167),
-                              fontSize: 12,
-                              height: 1.4,
+                              fontSize: 11.5,
+                              height: 1.3,
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
                           const Text(
                             'Nome do projeto *',
                             style: TextStyle(
                               color: Color(0xFF3A3339),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           TextFormField(
                             controller: _titleController,
                             textInputAction: TextInputAction.next,
                             decoration: _buildInputDecoration(
-                              hintText: 'Ex.: Reino partido',
+                              hintText: 'Nome do projeto',
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -249,8 +256,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             'Sinopse',
                             style: TextStyle(
                               color: Color(0xFF3A3339),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -259,41 +266,52 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             scrollController: _synopsisScrollController,
                             isEditing: true,
                             placeholderText:
-                                'Opcional. Use este campo para resumir a historia.',
+                                'Sintese opcional para resumir a historia.',
                             textStyle: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
                               color: Color(0xFF3A3339),
-                              height: 1.4,
+                              height: 1.35,
                             ),
-                            height: 72,
+                            height: 66,
                             panelPadding: const EdgeInsets.fromLTRB(
                               12,
-                              10,
+                              9,
                               12,
-                              10,
+                              9,
                             ),
-                            scrollPadding: const EdgeInsets.only(right: 10),
-                            fillColor: Colors.white.withValues(alpha: 0.52),
+                            scrollPadding: const EdgeInsets.only(right: 8),
+                            fillColor: Colors.white.withValues(alpha: 0.56),
                             backgroundGradient: null,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: Colors.white.withValues(alpha: 0.74),
                             ),
                             viewerBuilder: (context, text, style) {
                               return Text(text, style: style);
                             },
                           ),
                           const SizedBox(height: 14),
-                          Row(
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Expanded(
-                                child: Text(
-                                  'Tags',
-                                  style: TextStyle(
-                                    color: Color(0xFF3A3339),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
+                              const Text(
+                                'Tags',
+                                style: TextStyle(
+                                  color: Color(0xFF3A3339),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                'nova cor opcional',
+                                style: TextStyle(
+                                  color: const Color(0xFF6A6167).withValues(
+                                    alpha: 0.88,
                                   ),
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                             ],
@@ -302,11 +320,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           if (_knownTags.isEmpty)
                             _InfoSurface(
                               child: const Text(
-                                'Nenhuma tag cadastrada ainda. Crie a primeira abaixo se quiser.',
+                                'Nenhuma tag cadastrada ainda.',
                                 style: TextStyle(
                                   color: Color(0xFF6A6167),
                                   fontSize: 12,
-                                  height: 1.4,
                                 ),
                               ),
                             )
@@ -334,12 +351,13 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   controller: _newTagController,
                                   textInputAction: TextInputAction.done,
                                   decoration: _buildInputDecoration(
-                                    hintText: 'Adicionar tag',
+                                    hintText: 'Nova tag',
                                   ),
+                                  onChanged: (_) => setState(() {}),
                                   onFieldSubmitted: (_) => _addTagFromInput(),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               SizedBox(
                                 height: 44,
                                 child: FilledButton(
@@ -348,67 +366,133 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                     backgroundColor: const Color(0xFFDF6EB8),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
+                                      horizontal: 14,
                                     ),
                                   ),
-                                  child: const Icon(Icons.add_rounded, size: 22),
+                                  child: const Icon(Icons.add_rounded, size: 20),
                                 ),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              _DraftTagPreview(
+                                label: _newTagController.text.trim().isEmpty
+                                    ? 'Nova tag'
+                                    : sanitizeProjectTagLabel(
+                                        _newTagController.text,
+                                      ),
+                                color: _newTagColor,
+                              ),
+                              for (final color in projectTagPalette)
+                                _TagColorSwatch(
+                                  color: color,
+                                  isSelected: color == _newTagColor,
+                                  onTap: () {
+                                    setState(() {
+                                      _newTagColor = color;
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _ColorTargetChip(
+                                  label: 'Capa',
+                                  color: _coverColor.toColor(),
+                                  isSelected:
+                                      _activeColorTarget ==
+                                      _ProjectColorTarget.cover,
+                                  onTap: () {
+                                    setState(() {
+                                      _activeColorTarget =
+                                          _ProjectColorTarget.cover;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _ColorTargetChip(
+                                  label: 'Realce',
+                                  color: _accentColor.toColor(),
+                                  isSelected:
+                                      _activeColorTarget ==
+                                      _ProjectColorTarget.accent,
+                                  onTap: () {
+                                    setState(() {
+                                      _activeColorTarget =
+                                          _ProjectColorTarget.accent;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
                           ProjectColorEditor(
-                            title: 'Cor da capa',
-                            description: 'Preenche o topo do cartao colapsado.',
-                            color: _coverColor.toColor(),
-                            hslColor: _coverColor,
-                            useSolidCoverPreview: true,
+                            title: _activeColorTarget == _ProjectColorTarget.cover
+                                ? 'Cor da capa'
+                                : 'Cor de realce',
+                            description:
+                                _activeColorTarget == _ProjectColorTarget.cover
+                                ? 'Preenche o topo do cartao.'
+                                : 'Aplica a base cromatica do cartao.',
+                            color: _activeColorTarget == _ProjectColorTarget.cover
+                                ? _coverColor.toColor()
+                                : _accentColor.toColor(),
+                            hslColor:
+                                _activeColorTarget == _ProjectColorTarget.cover
+                                ? _coverColor
+                                : _accentColor,
+                            useSolidCoverPreview:
+                                _activeColorTarget == _ProjectColorTarget.cover,
                             onHueChanged: (value) {
                               setState(() {
-                                _coverColor = _coverColor.withHue(value);
+                                if (_activeColorTarget ==
+                                    _ProjectColorTarget.cover) {
+                                  _coverColor = _coverColor.withHue(value);
+                                } else {
+                                  _accentColor = _accentColor.withHue(value);
+                                }
                               });
                             },
                             onSaturationChanged: (value) {
                               setState(() {
-                                _coverColor = _coverColor.withSaturation(value);
+                                if (_activeColorTarget ==
+                                    _ProjectColorTarget.cover) {
+                                  _coverColor = _coverColor.withSaturation(value);
+                                } else {
+                                  _accentColor = _accentColor.withSaturation(
+                                    value,
+                                  );
+                                }
                               });
                             },
                             onLightnessChanged: (value) {
                               setState(() {
-                                _coverColor = _coverColor.withLightness(value);
+                                if (_activeColorTarget ==
+                                    _ProjectColorTarget.cover) {
+                                  _coverColor = _coverColor.withLightness(value);
+                                } else {
+                                  _accentColor = _accentColor.withLightness(
+                                    value,
+                                  );
+                                }
                               });
                             },
                           ),
                           const SizedBox(height: 14),
-                          ProjectColorEditor(
-                            title: 'Cor de realce',
-                            description: 'Aplica a base cromatica do cartao.',
-                            color: _accentColor.toColor(),
-                            hslColor: _accentColor,
-                            onHueChanged: (value) {
-                              setState(() {
-                                _accentColor = _accentColor.withHue(value);
-                              });
-                            },
-                            onSaturationChanged: (value) {
-                              setState(() {
-                                _accentColor = _accentColor.withSaturation(
-                                  value,
-                                );
-                              });
-                            },
-                            onLightnessChanged: (value) {
-                              setState(() {
-                                _accentColor = _accentColor.withLightness(
-                                  value,
-                                );
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 18),
                           Row(
                             children: [
                               Expanded(
@@ -418,11 +502,11 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                     foregroundColor: const Color(0xFF514752),
                                     side: BorderSide(
                                       color: Colors.white.withValues(
-                                        alpha: 0.8,
+                                        alpha: 0.82,
                                       ),
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
+                                      vertical: 13,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
@@ -431,7 +515,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   child: const Text('Cancelar'),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: FilledButton(
                                   onPressed: _submit,
@@ -439,7 +523,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                     backgroundColor: const Color(0xFFDF6EB8),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
+                                      vertical: 13,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
@@ -471,10 +555,11 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Color(0xFF8E838B), fontSize: 13),
+      hintStyle: const TextStyle(color: Color(0xFF8E838B), fontSize: 12.5),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.52),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      fillColor: Colors.white.withValues(alpha: 0.56),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       enabledBorder: border,
       focusedBorder: border.copyWith(
         borderSide: const BorderSide(color: Color(0xFFDF6EB8), width: 1.1),
@@ -498,13 +583,187 @@ class _InfoSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.36),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.56)),
       ),
       child: child,
+    );
+  }
+}
+
+class _DraftTagPreview extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _DraftTagPreview({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : double.infinity;
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: color.withValues(alpha: 0.92)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: TextStyle(
+                      color: color.withValues(alpha: 0.98),
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TagColorSwatch extends StatelessWidget {
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TagColorSwatch({
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF2C262C)
+                  : Colors.white.withValues(alpha: 0.88),
+              width: isSelected ? 2.0 : 1.15,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: isSelected ? 0.34 : 0.16),
+                blurRadius: isSelected ? 10 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: isSelected
+              ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorTargetChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ColorTargetChip({
+    required this.label,
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? color.withValues(alpha: 0.14)
+                : Colors.white.withValues(alpha: 0.34),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                  ? color.withValues(alpha: 0.92)
+                  : Colors.white.withValues(alpha: 0.72),
+              width: isSelected ? 1.1 : 0.9,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: const Color(0xFF3A3339).withValues(
+                      alpha: isSelected ? 1 : 0.72,
+                    ),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -522,45 +781,61 @@ class _SelectableTagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? tag.color.withValues(alpha: 0.16)
-                : Colors.white.withValues(alpha: 0.24),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: tag.color.withValues(alpha: isSelected ? 0.98 : 0.78),
-              width: isSelected ? 1.2 : 1.0,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSelected) ...[
-                Icon(Icons.check_rounded, size: 15, color: tag.color),
-                const SizedBox(width: 4),
-              ],
-              Text(
-                tag.label,
-                style: TextStyle(
-                  color: tag.color.withValues(alpha: 0.98),
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w600,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : double.infinity;
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? tag.color.withValues(alpha: 0.16)
+                      : Colors.white.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: tag.color.withValues(alpha: isSelected ? 0.98 : 0.78),
+                    width: isSelected ? 1.2 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isSelected) ...[
+                      Icon(Icons.check_rounded, size: 15, color: tag.color),
+                      const SizedBox(width: 4),
+                    ],
+                    Flexible(
+                      child: Text(
+                        tag.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: TextStyle(
+                          color: tag.color.withValues(alpha: 0.98),
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

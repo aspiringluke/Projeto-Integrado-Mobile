@@ -15,7 +15,7 @@ class ProjectListController extends ChangeNotifier {
   void addProject({
     required String title,
     String synopsis = '',
-    Iterable<String> tagLabels = const <String>[],
+    Iterable<ProjectTagData> tags = const <ProjectTagData>[],
     Color coverColor = defaultProjectCoverColor,
     Color accentColor = defaultProjectAccentColor,
   }) {
@@ -23,7 +23,7 @@ class ProjectListController extends ChangeNotifier {
     if (sanitizedTitle.isEmpty) return;
 
     final unpinnedCount = _projects.where((item) => !item.isPinned).length;
-    final resolvedTags = _resolveTags(tagLabels);
+    final resolvedTags = _resolveTags(tags);
 
     _projects.add(
       _ProjectListItem(
@@ -39,13 +39,13 @@ class ProjectListController extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<ProjectTagData> _resolveTags(Iterable<String> tagLabels) {
+  List<ProjectTagData> _resolveTags(Iterable<ProjectTagData> tags) {
     final resolvedTags = <ProjectTagData>[];
     final seenLabels = <String>{};
 
-    for (final rawLabel in tagLabels) {
-      final sanitizedLabel = sanitizeProjectTagLabel(rawLabel);
-      final normalizedLabel = normalizeProjectTagLabel(rawLabel);
+    for (final tag in tags) {
+      final sanitizedLabel = sanitizeProjectTagLabel(tag.label);
+      final normalizedLabel = normalizeProjectTagLabel(tag.label);
 
       if (normalizedLabel.isEmpty || !seenLabels.add(normalizedLabel)) {
         continue;
@@ -62,7 +62,7 @@ class ProjectListController extends ChangeNotifier {
 
       final newTag = ProjectTagData(
         label: sanitizedLabel,
-        color: projectTagColorAt(_availableTags.length),
+        color: tag.color,
       );
 
       _availableTags.add(newTag);

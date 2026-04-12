@@ -57,7 +57,7 @@ class _ShellPageState extends State<ShellPage> {
     _projectListController.addProject(
       title: draft.title,
       synopsis: draft.synopsis,
-      tagLabels: draft.tagLabels,
+      tags: draft.tags,
       coverColor: draft.coverColor,
       accentColor: draft.accentColor,
     );
