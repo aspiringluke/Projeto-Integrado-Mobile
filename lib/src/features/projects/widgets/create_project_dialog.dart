@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../models/project_style_defaults.dart';
@@ -57,6 +57,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
   _ProjectColorTarget _activeColorTarget = _ProjectColorTarget.accent;
 
+  static const TextStyle _synopsisTextStyle = TextStyle(
+    fontSize: 12,
+    color: Color(0xFF3A3339),
+    height: 1.35,
+  );
+
   Color get _defaultNewTagColor => projectTagColorAt(_knownTags.length);
 
   @override
@@ -64,6 +70,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     super.initState();
     _titleController = TextEditingController();
     _synopsisController = TextEditingController();
+    _synopsisController.addListener(_onSynopsisTextChanged);
     _newTagController = TextEditingController();
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
@@ -73,12 +80,36 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 
   @override
   void dispose() {
+    _synopsisController.removeListener(_onSynopsisTextChanged);
     _titleController.dispose();
     _synopsisController.dispose();
     _newTagController.dispose();
     _contentScrollController.dispose();
     _synopsisScrollController.dispose();
     super.dispose();
+  }
+
+  void _onSynopsisTextChanged() {
+    setState(() {});
+  }
+
+  double _calculateSynopsisHeight(double maxWidth) {
+    final text = _synopsisController.text.trim().isEmpty
+        ? synopsisPlaceholderText
+        : _synopsisController.text;
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: _synopsisTextStyle),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.left,
+      maxLines: null,
+    );
+
+    textPainter.layout(maxWidth: maxWidth - 16);
+    const verticalPadding = 16.0;
+    final estimatedHeight = textPainter.size.height + verticalPadding;
+
+    return estimatedHeight.clamp(92.0, 220.0);
   }
 
   void _toggleTag(ProjectTagData tag) {
@@ -148,7 +179,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: const EdgeInsets.fromLTRB(24, 34, 24, 26),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: Container(
@@ -176,7 +207,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final viewportHeight = constraints.hasBoundedHeight
@@ -219,15 +250,19 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          const Text(
-                            'Base rapida, tags e identidade visual.',
-                            style: TextStyle(
-                              color: Color(0xFF6A6167),
-                              fontSize: 11.5,
-                              height: 1.3,
+                          Container(
+                            height: 1,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.94),
+                                  const Color(0xFFDFC7D6).withValues(alpha: 0.82),
+                                  Colors.white.withValues(alpha: 0.28),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           const Text(
                             'Nome do projeto *',
                             style: TextStyle(
@@ -251,9 +286,9 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           const Text(
-                            'Sinopse',
+                            'Síntese',
                             style: TextStyle(
                               color: Color(0xFF3A3339),
                               fontSize: 12.5,
@@ -261,40 +296,39 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          EditableSynopsisPanel(
-                            controller: _synopsisController,
-                            scrollController: _synopsisScrollController,
-                            isEditing: true,
-                            placeholderText:
-                                'Sintese opcional para resumir a historia.',
-                            textStyle: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF3A3339),
-                              height: 1.35,
-                            ),
-                            height: 66,
-                            panelPadding: const EdgeInsets.fromLTRB(
-                              12,
-                              9,
-                              12,
-                              9,
-                            ),
-                            scrollPadding: const EdgeInsets.only(right: 8),
-                            fillColor: Colors.white.withValues(alpha: 0.56),
-                            backgroundGradient: null,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.74),
-                            ),
-                            viewerBuilder: (context, text, style) {
-                              return Text(text, style: style);
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return EditableSynopsisPanel(
+                                controller: _synopsisController,
+                                scrollController: _synopsisScrollController,
+                                isEditing: true,
+                                placeholderText: synopsisPlaceholderText,
+                                textStyle: _synopsisTextStyle,
+                                height: _calculateSynopsisHeight(
+                                  constraints.maxWidth,
+                                ),
+                                panelPadding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  8,
+                                  12,
+                                  8,
+                                ),
+                                scrollPadding: const EdgeInsets.only(right: 8),
+                                fillColor: Colors.white.withValues(alpha: 0.56),
+                                backgroundGradient: null,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.74),
+                                ),
+                                viewerBuilder: (context, text, style) {
+                                  return Text(text, style: style);
+                                },
+                              );
                             },
                           ),
-                          const SizedBox(height: 14),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            crossAxisAlignment: WrapCrossAlignment.center,
+                          const SizedBox(height: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
                                 'Tags',
@@ -304,15 +338,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              Text(
-                                'nova cor opcional',
-                                style: TextStyle(
-                                  color: const Color(0xFF6A6167).withValues(
-                                    alpha: 0.88,
-                                  ),
-                                  fontSize: 11,
-                                  fontStyle: FontStyle.italic,
-                                ),
+                              const SizedBox(height: 5),
+                              const _FieldDescription(
+                                text:
+                                    'Clique em "+" para cadastrar uma tag no banco de dados. Crie, digite o nome de uma já existente ou toque nas recentes para associá-las ao projeto.',
                               ),
                             ],
                           ),
@@ -342,7 +371,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   ),
                               ],
                             ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -377,7 +406,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -403,13 +432,19 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
                           Row(
                             children: [
                               Expanded(
                                 child: _ColorTargetChip(
                                   label: 'Capa',
                                   color: _coverColor.toColor(),
+                                  gradient: _buildDialogCoverPreviewGradient(
+                                    _coverColor.toColor(),
+                                  ),
+                                  swatchGradient: _buildDialogCoverPreviewGradient(
+                                    _coverColor.toColor(),
+                                  ),
                                   isSelected:
                                       _activeColorTarget ==
                                       _ProjectColorTarget.cover,
@@ -426,6 +461,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 child: _ColorTargetChip(
                                   label: 'Realce',
                                   color: _accentColor.toColor(),
+                                  gradient: _buildDialogAccentPreviewGradient(
+                                    _accentColor.toColor(),
+                                  ),
+                                  swatchGradient: _buildDialogAccentPreviewGradient(
+                                    _accentColor.toColor(),
+                                  ),
                                   isSelected:
                                       _activeColorTarget ==
                                       _ProjectColorTarget.accent,
@@ -439,15 +480,15 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           ProjectColorEditor(
                             title: _activeColorTarget == _ProjectColorTarget.cover
                                 ? 'Cor da capa'
                                 : 'Cor de realce',
                             description:
                                 _activeColorTarget == _ProjectColorTarget.cover
-                                ? 'Preenche o topo do cartao.'
-                                : 'Aplica a base cromatica do cartao.',
+                                ? 'Preenche o topo do cartão.'
+                                : 'Aplica a base cromática do cartão.',
                             color: _activeColorTarget == _ProjectColorTarget.cover
                                 ? _coverColor.toColor()
                                 : _accentColor.toColor(),
@@ -492,7 +533,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               });
                             },
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -515,7 +556,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   child: const Text('Cancelar'),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: FilledButton(
                                   onPressed: _submit,
@@ -652,6 +693,41 @@ class _DraftTagPreview extends StatelessWidget {
   }
 }
 
+class _FieldDescription extends StatelessWidget {
+  final String text;
+
+  const _FieldDescription({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 2,
+          height: 20,
+          decoration: BoxDecoration(
+            color: const Color(0xFFBFB8BD).withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFF6A6167),
+              fontSize: 11.25,
+              height: 1.3,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _TagColorSwatch extends StatelessWidget {
   final Color color;
   final bool isSelected;
@@ -701,15 +777,59 @@ class _TagColorSwatch extends StatelessWidget {
   }
 }
 
+LinearGradient _buildDialogCoverPreviewGradient(Color coverColor) {
+  return LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Colors.white.withValues(alpha: 0.95),
+      Color.alphaBlend(
+        coverColor.withValues(alpha: 0.24),
+        const Color(0xFFF8F1F5),
+      ),
+      coverColor,
+    ],
+    stops: const [0.0, 0.54, 1.0],
+  );
+}
+
+LinearGradient _buildDialogAccentPreviewGradient(Color accentColor) {
+  final hsl = HSLColor.fromColor(accentColor);
+  final lighter = hsl
+      .withLightness((hsl.lightness + 0.18).clamp(0.0, 1.0))
+      .toColor();
+
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color.alphaBlend(
+        lighter.withValues(alpha: 0.18),
+        Colors.white.withValues(alpha: 0.84),
+      ),
+      Colors.white.withValues(alpha: 0.78),
+      Color.alphaBlend(
+        accentColor.withValues(alpha: 0.22),
+        const Color(0xFFF9F1F5),
+      ),
+    ],
+    stops: const [0.0, 0.52, 1.0],
+  );
+}
+
 class _ColorTargetChip extends StatelessWidget {
   final String label;
   final Color color;
+  final Gradient gradient;
+  final Gradient swatchGradient;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _ColorTargetChip({
     required this.label,
     required this.color,
+    required this.gradient,
+    required this.swatchGradient,
     required this.isSelected,
     required this.onTap,
   });
@@ -724,11 +844,20 @@ class _ColorTargetChip extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(alpha: 0.14)
-                : Colors.white.withValues(alpha: 0.34),
+            color: isSelected ? null : Colors.white.withValues(alpha: 0.34),
+            gradient: isSelected ? gradient : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.16),
+                      blurRadius: 18,
+                      spreadRadius: 0.2,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected
@@ -737,28 +866,52 @@ class _ColorTargetChip extends StatelessWidget {
               width: isSelected ? 1.1 : 0.9,
             ),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 12,
-                height: 12,
+                height: 16,
                 decoration: BoxDecoration(
-                  color: color,
+                  gradient: gradient,
                   borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: const Color(0xFF3A3339).withValues(
-                      alpha: isSelected ? 1 : 0.72,
-                    ),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    width: 0.8,
                   ),
                 ),
+              ),
+              const SizedBox(height: 7),
+              Row(
+                children: [
+                  Container(
+                    width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  gradient: swatchGradient,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    width: 0.8,
+                  ),
+                ),
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Color.alphaBlend(
+                          color.withValues(alpha: isSelected ? 0.74 : 0.5),
+                          const Color(0xFF2C262C),
+                        ),
+                        fontSize: 12.25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -839,3 +992,6 @@ class _SelectableTagChip extends StatelessWidget {
     );
   }
 }
+
+
+

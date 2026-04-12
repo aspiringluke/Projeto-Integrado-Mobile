@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class ProjectColorEditor extends StatelessWidget {
   final String title;
@@ -35,18 +35,11 @@ class ProjectColorEditor extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+        const SizedBox(height: 5),
+        _EditorDescription(text: description),
         const SizedBox(height: 6),
-        Text(
-          description,
-          style: const TextStyle(
-            color: Color(0xFF6A6167),
-            fontSize: 11.5,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 8),
         Container(
-          height: 38,
+          height: 34,
           decoration: BoxDecoration(
             gradient: useSolidCoverPreview
                 ? _buildCoverPreviewGradient(color)
@@ -65,7 +58,7 @@ class ProjectColorEditor extends StatelessWidget {
           onChanged: onHueChanged,
         ),
         _ColorSliderField(
-          label: 'Saturacao',
+          label: 'Saturação',
           value: hslColor.saturation,
           min: 0,
           max: 1,
@@ -152,11 +145,46 @@ LinearGradient _buildSaturationGradient(HSLColor color) {
 LinearGradient _buildLightnessGradient(HSLColor color) {
   return LinearGradient(
     colors: [
-      Colors.white,
-      color.withLightness(0.5).toColor(),
       Colors.black,
+      color.withLightness(0.5).toColor(),
+      Colors.white,
     ],
   );
+}
+
+class _EditorDescription extends StatelessWidget {
+  final String text;
+
+  const _EditorDescription({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 2,
+          height: 18,
+          decoration: BoxDecoration(
+            color: const Color(0xFFBFB8BD).withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFF6A6167),
+              fontSize: 11.25,
+              height: 1.3,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _ColorSliderField extends StatelessWidget {
@@ -200,9 +228,9 @@ class _ColorSliderField extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         SizedBox(
-          height: 30,
+          height: 27,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -211,7 +239,7 @@ class _ColorSliderField extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: thumbRadius),
                   child: Center(
                     child: Container(
-                      height: 10,
+                      height: 9,
                       decoration: BoxDecoration(
                         gradient: gradient,
                         borderRadius: BorderRadius.circular(999),

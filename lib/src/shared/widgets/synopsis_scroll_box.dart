@@ -8,7 +8,7 @@ typedef SynopsisViewerBuilder =
     Widget Function(BuildContext context, String text, TextStyle style);
 
 const String synopsisPlaceholderText =
-    'Esse é o campo de síntese. Uma boa síntese encapsula o máximo de informações pertinentes quanto possível na menor quantidade de palavras que puder, criando uma imagem mental precisa de o que você está falando sobre. Fale tudo explicitamente importante e deixe tudo implicitamente importante inferível nas entrelinhas, na escolha cautelosa de palavras.';
+    'Esse é o campo de síntese. Uma boa síntese encapsula o máximo de informações pertinentes quanto possível na menor quantidade de palavras que puder, criando uma imagem mental precisa de o que você está falando sobre. Fale tudo explicitamente importante e deixe tudo implicitamente importante inferível nas entrelinhas e na escolha cautelosa de palavras.';
 
 class SynopsisScrollBox extends StatefulWidget {
   final ScrollController controller;
@@ -123,15 +123,13 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
       ),
     );
 
-    return SizedBox(
-      height: widget.height,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: widget.height),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Padding(
-              padding: widget.contentPadding,
-              child: scrollableChild,
-            ),
+          Padding(
+            padding: widget.contentPadding,
+            child: scrollableChild,
           ),
           if (scrollMetrics.isVisible)
             Positioned(
@@ -249,7 +247,7 @@ class _SynopsisScrollMetrics {
   });
 }
 
-class EditableSynopsisPanel extends StatelessWidget {
+class EditableSynopsisPanel extends StatefulWidget {
   final TextEditingController controller;
   final ScrollController scrollController;
   final bool isEditing;
@@ -286,32 +284,77 @@ class EditableSynopsisPanel extends StatelessWidget {
   });
 
   @override
+  State<EditableSynopsisPanel> createState() => _EditableSynopsisPanelState();
+}
+
+class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant EditableSynopsisPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isEditing && widget.isEditing) {
+      _focusNode.requestFocus();
+    } else if (oldWidget.isEditing && !widget.isEditing) {
+      _focusNode.unfocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final effectivePlaceholderStyle =
-        placeholderStyle ??
-        textStyle.copyWith(
+        widget.placeholderStyle ??
+        widget.textStyle.copyWith(
           color: const Color(0xFF8A828C),
           fontStyle: FontStyle.italic,
         );
-    final isEmpty = controller.text.trim().isEmpty;
+    final isEmpty = widget.controller.text.trim().isEmpty;
+    final isFocused = _focusNode.hasFocus;
 
     final content = Container(
-      padding: panelPadding,
+      padding: widget.panelPadding,
       decoration: BoxDecoration(
-        color: fillColor,
-        gradient: backgroundGradient,
-        borderRadius: borderRadius,
-        border: border,
+        color: widget.fillColor,
+        gradient: widget.backgroundGradient,
+        borderRadius: widget.borderRadius,
+        border: isFocused
+            ? Border.all(
+                color: const Color(0xFFDF6EB8),
+                width: 1.1,
+              )
+            : widget.border ?? Border.all(
+                color: Colors.white.withValues(alpha: 0.74),
+                width: 1.0,
+              ),
       ),
       child: SynopsisScrollBox(
-        controller: scrollController,
-        childIsScrollable: isEditing,
-        height: height,
-        contentPadding: scrollPadding,
-        child: isEditing
+        controller: widget.scrollController,
+        childIsScrollable: widget.isEditing,
+        height: widget.height,
+        contentPadding: widget.scrollPadding,
+        child: widget.isEditing
             ? TextField(
-                controller: controller,
-                scrollController: scrollController,
+                focusNode: _focusNode,
+                controller: widget.controller,
+                scrollController: widget.scrollController,
                 scrollPhysics: const ClampingScrollPhysics(),
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
@@ -321,25 +364,29 @@ class EditableSynopsisPanel extends StatelessWidget {
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
-                  hintText: placeholderText,
+                  hintText: widget.placeholderText,
                   hintStyle: effectivePlaceholderStyle,
                 ),
-                style: textStyle,
+                style: widget.textStyle,
               )
             : isEmpty
-            ? Text(placeholderText, style: effectivePlaceholderStyle)
-            : viewerBuilder(context, controller.text, textStyle),
+                ? Text(widget.placeholderText, style: effectivePlaceholderStyle)
+                : widget.viewerBuilder(
+                    context,
+                    widget.controller.text,
+                    widget.textStyle,
+                  ),
       ),
     );
 
-    if (blurSigma <= 0) {
+    if (widget.blurSigma <= 0) {
       return content;
     }
 
     return ClipRRect(
-      borderRadius: borderRadius,
+      borderRadius: widget.borderRadius,
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        filter: ImageFilter.blur(sigmaX: widget.blurSigma, sigmaY: widget.blurSigma),
         child: content,
       ),
     );
