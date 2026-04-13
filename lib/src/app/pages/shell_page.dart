@@ -66,6 +66,12 @@ class _ShellPageState extends State<ShellPage> {
       coverImageScale: draft.coverImageScale,
       coverImageOffsetX: draft.coverImageOffsetX,
       coverImageOffsetY: draft.coverImageOffsetY,
+      accentImageBytes: draft.accentImageBytes,
+      accentImageWidth: draft.accentImageWidth,
+      accentImageHeight: draft.accentImageHeight,
+      accentImageScale: draft.accentImageScale,
+      accentImageOffsetX: draft.accentImageOffsetX,
+      accentImageOffsetY: draft.accentImageOffsetY,
     );
   }
 

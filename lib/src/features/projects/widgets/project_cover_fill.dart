@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -73,6 +74,104 @@ class ProjectCoverFill extends StatelessWidget {
                 ),
               ),
             ),
+    );
+  }
+}
+
+class ProjectAccentFill extends StatelessWidget {
+  final Color accentColor;
+  final Uint8List? imageBytes;
+  final double? imageWidth;
+  final double? imageHeight;
+  final double imageScale;
+  final double imageOffsetX;
+  final double imageOffsetY;
+
+  const ProjectAccentFill({
+    super.key,
+    required this.accentColor,
+    this.imageBytes,
+    this.imageWidth,
+    this.imageHeight,
+    this.imageScale = 1,
+    this.imageOffsetX = 0,
+    this.imageOffsetY = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  accentColor.withValues(alpha: 0.12),
+                  Colors.white.withValues(alpha: 0.52),
+                ),
+                Colors.white.withValues(alpha: 0.34),
+                Color.alphaBlend(
+                  accentColor.withValues(alpha: 0.16),
+                  const Color(0xFFFFF8FC).withValues(alpha: 0.42),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (imageBytes != null)
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.44,
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 1.6, sigmaY: 1.6),
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Color.alphaBlend(
+                      accentColor.withValues(alpha: 0.24),
+                      Colors.white.withValues(alpha: 0.08),
+                    ),
+                    BlendMode.modulate,
+                  ),
+                  child: _ProjectCoverImageViewport(
+                    imageBytes: imageBytes!,
+                    imageWidth: imageWidth ?? 0,
+                    imageHeight: imageHeight ?? 0,
+                    scale: imageScale,
+                    offsetX: imageOffsetX,
+                    offsetY: imageOffsetY,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.alphaBlend(
+                    accentColor.withValues(alpha: 0.18),
+                    Colors.white.withValues(alpha: 0.56),
+                  ),
+                  Colors.white.withValues(alpha: 0.16),
+                  Color.alphaBlend(
+                    accentColor.withValues(alpha: 0.24),
+                    const Color(0xFFFFF7FB).withValues(alpha: 0.34),
+                  ),
+                ],
+                stops: const [0.0, 0.52, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

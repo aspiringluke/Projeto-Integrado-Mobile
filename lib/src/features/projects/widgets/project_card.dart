@@ -26,6 +26,12 @@ class ProjectCard extends StatefulWidget {
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
+  final Uint8List? accentImageBytes;
+  final double? accentImageWidth;
+  final double? accentImageHeight;
+  final double accentImageScale;
+  final double accentImageOffsetX;
+  final double accentImageOffsetY;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
   final DateTime createdAt;
@@ -47,6 +53,12 @@ class ProjectCard extends StatefulWidget {
     this.coverImageScale = 1,
     this.coverImageOffsetX = 0,
     this.coverImageOffsetY = 0,
+    this.accentImageBytes,
+    this.accentImageWidth,
+    this.accentImageHeight,
+    this.accentImageScale = 1,
+    this.accentImageOffsetX = 0,
+    this.accentImageOffsetY = 0,
     this.isPinned = false,
     this.onTogglePinned,
     required this.createdAt,
@@ -332,6 +344,14 @@ class _ProjectCardState extends State<ProjectCard>
                                       dateEntry: _currentDateEntry,
                                       tags: widget.tags,
                                       accentColor: widget.accentColor,
+                                      accentImageBytes: widget.accentImageBytes,
+                                      accentImageWidth: widget.accentImageWidth,
+                                      accentImageHeight: widget.accentImageHeight,
+                                      accentImageScale: widget.accentImageScale,
+                                      accentImageOffsetX:
+                                          widget.accentImageOffsetX,
+                                      accentImageOffsetY:
+                                          widget.accentImageOffsetY,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,
                                       synopsisText: _synopsisController.text,
@@ -751,6 +771,12 @@ class _ProjectDetails extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
   final List<ProjectTagData> tags;
   final Color accentColor;
+  final Uint8List? accentImageBytes;
+  final double? accentImageWidth;
+  final double? accentImageHeight;
+  final double accentImageScale;
+  final double accentImageOffsetX;
+  final double accentImageOffsetY;
   final bool isEditing;
   final TextEditingController synopsisController;
   final String synopsisText;
@@ -763,6 +789,12 @@ class _ProjectDetails extends StatelessWidget {
     required this.dateEntry,
     required this.tags,
     required this.accentColor,
+    required this.accentImageBytes,
+    required this.accentImageWidth,
+    required this.accentImageHeight,
+    required this.accentImageScale,
+    required this.accentImageOffsetX,
+    required this.accentImageOffsetY,
     required this.isEditing,
     required this.synopsisController,
     required this.synopsisText,
@@ -803,24 +835,7 @@ class _ProjectDetails extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(
-                  accentColor.withValues(alpha: 0.12),
-                  Colors.white.withValues(alpha: 0.52),
-                ),
-                Colors.white.withValues(alpha: 0.34),
-                Color.alphaBlend(
-                  accentColor.withValues(alpha: 0.16),
-                  const Color(0xFFFFF8FC).withValues(alpha: 0.42),
-                ),
-              ],
-            ),
             border: Border(
               top: BorderSide(
                 color: Colors.white.withValues(alpha: 0.22),
@@ -828,163 +843,193 @@ class _ProjectDetails extends StatelessWidget {
               ),
             ),
           ),
-          foregroundDecoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white.withValues(alpha: 0.12),
-                Colors.white.withValues(alpha: 0.04),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.24, 0.6],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _TimeField(
-                      accentColor: accentColor,
-                      dateEntry: dateEntry,
-                      onTapClock: onCycleDateType,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  GlassCircleButton(
-                    diameter: 36,
-                    onTap: onToggleEditing,
-                    blurSigma: 8,
-                    fillColor: Colors.white.withValues(alpha: 0.32),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.58),
-                        accentColor.withValues(alpha: 0.2),
-                        _lighten(accentColor, 0.22).withValues(alpha: 0.16),
-                      ],
-                    ),
-                    borderColor: Colors.white.withValues(alpha: 0.8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.14),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+              Positioned.fill(
+                child: ProjectAccentFill(
+                  accentColor: accentColor,
+                  imageBytes: accentImageBytes,
+                  imageWidth: accentImageWidth,
+                  imageHeight: accentImageHeight,
+                  imageScale: accentImageScale,
+                  imageOffsetX: accentImageOffsetX,
+                  imageOffsetY: accentImageOffsetY,
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.04),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.24, 0.6],
                       ),
-                    ],
-                    child: Icon(
-                      isEditing ? Icons.check_rounded : Icons.edit_outlined,
-                      size: 18,
-                      color: const Color(0xFF544959),
                     ),
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 12),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  return EditableSynopsisPanel(
-                    controller: synopsisController,
-                    scrollController: synopsisScrollController,
-                    isEditing: isEditing,
-                    height: _calculateSynopsisHeight(
-                      context,
-                      constraints.maxWidth,
-                    ),
-                    focusedBorderColor: accentColor,
-                    placeholderText: synopsisPlaceholderText,
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF8F8990),
-                      height: 1.4,
-                    ),
-                    fillColor: Colors.white.withValues(alpha: 0.72),
-                    blurSigma: 5,
-                    backgroundGradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.8),
-                        const Color(0xFFFFF8FC).withValues(alpha: 0.68),
-                        const Color(0xFFF1E6EE).withValues(alpha: 0.42),
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.78),
-                      width: 0.7,
-                    ),
-                    placeholderStyle: const TextStyle(
-                      fontSize: 12,
-                      height: 1.4,
-                      color: Color(0xFF8F8990),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    viewerBuilder: (context, text, style) {
-                      return _ProjectMarkdownText(data: text, style: style);
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              if (tags.isNotEmpty) ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final tag in tags)
-                      OutlinedTagPill(label: tag.label, color: tag.color),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _TimeField(
+                            accentColor: accentColor,
+                            dateEntry: dateEntry,
+                            onTapClock: onCycleDateType,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GlassCircleButton(
+                          diameter: 36,
+                          onTap: onToggleEditing,
+                          blurSigma: 8,
+                          fillColor: Colors.white.withValues(alpha: 0.32),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.58),
+                              accentColor.withValues(alpha: 0.2),
+                              _lighten(
+                                accentColor,
+                                0.22,
+                              ).withValues(alpha: 0.16),
+                            ],
+                          ),
+                          borderColor: Colors.white.withValues(alpha: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.14),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                          child: Icon(
+                            isEditing ? Icons.check_rounded : Icons.edit_outlined,
+                            size: 18,
+                            color: const Color(0xFF544959),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return EditableSynopsisPanel(
+                          controller: synopsisController,
+                          scrollController: synopsisScrollController,
+                          isEditing: isEditing,
+                          height: _calculateSynopsisHeight(
+                            context,
+                            constraints.maxWidth,
+                          ),
+                          focusedBorderColor: accentColor,
+                          placeholderText: synopsisPlaceholderText,
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8F8990),
+                            height: 1.4,
+                          ),
+                          fillColor: Colors.white.withValues(alpha: 0.72),
+                          blurSigma: 5,
+                          backgroundGradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.8),
+                              const Color(0xFFFFF8FC).withValues(alpha: 0.68),
+                              const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+                            ],
+                            stops: const [0.0, 0.55, 1.0],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.78),
+                            width: 0.7,
+                          ),
+                          placeholderStyle: const TextStyle(
+                            fontSize: 12,
+                            height: 1.4,
+                            color: Color(0xFF8F8990),
+                            fontStyle: FontStyle.italic,
+                          ),
+                          viewerBuilder: (context, text, style) {
+                            return _ProjectMarkdownText(data: text, style: style);
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    if (tags.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final tag in tags)
+                            OutlinedTagPill(label: tag.label, color: tag.color),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Builder(
+                          builder: (context) {
+                            return GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: () => _showProjectCharacterInfo(
+                                context,
+                                rectFromContext(context),
+                              ),
+                              child: const _ProjectInfoButton(),
+                            );
+                          },
+                        ),
+                        GlassCircleButton(
+                          diameter: 34,
+                          blurSigma: 6,
+                          fillColor: accentColor.withValues(alpha: 0.22),
+                          borderColor: Colors.white.withValues(alpha: 0.62),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.56),
+                              accentColor.withValues(alpha: 0.22),
+                              _lighten(
+                                accentColor,
+                                0.22,
+                              ).withValues(alpha: 0.18),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.14),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                          child: const Icon(
+                            Icons.swap_horiz,
+                            color: Color(0xFF544959),
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
-              ],
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Builder(
-                    builder: (context) {
-                      return GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () => _showProjectCharacterInfo(
-                          context,
-                          rectFromContext(context),
-                        ),
-                        child: const _ProjectInfoButton(),
-                      );
-                    },
-                  ),
-                  GlassCircleButton(
-                    diameter: 34,
-                    blurSigma: 6,
-                    fillColor: accentColor.withValues(alpha: 0.22),
-                    borderColor: Colors.white.withValues(alpha: 0.62),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.56),
-                        accentColor.withValues(alpha: 0.22),
-                        _lighten(accentColor, 0.22).withValues(alpha: 0.18),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.14),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                    child: const Icon(
-                      Icons.swap_horiz,
-                      color: Color(0xFF544959),
-                      size: 18,
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

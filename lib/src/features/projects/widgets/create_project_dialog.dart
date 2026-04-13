@@ -33,6 +33,12 @@ class CreateProjectTextDraft {
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
+  final Uint8List? accentImageBytes;
+  final double? accentImageWidth;
+  final double? accentImageHeight;
+  final double accentImageScale;
+  final double accentImageOffsetX;
+  final double accentImageOffsetY;
 
   const CreateProjectTextDraft({
     required this.title,
@@ -46,6 +52,12 @@ class CreateProjectTextDraft {
     this.coverImageScale = 1,
     this.coverImageOffsetX = 0,
     this.coverImageOffsetY = 0,
+    this.accentImageBytes,
+    this.accentImageWidth,
+    this.accentImageHeight,
+    this.accentImageScale = 1,
+    this.accentImageOffsetX = 0,
+    this.accentImageOffsetY = 0,
   });
 }
 
@@ -62,8 +74,6 @@ enum _ProjectColorTarget { cover, accent }
 
 class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _dialogContentKey = GlobalKey();
-  final _synopsisPanelKey = GlobalKey();
   late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
   late final TextEditingController _newTagController;
@@ -82,9 +92,15 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   double _coverImageScale = 1;
   double _coverImageOffsetX = 0;
   double _coverImageOffsetY = 0;
-  double _synopsisHeightCap = 220;
-  double _dialogViewportHeight = 0;
-  bool _isSynopsisCapUpdateScheduled = false;
+  Uint8List? _accentImageBytes;
+  String? _accentImageName;
+  double? _accentImageWidth;
+  double? _accentImageHeight;
+  double _accentImageScale = 1;
+  double _accentImageOffsetX = 0;
+  double _accentImageOffsetY = 0;
+
+  static const double _synopsisMaxHeight = 196;
 
   static const TextStyle _synopsisTextStyle = TextStyle(
     fontSize: 12,
@@ -140,59 +156,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     final minimumHeight =
         (_synopsisTextStyle.fontSize! * _synopsisTextStyle.height!) +
         verticalPadding;
-    final maxHeight = _synopsisHeightCap < minimumHeight
-        ? minimumHeight
-        : _synopsisHeightCap;
 
-    return estimatedHeight.clamp(minimumHeight, maxHeight);
-  }
-
-  void _scheduleSynopsisHeightCapUpdate() {
-    if (_isSynopsisCapUpdateScheduled) {
-      return;
-    }
-
-    _isSynopsisCapUpdateScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _isSynopsisCapUpdateScheduled = false;
-
-      if (!mounted || _dialogViewportHeight <= 0) {
-        return;
-      }
-
-      final contentBox =
-          _dialogContentKey.currentContext?.findRenderObject() as RenderBox?;
-      final synopsisBox =
-          _synopsisPanelKey.currentContext?.findRenderObject() as RenderBox?;
-
-      if (contentBox == null ||
-          synopsisBox == null ||
-          !contentBox.hasSize ||
-          !synopsisBox.hasSize) {
-        return;
-      }
-
-      const hardMaxHeight = 220.0;
-      const reservedViewportGap = 28.0;
-      final contentWithoutSynopsis =
-          contentBox.size.height - synopsisBox.size.height;
-      final availableHeight =
-          (_dialogViewportHeight -
-                  contentWithoutSynopsis -
-                  reservedViewportGap)
-              .clamp(
-            0.0,
-            hardMaxHeight,
-          );
-
-      if ((availableHeight - _synopsisHeightCap).abs() < 0.5) {
-        return;
-      }
-
-      setState(() {
-        _synopsisHeightCap = availableHeight;
-      });
-    });
+    return estimatedHeight.clamp(minimumHeight, _synopsisMaxHeight);
   }
 
   void _toggleTag(ProjectTagData tag) {
@@ -260,6 +225,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         coverImageScale: _coverImageScale,
         coverImageOffsetX: _coverImageOffsetX,
         coverImageOffsetY: _coverImageOffsetY,
+        accentImageBytes: _accentImageBytes,
+        accentImageWidth: _accentImageWidth,
+        accentImageHeight: _accentImageHeight,
+        accentImageScale: _accentImageScale,
+        accentImageOffsetX: _accentImageOffsetX,
+        accentImageOffsetY: _accentImageOffsetY,
       ),
     );
   }
@@ -298,6 +269,40 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     });
   }
 
+  Future<void> _pickAccentImage() async {
+    final result = await pickProjectImage();
+    if (result == null) {
+      return;
+    }
+
+    final imageSize = await _decodeImageSize(result.bytes);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _accentImageBytes = result.bytes;
+      _accentImageName = result.name;
+      _accentImageWidth = imageSize.width;
+      _accentImageHeight = imageSize.height;
+      _accentImageScale = 1;
+      _accentImageOffsetX = 0;
+      _accentImageOffsetY = 0;
+    });
+  }
+
+  void _removeAccentImage() {
+    setState(() {
+      _accentImageBytes = null;
+      _accentImageName = null;
+      _accentImageWidth = null;
+      _accentImageHeight = null;
+      _accentImageScale = 1;
+      _accentImageOffsetX = 0;
+      _accentImageOffsetY = 0;
+    });
+  }
+
   Future<Size> _decodeImageSize(Uint8List bytes) async {
     final codec = await ui.instantiateImageCodec(bytes);
     final frame = await codec.getNextFrame();
@@ -310,12 +315,24 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 
   ProjectImageViewportMetrics _coverImageMetrics(double scale) {
     return computeProjectImageViewportMetrics(
-      viewportSize: const Size(
-        _CoverImageEditor.cropReferenceWidth,
-        _CoverImageEditor.cropHeight,
+      viewportSize: Size(
+        _CoverImageEditor.coverViewportPreset.cropReferenceWidth,
+        _CoverImageEditor.coverViewportPreset.cropHeight,
       ),
       imageWidth: _coverImageWidth ?? 0,
       imageHeight: _coverImageHeight ?? 0,
+      scale: scale,
+    );
+  }
+
+  ProjectImageViewportMetrics _accentImageMetrics(double scale) {
+    return computeProjectImageViewportMetrics(
+      viewportSize: Size(
+        _CoverImageEditor.accentViewportPreset.cropReferenceWidth,
+        _CoverImageEditor.accentViewportPreset.cropHeight,
+      ),
+      imageWidth: _accentImageWidth ?? 0,
+      imageHeight: _accentImageHeight ?? 0,
       scale: scale,
     );
   }
@@ -345,6 +362,37 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         maxTranslation: metrics.maxTranslationX,
       );
       _coverImageOffsetY = clampProjectImageOffset(
+        dy,
+        maxTranslation: metrics.maxTranslationY,
+      );
+    });
+  }
+
+  void _setAccentImageScale(double value) {
+    final metrics = _accentImageMetrics(value);
+
+    setState(() {
+      _accentImageScale = value;
+      _accentImageOffsetX = clampProjectImageOffset(
+        _accentImageOffsetX,
+        maxTranslation: metrics.maxTranslationX,
+      );
+      _accentImageOffsetY = clampProjectImageOffset(
+        _accentImageOffsetY,
+        maxTranslation: metrics.maxTranslationY,
+      );
+    });
+  }
+
+  void _setAccentImageOffset(double dx, double dy) {
+    final metrics = _accentImageMetrics(_accentImageScale);
+
+    setState(() {
+      _accentImageOffsetX = clampProjectImageOffset(
+        dx,
+        maxTranslation: metrics.maxTranslationX,
+      );
+      _accentImageOffsetY = clampProjectImageOffset(
         dy,
         maxTranslation: metrics.maxTranslationY,
       );
@@ -389,8 +437,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                 final viewportHeight = constraints.hasBoundedHeight
                     ? constraints.maxHeight
                     : MediaQuery.sizeOf(context).height - 96;
-                _dialogViewportHeight = viewportHeight;
-                _scheduleSynopsisHeightCapUpdate();
 
                 return Form(
                   key: _formKey,
@@ -405,7 +451,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                         parent: ClampingScrollPhysics(),
                       ),
                       child: Column(
-                        key: _dialogContentKey,
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -478,35 +523,32 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           const SizedBox(height: 6),
                           LayoutBuilder(
                             builder: (context, constraints) {
-                              return KeyedSubtree(
-                                key: _synopsisPanelKey,
-                                child: EditableSynopsisPanel(
-                                  controller: _synopsisController,
-                                  scrollController: _synopsisScrollController,
-                                  isEditing: true,
-                                  placeholderText: synopsisPlaceholderText,
-                                  textStyle: _synopsisTextStyle,
-                                  height: _calculateSynopsisHeight(
-                                    constraints.maxWidth,
-                                  ),
-                                  panelPadding: const EdgeInsets.fromLTRB(
-                                    12,
-                                    8,
-                                    12,
-                                    8,
-                                  ),
-                                  scrollPadding: const EdgeInsets.only(right: 8),
-                                  fillColor: Colors.white.withValues(alpha: 0.56),
-                                  backgroundGradient: null,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.74),
-                                  ),
-                                  focusedBorderColor: _accentColor.toColor(),
-                                  viewerBuilder: (context, text, style) {
-                                    return Text(text, style: style);
-                                  },
+                              return EditableSynopsisPanel(
+                                controller: _synopsisController,
+                                scrollController: _synopsisScrollController,
+                                isEditing: true,
+                                placeholderText: synopsisPlaceholderText,
+                                textStyle: _synopsisTextStyle,
+                                height: _calculateSynopsisHeight(
+                                  constraints.maxWidth,
                                 ),
+                                panelPadding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  8,
+                                  12,
+                                  8,
+                                ),
+                                scrollPadding: const EdgeInsets.only(right: 8),
+                                fillColor: Colors.white.withValues(alpha: 0.56),
+                                backgroundGradient: null,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.74),
+                                ),
+                                focusedBorderColor: _accentColor.toColor(),
+                                viewerBuilder: (context, text, style) {
+                                  return Text(text, style: style);
+                                },
                               );
                             },
                           ),
@@ -721,6 +763,9 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           if (_activeColorTarget == _ProjectColorTarget.cover) ...[
                             const SizedBox(height: 12),
                             _CoverImagePickerCard(
+                              title: 'Imagem da capa',
+                              description:
+                                  'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
                               imageBytes: _coverImageBytes,
                               imageWidth: _coverImageWidth,
                               imageHeight: _coverImageHeight,
@@ -728,12 +773,50 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               scale: _coverImageScale,
                               offsetX: _coverImageOffsetX,
                               offsetY: _coverImageOffsetY,
+                              backgroundGradient: const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Color(0xFFF4EDF2),
+                                  Color(0xFFEAE2E8),
+                                  Color(0xFFFFFFFF),
+                                ],
+                              ),
+                              viewportPreset:
+                                  _CoverImageEditor.coverViewportPreset,
+                              emptyStateText: 'Nenhuma imagem selecionada',
                               onScaleChanged: _setCoverImageScale,
                               onOffsetChanged: _setCoverImageOffset,
                               onPick: _pickCoverImage,
                               onRemove: _coverImageBytes == null
                                   ? null
                                   : _removeCoverImage,
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 12),
+                            _CoverImagePickerCard(
+                              title: 'Imagem do realce',
+                              description:
+                                  'Escolha uma imagem para o fundo do cartão expandido. A cor de realce continua controlando a colorização, a suavização e os gradientes por cima dela.',
+                              imageBytes: _accentImageBytes,
+                              imageWidth: _accentImageWidth,
+                              imageHeight: _accentImageHeight,
+                              imageName: _accentImageName,
+                              scale: _accentImageScale,
+                              offsetX: _accentImageOffsetX,
+                              offsetY: _accentImageOffsetY,
+                              backgroundGradient: _buildDialogAccentPreviewGradient(
+                                _accentColor.toColor(),
+                              ),
+                              viewportPreset:
+                                  _CoverImageEditor.accentViewportPreset,
+                              emptyStateText: 'Nenhuma imagem selecionada',
+                              onScaleChanged: _setAccentImageScale,
+                              onOffsetChanged: _setAccentImageOffset,
+                              onPick: _pickAccentImage,
+                              onRemove: _accentImageBytes == null
+                                  ? null
+                                  : _removeAccentImage,
                             ),
                           ],
                           const SizedBox(height: 12),
@@ -822,6 +905,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 }
 
 class _CoverImagePickerCard extends StatelessWidget {
+  final String title;
+  final String description;
   final Uint8List? imageBytes;
   final double? imageWidth;
   final double? imageHeight;
@@ -829,12 +914,17 @@ class _CoverImagePickerCard extends StatelessWidget {
   final double scale;
   final double offsetX;
   final double offsetY;
+  final Gradient backgroundGradient;
+  final _ImageEditorViewportPreset viewportPreset;
+  final String emptyStateText;
   final ValueChanged<double> onScaleChanged;
   final void Function(double offsetX, double offsetY) onOffsetChanged;
   final VoidCallback onPick;
   final VoidCallback? onRemove;
 
   const _CoverImagePickerCard({
+    required this.title,
+    required this.description,
     required this.imageBytes,
     required this.imageWidth,
     required this.imageHeight,
@@ -842,6 +932,9 @@ class _CoverImagePickerCard extends StatelessWidget {
     required this.scale,
     required this.offsetX,
     required this.offsetY,
+    required this.backgroundGradient,
+    required this.viewportPreset,
+    required this.emptyStateText,
     required this.onScaleChanged,
     required this.onOffsetChanged,
     required this.onPick,
@@ -861,8 +954,8 @@ class _CoverImagePickerCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Imagem da capa',
+          Text(
+            title,
             style: TextStyle(
               color: Color(0xFF3A3339),
               fontSize: 13,
@@ -870,9 +963,8 @@ class _CoverImagePickerCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          const _FieldDescription(
-            text:
-                'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
+          _FieldDescription(
+            text: description,
           ),
           const SizedBox(height: 8),
           _CoverImageEditor(
@@ -882,6 +974,9 @@ class _CoverImagePickerCard extends StatelessWidget {
             scale: scale,
             offsetX: offsetX,
             offsetY: offsetY,
+            backgroundGradient: backgroundGradient,
+            viewportPreset: viewportPreset,
+            emptyStateText: emptyStateText,
             onOffsetChanged: onOffsetChanged,
           ),
           if (imageName != null) ...[
@@ -982,10 +1077,19 @@ class _CoverImagePickerCard extends StatelessWidget {
 }
 
 class _CoverImageEditor extends StatelessWidget {
-  static const canvasHeight = 144.0;
-  static const cropHeight = 74.0;
-  static const cropHorizontalInset = 12.0;
-  static const cropReferenceWidth = 240.0;
+  static const coverViewportPreset = _ImageEditorViewportPreset(
+    canvasHeight: 144,
+    cropHeight: 74,
+    cropHorizontalInset: 12,
+    cropReferenceWidth: 240,
+  );
+
+  static const accentViewportPreset = _ImageEditorViewportPreset(
+    canvasHeight: 156,
+    cropHeight: 112,
+    cropHorizontalInset: 10,
+    cropReferenceWidth: 240,
+  );
 
   final Uint8List? imageBytes;
   final double? imageWidth;
@@ -993,6 +1097,9 @@ class _CoverImageEditor extends StatelessWidget {
   final double scale;
   final double offsetX;
   final double offsetY;
+  final Gradient backgroundGradient;
+  final _ImageEditorViewportPreset viewportPreset;
+  final String emptyStateText;
   final void Function(double offsetX, double offsetY) onOffsetChanged;
 
   const _CoverImageEditor({
@@ -1002,6 +1109,9 @@ class _CoverImageEditor extends StatelessWidget {
     required this.scale,
     required this.offsetX,
     required this.offsetY,
+    required this.backgroundGradient,
+    required this.viewportPreset,
+    required this.emptyStateText,
     required this.onOffsetChanged,
   });
 
@@ -1009,12 +1119,14 @@ class _CoverImageEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cropTop = (canvasHeight - cropHeight) / 2;
-        final cropWidth = constraints.maxWidth - (cropHorizontalInset * 2);
+        final cropTop =
+            (viewportPreset.canvasHeight - viewportPreset.cropHeight) / 2;
+        final cropWidth =
+            constraints.maxWidth - (viewportPreset.cropHorizontalInset * 2);
         final metrics =
             imageBytes != null && imageWidth != null && imageHeight != null
             ? computeProjectImageViewportMetrics(
-                viewportSize: Size(cropWidth, cropHeight),
+                viewportSize: Size(cropWidth, viewportPreset.cropHeight),
                 imageWidth: imageWidth!,
                 imageHeight: imageHeight!,
                 scale: scale,
@@ -1024,25 +1136,17 @@ class _CoverImageEditor extends StatelessWidget {
         return ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Container(
-            height: canvasHeight,
+            height: viewportPreset.canvasHeight,
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Color(0xFFF4EDF2),
-                  Color(0xFFEAE2E8),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
+              gradient: backgroundGradient,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withValues(alpha: 0.82)),
             ),
             child: imageBytes == null
                 ? Center(
                     child: Text(
-                      'Nenhuma imagem selecionada',
+                      emptyStateText,
                       style: TextStyle(
                         color: Colors.black.withValues(alpha: 0.55),
                         fontSize: 12,
@@ -1068,13 +1172,13 @@ class _CoverImageEditor extends StatelessWidget {
                         ProjectImageTransformView(
                           imageBytes: imageBytes!,
                           imageWidth: imageWidth ?? cropWidth,
-                          imageHeight: imageHeight ?? cropHeight,
+                          imageHeight: imageHeight ?? viewportPreset.cropHeight,
                           scale: scale,
                           offsetX: offsetX,
                           offsetY: offsetY,
                           clipImage: false,
                           viewportWidth: cropWidth,
-                          viewportHeight: cropHeight,
+                          viewportHeight: viewportPreset.cropHeight,
                         ),
                         IgnorePointer(
                           child: Stack(
@@ -1094,10 +1198,10 @@ class _CoverImageEditor extends StatelessWidget {
                                 child: _EditorShade(),
                               ),
                               Positioned(
-                                left: cropHorizontalInset,
-                                right: cropHorizontalInset,
+                                left: viewportPreset.cropHorizontalInset,
+                                right: viewportPreset.cropHorizontalInset,
                                 top: cropTop,
-                                height: cropHeight,
+                                height: viewportPreset.cropHeight,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     border: Border.all(
@@ -1111,14 +1215,14 @@ class _CoverImageEditor extends StatelessWidget {
                                 left: 0,
                                 top: cropTop,
                                 bottom: cropTop,
-                                width: cropHorizontalInset,
+                                width: viewportPreset.cropHorizontalInset,
                                 child: const _EditorShade(),
                               ),
                               Positioned(
                                 right: 0,
                                 top: cropTop,
                                 bottom: cropTop,
-                                width: cropHorizontalInset,
+                                width: viewportPreset.cropHorizontalInset,
                                 child: const _EditorShade(),
                               ),
                             ],
@@ -1132,6 +1236,20 @@ class _CoverImageEditor extends StatelessWidget {
       },
     );
   }
+}
+
+class _ImageEditorViewportPreset {
+  final double canvasHeight;
+  final double cropHeight;
+  final double cropHorizontalInset;
+  final double cropReferenceWidth;
+
+  const _ImageEditorViewportPreset({
+    required this.canvasHeight,
+    required this.cropHeight,
+    required this.cropHorizontalInset,
+    required this.cropReferenceWidth,
+  });
 }
 
 class _EditorShade extends StatelessWidget {

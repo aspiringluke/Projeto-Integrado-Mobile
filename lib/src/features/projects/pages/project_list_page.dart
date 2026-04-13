@@ -26,6 +26,12 @@ class ProjectListController extends ChangeNotifier {
     double coverImageScale = 1,
     double coverImageOffsetX = 0,
     double coverImageOffsetY = 0,
+    Uint8List? accentImageBytes,
+    double? accentImageWidth,
+    double? accentImageHeight,
+    double accentImageScale = 1,
+    double accentImageOffsetX = 0,
+    double accentImageOffsetY = 0,
   }) {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) return;
@@ -48,6 +54,12 @@ class ProjectListController extends ChangeNotifier {
         coverImageScale: coverImageScale,
         coverImageOffsetX: coverImageOffsetX,
         coverImageOffsetY: coverImageOffsetY,
+        accentImageBytes: accentImageBytes,
+        accentImageWidth: accentImageWidth,
+        accentImageHeight: accentImageHeight,
+        accentImageScale: accentImageScale,
+        accentImageOffsetX: accentImageOffsetX,
+        accentImageOffsetY: accentImageOffsetY,
         createdAt: now,
         lastModified: now,
         lastAccessed: now,
@@ -226,6 +238,12 @@ class ProjectListPage extends StatelessWidget {
               coverImageScale: project.coverImageScale,
               coverImageOffsetX: project.coverImageOffsetX,
               coverImageOffsetY: project.coverImageOffsetY,
+              accentImageBytes: project.accentImageBytes,
+              accentImageWidth: project.accentImageWidth,
+              accentImageHeight: project.accentImageHeight,
+              accentImageScale: project.accentImageScale,
+              accentImageOffsetX: project.accentImageOffsetX,
+              accentImageOffsetY: project.accentImageOffsetY,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
               createdAt: project.createdAt,
@@ -298,6 +316,12 @@ class _ProjectListItem {
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
+  final Uint8List? accentImageBytes;
+  final double? accentImageWidth;
+  final double? accentImageHeight;
+  final double accentImageScale;
+  final double accentImageOffsetX;
+  final double accentImageOffsetY;
   final DateTime createdAt;
   DateTime lastModified;
   DateTime lastAccessed;
@@ -316,6 +340,12 @@ class _ProjectListItem {
     required this.coverImageScale,
     required this.coverImageOffsetX,
     required this.coverImageOffsetY,
+    required this.accentImageBytes,
+    required this.accentImageWidth,
+    required this.accentImageHeight,
+    required this.accentImageScale,
+    required this.accentImageOffsetX,
+    required this.accentImageOffsetY,
     required this.createdAt,
     required this.lastModified,
     required this.lastAccessed,
