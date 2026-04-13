@@ -362,13 +362,14 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
                 scrollPhysics: const ClampingScrollPhysics(),
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
-                minLines: null,
-                expands: true,
+                minLines: 1,
                 textAlignVertical: TextAlignVertical.top,
+                scrollPadding: EdgeInsets.zero,
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
                   hintText: widget.placeholderText,
+                  hintMaxLines: null,
                   hintStyle: effectivePlaceholderStyle,
                 ),
                 style: widget.textStyle,
@@ -383,16 +384,24 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
       ),
     );
 
-    if (widget.blurSigma <= 0) {
-      return content;
-    }
-
-    return ClipRRect(
-      borderRadius: widget.borderRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: widget.blurSigma, sigmaY: widget.blurSigma),
-        child: content,
-      ),
+    final animatedContent = AnimatedSize(
+      duration: const Duration(milliseconds: 240),
+      curve: const Cubic(0.22, 1, 0.36, 1),
+      alignment: Alignment.topCenter,
+      child: widget.blurSigma <= 0
+          ? content
+          : ClipRRect(
+              borderRadius: widget.borderRadius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: widget.blurSigma,
+                  sigmaY: widget.blurSigma,
+                ),
+                child: content,
+              ),
+            ),
     );
+
+    return animatedContent;
   }
 }

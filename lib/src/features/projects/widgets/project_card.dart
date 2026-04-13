@@ -32,7 +32,7 @@ class ProjectCard extends StatefulWidget {
   final DateTime lastModified;
   final DateTime lastAccessed;
   final VoidCallback? onOpenProject;
-  final VoidCallback? onProjectEdited;
+  final void Function(String title, String synopsis)? onProjectEdited;
 
   const ProjectCard({
     super.key,
@@ -71,7 +71,9 @@ class _ProjectCardState extends State<ProjectCard>
   late final AnimationController _entranceController;
   late final Animation<double> _entranceAnimation;
   late final ScrollController _synopsisScrollController;
+  late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
+  late final FocusNode _titleFocusNode;
 
   @override
   void initState() {
@@ -99,14 +101,19 @@ class _ProjectCardState extends State<ProjectCard>
       reverseCurve: Curves.easeInOut,
     );
     _synopsisScrollController = ScrollController();
+    _titleController = TextEditingController(text: widget.title);
     _synopsisController = TextEditingController(text: widget.synopsis);
     _synopsisController.addListener(_handleSynopsisChanged);
+    _titleFocusNode = FocusNode();
     _entranceController.forward();
   }
 
   @override
   void didUpdateWidget(covariant ProjectCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.title != widget.title && widget.title != _titleController.text) {
+      _titleController.text = widget.title;
+    }
     if (oldWidget.synopsis != widget.synopsis &&
         widget.synopsis != _synopsisController.text) {
       _synopsisController.text = widget.synopsis;
@@ -115,9 +122,11 @@ class _ProjectCardState extends State<ProjectCard>
 
   @override
   void dispose() {
+    _titleController.dispose();
     _synopsisController.removeListener(_handleSynopsisChanged);
     _synopsisController.dispose();
     _synopsisScrollController.dispose();
+    _titleFocusNode.dispose();
     _entranceController.dispose();
     _expandController.dispose();
     super.dispose();
@@ -168,152 +177,190 @@ class _ProjectCardState extends State<ProjectCard>
       ).forType(_activeDateType);
 
   void _toggleEditing() {
-    FocusScope.of(context).unfocus();
+    if (_isEditing) {
+      _confirmEditing();
+      return;
+    }
 
-    final willStopEditing = _isEditing;
     setState(() {
-      _isEditing = !_isEditing;
+      _isEditing = true;
     });
 
-    if (willStopEditing) {
-      widget.onProjectEdited?.call();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _titleFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _confirmEditing() {
+    if (!_isEditing) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    final sanitizedTitle = _titleController.text.trim();
+    final resolvedTitle = sanitizedTitle.isEmpty ? widget.title : sanitizedTitle;
+    final resolvedSynopsis = _synopsisController.text;
+    final hasChanges =
+        resolvedTitle != widget.title || resolvedSynopsis != widget.synopsis;
+
+    if (_titleController.text != resolvedTitle) {
+      _titleController.value = _titleController.value.copyWith(
+        text: resolvedTitle,
+        selection: TextSelection.collapsed(offset: resolvedTitle.length),
+        composing: TextRange.empty,
+      );
+    }
+
+    setState(() {
+      _isEditing = false;
+    });
+
+    if (hasChanges) {
+      widget.onProjectEdited?.call(resolvedTitle, resolvedSynopsis);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: AnimatedBuilder(
-        animation: _entranceAnimation,
-        builder: (context, child) {
-          final offsetY = (1 - _entranceAnimation.value) * 10;
-          return Opacity(
-            opacity: _entranceAnimation.value,
-            child: Transform.translate(
-              offset: Offset(0, offsetY),
-              child: child,
-            ),
-          );
-        },
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 16, top: 2),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.accentColor.withValues(
-                        alpha: _isExpanded ? 0.12 : 0.08,
-                      ),
-                      blurRadius: _isExpanded ? 12 : 10,
-                      offset: const Offset(0, 4),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: _isExpanded ? 0.08 : 0.05,
-                      ),
-                      blurRadius: _isExpanded ? 12 : 9,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: _buildProjectShellGradient(
-                        widget.accentColor,
-                        isExpanded: _isExpanded,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(
-                          alpha: _isExpanded ? 0.7 : 0.58,
+    return TapRegion(
+      onTapOutside: (_) => _confirmEditing(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: AnimatedBuilder(
+          animation: _entranceAnimation,
+          builder: (context, child) {
+            final offsetY = (1 - _entranceAnimation.value) * 10;
+            return Opacity(
+              opacity: _entranceAnimation.value,
+              child: Transform.translate(
+                offset: Offset(0, offsetY),
+                child: child,
+              ),
+            );
+          },
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16, top: 2),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.accentColor.withValues(
+                          alpha: _isExpanded ? 0.12 : 0.08,
                         ),
-                        width: 0.85,
+                        blurRadius: _isExpanded ? 12 : 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                    foregroundDecoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.13),
-                          Colors.transparent,
-                          Colors.white.withValues(alpha: 0.08),
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.28, 0.56, 1.0],
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _isExpanded ? 0.08 : 0.05,
+                        ),
+                        blurRadius: _isExpanded ? 12 : 9,
+                        offset: const Offset(0, 6),
                       ),
-                    ),
-                    child: AnimatedBuilder(
-                      animation: _expandAnimation,
-                      builder: (context, child) {
-                        final bottomRadius = Radius.circular(
-                          16 * (1 - _expandAnimation.value),
-                        );
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: _buildProjectShellGradient(
+                          widget.accentColor,
+                          isExpanded: _isExpanded,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(
+                            alpha: _isExpanded ? 0.7 : 0.58,
+                          ),
+                          width: 0.85,
+                        ),
+                      ),
+                      foregroundDecoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.13),
+                            Colors.transparent,
+                            Colors.white.withValues(alpha: 0.08),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.28, 0.56, 1.0],
+                        ),
+                      ),
+                      child: AnimatedBuilder(
+                        animation: _expandAnimation,
+                        builder: (context, child) {
+                          final bottomRadius = Radius.circular(
+                            16 * (1 - _expandAnimation.value),
+                          );
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _ProjectHeader(
-                              title: widget.title,
-                              coverColor: widget.coverColor,
-                              coverImageBytes: widget.coverImageBytes,
-                              coverImageWidth: widget.coverImageWidth,
-                              coverImageHeight: widget.coverImageHeight,
-                              coverImageScale: widget.coverImageScale,
-                              coverImageOffsetX: widget.coverImageOffsetX,
-                              coverImageOffsetY: widget.coverImageOffsetY,
-                              isExpanded: _isExpanded,
-                              bottomRadius: bottomRadius,
-                              onOpenProject: _openProject,
-                              onToggleExpand: _toggleExpand,
-                            ),
-                            ClipRect(
-                              child: SizeTransition(
-                                sizeFactor: _expandAnimation,
-                                axisAlignment: -1,
-                                child: FadeTransition(
-                                  opacity: _detailsFadeAnimation,
-                                  child: _ProjectDetails(
-                                    projectTitle: widget.title,
-                                    dateEntry: _currentDateEntry,
-                                    tags: widget.tags,
-                                    accentColor: widget.accentColor,
-                                    isEditing: _isEditing,
-                                    synopsisController: _synopsisController,
-                                    synopsisText: _synopsisController.text,
-                                    onCycleDateType: _cycleDateType,
-                                    onToggleEditing: _toggleEditing,
-                                    synopsisScrollController:
-                                        _synopsisScrollController,
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _ProjectHeader(
+                                coverColor: widget.coverColor,
+                                coverImageBytes: widget.coverImageBytes,
+                                coverImageWidth: widget.coverImageWidth,
+                                coverImageHeight: widget.coverImageHeight,
+                                coverImageScale: widget.coverImageScale,
+                                coverImageOffsetX: widget.coverImageOffsetX,
+                                coverImageOffsetY: widget.coverImageOffsetY,
+                                isExpanded: _isExpanded,
+                                isEditing: _isEditing,
+                                titleController: _titleController,
+                                titleFocusNode: _titleFocusNode,
+                                bottomRadius: bottomRadius,
+                                onOpenProject: _openProject,
+                                onToggleExpand: _toggleExpand,
+                              ),
+                              ClipRect(
+                                child: SizeTransition(
+                                  sizeFactor: _expandAnimation,
+                                  axisAlignment: -1,
+                                  child: FadeTransition(
+                                    opacity: _detailsFadeAnimation,
+                                    child: _ProjectDetails(
+                                      projectTitle: widget.title,
+                                      dateEntry: _currentDateEntry,
+                                      tags: widget.tags,
+                                      accentColor: widget.accentColor,
+                                      isEditing: _isEditing,
+                                      synopsisController: _synopsisController,
+                                      synopsisText: _synopsisController.text,
+                                      onCycleDateType: _cycleDateType,
+                                      onToggleEditing: _toggleEditing,
+                                      synopsisScrollController:
+                                          _synopsisScrollController,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 0,
-              top: -4,
-              child: _PinBadge(
-                isActive: widget.isPinned,
-                onTap: widget.onTogglePinned,
+              Positioned(
+                left: 0,
+                top: -4,
+                child: _PinBadge(
+                  isActive: widget.isPinned,
+                  onTap: widget.onTogglePinned,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -321,7 +368,6 @@ class _ProjectCardState extends State<ProjectCard>
 }
 
 class _ProjectHeader extends StatelessWidget {
-  final String title;
   final Color coverColor;
   final Uint8List? coverImageBytes;
   final double? coverImageWidth;
@@ -330,12 +376,14 @@ class _ProjectHeader extends StatelessWidget {
   final double coverImageOffsetX;
   final double coverImageOffsetY;
   final bool isExpanded;
+  final bool isEditing;
+  final TextEditingController titleController;
+  final FocusNode titleFocusNode;
   final Radius bottomRadius;
   final VoidCallback onOpenProject;
   final VoidCallback onToggleExpand;
 
   const _ProjectHeader({
-    required this.title,
     required this.coverColor,
     required this.coverImageBytes,
     required this.coverImageWidth,
@@ -344,6 +392,9 @@ class _ProjectHeader extends StatelessWidget {
     required this.coverImageOffsetX,
     required this.coverImageOffsetY,
     required this.isExpanded,
+    required this.isEditing,
+    required this.titleController,
+    required this.titleFocusNode,
     required this.bottomRadius,
     required this.onOpenProject,
     required this.onToggleExpand,
@@ -390,16 +441,22 @@ class _ProjectHeader extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: onOpenProject,
+                  onTap: isEditing ? null : onOpenProject,
                   child: Padding(
                     padding: const EdgeInsets.only(left: 50, right: 18),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        title,
+                      child: TextField(
+                        controller: titleController,
+                        focusNode: titleFocusNode,
+                        enabled: isEditing,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.left,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
                         style: TextStyle(
                           color: isExpanded
                               ? const Color(0xFFF9F6FA)
@@ -409,12 +466,18 @@ class _ProjectHeader extends StatelessWidget {
                           fontStyle: FontStyle.italic,
                           shadows: [
                             Shadow(
-                              color: Colors.black.withValues(alpha: 0.22),
-                              blurRadius: 5,
-                              offset: const Offset(0, 1.2),
+                              color: Colors.black.withValues(alpha: 0.58),
+                              blurRadius: 14,
+                              offset: const Offset(0, 3),
+                            ),
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.32),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
                             ),
                           ],
                         ),
+                        cursorColor: Colors.white.withValues(alpha: 0.95),
                       ),
                     ),
                   ),
@@ -730,7 +793,8 @@ class _ProjectDetails extends StatelessWidget {
     textPainter.layout(maxWidth: maxWidth - 28);
     const verticalPadding = 28.0;
     final estimatedHeight = textPainter.size.height + verticalPadding;
-    return estimatedHeight.clamp(112.0, 220.0);
+    final minimumHeight = (12 * 1.4) + verticalPadding;
+    return estimatedHeight.clamp(minimumHeight, 220.0);
   }
 
   @override

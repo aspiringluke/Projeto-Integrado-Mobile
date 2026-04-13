@@ -235,7 +235,9 @@ class ProjectListPage extends StatelessWidget {
                 project.lastAccessed = DateTime.now();
                 controller.notifyListeners();
               },
-              onProjectEdited: () {
+              onProjectEdited: (title, synopsis) {
+                project.title = title;
+                project.synopsis = synopsis;
                 project.lastModified = DateTime.now();
                 controller.notifyListeners();
               },
@@ -285,8 +287,8 @@ class ProjectListPage extends StatelessWidget {
 }
 
 class _ProjectListItem {
-  final String title;
-  final String synopsis;
+  String title;
+  String synopsis;
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;

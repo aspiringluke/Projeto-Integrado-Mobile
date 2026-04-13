@@ -62,6 +62,8 @@ enum _ProjectColorTarget { cover, accent }
 
 class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _dialogContentKey = GlobalKey();
+  final _synopsisPanelKey = GlobalKey();
   late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
   late final TextEditingController _newTagController;
@@ -80,6 +82,9 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   double _coverImageScale = 1;
   double _coverImageOffsetX = 0;
   double _coverImageOffsetY = 0;
+  double _synopsisHeightCap = 220;
+  double _dialogViewportHeight = 0;
+  bool _isSynopsisCapUpdateScheduled = false;
 
   static const TextStyle _synopsisTextStyle = TextStyle(
     fontSize: 12,
@@ -132,8 +137,62 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     textPainter.layout(maxWidth: maxWidth - 16);
     const verticalPadding = 16.0;
     final estimatedHeight = textPainter.size.height + verticalPadding;
+    final minimumHeight =
+        (_synopsisTextStyle.fontSize! * _synopsisTextStyle.height!) +
+        verticalPadding;
+    final maxHeight = _synopsisHeightCap < minimumHeight
+        ? minimumHeight
+        : _synopsisHeightCap;
 
-    return estimatedHeight.clamp(92.0, 220.0);
+    return estimatedHeight.clamp(minimumHeight, maxHeight);
+  }
+
+  void _scheduleSynopsisHeightCapUpdate() {
+    if (_isSynopsisCapUpdateScheduled) {
+      return;
+    }
+
+    _isSynopsisCapUpdateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _isSynopsisCapUpdateScheduled = false;
+
+      if (!mounted || _dialogViewportHeight <= 0) {
+        return;
+      }
+
+      final contentBox =
+          _dialogContentKey.currentContext?.findRenderObject() as RenderBox?;
+      final synopsisBox =
+          _synopsisPanelKey.currentContext?.findRenderObject() as RenderBox?;
+
+      if (contentBox == null ||
+          synopsisBox == null ||
+          !contentBox.hasSize ||
+          !synopsisBox.hasSize) {
+        return;
+      }
+
+      const hardMaxHeight = 220.0;
+      const reservedViewportGap = 28.0;
+      final contentWithoutSynopsis =
+          contentBox.size.height - synopsisBox.size.height;
+      final availableHeight =
+          (_dialogViewportHeight -
+                  contentWithoutSynopsis -
+                  reservedViewportGap)
+              .clamp(
+            0.0,
+            hardMaxHeight,
+          );
+
+      if ((availableHeight - _synopsisHeightCap).abs() < 0.5) {
+        return;
+      }
+
+      setState(() {
+        _synopsisHeightCap = availableHeight;
+      });
+    });
   }
 
   void _toggleTag(ProjectTagData tag) {
@@ -330,6 +389,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                 final viewportHeight = constraints.hasBoundedHeight
                     ? constraints.maxHeight
                     : MediaQuery.sizeOf(context).height - 96;
+                _dialogViewportHeight = viewportHeight;
+                _scheduleSynopsisHeightCapUpdate();
 
                 return Form(
                   key: _formKey,
@@ -344,6 +405,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                         parent: ClampingScrollPhysics(),
                       ),
                       child: Column(
+                        key: _dialogContentKey,
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -416,32 +478,35 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           const SizedBox(height: 6),
                           LayoutBuilder(
                             builder: (context, constraints) {
-                              return EditableSynopsisPanel(
-                                controller: _synopsisController,
-                                scrollController: _synopsisScrollController,
-                                isEditing: true,
-                                placeholderText: synopsisPlaceholderText,
-                                textStyle: _synopsisTextStyle,
-                                height: _calculateSynopsisHeight(
-                                  constraints.maxWidth,
+                              return KeyedSubtree(
+                                key: _synopsisPanelKey,
+                                child: EditableSynopsisPanel(
+                                  controller: _synopsisController,
+                                  scrollController: _synopsisScrollController,
+                                  isEditing: true,
+                                  placeholderText: synopsisPlaceholderText,
+                                  textStyle: _synopsisTextStyle,
+                                  height: _calculateSynopsisHeight(
+                                    constraints.maxWidth,
+                                  ),
+                                  panelPadding: const EdgeInsets.fromLTRB(
+                                    12,
+                                    8,
+                                    12,
+                                    8,
+                                  ),
+                                  scrollPadding: const EdgeInsets.only(right: 8),
+                                  fillColor: Colors.white.withValues(alpha: 0.56),
+                                  backgroundGradient: null,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.74),
+                                  ),
+                                  focusedBorderColor: _accentColor.toColor(),
+                                  viewerBuilder: (context, text, style) {
+                                    return Text(text, style: style);
+                                  },
                                 ),
-                                panelPadding: const EdgeInsets.fromLTRB(
-                                  12,
-                                  8,
-                                  12,
-                                  8,
-                                ),
-                                scrollPadding: const EdgeInsets.only(right: 8),
-                                fillColor: Colors.white.withValues(alpha: 0.56),
-                                backgroundGradient: null,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.74),
-                                ),
-                                focusedBorderColor: _accentColor.toColor(),
-                                viewerBuilder: (context, text, style) {
-                                  return Text(text, style: style);
-                                },
                               );
                             },
                           ),
