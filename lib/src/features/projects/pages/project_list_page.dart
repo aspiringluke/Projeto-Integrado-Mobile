@@ -21,6 +21,8 @@ class ProjectListController extends ChangeNotifier {
     Color coverColor = defaultProjectCoverColor,
     Color accentColor = defaultProjectAccentColor,
     Uint8List? coverImageBytes,
+    double? coverImageWidth,
+    double? coverImageHeight,
     double coverImageScale = 1,
     double coverImageOffsetX = 0,
     double coverImageOffsetY = 0,
@@ -41,6 +43,8 @@ class ProjectListController extends ChangeNotifier {
         coverColor: coverColor,
         accentColor: accentColor,
         coverImageBytes: coverImageBytes,
+        coverImageWidth: coverImageWidth,
+        coverImageHeight: coverImageHeight,
         coverImageScale: coverImageScale,
         coverImageOffsetX: coverImageOffsetX,
         coverImageOffsetY: coverImageOffsetY,
@@ -167,6 +171,7 @@ class ProjectListController extends ChangeNotifier {
 
 class ProjectListPage extends StatelessWidget {
   final ProjectListController controller;
+  static const double _floatingActionButtonClearance = 112;
 
   const ProjectListPage({super.key, required this.controller});
 
@@ -182,6 +187,9 @@ class ProjectListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobileReorderEnabled = _isMobileReorderEnabled;
+    final bottomListPadding =
+        MediaQuery.paddingOf(context).bottom + _floatingActionButtonClearance;
+    final listPadding = EdgeInsets.fromLTRB(0, 8, 0, bottomListPadding);
 
     return AnimatedBuilder(
       animation: controller,
@@ -213,6 +221,8 @@ class ProjectListPage extends StatelessWidget {
               coverColor: project.coverColor,
               accentColor: project.accentColor,
               coverImageBytes: project.coverImageBytes,
+              coverImageWidth: project.coverImageWidth,
+              coverImageHeight: project.coverImageHeight,
               coverImageScale: project.coverImageScale,
               coverImageOffsetX: project.coverImageOffsetX,
               coverImageOffsetY: project.coverImageOffsetY,
@@ -245,7 +255,7 @@ class ProjectListPage extends StatelessWidget {
 
         if (!isMobileReorderEnabled) {
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: listPadding,
             itemCount: controller._projects.length,
             itemBuilder: buildProjectCard,
           );
@@ -253,7 +263,7 @@ class ProjectListPage extends StatelessWidget {
 
         return ReorderableListView.builder(
           buildDefaultDragHandles: false,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: listPadding,
           itemCount: controller._projects.length,
           onReorder: controller.reorderProjects,
           proxyDecorator: (widget, index, animation) {
@@ -281,6 +291,8 @@ class _ProjectListItem {
   final Color coverColor;
   final Color accentColor;
   final Uint8List? coverImageBytes;
+  final double? coverImageWidth;
+  final double? coverImageHeight;
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
@@ -297,6 +309,8 @@ class _ProjectListItem {
     required this.coverColor,
     required this.accentColor,
     required this.coverImageBytes,
+    required this.coverImageWidth,
+    required this.coverImageHeight,
     required this.coverImageScale,
     required this.coverImageOffsetX,
     required this.coverImageOffsetY,

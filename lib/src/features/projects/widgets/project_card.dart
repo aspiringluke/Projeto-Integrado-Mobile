@@ -21,6 +21,8 @@ class ProjectCard extends StatefulWidget {
   final Color coverColor;
   final Color accentColor;
   final Uint8List? coverImageBytes;
+  final double? coverImageWidth;
+  final double? coverImageHeight;
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
@@ -40,6 +42,8 @@ class ProjectCard extends StatefulWidget {
     this.coverColor = defaultProjectCoverColor,
     this.accentColor = defaultProjectAccentColor,
     this.coverImageBytes,
+    this.coverImageWidth,
+    this.coverImageHeight,
     this.coverImageScale = 1,
     this.coverImageOffsetX = 0,
     this.coverImageOffsetY = 0,
@@ -244,6 +248,8 @@ class _ProjectCardState extends State<ProjectCard>
                               title: widget.title,
                               coverColor: widget.coverColor,
                               coverImageBytes: widget.coverImageBytes,
+                              coverImageWidth: widget.coverImageWidth,
+                              coverImageHeight: widget.coverImageHeight,
                               coverImageScale: widget.coverImageScale,
                               coverImageOffsetX: widget.coverImageOffsetX,
                               coverImageOffsetY: widget.coverImageOffsetY,
@@ -300,6 +306,8 @@ class _ProjectHeader extends StatelessWidget {
   final String title;
   final Color coverColor;
   final Uint8List? coverImageBytes;
+  final double? coverImageWidth;
+  final double? coverImageHeight;
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
@@ -312,6 +320,8 @@ class _ProjectHeader extends StatelessWidget {
     required this.title,
     required this.coverColor,
     required this.coverImageBytes,
+    required this.coverImageWidth,
+    required this.coverImageHeight,
     required this.coverImageScale,
     required this.coverImageOffsetX,
     required this.coverImageOffsetY,
@@ -346,6 +356,8 @@ class _ProjectHeader extends StatelessWidget {
               child: ProjectCoverFill(
                 color: coverColor,
                 imageBytes: coverImageBytes,
+                imageWidth: coverImageWidth,
+                imageHeight: coverImageHeight,
                 imageScale: coverImageScale,
                 imageOffsetX: coverImageOffsetX,
                 imageOffsetY: coverImageOffsetY,

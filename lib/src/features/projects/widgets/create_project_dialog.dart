@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../models/project_style_defaults.dart';
@@ -27,6 +28,8 @@ class CreateProjectTextDraft {
   final Color coverColor;
   final Color accentColor;
   final Uint8List? coverImageBytes;
+  final double? coverImageWidth;
+  final double? coverImageHeight;
   final double coverImageScale;
   final double coverImageOffsetX;
   final double coverImageOffsetY;
@@ -38,6 +41,8 @@ class CreateProjectTextDraft {
     required this.coverColor,
     required this.accentColor,
     this.coverImageBytes,
+    this.coverImageWidth,
+    this.coverImageHeight,
     this.coverImageScale = 1,
     this.coverImageOffsetX = 0,
     this.coverImageOffsetY = 0,
@@ -70,6 +75,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   _ProjectColorTarget _activeColorTarget = _ProjectColorTarget.accent;
   Uint8List? _coverImageBytes;
   String? _coverImageName;
+  double? _coverImageWidth;
+  double? _coverImageHeight;
   double _coverImageScale = 1;
   double _coverImageOffsetX = 0;
   double _coverImageOffsetY = 0;
@@ -189,6 +196,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         coverColor: _coverColor.toColor(),
         accentColor: _accentColor.toColor(),
         coverImageBytes: _coverImageBytes,
+        coverImageWidth: _coverImageWidth,
+        coverImageHeight: _coverImageHeight,
         coverImageScale: _coverImageScale,
         coverImageOffsetX: _coverImageOffsetX,
         coverImageOffsetY: _coverImageOffsetY,
@@ -202,9 +211,16 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       return;
     }
 
+    final imageSize = await _decodeImageSize(result.bytes);
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _coverImageBytes = result.bytes;
       _coverImageName = result.name;
+      _coverImageWidth = imageSize.width;
+      _coverImageHeight = imageSize.height;
       _coverImageScale = 1;
       _coverImageOffsetX = 0;
       _coverImageOffsetY = 0;
@@ -215,9 +231,64 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     setState(() {
       _coverImageBytes = null;
       _coverImageName = null;
+      _coverImageWidth = null;
+      _coverImageHeight = null;
       _coverImageScale = 1;
       _coverImageOffsetX = 0;
       _coverImageOffsetY = 0;
+    });
+  }
+
+  Future<Size> _decodeImageSize(Uint8List bytes) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+    final size = Size(image.width.toDouble(), image.height.toDouble());
+    image.dispose();
+    codec.dispose();
+    return size;
+  }
+
+  ProjectImageViewportMetrics _coverImageMetrics(double scale) {
+    return computeProjectImageViewportMetrics(
+      viewportSize: const Size(
+        _CoverImageEditor.cropReferenceWidth,
+        _CoverImageEditor.cropHeight,
+      ),
+      imageWidth: _coverImageWidth ?? 0,
+      imageHeight: _coverImageHeight ?? 0,
+      scale: scale,
+    );
+  }
+
+  void _setCoverImageScale(double value) {
+    final metrics = _coverImageMetrics(value);
+
+    setState(() {
+      _coverImageScale = value;
+      _coverImageOffsetX = clampProjectImageOffset(
+        _coverImageOffsetX,
+        maxTranslation: metrics.maxTranslationX,
+      );
+      _coverImageOffsetY = clampProjectImageOffset(
+        _coverImageOffsetY,
+        maxTranslation: metrics.maxTranslationY,
+      );
+    });
+  }
+
+  void _setCoverImageOffset(double dx, double dy) {
+    final metrics = _coverImageMetrics(_coverImageScale);
+
+    setState(() {
+      _coverImageOffsetX = clampProjectImageOffset(
+        dx,
+        maxTranslation: metrics.maxTranslationX,
+      );
+      _coverImageOffsetY = clampProjectImageOffset(
+        dy,
+        maxTranslation: metrics.maxTranslationY,
+      );
     });
   }
 
@@ -586,21 +657,14 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             const SizedBox(height: 12),
                             _CoverImagePickerCard(
                               imageBytes: _coverImageBytes,
+                              imageWidth: _coverImageWidth,
+                              imageHeight: _coverImageHeight,
                               imageName: _coverImageName,
                               scale: _coverImageScale,
                               offsetX: _coverImageOffsetX,
                               offsetY: _coverImageOffsetY,
-                              onScaleChanged: (value) {
-                                setState(() {
-                                  _coverImageScale = value;
-                                });
-                              },
-                              onOffsetChanged: (dx, dy) {
-                                setState(() {
-                                  _coverImageOffsetX = dx.clamp(-1.0, 1.0);
-                                  _coverImageOffsetY = dy.clamp(-1.0, 1.0);
-                                });
-                              },
+                              onScaleChanged: _setCoverImageScale,
+                              onOffsetChanged: _setCoverImageOffset,
                               onPick: _pickCoverImage,
                               onRemove: _coverImageBytes == null
                                   ? null
@@ -694,6 +758,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 
 class _CoverImagePickerCard extends StatelessWidget {
   final Uint8List? imageBytes;
+  final double? imageWidth;
+  final double? imageHeight;
   final String? imageName;
   final double scale;
   final double offsetX;
@@ -705,6 +771,8 @@ class _CoverImagePickerCard extends StatelessWidget {
 
   const _CoverImagePickerCard({
     required this.imageBytes,
+    required this.imageWidth,
+    required this.imageHeight,
     required this.imageName,
     required this.scale,
     required this.offsetX,
@@ -744,6 +812,8 @@ class _CoverImagePickerCard extends StatelessWidget {
           const SizedBox(height: 8),
           _CoverImageEditor(
             imageBytes: imageBytes,
+            imageWidth: imageWidth,
+            imageHeight: imageHeight,
             scale: scale,
             offsetX: offsetX,
             offsetY: offsetY,
@@ -847,7 +917,14 @@ class _CoverImagePickerCard extends StatelessWidget {
 }
 
 class _CoverImageEditor extends StatelessWidget {
+  static const canvasHeight = 144.0;
+  static const cropHeight = 74.0;
+  static const cropHorizontalInset = 12.0;
+  static const cropReferenceWidth = 240.0;
+
   final Uint8List? imageBytes;
+  final double? imageWidth;
+  final double? imageHeight;
   final double scale;
   final double offsetX;
   final double offsetY;
@@ -855,6 +932,8 @@ class _CoverImageEditor extends StatelessWidget {
 
   const _CoverImageEditor({
     required this.imageBytes,
+    required this.imageWidth,
+    required this.imageHeight,
     required this.scale,
     required this.offsetX,
     required this.offsetY,
@@ -865,11 +944,17 @@ class _CoverImageEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        const canvasHeight = 144.0;
-        const cropHeight = 74.0;
-        const cropHorizontalInset = 12.0;
         final cropTop = (canvasHeight - cropHeight) / 2;
+        final cropWidth = constraints.maxWidth - (cropHorizontalInset * 2);
+        final metrics =
+            imageBytes != null && imageWidth != null && imageHeight != null
+            ? computeProjectImageViewportMetrics(
+                viewportSize: Size(cropWidth, cropHeight),
+                imageWidth: imageWidth!,
+                imageHeight: imageHeight!,
+                scale: scale,
+              )
+            : null;
 
         return ClipRRect(
           borderRadius: BorderRadius.circular(16),
@@ -902,8 +987,14 @@ class _CoverImageEditor extends StatelessWidget {
                   )
                 : GestureDetector(
                     onPanUpdate: (details) {
-                      final dx = offsetX + (details.delta.dx / width) * 2;
-                      final dy = offsetY + (details.delta.dy / cropHeight) * 2;
+                      final dx = offsetX +
+                          ((metrics?.maxTranslationX ?? 0) <= 0
+                              ? 0
+                              : details.delta.dx / metrics!.maxTranslationX);
+                      final dy = offsetY +
+                          ((metrics?.maxTranslationY ?? 0) <= 0
+                              ? 0
+                              : details.delta.dy / metrics!.maxTranslationY);
                       onOffsetChanged(dx, dy);
                     },
                     child: Stack(
@@ -911,10 +1002,14 @@ class _CoverImageEditor extends StatelessWidget {
                       children: [
                         ProjectImageTransformView(
                           imageBytes: imageBytes!,
+                          imageWidth: imageWidth ?? cropWidth,
+                          imageHeight: imageHeight ?? cropHeight,
                           scale: scale,
                           offsetX: offsetX,
                           offsetY: offsetY,
                           clipImage: false,
+                          viewportWidth: cropWidth,
+                          viewportHeight: cropHeight,
                         ),
                         IgnorePointer(
                           child: Stack(
@@ -1362,6 +1457,3 @@ class _SelectableTagChip extends StatelessWidget {
     );
   }
 }
-
-
-

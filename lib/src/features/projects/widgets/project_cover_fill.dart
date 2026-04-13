@@ -7,6 +7,8 @@ import 'project_image_transform_view.dart';
 class ProjectCoverFill extends StatelessWidget {
   final Color color;
   final Uint8List? imageBytes;
+  final double? imageWidth;
+  final double? imageHeight;
   final double imageScale;
   final double imageOffsetX;
   final double imageOffsetY;
@@ -16,6 +18,8 @@ class ProjectCoverFill extends StatelessWidget {
     super.key,
     required this.color,
     this.imageBytes,
+    this.imageWidth,
+    this.imageHeight,
     this.imageScale = 1,
     this.imageOffsetX = 0,
     this.imageOffsetY = 0,
@@ -61,6 +65,8 @@ class ProjectCoverFill extends StatelessWidget {
                 },
                 child: _ProjectCoverImageViewport(
                   imageBytes: imageBytes!,
+                  imageWidth: imageWidth ?? 0,
+                  imageHeight: imageHeight ?? 0,
                   scale: imageScale,
                   offsetX: imageOffsetX,
                   offsetY: imageOffsetY,
@@ -73,12 +79,16 @@ class ProjectCoverFill extends StatelessWidget {
 
 class _ProjectCoverImageViewport extends StatelessWidget {
   final Uint8List imageBytes;
+  final double imageWidth;
+  final double imageHeight;
   final double scale;
   final double offsetX;
   final double offsetY;
 
   const _ProjectCoverImageViewport({
     required this.imageBytes,
+    required this.imageWidth,
+    required this.imageHeight,
     required this.scale,
     required this.offsetX,
     required this.offsetY,
@@ -88,6 +98,8 @@ class _ProjectCoverImageViewport extends StatelessWidget {
   Widget build(BuildContext context) {
     return ProjectImageTransformView(
       imageBytes: imageBytes,
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
       scale: scale,
       offsetX: offsetX,
       offsetY: offsetY,
