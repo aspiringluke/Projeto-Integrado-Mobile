@@ -100,16 +100,33 @@ class _ProjectCardState extends State<ProjectCard>
     );
     _synopsisScrollController = ScrollController();
     _synopsisController = TextEditingController(text: widget.synopsis);
+    _synopsisController.addListener(_handleSynopsisChanged);
     _entranceController.forward();
   }
 
   @override
+  void didUpdateWidget(covariant ProjectCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.synopsis != widget.synopsis &&
+        widget.synopsis != _synopsisController.text) {
+      _synopsisController.text = widget.synopsis;
+    }
+  }
+
+  @override
   void dispose() {
+    _synopsisController.removeListener(_handleSynopsisChanged);
     _synopsisController.dispose();
     _synopsisScrollController.dispose();
     _entranceController.dispose();
     _expandController.dispose();
     super.dispose();
+  }
+
+  void _handleSynopsisChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _toggleExpand() {
@@ -271,6 +288,7 @@ class _ProjectCardState extends State<ProjectCard>
                                     accentColor: widget.accentColor,
                                     isEditing: _isEditing,
                                     synopsisController: _synopsisController,
+                                    synopsisText: _synopsisController.text,
                                     onCycleDateType: _cycleDateType,
                                     onToggleEditing: _toggleEditing,
                                     synopsisScrollController:
@@ -444,9 +462,8 @@ class _ProjectHeader extends StatelessWidget {
                       turns: isExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: Colors.black.withValues(alpha: 0.48),
+                      child: const _ExclusionIcon(
+                        icon: Icons.keyboard_arrow_down_rounded,
                         size: 26,
                       ),
                     ),
@@ -538,6 +555,87 @@ class _PinBadge extends StatelessWidget {
   }
 }
 
+class _ExclusionIcon extends StatelessWidget {
+  final IconData icon;
+  final double size;
+
+  const _ExclusionIcon({
+    required this.icon,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _ExclusionIconPainter(
+          icon: icon,
+          size: size,
+        ),
+      ),
+    );
+  }
+}
+
+class _ExclusionIconPainter extends CustomPainter {
+  final IconData icon;
+  final double size;
+
+  const _ExclusionIconPainter({
+    required this.icon,
+    required this.size,
+  });
+
+  @override
+  void paint(Canvas canvas, Size canvasSize) {
+    TextPainter buildPainter(Color color) {
+      return TextPainter(
+        textDirection: TextDirection.ltr,
+        text: TextSpan(
+          text: String.fromCharCode(icon.codePoint),
+          style: TextStyle(
+            inherit: false,
+            color: color,
+            fontSize: size,
+            fontFamily: icon.fontFamily,
+            package: icon.fontPackage,
+          ),
+        ),
+      )..layout();
+    }
+
+    final outlinePainter = buildPainter(Colors.black.withValues(alpha: 0.22));
+    final painter = buildPainter(Colors.white);
+    final offset = Offset(
+      (canvasSize.width - painter.width) / 2,
+      (canvasSize.height - painter.height) / 2,
+    );
+
+    for (final delta in const <Offset>[
+      Offset(-0.6, 0),
+      Offset(0.6, 0),
+      Offset(0, -0.6),
+      Offset(0, 0.6),
+    ]) {
+      outlinePainter.paint(canvas, offset + delta);
+    }
+
+    canvas.saveLayer(
+      Offset.zero & canvasSize,
+      Paint()..blendMode = BlendMode.exclusion,
+    );
+    painter.paint(canvas, offset);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _ExclusionIconPainter oldDelegate) {
+    return oldDelegate.icon != icon || oldDelegate.size != size;
+  }
+}
+
 enum _ProjectDateType { lastModified, lastAccessed, createdAt }
 
 class _ProjectDateEntry {
@@ -592,6 +690,7 @@ class _ProjectDetails extends StatelessWidget {
   final Color accentColor;
   final bool isEditing;
   final TextEditingController synopsisController;
+  final String synopsisText;
   final VoidCallback onCycleDateType;
   final VoidCallback onToggleEditing;
   final ScrollController synopsisScrollController;
@@ -603,177 +702,229 @@ class _ProjectDetails extends StatelessWidget {
     required this.accentColor,
     required this.isEditing,
     required this.synopsisController,
+    required this.synopsisText,
     required this.onCycleDateType,
     required this.onToggleEditing,
     required this.synopsisScrollController,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.alphaBlend(
-              accentColor.withValues(alpha: 0.14),
-              Colors.white.withValues(alpha: 0.78),
-            ),
-            Colors.white.withValues(alpha: 0.72),
-            Color.alphaBlend(
-              accentColor.withValues(alpha: 0.2),
-              const Color(0xFFFFF8FC).withValues(alpha: 0.76),
-            ),
-          ],
-        ),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.22),
-            width: 0.7,
-          ),
+  double _calculateSynopsisHeight(
+    BuildContext context,
+    double maxWidth,
+  ) {
+    final text = synopsisText.trim().isEmpty
+        ? synopsisPlaceholderText
+        : synopsisText;
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          fontSize: 12,
+          color: Color(0xFF8F8990),
+          height: 1.4,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _TimeField(
-                  accentColor: accentColor,
-                  dateEntry: dateEntry,
-                  onTapClock: onCycleDateType,
-                ),
-              ),
-              const SizedBox(width: 12),
-              GlassCircleButton(
-                diameter: 36,
-                onTap: onToggleEditing,
-                blurSigma: 8,
-                fillColor: Colors.white.withValues(alpha: 0.32),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.58),
-                    accentColor.withValues(alpha: 0.2),
-                    _lighten(accentColor, 0.22).withValues(alpha: 0.16),
-                  ],
-                ),
-                borderColor: Colors.white.withValues(alpha: 0.8),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withValues(alpha: 0.14),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-                child: Icon(
-                  isEditing ? Icons.check_rounded : Icons.edit_outlined,
-                  size: 18,
-                  color: const Color(0xFF544959),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          EditableSynopsisPanel(
-            controller: synopsisController,
-            scrollController: synopsisScrollController,
-            isEditing: isEditing,
-            focusedBorderColor: accentColor,
-            placeholderText: synopsisPlaceholderText,
-            textStyle: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF8F8990),
-              height: 1.4,
-            ),
-            fillColor: Colors.white.withValues(alpha: 0.72),
-            blurSigma: 5,
-            backgroundGradient: LinearGradient(
+      textDirection: Directionality.of(context),
+      maxLines: null,
+    );
+    textPainter.layout(maxWidth: maxWidth - 28);
+    const verticalPadding = 28.0;
+    final estimatedHeight = textPainter.size.height + verticalPadding;
+    return estimatedHeight.clamp(112.0, 220.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withValues(alpha: 0.8),
-                const Color(0xFFFFF8FC).withValues(alpha: 0.68),
-                const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+                Color.alphaBlend(
+                  accentColor.withValues(alpha: 0.12),
+                  Colors.white.withValues(alpha: 0.52),
+                ),
+                Colors.white.withValues(alpha: 0.34),
+                Color.alphaBlend(
+                  accentColor.withValues(alpha: 0.16),
+                  const Color(0xFFFFF8FC).withValues(alpha: 0.42),
+                ),
               ],
-              stops: const [0.0, 0.55, 1.0],
             ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.78),
-              width: 0.7,
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.22),
+                width: 0.7,
+              ),
             ),
-            placeholderStyle: const TextStyle(
-              fontSize: 12,
-              height: 1.4,
-              color: Color(0xFF8F8990),
-              fontStyle: FontStyle.italic,
-            ),
-            viewerBuilder: (context, text, style) {
-              return _ProjectMarkdownText(data: text, style: style);
-            },
           ),
-          const SizedBox(height: 16),
-          if (tags.isNotEmpty) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final tag in tags)
-                  OutlinedTagPill(label: tag.label, color: tag.color),
+          foregroundDecoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.12),
+                Colors.white.withValues(alpha: 0.04),
+                Colors.transparent,
               ],
+              stops: const [0.0, 0.24, 0.6],
             ),
-            const SizedBox(height: 16),
-          ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Builder(
-                builder: (context) {
-                  return GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () => _showProjectCharacterInfo(
-                      context,
-                      rectFromContext(context),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TimeField(
+                      accentColor: accentColor,
+                      dateEntry: dateEntry,
+                      onTapClock: onCycleDateType,
                     ),
-                    child: const _ProjectInfoButton(),
+                  ),
+                  const SizedBox(width: 12),
+                  GlassCircleButton(
+                    diameter: 36,
+                    onTap: onToggleEditing,
+                    blurSigma: 8,
+                    fillColor: Colors.white.withValues(alpha: 0.32),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.58),
+                        accentColor.withValues(alpha: 0.2),
+                        _lighten(accentColor, 0.22).withValues(alpha: 0.16),
+                      ],
+                    ),
+                    borderColor: Colors.white.withValues(alpha: 0.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentColor.withValues(alpha: 0.14),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                    child: Icon(
+                      isEditing ? Icons.check_rounded : Icons.edit_outlined,
+                      size: 18,
+                      color: const Color(0xFF544959),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return EditableSynopsisPanel(
+                    controller: synopsisController,
+                    scrollController: synopsisScrollController,
+                    isEditing: isEditing,
+                    height: _calculateSynopsisHeight(
+                      context,
+                      constraints.maxWidth,
+                    ),
+                    focusedBorderColor: accentColor,
+                    placeholderText: synopsisPlaceholderText,
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF8F8990),
+                      height: 1.4,
+                    ),
+                    fillColor: Colors.white.withValues(alpha: 0.72),
+                    blurSigma: 5,
+                    backgroundGradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.8),
+                        const Color(0xFFFFF8FC).withValues(alpha: 0.68),
+                        const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+                      ],
+                      stops: const [0.0, 0.55, 1.0],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      width: 0.7,
+                    ),
+                    placeholderStyle: const TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: Color(0xFF8F8990),
+                      fontStyle: FontStyle.italic,
+                    ),
+                    viewerBuilder: (context, text, style) {
+                      return _ProjectMarkdownText(data: text, style: style);
+                    },
                   );
                 },
               ),
-              GlassCircleButton(
-                diameter: 34,
-                blurSigma: 6,
-                fillColor: accentColor.withValues(alpha: 0.22),
-                borderColor: Colors.white.withValues(alpha: 0.62),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.56),
-                    accentColor.withValues(alpha: 0.22),
-                    _lighten(accentColor, 0.22).withValues(alpha: 0.18),
+              const SizedBox(height: 16),
+              if (tags.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final tag in tags)
+                      OutlinedTagPill(label: tag.label, color: tag.color),
                   ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withValues(alpha: 0.14),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                const SizedBox(height: 16),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Builder(
+                    builder: (context) {
+                      return GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () => _showProjectCharacterInfo(
+                          context,
+                          rectFromContext(context),
+                        ),
+                        child: const _ProjectInfoButton(),
+                      );
+                    },
+                  ),
+                  GlassCircleButton(
+                    diameter: 34,
+                    blurSigma: 6,
+                    fillColor: accentColor.withValues(alpha: 0.22),
+                    borderColor: Colors.white.withValues(alpha: 0.62),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.56),
+                        accentColor.withValues(alpha: 0.22),
+                        _lighten(accentColor, 0.22).withValues(alpha: 0.18),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentColor.withValues(alpha: 0.14),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                    child: const Icon(
+                      Icons.swap_horiz,
+                      color: Color(0xFF544959),
+                      size: 18,
+                    ),
                   ),
                 ],
-                child: const Icon(
-                  Icons.swap_horiz,
-                  color: Color(0xFF544959),
-                  size: 18,
-                ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -800,28 +951,29 @@ class _ProjectDetails extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Nenhum personagem exibido aqui.',
             style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.82),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+              color: Color(0xFF3E313A),
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              fontStyle: FontStyle.italic,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7),
           Text(
             'Os 3 personagens de maior relevância são automaticamente exibidos, ou você pode escolher manualmente na',
             style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.72),
+              color: const Color(0xFF655862),
               fontSize: 12,
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           RichText(
             text: TextSpan(
               style: TextStyle(
-                color: Colors.black.withValues(alpha: 0.72),
+                color: const Color(0xFF655862),
                 fontSize: 12,
                 height: 1.4,
               ),
@@ -829,9 +981,12 @@ class _ProjectDetails extends StatelessWidget {
                 TextSpan(
                   text: 'página de configurações do projeto',
                   style: const TextStyle(
-                    color: Color(0xFF5B33A8),
+                    color: Color(0xFF7C4E63),
                     decoration: TextDecoration.underline,
-                    fontWeight: FontWeight.w600,
+                    decorationColor: Color(0xFFB97C98),
+                    decorationThickness: 1.2,
+                    fontWeight: FontWeight.w700,
+                    fontStyle: FontStyle.italic,
                   ),
                   recognizer: recognizer,
                 ),
@@ -941,25 +1096,52 @@ class _AnchoredInfoBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bubble = ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFFFFF8FC).withValues(alpha: 0.78),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.9),
+                const Color(0xFFFFF6FB).withValues(alpha: 0.84),
+                const Color(0xFFF2DCE8).withValues(alpha: 0.72),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.86),
-              width: 0.8,
+              color: Colors.white.withValues(alpha: 0.92),
+              width: 0.9,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: const Color(0xFFB96B92).withValues(alpha: 0.12),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
+          ),
+          foregroundDecoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.14),
+                Colors.white.withValues(alpha: 0.05),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.24, 0.62],
+            ),
           ),
           child: child,
         ),
@@ -973,7 +1155,7 @@ class _AnchoredInfoBubble extends StatelessWidget {
       child: CustomPaint(
         size: Size(arrowSize, arrowSize),
         painter: _BubbleArrowPainter(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: const Color(0xFFFFF7FB).withValues(alpha: 0.88),
           pointUp: !showAbove,
         ),
       ),
