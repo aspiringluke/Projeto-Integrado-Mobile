@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../../../shared/widgets/synopsis_scroll_box.dart';
+import '../controllers/create_project_dialog_controller.dart';
 import '../models/project_image_data.dart';
-import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
 import '../utils/project_image_picker.dart';
 import 'create_project_dialog_image_widgets.dart';
@@ -53,8 +53,6 @@ class _CreateProjectDialog extends StatefulWidget {
   State<_CreateProjectDialog> createState() => _CreateProjectDialogState();
 }
 
-enum _ProjectColorTarget { cover, accent }
-
 class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
@@ -62,12 +60,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   late final TextEditingController _newTagController;
   late final ScrollController _contentScrollController;
   late final ScrollController _synopsisScrollController;
-  late List<ProjectTagData> _knownTags;
-  final Set<String> _selectedTags = <String>{};
-  late Color _newTagColor;
-  HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
-  HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
-  _ProjectColorTarget _activeColorTarget = _ProjectColorTarget.accent;
+  late final CreateProjectDialogController _dialogController;
   ProjectImageData _coverImage = const ProjectImageData();
   String? _coverImageName;
   ProjectImageData _accentImage = const ProjectImageData();
@@ -81,8 +74,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     height: 1.35,
   );
 
-  Color get _defaultNewTagColor => projectTagColorAt(_knownTags.length);
-
   @override
   void initState() {
     super.initState();
@@ -92,12 +83,16 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _newTagController = TextEditingController();
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
-    _knownTags = List<ProjectTagData>.from(widget.availableTags);
-    _newTagColor = _defaultNewTagColor;
+    _dialogController = CreateProjectDialogController(
+      availableTags: widget.availableTags,
+    );
+    _dialogController.addListener(_onDialogControllerChanged);
   }
 
   @override
   void dispose() {
+    _dialogController.removeListener(_onDialogControllerChanged);
+    _dialogController.dispose();
     _synopsisController.removeListener(_onSynopsisTextChanged);
     _titleController.dispose();
     _synopsisController.dispose();
@@ -108,6 +103,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   }
 
   void _onSynopsisTextChanged() {
+    setState(() {});
+  }
+
+  void _onDialogControllerChanged() {
     setState(() {});
   }
 
@@ -133,43 +132,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     return estimatedHeight.clamp(minimumHeight, _synopsisMaxHeight);
   }
 
-  void _toggleTag(ProjectTagData tag) {
-    final normalizedLabel = tag.normalizedLabel;
-
-    setState(() {
-      if (_selectedTags.contains(normalizedLabel)) {
-        _selectedTags.remove(normalizedLabel);
-      } else {
-        _selectedTags.add(normalizedLabel);
-      }
-    });
-  }
-
   void _addTagFromInput() {
-    final sanitizedLabel = sanitizeProjectTagLabel(_newTagController.text);
-    final normalizedLabel = normalizeProjectTagLabel(_newTagController.text);
-    if (normalizedLabel.isEmpty) return;
-
-    final existingIndex = _knownTags.indexWhere(
-      (tag) => tag.normalizedLabel == normalizedLabel,
-    );
-
-    setState(() {
-      if (existingIndex != -1) {
-        _selectedTags.add(normalizedLabel);
-      } else {
-        final newTag = ProjectTagData(
-          label: sanitizedLabel,
-          color: _newTagColor,
-        );
-
-        _knownTags = <ProjectTagData>[..._knownTags, newTag];
-        _selectedTags.add(newTag.normalizedLabel);
-      }
-
+    final didAdd = _dialogController.addTagFromInput(_newTagController.text);
+    if (didAdd) {
       _newTagController.clear();
-      _newTagColor = _defaultNewTagColor;
-    });
+      setState(() {});
+    }
   }
 
   void _submit() {
@@ -181,36 +149,32 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       return;
     }
 
-    final selectedTags = _knownTags
-        .where((tag) => _selectedTags.contains(tag.normalizedLabel))
-        .toList(growable: false);
-
     Navigator.of(context).pop(
       CreateProjectTextDraft(
         title: _titleController.text.trim(),
         synopsis: _synopsisController.text.trim(),
-        tags: selectedTags,
-        coverColor: _coverColor.toColor(),
-        accentColor: _accentColor.toColor(),
+        tags: _dialogController.selectedTags,
+        coverColor: _dialogController.coverColor,
+        accentColor: _dialogController.accentColor,
         coverImage: _coverImage,
         accentImage: _accentImage,
       ),
     );
   }
 
-  bool _isCoverTarget(_ProjectColorTarget target) =>
-      target == _ProjectColorTarget.cover;
+  bool _isCoverTarget(CreateProjectDialogColorTarget target) =>
+      target == CreateProjectDialogColorTarget.cover;
 
-  ProjectImageData _imageForTarget(_ProjectColorTarget target) {
+  ProjectImageData _imageForTarget(CreateProjectDialogColorTarget target) {
     return _isCoverTarget(target) ? _coverImage : _accentImage;
   }
 
-  String? _imageNameForTarget(_ProjectColorTarget target) {
+  String? _imageNameForTarget(CreateProjectDialogColorTarget target) {
     return _isCoverTarget(target) ? _coverImageName : _accentImageName;
   }
 
   void _setImageStateForTarget(
-    _ProjectColorTarget target, {
+    CreateProjectDialogColorTarget target, {
     required ProjectImageData image,
     required String? imageName,
   }) {
@@ -225,14 +189,14 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   }
 
   CreateProjectDialogImageEditorViewportPreset _viewportPresetForTarget(
-    _ProjectColorTarget target,
+    CreateProjectDialogColorTarget target,
   ) {
     return _isCoverTarget(target)
         ? createProjectDialogCoverViewportPreset
         : createProjectDialogAccentViewportPreset;
   }
 
-  Future<void> _pickImage(_ProjectColorTarget target) async {
+  Future<void> _pickImage(CreateProjectDialogColorTarget target) async {
     final result = await pickProjectImage();
     if (result == null) {
       return;
@@ -256,7 +220,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     });
   }
 
-  void _removeImage(_ProjectColorTarget target) {
+  void _removeImage(CreateProjectDialogColorTarget target) {
     setState(() {
       _setImageStateForTarget(
         target,
@@ -277,7 +241,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   }
 
   ProjectImageViewportMetrics _imageMetricsForTarget(
-    _ProjectColorTarget target,
+    CreateProjectDialogColorTarget target,
     double scale,
   ) {
     final image = _imageForTarget(target);
@@ -294,7 +258,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     );
   }
 
-  void _setImageScale(_ProjectColorTarget target, double value) {
+  void _setImageScale(CreateProjectDialogColorTarget target, double value) {
     final metrics = _imageMetricsForTarget(target, value);
     final image = _imageForTarget(target);
 
@@ -320,7 +284,11 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     });
   }
 
-  void _setImageOffset(_ProjectColorTarget target, double dx, double dy) {
+  void _setImageOffset(
+    CreateProjectDialogColorTarget target,
+    double dx,
+    double dy,
+  ) {
     final image = _imageForTarget(target);
     final metrics = _imageMetricsForTarget(target, image.scale);
 
@@ -450,7 +418,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             textInputAction: TextInputAction.next,
                             decoration: _buildInputDecoration(
                               hintText: 'Nome do projeto',
-                              focusedColor: _accentColor.toColor(),
+                              focusedColor: _dialogController.accentColor,
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -494,7 +462,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 border: Border.all(
                                   color: Colors.white.withValues(alpha: 0.74),
                                 ),
-                                focusedBorderColor: _accentColor.toColor(),
+                                focusedBorderColor:
+                                    _dialogController.accentColor,
                                 viewerBuilder: (context, text, style) {
                                   return Text(text, style: style);
                                 },
@@ -521,7 +490,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          if (_knownTags.isEmpty)
+                          if (_dialogController.knownTags.isEmpty)
                             CreateProjectDialogInfoSurface(
                               child: const Text(
                                 'Nenhuma tag cadastrada ainda.',
@@ -536,13 +505,14 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               spacing: 8,
                               runSpacing: 8,
                               children: [
-                                for (final tag in _knownTags)
+                                for (final tag in _dialogController.knownTags)
                                   CreateProjectDialogSelectableTagChip(
                                     tag: tag,
-                                    isSelected: _selectedTags.contains(
-                                      tag.normalizedLabel,
+                                    isSelected: _dialogController.isSelectedTag(
+                                      tag,
                                     ),
-                                    onTap: () => _toggleTag(tag),
+                                    onTap: () =>
+                                        _dialogController.toggleTag(tag),
                                   ),
                               ],
                             ),
@@ -556,7 +526,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   textInputAction: TextInputAction.done,
                                   decoration: _buildInputDecoration(
                                     hintText: 'Nova tag',
-                                    focusedColor: _accentColor.toColor(),
+                                    focusedColor: _dialogController.accentColor,
                                   ),
                                   onChanged: (_) => setState(() {}),
                                   onFieldSubmitted: (_) => _addTagFromInput(),
@@ -597,17 +567,15 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                     : sanitizeProjectTagLabel(
                                         _newTagController.text,
                                       ),
-                                color: _newTagColor,
+                                color: _dialogController.newTagColor,
                               ),
                               for (final color in projectTagPalette)
                                 CreateProjectDialogTagColorSwatch(
                                   color: color,
-                                  isSelected: color == _newTagColor,
-                                  onTap: () {
-                                    setState(() {
-                                      _newTagColor = color;
-                                    });
-                                  },
+                                  isSelected:
+                                      color == _dialogController.newTagColor,
+                                  onTap: () =>
+                                      _dialogController.setNewTagColor(color),
                                 ),
                             ],
                           ),
@@ -617,48 +585,44 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               Expanded(
                                 child: CreateProjectDialogColorTargetChip(
                                   label: 'Capa',
-                                  color: _coverColor.toColor(),
+                                  color: _dialogController.coverColor,
                                   gradient:
                                       buildCreateProjectDialogCoverPreviewGradient(
-                                        _coverColor.toColor(),
+                                        _dialogController.coverColor,
                                       ),
                                   swatchGradient:
                                       buildCreateProjectDialogCoverPreviewGradient(
-                                        _coverColor.toColor(),
+                                        _dialogController.coverColor,
                                       ),
                                   isSelected:
-                                      _activeColorTarget ==
-                                      _ProjectColorTarget.cover,
-                                  onTap: () {
-                                    setState(() {
-                                      _activeColorTarget =
-                                          _ProjectColorTarget.cover;
-                                    });
-                                  },
+                                      _dialogController.activeColorTarget ==
+                                      CreateProjectDialogColorTarget.cover,
+                                  onTap: () =>
+                                      _dialogController.setActiveColorTarget(
+                                        CreateProjectDialogColorTarget.cover,
+                                      ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: CreateProjectDialogColorTargetChip(
                                   label: 'Realce',
-                                  color: _accentColor.toColor(),
+                                  color: _dialogController.accentColor,
                                   gradient:
                                       buildCreateProjectDialogAccentPreviewGradient(
-                                        _accentColor.toColor(),
+                                        _dialogController.accentColor,
                                       ),
                                   swatchGradient:
                                       buildCreateProjectDialogAccentPreviewGradient(
-                                        _accentColor.toColor(),
+                                        _dialogController.accentColor,
                                       ),
                                   isSelected:
-                                      _activeColorTarget ==
-                                      _ProjectColorTarget.accent,
-                                  onTap: () {
-                                    setState(() {
-                                      _activeColorTarget =
-                                          _ProjectColorTarget.accent;
-                                    });
-                                  },
+                                      _dialogController.activeColorTarget ==
+                                      CreateProjectDialogColorTarget.accent,
+                                  onTap: () =>
+                                      _dialogController.setActiveColorTarget(
+                                        CreateProjectDialogColorTarget.accent,
+                                      ),
                                 ),
                               ),
                             ],
@@ -666,64 +630,28 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           const SizedBox(height: 8),
                           ProjectColorEditor(
                             title:
-                                _activeColorTarget == _ProjectColorTarget.cover
+                                _dialogController.activeColorTarget ==
+                                    CreateProjectDialogColorTarget.cover
                                 ? 'Cor da capa'
                                 : 'Cor de realce',
                             description:
-                                _activeColorTarget == _ProjectColorTarget.cover
+                                _dialogController.activeColorTarget ==
+                                    CreateProjectDialogColorTarget.cover
                                 ? 'Preenche o topo do cartão.'
                                 : 'Aplica a base cromática do cartão.',
-                            color:
-                                _activeColorTarget == _ProjectColorTarget.cover
-                                ? _coverColor.toColor()
-                                : _accentColor.toColor(),
-                            hslColor:
-                                _activeColorTarget == _ProjectColorTarget.cover
-                                ? _coverColor
-                                : _accentColor,
+                            color: _dialogController.activeColor,
+                            hslColor: _dialogController.activeHslColor,
                             useSolidCoverPreview:
-                                _activeColorTarget == _ProjectColorTarget.cover,
-                            onHueChanged: (value) {
-                              setState(() {
-                                if (_activeColorTarget ==
-                                    _ProjectColorTarget.cover) {
-                                  _coverColor = _coverColor.withHue(value);
-                                } else {
-                                  _accentColor = _accentColor.withHue(value);
-                                }
-                              });
-                            },
-                            onSaturationChanged: (value) {
-                              setState(() {
-                                if (_activeColorTarget ==
-                                    _ProjectColorTarget.cover) {
-                                  _coverColor = _coverColor.withSaturation(
-                                    value,
-                                  );
-                                } else {
-                                  _accentColor = _accentColor.withSaturation(
-                                    value,
-                                  );
-                                }
-                              });
-                            },
-                            onLightnessChanged: (value) {
-                              setState(() {
-                                if (_activeColorTarget ==
-                                    _ProjectColorTarget.cover) {
-                                  _coverColor = _coverColor.withLightness(
-                                    value,
-                                  );
-                                } else {
-                                  _accentColor = _accentColor.withLightness(
-                                    value,
-                                  );
-                                }
-                              });
-                            },
+                                _dialogController.activeColorTarget ==
+                                CreateProjectDialogColorTarget.cover,
+                            onHueChanged: _dialogController.setActiveHue,
+                            onSaturationChanged:
+                                _dialogController.setActiveSaturation,
+                            onLightnessChanged:
+                                _dialogController.setActiveLightness,
                           ),
-                          if (_activeColorTarget ==
-                              _ProjectColorTarget.cover) ...[
+                          if (_dialogController.activeColorTarget ==
+                              CreateProjectDialogColorTarget.cover) ...[
                             const SizedBox(height: 12),
                             CreateProjectDialogCoverImagePickerCard(
                               title: 'Imagem da capa',
@@ -749,21 +677,23 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                   createProjectDialogCoverViewportPreset,
                               emptyStateText: 'Nenhuma imagem selecionada',
                               onScaleChanged: (value) => _setImageScale(
-                                _ProjectColorTarget.cover,
+                                CreateProjectDialogColorTarget.cover,
                                 value,
                               ),
                               onOffsetChanged: (offsetX, offsetY) =>
                                   _setImageOffset(
-                                    _ProjectColorTarget.cover,
+                                    CreateProjectDialogColorTarget.cover,
                                     offsetX,
                                     offsetY,
                                   ),
-                              onPick: () =>
-                                  _pickImage(_ProjectColorTarget.cover),
+                              onPick: () => _pickImage(
+                                CreateProjectDialogColorTarget.cover,
+                              ),
                               onRemove: _coverImage.bytes == null
                                   ? null
-                                  : () =>
-                                        _removeImage(_ProjectColorTarget.cover),
+                                  : () => _removeImage(
+                                      CreateProjectDialogColorTarget.cover,
+                                    ),
                             ),
                           ] else ...[
                             const SizedBox(height: 12),
@@ -780,27 +710,28 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               offsetY: _accentImage.offsetY,
                               backgroundGradient:
                                   buildCreateProjectDialogAccentPreviewGradient(
-                                    _accentColor.toColor(),
+                                    _dialogController.accentColor,
                                   ),
                               viewportPreset:
                                   createProjectDialogAccentViewportPreset,
                               emptyStateText: 'Nenhuma imagem selecionada',
                               onScaleChanged: (value) => _setImageScale(
-                                _ProjectColorTarget.accent,
+                                CreateProjectDialogColorTarget.accent,
                                 value,
                               ),
                               onOffsetChanged: (offsetX, offsetY) =>
                                   _setImageOffset(
-                                    _ProjectColorTarget.accent,
+                                    CreateProjectDialogColorTarget.accent,
                                     offsetX,
                                     offsetY,
                                   ),
-                              onPick: () =>
-                                  _pickImage(_ProjectColorTarget.accent),
+                              onPick: () => _pickImage(
+                                CreateProjectDialogColorTarget.accent,
+                              ),
                               onRemove: _accentImage.bytes == null
                                   ? null
                                   : () => _removeImage(
-                                      _ProjectColorTarget.accent,
+                                      CreateProjectDialogColorTarget.accent,
                                     ),
                             ),
                           ],
