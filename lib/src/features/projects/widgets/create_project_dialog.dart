@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../controllers/create_project_dialog_controller.dart';
+import '../controllers/create_project_dialog_image_controller.dart';
 import '../models/project_image_data.dart';
 import '../models/project_tag_data.dart';
-import '../utils/project_image_picker.dart';
-import 'create_project_dialog_image_widgets.dart';
 import 'create_project_dialog_sections.dart';
-import 'project_image_transform_view.dart';
 
 Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
   BuildContext context, {
@@ -60,10 +55,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   late final ScrollController _contentScrollController;
   late final ScrollController _synopsisScrollController;
   late final CreateProjectDialogController _dialogController;
-  ProjectImageData _coverImage = const ProjectImageData();
-  String? _coverImageName;
-  ProjectImageData _accentImage = const ProjectImageData();
-  String? _accentImageName;
+  late final CreateProjectDialogImageController _imageController;
 
   static const double _synopsisMaxHeight = 196;
 
@@ -85,11 +77,15 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _dialogController = CreateProjectDialogController(
       availableTags: widget.availableTags,
     );
+    _imageController = CreateProjectDialogImageController();
     _dialogController.addListener(_onDialogControllerChanged);
+    _imageController.addListener(_onImageControllerChanged);
   }
 
   @override
   void dispose() {
+    _imageController.removeListener(_onImageControllerChanged);
+    _imageController.dispose();
     _dialogController.removeListener(_onDialogControllerChanged);
     _dialogController.dispose();
     _synopsisController.removeListener(_onSynopsisTextChanged);
@@ -106,6 +102,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   }
 
   void _onDialogControllerChanged() {
+    setState(() {});
+  }
+
+  void _onImageControllerChanged() {
     setState(() {});
   }
 
@@ -155,162 +155,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         tags: _dialogController.selectedTags,
         coverColor: _dialogController.coverColor,
         accentColor: _dialogController.accentColor,
-        coverImage: _coverImage,
-        accentImage: _accentImage,
+        coverImage: _imageController.coverImage,
+        accentImage: _imageController.accentImage,
       ),
     );
-  }
-
-  bool _isCoverTarget(CreateProjectDialogColorTarget target) =>
-      target == CreateProjectDialogColorTarget.cover;
-
-  ProjectImageData _imageForTarget(CreateProjectDialogColorTarget target) {
-    return _isCoverTarget(target) ? _coverImage : _accentImage;
-  }
-
-  String? _imageNameForTarget(CreateProjectDialogColorTarget target) {
-    return _isCoverTarget(target) ? _coverImageName : _accentImageName;
-  }
-
-  void _setImageStateForTarget(
-    CreateProjectDialogColorTarget target, {
-    required ProjectImageData image,
-    required String? imageName,
-  }) {
-    if (_isCoverTarget(target)) {
-      _coverImage = image;
-      _coverImageName = imageName;
-      return;
-    }
-
-    _accentImage = image;
-    _accentImageName = imageName;
-  }
-
-  CreateProjectDialogImageEditorViewportPreset _viewportPresetForTarget(
-    CreateProjectDialogColorTarget target,
-  ) {
-    return _isCoverTarget(target)
-        ? createProjectDialogCoverViewportPreset
-        : createProjectDialogAccentViewportPreset;
-  }
-
-  Future<void> _pickImage(CreateProjectDialogColorTarget target) async {
-    final result = await pickProjectImage();
-    if (result == null) {
-      return;
-    }
-
-    final imageSize = await _decodeImageSize(result.bytes);
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _setImageStateForTarget(
-        target,
-        image: ProjectImageData(
-          bytes: result.bytes,
-          width: imageSize.width,
-          height: imageSize.height,
-        ),
-        imageName: result.name,
-      );
-    });
-  }
-
-  void _removeImage(CreateProjectDialogColorTarget target) {
-    setState(() {
-      _setImageStateForTarget(
-        target,
-        image: const ProjectImageData(),
-        imageName: null,
-      );
-    });
-  }
-
-  Future<Size> _decodeImageSize(Uint8List bytes) async {
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    final image = frame.image;
-    final size = Size(image.width.toDouble(), image.height.toDouble());
-    image.dispose();
-    codec.dispose();
-    return size;
-  }
-
-  ProjectImageViewportMetrics _imageMetricsForTarget(
-    CreateProjectDialogColorTarget target,
-    double scale,
-  ) {
-    final image = _imageForTarget(target);
-    final viewportPreset = _viewportPresetForTarget(target);
-
-    return computeProjectImageViewportMetrics(
-      viewportSize: Size(
-        viewportPreset.cropReferenceWidth,
-        viewportPreset.cropHeight,
-      ),
-      imageWidth: image.width ?? 0,
-      imageHeight: image.height ?? 0,
-      scale: scale,
-    );
-  }
-
-  void _setImageScale(CreateProjectDialogColorTarget target, double value) {
-    final metrics = _imageMetricsForTarget(target, value);
-    final image = _imageForTarget(target);
-
-    setState(() {
-      _setImageStateForTarget(
-        target,
-        image: ProjectImageData(
-          bytes: image.bytes,
-          width: image.width,
-          height: image.height,
-          scale: value,
-          offsetX: clampProjectImageOffset(
-            image.offsetX,
-            maxTranslation: metrics.maxTranslationX,
-          ),
-          offsetY: clampProjectImageOffset(
-            image.offsetY,
-            maxTranslation: metrics.maxTranslationY,
-          ),
-        ),
-        imageName: _imageNameForTarget(target),
-      );
-    });
-  }
-
-  void _setImageOffset(
-    CreateProjectDialogColorTarget target,
-    double dx,
-    double dy,
-  ) {
-    final image = _imageForTarget(target);
-    final metrics = _imageMetricsForTarget(target, image.scale);
-
-    setState(() {
-      _setImageStateForTarget(
-        target,
-        image: ProjectImageData(
-          bytes: image.bytes,
-          width: image.width,
-          height: image.height,
-          scale: image.scale,
-          offsetX: clampProjectImageOffset(
-            dx,
-            maxTranslation: metrics.maxTranslationX,
-          ),
-          offsetY: clampProjectImageOffset(
-            dy,
-            maxTranslation: metrics.maxTranslationY,
-          ),
-        ),
-        imageName: _imageNameForTarget(target),
-      );
-    });
   }
 
   @override
@@ -422,14 +270,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           const SizedBox(height: 12),
                           CreateProjectDialogImageSection(
                             controller: _dialogController,
-                            coverImage: _coverImage,
-                            coverImageName: _coverImageName,
-                            accentImage: _accentImage,
-                            accentImageName: _accentImageName,
-                            onScaleChanged: _setImageScale,
-                            onOffsetChanged: _setImageOffset,
-                            onPickImage: _pickImage,
-                            onRemoveImage: _removeImage,
+                            imageController: _imageController,
                           ),
                           const SizedBox(height: 12),
                           CreateProjectDialogActionsRow(

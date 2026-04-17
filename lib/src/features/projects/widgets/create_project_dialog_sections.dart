@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../controllers/create_project_dialog_controller.dart';
-import '../models/project_image_data.dart';
+import '../controllers/create_project_dialog_image_controller.dart';
+import '../models/create_project_dialog_image_viewport_presets.dart';
 import '../models/project_tag_data.dart';
 import 'create_project_dialog_image_widgets.dart';
 import 'create_project_dialog_support_widgets.dart';
@@ -341,36 +342,21 @@ class CreateProjectDialogColorSection extends StatelessWidget {
 
 class CreateProjectDialogImageSection extends StatelessWidget {
   final CreateProjectDialogController controller;
-  final ProjectImageData coverImage;
-  final String? coverImageName;
-  final ProjectImageData accentImage;
-  final String? accentImageName;
-  final void Function(CreateProjectDialogColorTarget target, double value)
-  onScaleChanged;
-  final void Function(
-    CreateProjectDialogColorTarget target,
-    double offsetX,
-    double offsetY,
-  )
-  onOffsetChanged;
-  final ValueChanged<CreateProjectDialogColorTarget> onPickImage;
-  final ValueChanged<CreateProjectDialogColorTarget> onRemoveImage;
+  final CreateProjectDialogImageController imageController;
 
   const CreateProjectDialogImageSection({
     super.key,
     required this.controller,
-    required this.coverImage,
-    required this.coverImageName,
-    required this.accentImage,
-    required this.accentImageName,
-    required this.onScaleChanged,
-    required this.onOffsetChanged,
-    required this.onPickImage,
-    required this.onRemoveImage,
+    required this.imageController,
   });
 
   @override
   Widget build(BuildContext context) {
+    final coverImage = imageController.coverImage;
+    final coverImageName = imageController.coverImageName;
+    final accentImage = imageController.accentImage;
+    final accentImageName = imageController.accentImageName;
+
     if (controller.activeColorTarget == CreateProjectDialogColorTarget.cover) {
       return CreateProjectDialogCoverImagePickerCard(
         title: 'Imagem da capa',
@@ -390,17 +376,22 @@ class CreateProjectDialogImageSection extends StatelessWidget {
         ),
         viewportPreset: createProjectDialogCoverViewportPreset,
         emptyStateText: 'Nenhuma imagem selecionada',
-        onScaleChanged: (value) =>
-            onScaleChanged(CreateProjectDialogColorTarget.cover, value),
-        onOffsetChanged: (offsetX, offsetY) => onOffsetChanged(
+        onScaleChanged: (value) => imageController.setImageScale(
+          CreateProjectDialogColorTarget.cover,
+          value,
+        ),
+        onOffsetChanged: (offsetX, offsetY) => imageController.setImageOffset(
           CreateProjectDialogColorTarget.cover,
           offsetX,
           offsetY,
         ),
-        onPick: () => onPickImage(CreateProjectDialogColorTarget.cover),
+        onPick: () =>
+            imageController.pickImage(CreateProjectDialogColorTarget.cover),
         onRemove: coverImage.bytes == null
             ? null
-            : () => onRemoveImage(CreateProjectDialogColorTarget.cover),
+            : () => imageController.removeImage(
+                CreateProjectDialogColorTarget.cover,
+              ),
       );
     }
 
@@ -420,17 +411,22 @@ class CreateProjectDialogImageSection extends StatelessWidget {
       ),
       viewportPreset: createProjectDialogAccentViewportPreset,
       emptyStateText: 'Nenhuma imagem selecionada',
-      onScaleChanged: (value) =>
-          onScaleChanged(CreateProjectDialogColorTarget.accent, value),
-      onOffsetChanged: (offsetX, offsetY) => onOffsetChanged(
+      onScaleChanged: (value) => imageController.setImageScale(
+        CreateProjectDialogColorTarget.accent,
+        value,
+      ),
+      onOffsetChanged: (offsetX, offsetY) => imageController.setImageOffset(
         CreateProjectDialogColorTarget.accent,
         offsetX,
         offsetY,
       ),
-      onPick: () => onPickImage(CreateProjectDialogColorTarget.accent),
+      onPick: () =>
+          imageController.pickImage(CreateProjectDialogColorTarget.accent),
       onRemove: accentImage.bytes == null
           ? null
-          : () => onRemoveImage(CreateProjectDialogColorTarget.accent),
+          : () => imageController.removeImage(
+              CreateProjectDialogColorTarget.accent,
+            ),
     );
   }
 }

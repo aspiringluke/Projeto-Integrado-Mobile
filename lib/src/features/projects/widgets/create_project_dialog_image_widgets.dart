@@ -2,23 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../models/create_project_dialog_image_viewport_presets.dart';
 import 'project_image_transform_view.dart';
-
-const createProjectDialogCoverViewportPreset =
-    CreateProjectDialogImageEditorViewportPreset(
-      canvasHeight: 144,
-      cropHeight: 74,
-      cropHorizontalInset: 12,
-      cropReferenceWidth: 240,
-    );
-
-const createProjectDialogAccentViewportPreset =
-    CreateProjectDialogImageEditorViewportPreset(
-      canvasHeight: 156,
-      cropHeight: 112,
-      cropHorizontalInset: 10,
-      cropReferenceWidth: 240,
-    );
 
 class CreateProjectDialogCoverImagePickerCard extends StatelessWidget {
   final String title;
@@ -347,20 +332,6 @@ class CreateProjectDialogImageEditor extends StatelessWidget {
       },
     );
   }
-}
-
-class CreateProjectDialogImageEditorViewportPreset {
-  final double canvasHeight;
-  final double cropHeight;
-  final double cropHorizontalInset;
-  final double cropReferenceWidth;
-
-  const CreateProjectDialogImageEditorViewportPreset({
-    required this.canvasHeight,
-    required this.cropHeight,
-    required this.cropHorizontalInset,
-    required this.cropReferenceWidth,
-  });
 }
 
 class CreateProjectDialogEditorShade extends StatelessWidget {
