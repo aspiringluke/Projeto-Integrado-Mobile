@@ -1,8 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/project_image_data.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../widgets/project_card.dart';
@@ -20,18 +19,8 @@ class ProjectListController extends ChangeNotifier {
     Iterable<ProjectTagData> tags = const <ProjectTagData>[],
     Color coverColor = defaultProjectCoverColor,
     Color accentColor = defaultProjectAccentColor,
-    Uint8List? coverImageBytes,
-    double? coverImageWidth,
-    double? coverImageHeight,
-    double coverImageScale = 1,
-    double coverImageOffsetX = 0,
-    double coverImageOffsetY = 0,
-    Uint8List? accentImageBytes,
-    double? accentImageWidth,
-    double? accentImageHeight,
-    double accentImageScale = 1,
-    double accentImageOffsetX = 0,
-    double accentImageOffsetY = 0,
+    ProjectImageData coverImage = const ProjectImageData(),
+    ProjectImageData accentImage = const ProjectImageData(),
   }) {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) return;
@@ -48,18 +37,8 @@ class ProjectListController extends ChangeNotifier {
         tags: resolvedTags,
         coverColor: coverColor,
         accentColor: accentColor,
-        coverImageBytes: coverImageBytes,
-        coverImageWidth: coverImageWidth,
-        coverImageHeight: coverImageHeight,
-        coverImageScale: coverImageScale,
-        coverImageOffsetX: coverImageOffsetX,
-        coverImageOffsetY: coverImageOffsetY,
-        accentImageBytes: accentImageBytes,
-        accentImageWidth: accentImageWidth,
-        accentImageHeight: accentImageHeight,
-        accentImageScale: accentImageScale,
-        accentImageOffsetX: accentImageOffsetX,
-        accentImageOffsetY: accentImageOffsetY,
+        coverImage: coverImage,
+        accentImage: accentImage,
         createdAt: now,
         lastModified: now,
         lastAccessed: now,
@@ -91,10 +70,7 @@ class ProjectListController extends ChangeNotifier {
         continue;
       }
 
-      final newTag = ProjectTagData(
-        label: sanitizedLabel,
-        color: tag.color,
-      );
+      final newTag = ProjectTagData(label: sanitizedLabel, color: tag.color);
 
       _availableTags.add(newTag);
       resolvedTags.add(newTag);
@@ -232,18 +208,8 @@ class ProjectListPage extends StatelessWidget {
               tags: project.tags,
               coverColor: project.coverColor,
               accentColor: project.accentColor,
-              coverImageBytes: project.coverImageBytes,
-              coverImageWidth: project.coverImageWidth,
-              coverImageHeight: project.coverImageHeight,
-              coverImageScale: project.coverImageScale,
-              coverImageOffsetX: project.coverImageOffsetX,
-              coverImageOffsetY: project.coverImageOffsetY,
-              accentImageBytes: project.accentImageBytes,
-              accentImageWidth: project.accentImageWidth,
-              accentImageHeight: project.accentImageHeight,
-              accentImageScale: project.accentImageScale,
-              accentImageOffsetX: project.accentImageOffsetX,
-              accentImageOffsetY: project.accentImageOffsetY,
+              coverImage: project.coverImage,
+              accentImage: project.accentImage,
               isPinned: project.isPinned,
               onTogglePinned: () => controller._togglePinned(project),
               createdAt: project.createdAt,
@@ -310,18 +276,8 @@ class _ProjectListItem {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
-  final Uint8List? coverImageBytes;
-  final double? coverImageWidth;
-  final double? coverImageHeight;
-  final double coverImageScale;
-  final double coverImageOffsetX;
-  final double coverImageOffsetY;
-  final Uint8List? accentImageBytes;
-  final double? accentImageWidth;
-  final double? accentImageHeight;
-  final double accentImageScale;
-  final double accentImageOffsetX;
-  final double accentImageOffsetY;
+  final ProjectImageData coverImage;
+  final ProjectImageData accentImage;
   final DateTime createdAt;
   DateTime lastModified;
   DateTime lastAccessed;
@@ -334,18 +290,8 @@ class _ProjectListItem {
     required this.tags,
     required this.coverColor,
     required this.accentColor,
-    required this.coverImageBytes,
-    required this.coverImageWidth,
-    required this.coverImageHeight,
-    required this.coverImageScale,
-    required this.coverImageOffsetX,
-    required this.coverImageOffsetY,
-    required this.accentImageBytes,
-    required this.accentImageWidth,
-    required this.accentImageHeight,
-    required this.accentImageScale,
-    required this.accentImageOffsetX,
-    required this.accentImageOffsetY,
+    this.coverImage = const ProjectImageData(),
+    this.accentImage = const ProjectImageData(),
     required this.createdAt,
     required this.lastModified,
     required this.lastAccessed,

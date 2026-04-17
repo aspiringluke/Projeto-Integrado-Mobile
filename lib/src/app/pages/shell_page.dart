@@ -60,18 +60,8 @@ class _ShellPageState extends State<ShellPage> {
       tags: draft.tags,
       coverColor: draft.coverColor,
       accentColor: draft.accentColor,
-      coverImageBytes: draft.coverImageBytes,
-      coverImageWidth: draft.coverImageWidth,
-      coverImageHeight: draft.coverImageHeight,
-      coverImageScale: draft.coverImageScale,
-      coverImageOffsetX: draft.coverImageOffsetX,
-      coverImageOffsetY: draft.coverImageOffsetY,
-      accentImageBytes: draft.accentImageBytes,
-      accentImageWidth: draft.accentImageWidth,
-      accentImageHeight: draft.accentImageHeight,
-      accentImageScale: draft.accentImageScale,
-      accentImageOffsetX: draft.accentImageOffsetX,
-      accentImageOffsetY: draft.accentImageOffsetY,
+      coverImage: draft.coverImage,
+      accentImage: draft.accentImage,
     );
   }
 

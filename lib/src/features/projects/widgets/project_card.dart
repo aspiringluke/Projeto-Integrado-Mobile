@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -6,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../characters/widgets/character_overlays.dart';
+import '../models/project_image_data.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
@@ -20,18 +20,8 @@ class ProjectCard extends StatefulWidget {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
-  final Uint8List? coverImageBytes;
-  final double? coverImageWidth;
-  final double? coverImageHeight;
-  final double coverImageScale;
-  final double coverImageOffsetX;
-  final double coverImageOffsetY;
-  final Uint8List? accentImageBytes;
-  final double? accentImageWidth;
-  final double? accentImageHeight;
-  final double accentImageScale;
-  final double accentImageOffsetX;
-  final double accentImageOffsetY;
+  final ProjectImageData coverImage;
+  final ProjectImageData accentImage;
   final bool isPinned;
   final VoidCallback? onTogglePinned;
   final DateTime createdAt;
@@ -47,18 +37,8 @@ class ProjectCard extends StatefulWidget {
     this.tags = const <ProjectTagData>[],
     this.coverColor = defaultProjectCoverColor,
     this.accentColor = defaultProjectAccentColor,
-    this.coverImageBytes,
-    this.coverImageWidth,
-    this.coverImageHeight,
-    this.coverImageScale = 1,
-    this.coverImageOffsetX = 0,
-    this.coverImageOffsetY = 0,
-    this.accentImageBytes,
-    this.accentImageWidth,
-    this.accentImageHeight,
-    this.accentImageScale = 1,
-    this.accentImageOffsetX = 0,
-    this.accentImageOffsetY = 0,
+    this.coverImage = const ProjectImageData(),
+    this.accentImage = const ProjectImageData(),
     this.isPinned = false,
     this.onTogglePinned,
     required this.createdAt,
@@ -123,7 +103,8 @@ class _ProjectCardState extends State<ProjectCard>
   @override
   void didUpdateWidget(covariant ProjectCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.title != widget.title && widget.title != _titleController.text) {
+    if (oldWidget.title != widget.title &&
+        widget.title != _titleController.text) {
       _titleController.text = widget.title;
     }
     if (oldWidget.synopsis != widget.synopsis &&
@@ -165,9 +146,7 @@ class _ProjectCardState extends State<ProjectCard>
   void _openProject() {
     widget.onOpenProject?.call();
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ProjectPage(title: widget.title),
-      ),
+      MaterialPageRoute<void>(builder: (_) => ProjectPage(title: widget.title)),
     );
   }
 
@@ -181,12 +160,11 @@ class _ProjectCardState extends State<ProjectCard>
     });
   }
 
-  _ProjectDateEntry get _currentDateEntry =>
-      _ProjectDateEntries.fromValues(
-        createdAt: widget.createdAt,
-        lastModified: widget.lastModified,
-        lastAccessed: widget.lastAccessed,
-      ).forType(_activeDateType);
+  _ProjectDateEntry get _currentDateEntry => _ProjectDateEntries.fromValues(
+    createdAt: widget.createdAt,
+    lastModified: widget.lastModified,
+    lastAccessed: widget.lastAccessed,
+  ).forType(_activeDateType);
 
   void _toggleEditing() {
     if (_isEditing) {
@@ -212,7 +190,9 @@ class _ProjectCardState extends State<ProjectCard>
 
     FocusScope.of(context).unfocus();
     final sanitizedTitle = _titleController.text.trim();
-    final resolvedTitle = sanitizedTitle.isEmpty ? widget.title : sanitizedTitle;
+    final resolvedTitle = sanitizedTitle.isEmpty
+        ? widget.title
+        : sanitizedTitle;
     final resolvedSynopsis = _synopsisController.text;
     final hasChanges =
         resolvedTitle != widget.title || resolvedSynopsis != widget.synopsis;
@@ -319,12 +299,7 @@ class _ProjectCardState extends State<ProjectCard>
                             children: [
                               _ProjectHeader(
                                 coverColor: widget.coverColor,
-                                coverImageBytes: widget.coverImageBytes,
-                                coverImageWidth: widget.coverImageWidth,
-                                coverImageHeight: widget.coverImageHeight,
-                                coverImageScale: widget.coverImageScale,
-                                coverImageOffsetX: widget.coverImageOffsetX,
-                                coverImageOffsetY: widget.coverImageOffsetY,
+                                coverImage: widget.coverImage,
                                 isExpanded: _isExpanded,
                                 isEditing: _isEditing,
                                 titleController: _titleController,
@@ -344,14 +319,7 @@ class _ProjectCardState extends State<ProjectCard>
                                       dateEntry: _currentDateEntry,
                                       tags: widget.tags,
                                       accentColor: widget.accentColor,
-                                      accentImageBytes: widget.accentImageBytes,
-                                      accentImageWidth: widget.accentImageWidth,
-                                      accentImageHeight: widget.accentImageHeight,
-                                      accentImageScale: widget.accentImageScale,
-                                      accentImageOffsetX:
-                                          widget.accentImageOffsetX,
-                                      accentImageOffsetY:
-                                          widget.accentImageOffsetY,
+                                      accentImage: widget.accentImage,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,
                                       synopsisText: _synopsisController.text,
@@ -389,12 +357,7 @@ class _ProjectCardState extends State<ProjectCard>
 
 class _ProjectHeader extends StatelessWidget {
   final Color coverColor;
-  final Uint8List? coverImageBytes;
-  final double? coverImageWidth;
-  final double? coverImageHeight;
-  final double coverImageScale;
-  final double coverImageOffsetX;
-  final double coverImageOffsetY;
+  final ProjectImageData coverImage;
   final bool isExpanded;
   final bool isEditing;
   final TextEditingController titleController;
@@ -405,12 +368,7 @@ class _ProjectHeader extends StatelessWidget {
 
   const _ProjectHeader({
     required this.coverColor,
-    required this.coverImageBytes,
-    required this.coverImageWidth,
-    required this.coverImageHeight,
-    required this.coverImageScale,
-    required this.coverImageOffsetX,
-    required this.coverImageOffsetY,
+    required this.coverImage,
     required this.isExpanded,
     required this.isEditing,
     required this.titleController,
@@ -444,12 +402,12 @@ class _ProjectHeader extends StatelessWidget {
             Positioned.fill(
               child: ProjectCoverFill(
                 color: coverColor,
-                imageBytes: coverImageBytes,
-                imageWidth: coverImageWidth,
-                imageHeight: coverImageHeight,
-                imageScale: coverImageScale,
-                imageOffsetX: coverImageOffsetX,
-                imageOffsetY: coverImageOffsetY,
+                imageBytes: coverImage.bytes,
+                imageWidth: coverImage.width,
+                imageHeight: coverImage.height,
+                imageScale: coverImage.scale,
+                imageOffsetX: coverImage.offsetX,
+                imageOffsetY: coverImage.offsetY,
                 borderRadius: BorderRadius.vertical(
                   top: const Radius.circular(16),
                   bottom: bottomRadius,
@@ -642,10 +600,7 @@ class _ExclusionIcon extends StatelessWidget {
   final IconData icon;
   final double size;
 
-  const _ExclusionIcon({
-    required this.icon,
-    required this.size,
-  });
+  const _ExclusionIcon({required this.icon, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -653,10 +608,7 @@ class _ExclusionIcon extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _ExclusionIconPainter(
-          icon: icon,
-          size: size,
-        ),
+        painter: _ExclusionIconPainter(icon: icon, size: size),
       ),
     );
   }
@@ -666,10 +618,7 @@ class _ExclusionIconPainter extends CustomPainter {
   final IconData icon;
   final double size;
 
-  const _ExclusionIconPainter({
-    required this.icon,
-    required this.size,
-  });
+  const _ExclusionIconPainter({required this.icon, required this.size});
 
   @override
   void paint(Canvas canvas, Size canvasSize) {
@@ -771,12 +720,7 @@ class _ProjectDetails extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
   final List<ProjectTagData> tags;
   final Color accentColor;
-  final Uint8List? accentImageBytes;
-  final double? accentImageWidth;
-  final double? accentImageHeight;
-  final double accentImageScale;
-  final double accentImageOffsetX;
-  final double accentImageOffsetY;
+  final ProjectImageData accentImage;
   final bool isEditing;
   final TextEditingController synopsisController;
   final String synopsisText;
@@ -789,12 +733,7 @@ class _ProjectDetails extends StatelessWidget {
     required this.dateEntry,
     required this.tags,
     required this.accentColor,
-    required this.accentImageBytes,
-    required this.accentImageWidth,
-    required this.accentImageHeight,
-    required this.accentImageScale,
-    required this.accentImageOffsetX,
-    required this.accentImageOffsetY,
+    required this.accentImage,
     required this.isEditing,
     required this.synopsisController,
     required this.synopsisText,
@@ -803,10 +742,7 @@ class _ProjectDetails extends StatelessWidget {
     required this.synopsisScrollController,
   });
 
-  double _calculateSynopsisHeight(
-    BuildContext context,
-    double maxWidth,
-  ) {
+  double _calculateSynopsisHeight(BuildContext context, double maxWidth) {
     final text = synopsisText.trim().isEmpty
         ? synopsisPlaceholderText
         : synopsisText;
@@ -848,12 +784,12 @@ class _ProjectDetails extends StatelessWidget {
               Positioned.fill(
                 child: ProjectAccentFill(
                   accentColor: accentColor,
-                  imageBytes: accentImageBytes,
-                  imageWidth: accentImageWidth,
-                  imageHeight: accentImageHeight,
-                  imageScale: accentImageScale,
-                  imageOffsetX: accentImageOffsetX,
-                  imageOffsetY: accentImageOffsetY,
+                  imageBytes: accentImage.bytes,
+                  imageWidth: accentImage.width,
+                  imageHeight: accentImage.height,
+                  imageScale: accentImage.scale,
+                  imageOffsetX: accentImage.offsetX,
+                  imageOffsetY: accentImage.offsetY,
                 ),
               ),
               Positioned.fill(
@@ -915,7 +851,9 @@ class _ProjectDetails extends StatelessWidget {
                             ),
                           ],
                           child: Icon(
-                            isEditing ? Icons.check_rounded : Icons.edit_outlined,
+                            isEditing
+                                ? Icons.check_rounded
+                                : Icons.edit_outlined,
                             size: 18,
                             color: const Color(0xFF544959),
                           ),
@@ -964,7 +902,10 @@ class _ProjectDetails extends StatelessWidget {
                             fontStyle: FontStyle.italic,
                           ),
                           viewerBuilder: (context, text, style) {
-                            return _ProjectMarkdownText(data: text, style: style);
+                            return _ProjectMarkdownText(
+                              data: text,
+                              style: style,
+                            );
                           },
                         );
                       },
@@ -1038,7 +979,10 @@ class _ProjectDetails extends StatelessWidget {
     );
   }
 
-  Future<void> _showProjectCharacterInfo(BuildContext context, Rect anchorRect) async {
+  Future<void> _showProjectCharacterInfo(
+    BuildContext context,
+    Rect anchorRect,
+  ) async {
     final recognizer = TapGestureRecognizer()
       ..onTap = () {
         Navigator.of(context).pop();
@@ -1133,17 +1077,16 @@ Future<void> _showAnchoredInfoBubble({
             screenSize.width - width - horizontalPadding,
           )
           .toDouble();
-      final showAbove = anchorRect.bottom + estimatedHeight > screenSize.height - 24;
-      final top = (showAbove
-              ? anchorRect.top - estimatedHeight - arrowSize - verticalGap
-              : anchorRect.bottom + verticalGap)
-          .clamp(12.0, screenSize.height - estimatedHeight - 12.0)
-          .toDouble();
+      final showAbove =
+          anchorRect.bottom + estimatedHeight > screenSize.height - 24;
+      final top =
+          (showAbove
+                  ? anchorRect.top - estimatedHeight - arrowSize - verticalGap
+                  : anchorRect.bottom + verticalGap)
+              .clamp(12.0, screenSize.height - estimatedHeight - 12.0)
+              .toDouble();
       final pointerLeft = (anchorRect.center.dx - left - (arrowSize / 2))
-          .clamp(
-            18.0,
-            width - 18.0,
-          )
+          .clamp(18.0, width - 18.0)
           .toDouble();
 
       return Material(
@@ -1167,7 +1110,9 @@ Future<void> _showAnchoredInfoBubble({
                 builder: (context, scale, dialogChild) {
                   return Transform.scale(
                     scale: scale,
-                    alignment: showAbove ? Alignment.bottomCenter : Alignment.topCenter,
+                    alignment: showAbove
+                        ? Alignment.bottomCenter
+                        : Alignment.topCenter,
                     child: dialogChild,
                   );
                 },
@@ -1289,10 +1234,7 @@ class _BubbleArrowPainter extends CustomPainter {
   final Color color;
   final bool pointUp;
 
-  const _BubbleArrowPainter({
-    required this.color,
-    required this.pointUp,
-  });
+  const _BubbleArrowPainter({required this.color, required this.pointUp});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1329,9 +1271,7 @@ class _ProjectInfoButton extends StatelessWidget {
     return const SizedBox(
       width: 38,
       height: 38,
-      child: Center(
-        child: _DottedCircle(),
-      ),
+      child: Center(child: _DottedCircle()),
     );
   }
 }
@@ -1377,9 +1317,11 @@ class _DottedCirclePainter extends CustomPainter {
     final dashAngle = dashLength / radius;
     final gapAngle = gapLength / radius;
 
-    for (var startAngle = 0.0;
-        startAngle < 2 * 3.1415926535897932;
-        startAngle += dashAngle + gapAngle) {
+    for (
+      var startAngle = 0.0;
+      startAngle < 2 * 3.1415926535897932;
+      startAngle += dashAngle + gapAngle
+    ) {
       canvas.drawArc(rect, startAngle, dashAngle, false, paint);
     }
   }

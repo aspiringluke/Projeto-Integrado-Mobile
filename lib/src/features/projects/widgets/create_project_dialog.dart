@@ -1,12 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../../../shared/widgets/synopsis_scroll_box.dart';
+import '../models/project_image_data.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
 import '../utils/project_image_picker.dart';
+import 'create_project_dialog_image_widgets.dart';
+import 'create_project_dialog_support_widgets.dart';
 import 'project_image_transform_view.dart';
 import 'project_color_editor.dart';
 
@@ -27,18 +30,8 @@ class CreateProjectTextDraft {
   final List<ProjectTagData> tags;
   final Color coverColor;
   final Color accentColor;
-  final Uint8List? coverImageBytes;
-  final double? coverImageWidth;
-  final double? coverImageHeight;
-  final double coverImageScale;
-  final double coverImageOffsetX;
-  final double coverImageOffsetY;
-  final Uint8List? accentImageBytes;
-  final double? accentImageWidth;
-  final double? accentImageHeight;
-  final double accentImageScale;
-  final double accentImageOffsetX;
-  final double accentImageOffsetY;
+  final ProjectImageData coverImage;
+  final ProjectImageData accentImage;
 
   const CreateProjectTextDraft({
     required this.title,
@@ -46,18 +39,8 @@ class CreateProjectTextDraft {
     required this.tags,
     required this.coverColor,
     required this.accentColor,
-    this.coverImageBytes,
-    this.coverImageWidth,
-    this.coverImageHeight,
-    this.coverImageScale = 1,
-    this.coverImageOffsetX = 0,
-    this.coverImageOffsetY = 0,
-    this.accentImageBytes,
-    this.accentImageWidth,
-    this.accentImageHeight,
-    this.accentImageScale = 1,
-    this.accentImageOffsetX = 0,
-    this.accentImageOffsetY = 0,
+    this.coverImage = const ProjectImageData(),
+    this.accentImage = const ProjectImageData(),
   });
 }
 
@@ -219,18 +202,22 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         tags: selectedTags,
         coverColor: _coverColor.toColor(),
         accentColor: _accentColor.toColor(),
-        coverImageBytes: _coverImageBytes,
-        coverImageWidth: _coverImageWidth,
-        coverImageHeight: _coverImageHeight,
-        coverImageScale: _coverImageScale,
-        coverImageOffsetX: _coverImageOffsetX,
-        coverImageOffsetY: _coverImageOffsetY,
-        accentImageBytes: _accentImageBytes,
-        accentImageWidth: _accentImageWidth,
-        accentImageHeight: _accentImageHeight,
-        accentImageScale: _accentImageScale,
-        accentImageOffsetX: _accentImageOffsetX,
-        accentImageOffsetY: _accentImageOffsetY,
+        coverImage: ProjectImageData(
+          bytes: _coverImageBytes,
+          width: _coverImageWidth,
+          height: _coverImageHeight,
+          scale: _coverImageScale,
+          offsetX: _coverImageOffsetX,
+          offsetY: _coverImageOffsetY,
+        ),
+        accentImage: ProjectImageData(
+          bytes: _accentImageBytes,
+          width: _accentImageWidth,
+          height: _accentImageHeight,
+          scale: _accentImageScale,
+          offsetX: _accentImageOffsetX,
+          offsetY: _accentImageOffsetY,
+        ),
       ),
     );
   }
@@ -316,8 +303,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   ProjectImageViewportMetrics _coverImageMetrics(double scale) {
     return computeProjectImageViewportMetrics(
       viewportSize: Size(
-        _CoverImageEditor.coverViewportPreset.cropReferenceWidth,
-        _CoverImageEditor.coverViewportPreset.cropHeight,
+        createProjectDialogCoverViewportPreset.cropReferenceWidth,
+        createProjectDialogCoverViewportPreset.cropHeight,
       ),
       imageWidth: _coverImageWidth ?? 0,
       imageHeight: _coverImageHeight ?? 0,
@@ -328,8 +315,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   ProjectImageViewportMetrics _accentImageMetrics(double scale) {
     return computeProjectImageViewportMetrics(
       viewportSize: Size(
-        _CoverImageEditor.accentViewportPreset.cropReferenceWidth,
-        _CoverImageEditor.accentViewportPreset.cropHeight,
+        createProjectDialogAccentViewportPreset.cropReferenceWidth,
+        createProjectDialogAccentViewportPreset.cropHeight,
       ),
       imageWidth: _accentImageWidth ?? 0,
       imageHeight: _accentImageHeight ?? 0,
@@ -480,7 +467,9 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               gradient: LinearGradient(
                                 colors: [
                                   Colors.white.withValues(alpha: 0.94),
-                                  const Color(0xFFDFC7D6).withValues(alpha: 0.82),
+                                  const Color(
+                                    0xFFDFC7D6,
+                                  ).withValues(alpha: 0.82),
                                   Colors.white.withValues(alpha: 0.28),
                                 ],
                               ),
@@ -565,7 +554,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 ),
                               ),
                               const SizedBox(height: 5),
-                              const _FieldDescription(
+                              const CreateProjectDialogFieldDescription(
                                 text:
                                     'Clique em "+" para cadastrar uma tag no banco de dados. Crie, digite o nome de uma já existente ou toque nas recentes para associá-las ao projeto.',
                               ),
@@ -573,7 +562,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           ),
                           const SizedBox(height: 8),
                           if (_knownTags.isEmpty)
-                            _InfoSurface(
+                            CreateProjectDialogInfoSurface(
                               child: const Text(
                                 'Nenhuma tag cadastrada ainda.',
                                 style: TextStyle(
@@ -588,7 +577,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               runSpacing: 8,
                               children: [
                                 for (final tag in _knownTags)
-                                  _SelectableTagChip(
+                                  CreateProjectDialogSelectableTagChip(
                                     tag: tag,
                                     isSelected: _selectedTags.contains(
                                       tag.normalizedLabel,
@@ -628,7 +617,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                       horizontal: 14,
                                     ),
                                   ),
-                                  child: const Icon(Icons.add_rounded, size: 20),
+                                  child: const Icon(
+                                    Icons.add_rounded,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                             ],
@@ -639,7 +631,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             runSpacing: 8,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              _DraftTagPreview(
+                              CreateProjectDialogDraftTagPreview(
                                 label: _newTagController.text.trim().isEmpty
                                     ? 'Nova tag'
                                     : sanitizeProjectTagLabel(
@@ -648,7 +640,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 color: _newTagColor,
                               ),
                               for (final color in projectTagPalette)
-                                _TagColorSwatch(
+                                CreateProjectDialogTagColorSwatch(
                                   color: color,
                                   isSelected: color == _newTagColor,
                                   onTap: () {
@@ -663,15 +655,17 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           Row(
                             children: [
                               Expanded(
-                                child: _ColorTargetChip(
+                                child: CreateProjectDialogColorTargetChip(
                                   label: 'Capa',
                                   color: _coverColor.toColor(),
-                                  gradient: _buildDialogCoverPreviewGradient(
-                                    _coverColor.toColor(),
-                                  ),
-                                  swatchGradient: _buildDialogCoverPreviewGradient(
-                                    _coverColor.toColor(),
-                                  ),
+                                  gradient:
+                                      buildCreateProjectDialogCoverPreviewGradient(
+                                        _coverColor.toColor(),
+                                      ),
+                                  swatchGradient:
+                                      buildCreateProjectDialogCoverPreviewGradient(
+                                        _coverColor.toColor(),
+                                      ),
                                   isSelected:
                                       _activeColorTarget ==
                                       _ProjectColorTarget.cover,
@@ -685,15 +679,17 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: _ColorTargetChip(
+                                child: CreateProjectDialogColorTargetChip(
                                   label: 'Realce',
                                   color: _accentColor.toColor(),
-                                  gradient: _buildDialogAccentPreviewGradient(
-                                    _accentColor.toColor(),
-                                  ),
-                                  swatchGradient: _buildDialogAccentPreviewGradient(
-                                    _accentColor.toColor(),
-                                  ),
+                                  gradient:
+                                      buildCreateProjectDialogAccentPreviewGradient(
+                                        _accentColor.toColor(),
+                                      ),
+                                  swatchGradient:
+                                      buildCreateProjectDialogAccentPreviewGradient(
+                                        _accentColor.toColor(),
+                                      ),
                                   isSelected:
                                       _activeColorTarget ==
                                       _ProjectColorTarget.accent,
@@ -709,14 +705,16 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           ),
                           const SizedBox(height: 8),
                           ProjectColorEditor(
-                            title: _activeColorTarget == _ProjectColorTarget.cover
+                            title:
+                                _activeColorTarget == _ProjectColorTarget.cover
                                 ? 'Cor da capa'
                                 : 'Cor de realce',
                             description:
                                 _activeColorTarget == _ProjectColorTarget.cover
                                 ? 'Preenche o topo do cartão.'
                                 : 'Aplica a base cromática do cartão.',
-                            color: _activeColorTarget == _ProjectColorTarget.cover
+                            color:
+                                _activeColorTarget == _ProjectColorTarget.cover
                                 ? _coverColor.toColor()
                                 : _accentColor.toColor(),
                             hslColor:
@@ -739,7 +737,9 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               setState(() {
                                 if (_activeColorTarget ==
                                     _ProjectColorTarget.cover) {
-                                  _coverColor = _coverColor.withSaturation(value);
+                                  _coverColor = _coverColor.withSaturation(
+                                    value,
+                                  );
                                 } else {
                                   _accentColor = _accentColor.withSaturation(
                                     value,
@@ -751,7 +751,9 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               setState(() {
                                 if (_activeColorTarget ==
                                     _ProjectColorTarget.cover) {
-                                  _coverColor = _coverColor.withLightness(value);
+                                  _coverColor = _coverColor.withLightness(
+                                    value,
+                                  );
                                 } else {
                                   _accentColor = _accentColor.withLightness(
                                     value,
@@ -760,9 +762,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               });
                             },
                           ),
-                          if (_activeColorTarget == _ProjectColorTarget.cover) ...[
+                          if (_activeColorTarget ==
+                              _ProjectColorTarget.cover) ...[
                             const SizedBox(height: 12),
-                            _CoverImagePickerCard(
+                            CreateProjectDialogCoverImagePickerCard(
                               title: 'Imagem da capa',
                               description:
                                   'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
@@ -783,7 +786,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                                 ],
                               ),
                               viewportPreset:
-                                  _CoverImageEditor.coverViewportPreset,
+                                  createProjectDialogCoverViewportPreset,
                               emptyStateText: 'Nenhuma imagem selecionada',
                               onScaleChanged: _setCoverImageScale,
                               onOffsetChanged: _setCoverImageOffset,
@@ -794,7 +797,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             ),
                           ] else ...[
                             const SizedBox(height: 12),
-                            _CoverImagePickerCard(
+                            CreateProjectDialogCoverImagePickerCard(
                               title: 'Imagem do realce',
                               description:
                                   'Escolha uma imagem para o fundo do cartão expandido. A cor de realce continua controlando a colorização, a suavização e os gradientes por cima dela.',
@@ -805,11 +808,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               scale: _accentImageScale,
                               offsetX: _accentImageOffsetX,
                               offsetY: _accentImageOffsetY,
-                              backgroundGradient: _buildDialogAccentPreviewGradient(
-                                _accentColor.toColor(),
-                              ),
+                              backgroundGradient:
+                                  buildCreateProjectDialogAccentPreviewGradient(
+                                    _accentColor.toColor(),
+                                  ),
                               viewportPreset:
-                                  _CoverImageEditor.accentViewportPreset,
+                                  createProjectDialogAccentViewportPreset,
                               emptyStateText: 'Nenhuma imagem selecionada',
                               onScaleChanged: _setAccentImageScale,
                               onOffsetChanged: _setAccentImageOffset,
@@ -900,743 +904,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       focusedErrorBorder: border.copyWith(
         borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),
       ),
-    );
-  }
-}
-
-class _CoverImagePickerCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final Uint8List? imageBytes;
-  final double? imageWidth;
-  final double? imageHeight;
-  final String? imageName;
-  final double scale;
-  final double offsetX;
-  final double offsetY;
-  final Gradient backgroundGradient;
-  final _ImageEditorViewportPreset viewportPreset;
-  final String emptyStateText;
-  final ValueChanged<double> onScaleChanged;
-  final void Function(double offsetX, double offsetY) onOffsetChanged;
-  final VoidCallback onPick;
-  final VoidCallback? onRemove;
-
-  const _CoverImagePickerCard({
-    required this.title,
-    required this.description,
-    required this.imageBytes,
-    required this.imageWidth,
-    required this.imageHeight,
-    required this.imageName,
-    required this.scale,
-    required this.offsetX,
-    required this.offsetY,
-    required this.backgroundGradient,
-    required this.viewportPreset,
-    required this.emptyStateText,
-    required this.onScaleChanged,
-    required this.onOffsetChanged,
-    required this.onPick,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.78)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: Color(0xFF3A3339),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 5),
-          _FieldDescription(
-            text: description,
-          ),
-          const SizedBox(height: 8),
-          _CoverImageEditor(
-            imageBytes: imageBytes,
-            imageWidth: imageWidth,
-            imageHeight: imageHeight,
-            scale: scale,
-            offsetX: offsetX,
-            offsetY: offsetY,
-            backgroundGradient: backgroundGradient,
-            viewportPreset: viewportPreset,
-            emptyStateText: emptyStateText,
-            onOffsetChanged: onOffsetChanged,
-          ),
-          if (imageName != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              imageName!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF6A6167),
-                fontSize: 11.5,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-          if (imageBytes != null) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Text(
-                  'Zoom',
-                  style: TextStyle(
-                    color: Color(0xFF514752),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 8,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 8,
-                      ),
-                    ),
-                    child: Slider(
-                      value: scale,
-                      min: 1,
-                      max: 3,
-                      onChanged: onScaleChanged,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 36,
-                  child: Text(
-                    '${scale.toStringAsFixed(1)}x',
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      color: Color(0xFF7A7079),
-                      fontSize: 11.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onPick,
-                  icon: const Icon(Icons.upload_file_rounded, size: 18),
-                  label: Text(
-                    imageBytes == null ? 'Escolher imagem' : 'Trocar imagem',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF514752),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.82)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-              if (onRemove != null) ...[
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: onRemove,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF8B5668),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.82)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text('Remover'),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CoverImageEditor extends StatelessWidget {
-  static const coverViewportPreset = _ImageEditorViewportPreset(
-    canvasHeight: 144,
-    cropHeight: 74,
-    cropHorizontalInset: 12,
-    cropReferenceWidth: 240,
-  );
-
-  static const accentViewportPreset = _ImageEditorViewportPreset(
-    canvasHeight: 156,
-    cropHeight: 112,
-    cropHorizontalInset: 10,
-    cropReferenceWidth: 240,
-  );
-
-  final Uint8List? imageBytes;
-  final double? imageWidth;
-  final double? imageHeight;
-  final double scale;
-  final double offsetX;
-  final double offsetY;
-  final Gradient backgroundGradient;
-  final _ImageEditorViewportPreset viewportPreset;
-  final String emptyStateText;
-  final void Function(double offsetX, double offsetY) onOffsetChanged;
-
-  const _CoverImageEditor({
-    required this.imageBytes,
-    required this.imageWidth,
-    required this.imageHeight,
-    required this.scale,
-    required this.offsetX,
-    required this.offsetY,
-    required this.backgroundGradient,
-    required this.viewportPreset,
-    required this.emptyStateText,
-    required this.onOffsetChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cropTop =
-            (viewportPreset.canvasHeight - viewportPreset.cropHeight) / 2;
-        final cropWidth =
-            constraints.maxWidth - (viewportPreset.cropHorizontalInset * 2);
-        final metrics =
-            imageBytes != null && imageWidth != null && imageHeight != null
-            ? computeProjectImageViewportMetrics(
-                viewportSize: Size(cropWidth, viewportPreset.cropHeight),
-                imageWidth: imageWidth!,
-                imageHeight: imageHeight!,
-                scale: scale,
-              )
-            : null;
-
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            height: viewportPreset.canvasHeight,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: backgroundGradient,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.82)),
-            ),
-            child: imageBytes == null
-                ? Center(
-                    child: Text(
-                      emptyStateText,
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  )
-                : GestureDetector(
-                    onPanUpdate: (details) {
-                      final dx = offsetX +
-                          ((metrics?.maxTranslationX ?? 0) <= 0
-                              ? 0
-                              : details.delta.dx / metrics!.maxTranslationX);
-                      final dy = offsetY +
-                          ((metrics?.maxTranslationY ?? 0) <= 0
-                              ? 0
-                              : details.delta.dy / metrics!.maxTranslationY);
-                      onOffsetChanged(dx, dy);
-                    },
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ProjectImageTransformView(
-                          imageBytes: imageBytes!,
-                          imageWidth: imageWidth ?? cropWidth,
-                          imageHeight: imageHeight ?? viewportPreset.cropHeight,
-                          scale: scale,
-                          offsetX: offsetX,
-                          offsetY: offsetY,
-                          clipImage: false,
-                          viewportWidth: cropWidth,
-                          viewportHeight: viewportPreset.cropHeight,
-                        ),
-                        IgnorePointer(
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                top: 0,
-                                height: cropTop,
-                                child: _EditorShade(),
-                              ),
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                height: cropTop,
-                                child: _EditorShade(),
-                              ),
-                              Positioned(
-                                left: viewportPreset.cropHorizontalInset,
-                                right: viewportPreset.cropHorizontalInset,
-                                top: cropTop,
-                                height: viewportPreset.cropHeight,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.92),
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                left: 0,
-                                top: cropTop,
-                                bottom: cropTop,
-                                width: viewportPreset.cropHorizontalInset,
-                                child: const _EditorShade(),
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: cropTop,
-                                bottom: cropTop,
-                                width: viewportPreset.cropHorizontalInset,
-                                child: const _EditorShade(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ImageEditorViewportPreset {
-  final double canvasHeight;
-  final double cropHeight;
-  final double cropHorizontalInset;
-  final double cropReferenceWidth;
-
-  const _ImageEditorViewportPreset({
-    required this.canvasHeight,
-    required this.cropHeight,
-    required this.cropHorizontalInset,
-    required this.cropReferenceWidth,
-  });
-}
-
-class _EditorShade extends StatelessWidget {
-  const _EditorShade();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white.withValues(alpha: 0.34),
-    );
-  }
-}
-
-class _InfoSurface extends StatelessWidget {
-  final Widget child;
-
-  const _InfoSurface({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.36),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.56)),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _DraftTagPreview extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _DraftTagPreview({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : double.infinity;
-
-        return ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: color.withValues(alpha: 0.92)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    style: TextStyle(
-                      color: color.withValues(alpha: 0.98),
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _FieldDescription extends StatelessWidget {
-  final String text;
-
-  const _FieldDescription({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 2,
-          height: 20,
-          decoration: BoxDecoration(
-            color: const Color(0xFFBFB8BD).withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Color(0xFF6A6167),
-              fontSize: 11.25,
-              height: 1.3,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TagColorSwatch extends StatelessWidget {
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TagColorSwatch({
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          width: 26,
-          height: 26,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: isSelected
-                  ? const Color(0xFF2C262C)
-                  : Colors.white.withValues(alpha: 0.88),
-              width: isSelected ? 2.0 : 1.15,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: isSelected ? 0.34 : 0.16),
-                blurRadius: isSelected ? 10 : 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: isSelected
-              ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-              : null,
-        ),
-      ),
-    );
-  }
-}
-
-LinearGradient _buildDialogCoverPreviewGradient(Color coverColor) {
-  return LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Colors.white.withValues(alpha: 0.95),
-      Color.alphaBlend(
-        coverColor.withValues(alpha: 0.24),
-        const Color(0xFFF8F1F5),
-      ),
-      coverColor,
-    ],
-    stops: const [0.0, 0.54, 1.0],
-  );
-}
-
-LinearGradient _buildDialogAccentPreviewGradient(Color accentColor) {
-  final hsl = HSLColor.fromColor(accentColor);
-  final lighter = hsl
-      .withLightness((hsl.lightness + 0.18).clamp(0.0, 1.0))
-      .toColor();
-
-  return LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color.alphaBlend(
-        lighter.withValues(alpha: 0.18),
-        Colors.white.withValues(alpha: 0.84),
-      ),
-      Colors.white.withValues(alpha: 0.78),
-      Color.alphaBlend(
-        accentColor.withValues(alpha: 0.22),
-        const Color(0xFFF9F1F5),
-      ),
-    ],
-    stops: const [0.0, 0.52, 1.0],
-  );
-}
-
-class _ColorTargetChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Gradient gradient;
-  final Gradient swatchGradient;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ColorTargetChip({
-    required this.label,
-    required this.color,
-    required this.gradient,
-    required this.swatchGradient,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-          decoration: BoxDecoration(
-            color: isSelected ? null : Colors.white.withValues(alpha: 0.34),
-            gradient: isSelected ? gradient : null,
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.16),
-                      blurRadius: 18,
-                      spreadRadius: 0.2,
-                      offset: const Offset(0, 6),
-                    ),
-                  ]
-                : null,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected
-                  ? color.withValues(alpha: 0.92)
-                  : Colors.white.withValues(alpha: 0.72),
-              width: isSelected ? 1.1 : 0.9,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 16,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    width: 0.8,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 7),
-              Row(
-                children: [
-                  Container(
-                    width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  gradient: swatchGradient,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    width: 0.8,
-                  ),
-                ),
-                  ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Color.alphaBlend(
-                          color.withValues(alpha: isSelected ? 0.74 : 0.5),
-                          const Color(0xFF2C262C),
-                        ),
-                        fontSize: 12.25,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SelectableTagChip extends StatelessWidget {
-  final ProjectTagData tag;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SelectableTagChip({
-    required this.tag,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : double.infinity;
-
-        return ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: onTap,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? tag.color.withValues(alpha: 0.16)
-                      : Colors.white.withValues(alpha: 0.24),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: tag.color.withValues(alpha: isSelected ? 0.98 : 0.78),
-                    width: isSelected ? 1.2 : 1.0,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isSelected) ...[
-                      Icon(Icons.check_rounded, size: 15, color: tag.color),
-                      const SizedBox(width: 4),
-                    ],
-                    Flexible(
-                      child: Text(
-                        tag.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
-                        style: TextStyle(
-                          color: tag.color.withValues(alpha: 0.98),
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
