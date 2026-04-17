@@ -9,9 +9,8 @@ import '../models/project_image_data.dart';
 import '../models/project_tag_data.dart';
 import '../utils/project_image_picker.dart';
 import 'create_project_dialog_image_widgets.dart';
-import 'create_project_dialog_support_widgets.dart';
+import 'create_project_dialog_sections.dart';
 import 'project_image_transform_view.dart';
-import 'project_color_editor.dart';
 
 Future<CreateProjectTextDraft?> showCreateProjectTextDialog(
   BuildContext context, {
@@ -369,24 +368,8 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Novo projeto',
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF2C262C),
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                icon: const Icon(Icons.close_rounded),
-                                color: const Color(0xFF544959),
-                              ),
-                            ],
+                          CreateProjectDialogHeader(
+                            onClose: () => Navigator.of(context).pop(),
                           ),
                           const SizedBox(height: 6),
                           Container(
@@ -404,378 +387,54 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Nome do projeto *',
-                            style: TextStyle(
-                              color: Color(0xFF3A3339),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          TextFormField(
+                          CreateProjectDialogTitleField(
                             controller: _titleController,
-                            textInputAction: TextInputAction.next,
-                            decoration: _buildInputDecoration(
-                              hintText: 'Nome do projeto',
-                              focusedColor: _dialogController.accentColor,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Informe um nome para o projeto.';
-                              }
-
-                              return null;
-                            },
+                            focusedColor: _dialogController.accentColor,
+                            buildInputDecoration: _buildInputDecoration,
                           ),
                           const SizedBox(height: 10),
-                          const Text(
-                            'Síntese',
-                            style: TextStyle(
-                              color: Color(0xFF3A3339),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
                           LayoutBuilder(
                             builder: (context, constraints) {
-                              return EditableSynopsisPanel(
+                              return CreateProjectDialogSynopsisField(
                                 controller: _synopsisController,
                                 scrollController: _synopsisScrollController,
-                                isEditing: true,
-                                placeholderText: synopsisPlaceholderText,
                                 textStyle: _synopsisTextStyle,
                                 height: _calculateSynopsisHeight(
                                   constraints.maxWidth,
                                 ),
-                                panelPadding: const EdgeInsets.fromLTRB(
-                                  12,
-                                  8,
-                                  12,
-                                  8,
-                                ),
-                                scrollPadding: const EdgeInsets.only(right: 8),
-                                fillColor: Colors.white.withValues(alpha: 0.56),
-                                backgroundGradient: null,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.74),
-                                ),
                                 focusedBorderColor:
                                     _dialogController.accentColor,
-                                viewerBuilder: (context, text, style) {
-                                  return Text(text, style: style);
-                                },
                               );
                             },
                           ),
                           const SizedBox(height: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Tags',
-                                style: TextStyle(
-                                  color: Color(0xFF3A3339),
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              const CreateProjectDialogFieldDescription(
-                                text:
-                                    'Clique em "+" para cadastrar uma tag no banco de dados. Crie, digite o nome de uma já existente ou toque nas recentes para associá-las ao projeto.',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (_dialogController.knownTags.isEmpty)
-                            CreateProjectDialogInfoSurface(
-                              child: const Text(
-                                'Nenhuma tag cadastrada ainda.',
-                                style: TextStyle(
-                                  color: Color(0xFF6A6167),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            )
-                          else
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final tag in _dialogController.knownTags)
-                                  CreateProjectDialogSelectableTagChip(
-                                    tag: tag,
-                                    isSelected: _dialogController.isSelectedTag(
-                                      tag,
-                                    ),
-                                    onTap: () =>
-                                        _dialogController.toggleTag(tag),
-                                  ),
-                              ],
-                            ),
-                          const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _newTagController,
-                                  textInputAction: TextInputAction.done,
-                                  decoration: _buildInputDecoration(
-                                    hintText: 'Nova tag',
-                                    focusedColor: _dialogController.accentColor,
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                  onFieldSubmitted: (_) => _addTagFromInput(),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                height: 44,
-                                child: FilledButton(
-                                  onPressed: _addTagFromInput,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFFDF6EB8),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.add_rounded,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              CreateProjectDialogDraftTagPreview(
-                                label: _newTagController.text.trim().isEmpty
-                                    ? 'Nova tag'
-                                    : sanitizeProjectTagLabel(
-                                        _newTagController.text,
-                                      ),
-                                color: _dialogController.newTagColor,
-                              ),
-                              for (final color in projectTagPalette)
-                                CreateProjectDialogTagColorSwatch(
-                                  color: color,
-                                  isSelected:
-                                      color == _dialogController.newTagColor,
-                                  onTap: () =>
-                                      _dialogController.setNewTagColor(color),
-                                ),
-                            ],
+                          CreateProjectDialogTagsSection(
+                            controller: _dialogController,
+                            newTagController: _newTagController,
+                            onAddTag: _addTagFromInput,
+                            onTagInputChanged: () => setState(() {}),
+                            buildInputDecoration: _buildInputDecoration,
                           ),
                           const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CreateProjectDialogColorTargetChip(
-                                  label: 'Capa',
-                                  color: _dialogController.coverColor,
-                                  gradient:
-                                      buildCreateProjectDialogCoverPreviewGradient(
-                                        _dialogController.coverColor,
-                                      ),
-                                  swatchGradient:
-                                      buildCreateProjectDialogCoverPreviewGradient(
-                                        _dialogController.coverColor,
-                                      ),
-                                  isSelected:
-                                      _dialogController.activeColorTarget ==
-                                      CreateProjectDialogColorTarget.cover,
-                                  onTap: () =>
-                                      _dialogController.setActiveColorTarget(
-                                        CreateProjectDialogColorTarget.cover,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: CreateProjectDialogColorTargetChip(
-                                  label: 'Realce',
-                                  color: _dialogController.accentColor,
-                                  gradient:
-                                      buildCreateProjectDialogAccentPreviewGradient(
-                                        _dialogController.accentColor,
-                                      ),
-                                  swatchGradient:
-                                      buildCreateProjectDialogAccentPreviewGradient(
-                                        _dialogController.accentColor,
-                                      ),
-                                  isSelected:
-                                      _dialogController.activeColorTarget ==
-                                      CreateProjectDialogColorTarget.accent,
-                                  onTap: () =>
-                                      _dialogController.setActiveColorTarget(
-                                        CreateProjectDialogColorTarget.accent,
-                                      ),
-                                ),
-                              ),
-                            ],
+                          CreateProjectDialogColorSection(
+                            controller: _dialogController,
                           ),
-                          const SizedBox(height: 8),
-                          ProjectColorEditor(
-                            title:
-                                _dialogController.activeColorTarget ==
-                                    CreateProjectDialogColorTarget.cover
-                                ? 'Cor da capa'
-                                : 'Cor de realce',
-                            description:
-                                _dialogController.activeColorTarget ==
-                                    CreateProjectDialogColorTarget.cover
-                                ? 'Preenche o topo do cartão.'
-                                : 'Aplica a base cromática do cartão.',
-                            color: _dialogController.activeColor,
-                            hslColor: _dialogController.activeHslColor,
-                            useSolidCoverPreview:
-                                _dialogController.activeColorTarget ==
-                                CreateProjectDialogColorTarget.cover,
-                            onHueChanged: _dialogController.setActiveHue,
-                            onSaturationChanged:
-                                _dialogController.setActiveSaturation,
-                            onLightnessChanged:
-                                _dialogController.setActiveLightness,
-                          ),
-                          if (_dialogController.activeColorTarget ==
-                              CreateProjectDialogColorTarget.cover) ...[
-                            const SizedBox(height: 12),
-                            CreateProjectDialogCoverImagePickerCard(
-                              title: 'Imagem da capa',
-                              description:
-                                  'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
-                              imageBytes: _coverImage.bytes,
-                              imageWidth: _coverImage.width,
-                              imageHeight: _coverImage.height,
-                              imageName: _coverImageName,
-                              scale: _coverImage.scale,
-                              offsetX: _coverImage.offsetX,
-                              offsetY: _coverImage.offsetY,
-                              backgroundGradient: const LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  Color(0xFFF4EDF2),
-                                  Color(0xFFEAE2E8),
-                                  Color(0xFFFFFFFF),
-                                ],
-                              ),
-                              viewportPreset:
-                                  createProjectDialogCoverViewportPreset,
-                              emptyStateText: 'Nenhuma imagem selecionada',
-                              onScaleChanged: (value) => _setImageScale(
-                                CreateProjectDialogColorTarget.cover,
-                                value,
-                              ),
-                              onOffsetChanged: (offsetX, offsetY) =>
-                                  _setImageOffset(
-                                    CreateProjectDialogColorTarget.cover,
-                                    offsetX,
-                                    offsetY,
-                                  ),
-                              onPick: () => _pickImage(
-                                CreateProjectDialogColorTarget.cover,
-                              ),
-                              onRemove: _coverImage.bytes == null
-                                  ? null
-                                  : () => _removeImage(
-                                      CreateProjectDialogColorTarget.cover,
-                                    ),
-                            ),
-                          ] else ...[
-                            const SizedBox(height: 12),
-                            CreateProjectDialogCoverImagePickerCard(
-                              title: 'Imagem do realce',
-                              description:
-                                  'Escolha uma imagem para o fundo do cartão expandido. A cor de realce continua controlando a colorização, a suavização e os gradientes por cima dela.',
-                              imageBytes: _accentImage.bytes,
-                              imageWidth: _accentImage.width,
-                              imageHeight: _accentImage.height,
-                              imageName: _accentImageName,
-                              scale: _accentImage.scale,
-                              offsetX: _accentImage.offsetX,
-                              offsetY: _accentImage.offsetY,
-                              backgroundGradient:
-                                  buildCreateProjectDialogAccentPreviewGradient(
-                                    _dialogController.accentColor,
-                                  ),
-                              viewportPreset:
-                                  createProjectDialogAccentViewportPreset,
-                              emptyStateText: 'Nenhuma imagem selecionada',
-                              onScaleChanged: (value) => _setImageScale(
-                                CreateProjectDialogColorTarget.accent,
-                                value,
-                              ),
-                              onOffsetChanged: (offsetX, offsetY) =>
-                                  _setImageOffset(
-                                    CreateProjectDialogColorTarget.accent,
-                                    offsetX,
-                                    offsetY,
-                                  ),
-                              onPick: () => _pickImage(
-                                CreateProjectDialogColorTarget.accent,
-                              ),
-                              onRemove: _accentImage.bytes == null
-                                  ? null
-                                  : () => _removeImage(
-                                      CreateProjectDialogColorTarget.accent,
-                                    ),
-                            ),
-                          ],
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF514752),
-                                    side: BorderSide(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.82,
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 13,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text('Cancelar'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: FilledButton(
-                                  onPressed: _submit,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFFDF6EB8),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 13,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text('Criar projeto'),
-                                ),
-                              ),
-                            ],
+                          CreateProjectDialogImageSection(
+                            controller: _dialogController,
+                            coverImage: _coverImage,
+                            coverImageName: _coverImageName,
+                            accentImage: _accentImage,
+                            accentImageName: _accentImageName,
+                            onScaleChanged: _setImageScale,
+                            onOffsetChanged: _setImageOffset,
+                            onPickImage: _pickImage,
+                            onRemoveImage: _removeImage,
+                          ),
+                          const SizedBox(height: 12),
+                          CreateProjectDialogActionsRow(
+                            onCancel: () => Navigator.of(context).pop(),
+                            onSubmit: _submit,
                           ),
                         ],
                       ),
