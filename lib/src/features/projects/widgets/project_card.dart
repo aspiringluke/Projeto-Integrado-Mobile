@@ -4,14 +4,16 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-import '../../characters/widgets/character_overlays.dart';
 import '../models/project_image_data.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
+import '../../../shared/utils/rect_from_context.dart';
+import '../../../shared/widgets/anchored_info_bubble.dart';
 import 'project_cover_fill.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
+import '../../../shared/widgets/pin_badge.dart';
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 
 class ProjectCard extends StatefulWidget {
@@ -342,7 +344,7 @@ class _ProjectCardState extends State<ProjectCard>
               Positioned(
                 left: 0,
                 top: -4,
-                child: _PinBadge(
+                child: PinBadge(
                   isActive: widget.isPinned,
                   onTap: widget.onTogglePinned,
                 ),
@@ -513,83 +515,6 @@ class _ProjectHeader extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PinBadge extends StatelessWidget {
-  final bool isActive;
-  final VoidCallback? onTap;
-
-  const _PinBadge({required this.isActive, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: const Color(
-              0xFFF4EEF3,
-            ).withValues(alpha: isActive ? 0.9 : 0.78),
-            gradient: isActive
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFF6D3E5).withValues(alpha: 0.96),
-                      const Color(0xFFF0BEDB).withValues(alpha: 0.9),
-                    ],
-                  )
-                : LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.72),
-                      const Color(0xFFF0E7EE).withValues(alpha: 0.82),
-                    ],
-                  ),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
-              width: 0.65,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isActive
-                    ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
-                    : Colors.black.withValues(alpha: 0.05),
-                blurRadius: isActive ? 10 : 5,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Center(
-            child: AnimatedScale(
-              scale: isActive ? 1.06 : 1,
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              child: Transform.rotate(
-                angle: -0.32,
-                child: Icon(
-                  isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                  size: isActive ? 16 : 15,
-                  color: Color(
-                    0xFF8A828C,
-                  ).withValues(alpha: isActive ? 0.98 : 0.56),
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -1059,208 +984,74 @@ Future<void> _showAnchoredInfoBubble({
   required Widget child,
   double width = 180,
 }) {
-  return showGeneralDialog<void>(
+  return showAnchoredInfoBubbleDialog(
     context: context,
-    barrierLabel: 'Info',
-    barrierDismissible: true,
-    barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 140),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      final screenSize = MediaQuery.of(context).size;
-      const horizontalPadding = 12.0;
-      const arrowSize = 12.0;
-      const verticalGap = 8.0;
-      const estimatedHeight = 130.0;
-      final left = (anchorRect.center.dx - (width / 2))
-          .clamp(
-            horizontalPadding,
-            screenSize.width - width - horizontalPadding,
-          )
-          .toDouble();
-      final showAbove =
-          anchorRect.bottom + estimatedHeight > screenSize.height - 24;
-      final top =
-          (showAbove
-                  ? anchorRect.top - estimatedHeight - arrowSize - verticalGap
-                  : anchorRect.bottom + verticalGap)
-              .clamp(12.0, screenSize.height - estimatedHeight - 12.0)
-              .toDouble();
-      final pointerLeft = (anchorRect.center.dx - left - (arrowSize / 2))
-          .clamp(18.0, width - 18.0)
-          .toDouble();
-
-      return Material(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => Navigator.of(context).pop(),
-                child: const SizedBox.expand(),
+    anchorRect: anchorRect,
+    child: child,
+    width: width,
+    estimatedHeight: 130,
+    bubbleBuilder:
+        (
+          context, {
+          required showAbove,
+          required pointerLeft,
+          required arrowSize,
+          required child,
+        }) {
+          return AnchoredInfoBubbleFrame(
+            showAbove: showAbove,
+            pointerLeft: pointerLeft,
+            arrowSize: arrowSize,
+            borderRadius: BorderRadius.circular(20),
+            blurSigma: 12,
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8FC).withValues(alpha: 0.78),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.9),
+                  const Color(0xFFFFF6FB).withValues(alpha: 0.84),
+                  const Color(0xFFF2DCE8).withValues(alpha: 0.72),
+                ],
               ),
-            ),
-            Positioned(
-              left: left,
-              top: top,
-              width: width,
-              child: TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 140),
-                tween: Tween<double>(begin: 0.96, end: 1),
-                builder: (context, scale, dialogChild) {
-                  return Transform.scale(
-                    scale: scale,
-                    alignment: showAbove
-                        ? Alignment.bottomCenter
-                        : Alignment.topCenter,
-                    child: dialogChild,
-                  );
-                },
-                child: _AnchoredInfoBubble(
-                  showAbove: showAbove,
-                  pointerLeft: pointerLeft,
-                  arrowSize: arrowSize,
-                  child: child,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.92),
+                width: 0.9,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFB96B92).withValues(alpha: 0.12),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
                 ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.14),
+                  Colors.white.withValues(alpha: 0.05),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.24, 0.62],
               ),
             ),
-          ],
-        ),
-      );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
-    },
+            arrowColor: const Color(0xFFFFF7FB).withValues(alpha: 0.88),
+            child: child,
+          );
+        },
   );
-}
-
-class _AnchoredInfoBubble extends StatelessWidget {
-  final bool showAbove;
-  final double pointerLeft;
-  final double arrowSize;
-  final Widget child;
-
-  const _AnchoredInfoBubble({
-    required this.showAbove,
-    required this.pointerLeft,
-    required this.arrowSize,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bubble = ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF8FC).withValues(alpha: 0.78),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.9),
-                const Color(0xFFFFF6FB).withValues(alpha: 0.84),
-                const Color(0xFFF2DCE8).withValues(alpha: 0.72),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.92),
-              width: 0.9,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFB96B92).withValues(alpha: 0.12),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          foregroundDecoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white.withValues(alpha: 0.14),
-                Colors.white.withValues(alpha: 0.05),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.24, 0.62],
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-
-    final arrow = Positioned(
-      left: pointerLeft,
-      top: showAbove ? null : 0,
-      bottom: showAbove ? 0 : null,
-      child: CustomPaint(
-        size: Size(arrowSize, arrowSize),
-        painter: _BubbleArrowPainter(
-          color: const Color(0xFFFFF7FB).withValues(alpha: 0.88),
-          pointUp: !showAbove,
-        ),
-      ),
-    );
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Padding(
-          padding: showAbove
-              ? EdgeInsets.only(bottom: arrowSize - 1)
-              : EdgeInsets.only(top: arrowSize - 1),
-          child: bubble,
-        ),
-        arrow,
-      ],
-    );
-  }
-}
-
-class _BubbleArrowPainter extends CustomPainter {
-  final Color color;
-  final bool pointUp;
-
-  const _BubbleArrowPainter({required this.color, required this.pointUp});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path();
-
-    if (pointUp) {
-      path
-        ..moveTo(size.width / 2, 0)
-        ..lineTo(0, size.height)
-        ..lineTo(size.width, size.height)
-        ..close();
-    } else {
-      path
-        ..moveTo(0, 0)
-        ..lineTo(size.width, 0)
-        ..lineTo(size.width / 2, size.height)
-        ..close();
-    }
-
-    canvas.drawPath(path, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(covariant _BubbleArrowPainter oldDelegate) {
-    return oldDelegate.color != color || oldDelegate.pointUp != pointUp;
-  }
 }
 
 class _ProjectInfoButton extends StatelessWidget {

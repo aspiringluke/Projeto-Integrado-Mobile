@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../../shared/utils/rect_from_context.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
@@ -146,11 +147,7 @@ class MiniGlassButton extends StatelessWidget {
           offset: const Offset(0, 3),
         ),
       ],
-      child: Icon(
-        icon,
-        color: const Color(0xFF544959),
-        size: 17,
-      ),
+      child: Icon(icon, color: const Color(0xFF544959), size: 17),
     );
   }
 }
@@ -191,7 +188,8 @@ class _CharacterPillSurface extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: fillColor,
-        gradient: gradient ??
+        gradient:
+            gradient ??
             LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -209,10 +207,7 @@ class _CharacterPillSurface extends StatelessWidget {
               stops: const [0.0, 0.52, 1.0],
             ),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: borderColor,
-          width: borderWidth,
-        ),
+        border: Border.all(color: borderColor, width: borderWidth),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -380,7 +375,9 @@ class CharacterBirthdayField extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      isEditing ? Icons.edit_calendar_outlined : Icons.cake_outlined,
+                      isEditing
+                          ? Icons.edit_calendar_outlined
+                          : Icons.cake_outlined,
                       size: 18,
                       color: const Color(0xFF171419),
                     ),
@@ -399,7 +396,8 @@ class CharacterBirthdayField extends StatelessWidget {
                               behavior: HitTestBehavior.translucent,
                               onTap: isEditing
                                   ? null
-                                  : () => onTapAge(rectFromContext(textContext)),
+                                  : () =>
+                                        onTapAge(rectFromContext(textContext)),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +405,9 @@ class CharacterBirthdayField extends StatelessWidget {
                                   Text(
                                     birthdayLabel,
                                     style: TextStyle(
-                                      color: Colors.black.withValues(alpha: 0.68),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.68,
+                                      ),
                                       fontSize: 11,
                                       fontStyle: FontStyle.italic,
                                     ),
@@ -418,7 +418,9 @@ class CharacterBirthdayField extends StatelessWidget {
                                     height: 2,
                                     child: CustomPaint(
                                       painter: DashedUnderlinePainter(
-                                        color: const Color(0xFF8A828C).withValues(alpha: 0.58),
+                                        color: const Color(
+                                          0xFF8A828C,
+                                        ).withValues(alpha: 0.58),
                                       ),
                                     ),
                                   ),
@@ -438,10 +440,7 @@ class CharacterBirthdayField extends StatelessWidget {
             right: 3,
             top: 5,
             bottom: 5,
-            child: _CharacterSignButton(
-              signData: signData,
-              onTap: onTapSign,
-            ),
+            child: _CharacterSignButton(signData: signData, onTap: onTapSign),
           ),
         ],
       ),
@@ -498,7 +497,10 @@ class CharacterHeightField extends StatelessWidget {
                       child: isEditing
                           ? TextField(
                               controller: controller,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               textInputAction: TextInputAction.done,
                               onSubmitted: (_) => onCommitHeight(),
                               onTapOutside: (_) {
@@ -534,10 +536,7 @@ class CharacterHeightField extends StatelessWidget {
             right: 4,
             top: 4,
             bottom: 4,
-            child: _CharacterUnitButton(
-              label: unitLabel,
-              onTap: onTapUnit,
-            ),
+            child: _CharacterUnitButton(label: unitLabel, onTap: onTapUnit),
           ),
         ],
       ),
@@ -594,7 +593,10 @@ class CharacterWeightField extends StatelessWidget {
                       child: isEditing
                           ? TextField(
                               controller: controller,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               textInputAction: TextInputAction.done,
                               onSubmitted: (_) => onCommitWeight(),
                               onTapOutside: (_) {
@@ -630,10 +632,7 @@ class CharacterWeightField extends StatelessWidget {
             right: 4,
             top: 4,
             bottom: 4,
-            child: _CharacterUnitButton(
-              label: unitLabel,
-              onTap: onTapUnit,
-            ),
+            child: _CharacterUnitButton(label: unitLabel, onTap: onTapUnit),
           ),
         ],
       ),
@@ -645,10 +644,7 @@ class _CharacterSignButton extends StatelessWidget {
   final ZodiacSignData signData;
   final ValueChanged<Rect> onTap;
 
-  const _CharacterSignButton({
-    required this.signData,
-    required this.onTap,
-  });
+  const _CharacterSignButton({required this.signData, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -710,10 +706,7 @@ class _CharacterUnitButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _CharacterUnitButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _CharacterUnitButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
