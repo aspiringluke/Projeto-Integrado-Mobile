@@ -68,20 +68,10 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
   _ProjectColorTarget _activeColorTarget = _ProjectColorTarget.accent;
-  Uint8List? _coverImageBytes;
+  ProjectImageData _coverImage = const ProjectImageData();
   String? _coverImageName;
-  double? _coverImageWidth;
-  double? _coverImageHeight;
-  double _coverImageScale = 1;
-  double _coverImageOffsetX = 0;
-  double _coverImageOffsetY = 0;
-  Uint8List? _accentImageBytes;
+  ProjectImageData _accentImage = const ProjectImageData();
   String? _accentImageName;
-  double? _accentImageWidth;
-  double? _accentImageHeight;
-  double _accentImageScale = 1;
-  double _accentImageOffsetX = 0;
-  double _accentImageOffsetY = 0;
 
   static const double _synopsisMaxHeight = 196;
 
@@ -202,27 +192,47 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         tags: selectedTags,
         coverColor: _coverColor.toColor(),
         accentColor: _accentColor.toColor(),
-        coverImage: ProjectImageData(
-          bytes: _coverImageBytes,
-          width: _coverImageWidth,
-          height: _coverImageHeight,
-          scale: _coverImageScale,
-          offsetX: _coverImageOffsetX,
-          offsetY: _coverImageOffsetY,
-        ),
-        accentImage: ProjectImageData(
-          bytes: _accentImageBytes,
-          width: _accentImageWidth,
-          height: _accentImageHeight,
-          scale: _accentImageScale,
-          offsetX: _accentImageOffsetX,
-          offsetY: _accentImageOffsetY,
-        ),
+        coverImage: _coverImage,
+        accentImage: _accentImage,
       ),
     );
   }
 
-  Future<void> _pickCoverImage() async {
+  bool _isCoverTarget(_ProjectColorTarget target) =>
+      target == _ProjectColorTarget.cover;
+
+  ProjectImageData _imageForTarget(_ProjectColorTarget target) {
+    return _isCoverTarget(target) ? _coverImage : _accentImage;
+  }
+
+  String? _imageNameForTarget(_ProjectColorTarget target) {
+    return _isCoverTarget(target) ? _coverImageName : _accentImageName;
+  }
+
+  void _setImageStateForTarget(
+    _ProjectColorTarget target, {
+    required ProjectImageData image,
+    required String? imageName,
+  }) {
+    if (_isCoverTarget(target)) {
+      _coverImage = image;
+      _coverImageName = imageName;
+      return;
+    }
+
+    _accentImage = image;
+    _accentImageName = imageName;
+  }
+
+  CreateProjectDialogImageEditorViewportPreset _viewportPresetForTarget(
+    _ProjectColorTarget target,
+  ) {
+    return _isCoverTarget(target)
+        ? createProjectDialogCoverViewportPreset
+        : createProjectDialogAccentViewportPreset;
+  }
+
+  Future<void> _pickImage(_ProjectColorTarget target) async {
     final result = await pickProjectImage();
     if (result == null) {
       return;
@@ -234,59 +244,25 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     }
 
     setState(() {
-      _coverImageBytes = result.bytes;
-      _coverImageName = result.name;
-      _coverImageWidth = imageSize.width;
-      _coverImageHeight = imageSize.height;
-      _coverImageScale = 1;
-      _coverImageOffsetX = 0;
-      _coverImageOffsetY = 0;
+      _setImageStateForTarget(
+        target,
+        image: ProjectImageData(
+          bytes: result.bytes,
+          width: imageSize.width,
+          height: imageSize.height,
+        ),
+        imageName: result.name,
+      );
     });
   }
 
-  void _removeCoverImage() {
+  void _removeImage(_ProjectColorTarget target) {
     setState(() {
-      _coverImageBytes = null;
-      _coverImageName = null;
-      _coverImageWidth = null;
-      _coverImageHeight = null;
-      _coverImageScale = 1;
-      _coverImageOffsetX = 0;
-      _coverImageOffsetY = 0;
-    });
-  }
-
-  Future<void> _pickAccentImage() async {
-    final result = await pickProjectImage();
-    if (result == null) {
-      return;
-    }
-
-    final imageSize = await _decodeImageSize(result.bytes);
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _accentImageBytes = result.bytes;
-      _accentImageName = result.name;
-      _accentImageWidth = imageSize.width;
-      _accentImageHeight = imageSize.height;
-      _accentImageScale = 1;
-      _accentImageOffsetX = 0;
-      _accentImageOffsetY = 0;
-    });
-  }
-
-  void _removeAccentImage() {
-    setState(() {
-      _accentImageBytes = null;
-      _accentImageName = null;
-      _accentImageWidth = null;
-      _accentImageHeight = null;
-      _accentImageScale = 1;
-      _accentImageOffsetX = 0;
-      _accentImageOffsetY = 0;
+      _setImageStateForTarget(
+        target,
+        image: const ProjectImageData(),
+        imageName: null,
+      );
     });
   }
 
@@ -300,88 +276,72 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     return size;
   }
 
-  ProjectImageViewportMetrics _coverImageMetrics(double scale) {
+  ProjectImageViewportMetrics _imageMetricsForTarget(
+    _ProjectColorTarget target,
+    double scale,
+  ) {
+    final image = _imageForTarget(target);
+    final viewportPreset = _viewportPresetForTarget(target);
+
     return computeProjectImageViewportMetrics(
       viewportSize: Size(
-        createProjectDialogCoverViewportPreset.cropReferenceWidth,
-        createProjectDialogCoverViewportPreset.cropHeight,
+        viewportPreset.cropReferenceWidth,
+        viewportPreset.cropHeight,
       ),
-      imageWidth: _coverImageWidth ?? 0,
-      imageHeight: _coverImageHeight ?? 0,
+      imageWidth: image.width ?? 0,
+      imageHeight: image.height ?? 0,
       scale: scale,
     );
   }
 
-  ProjectImageViewportMetrics _accentImageMetrics(double scale) {
-    return computeProjectImageViewportMetrics(
-      viewportSize: Size(
-        createProjectDialogAccentViewportPreset.cropReferenceWidth,
-        createProjectDialogAccentViewportPreset.cropHeight,
-      ),
-      imageWidth: _accentImageWidth ?? 0,
-      imageHeight: _accentImageHeight ?? 0,
-      scale: scale,
-    );
-  }
-
-  void _setCoverImageScale(double value) {
-    final metrics = _coverImageMetrics(value);
+  void _setImageScale(_ProjectColorTarget target, double value) {
+    final metrics = _imageMetricsForTarget(target, value);
+    final image = _imageForTarget(target);
 
     setState(() {
-      _coverImageScale = value;
-      _coverImageOffsetX = clampProjectImageOffset(
-        _coverImageOffsetX,
-        maxTranslation: metrics.maxTranslationX,
-      );
-      _coverImageOffsetY = clampProjectImageOffset(
-        _coverImageOffsetY,
-        maxTranslation: metrics.maxTranslationY,
+      _setImageStateForTarget(
+        target,
+        image: ProjectImageData(
+          bytes: image.bytes,
+          width: image.width,
+          height: image.height,
+          scale: value,
+          offsetX: clampProjectImageOffset(
+            image.offsetX,
+            maxTranslation: metrics.maxTranslationX,
+          ),
+          offsetY: clampProjectImageOffset(
+            image.offsetY,
+            maxTranslation: metrics.maxTranslationY,
+          ),
+        ),
+        imageName: _imageNameForTarget(target),
       );
     });
   }
 
-  void _setCoverImageOffset(double dx, double dy) {
-    final metrics = _coverImageMetrics(_coverImageScale);
+  void _setImageOffset(_ProjectColorTarget target, double dx, double dy) {
+    final image = _imageForTarget(target);
+    final metrics = _imageMetricsForTarget(target, image.scale);
 
     setState(() {
-      _coverImageOffsetX = clampProjectImageOffset(
-        dx,
-        maxTranslation: metrics.maxTranslationX,
-      );
-      _coverImageOffsetY = clampProjectImageOffset(
-        dy,
-        maxTranslation: metrics.maxTranslationY,
-      );
-    });
-  }
-
-  void _setAccentImageScale(double value) {
-    final metrics = _accentImageMetrics(value);
-
-    setState(() {
-      _accentImageScale = value;
-      _accentImageOffsetX = clampProjectImageOffset(
-        _accentImageOffsetX,
-        maxTranslation: metrics.maxTranslationX,
-      );
-      _accentImageOffsetY = clampProjectImageOffset(
-        _accentImageOffsetY,
-        maxTranslation: metrics.maxTranslationY,
-      );
-    });
-  }
-
-  void _setAccentImageOffset(double dx, double dy) {
-    final metrics = _accentImageMetrics(_accentImageScale);
-
-    setState(() {
-      _accentImageOffsetX = clampProjectImageOffset(
-        dx,
-        maxTranslation: metrics.maxTranslationX,
-      );
-      _accentImageOffsetY = clampProjectImageOffset(
-        dy,
-        maxTranslation: metrics.maxTranslationY,
+      _setImageStateForTarget(
+        target,
+        image: ProjectImageData(
+          bytes: image.bytes,
+          width: image.width,
+          height: image.height,
+          scale: image.scale,
+          offsetX: clampProjectImageOffset(
+            dx,
+            maxTranslation: metrics.maxTranslationX,
+          ),
+          offsetY: clampProjectImageOffset(
+            dy,
+            maxTranslation: metrics.maxTranslationY,
+          ),
+        ),
+        imageName: _imageNameForTarget(target),
       );
     });
   }
@@ -769,13 +729,13 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               title: 'Imagem da capa',
                               description:
                                   'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
-                              imageBytes: _coverImageBytes,
-                              imageWidth: _coverImageWidth,
-                              imageHeight: _coverImageHeight,
+                              imageBytes: _coverImage.bytes,
+                              imageWidth: _coverImage.width,
+                              imageHeight: _coverImage.height,
                               imageName: _coverImageName,
-                              scale: _coverImageScale,
-                              offsetX: _coverImageOffsetX,
-                              offsetY: _coverImageOffsetY,
+                              scale: _coverImage.scale,
+                              offsetX: _coverImage.offsetX,
+                              offsetY: _coverImage.offsetY,
                               backgroundGradient: const LinearGradient(
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
@@ -788,12 +748,22 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               viewportPreset:
                                   createProjectDialogCoverViewportPreset,
                               emptyStateText: 'Nenhuma imagem selecionada',
-                              onScaleChanged: _setCoverImageScale,
-                              onOffsetChanged: _setCoverImageOffset,
-                              onPick: _pickCoverImage,
-                              onRemove: _coverImageBytes == null
+                              onScaleChanged: (value) => _setImageScale(
+                                _ProjectColorTarget.cover,
+                                value,
+                              ),
+                              onOffsetChanged: (offsetX, offsetY) =>
+                                  _setImageOffset(
+                                    _ProjectColorTarget.cover,
+                                    offsetX,
+                                    offsetY,
+                                  ),
+                              onPick: () =>
+                                  _pickImage(_ProjectColorTarget.cover),
+                              onRemove: _coverImage.bytes == null
                                   ? null
-                                  : _removeCoverImage,
+                                  : () =>
+                                        _removeImage(_ProjectColorTarget.cover),
                             ),
                           ] else ...[
                             const SizedBox(height: 12),
@@ -801,13 +771,13 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               title: 'Imagem do realce',
                               description:
                                   'Escolha uma imagem para o fundo do cartão expandido. A cor de realce continua controlando a colorização, a suavização e os gradientes por cima dela.',
-                              imageBytes: _accentImageBytes,
-                              imageWidth: _accentImageWidth,
-                              imageHeight: _accentImageHeight,
+                              imageBytes: _accentImage.bytes,
+                              imageWidth: _accentImage.width,
+                              imageHeight: _accentImage.height,
                               imageName: _accentImageName,
-                              scale: _accentImageScale,
-                              offsetX: _accentImageOffsetX,
-                              offsetY: _accentImageOffsetY,
+                              scale: _accentImage.scale,
+                              offsetX: _accentImage.offsetX,
+                              offsetY: _accentImage.offsetY,
                               backgroundGradient:
                                   buildCreateProjectDialogAccentPreviewGradient(
                                     _accentColor.toColor(),
@@ -815,12 +785,23 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                               viewportPreset:
                                   createProjectDialogAccentViewportPreset,
                               emptyStateText: 'Nenhuma imagem selecionada',
-                              onScaleChanged: _setAccentImageScale,
-                              onOffsetChanged: _setAccentImageOffset,
-                              onPick: _pickAccentImage,
-                              onRemove: _accentImageBytes == null
+                              onScaleChanged: (value) => _setImageScale(
+                                _ProjectColorTarget.accent,
+                                value,
+                              ),
+                              onOffsetChanged: (offsetX, offsetY) =>
+                                  _setImageOffset(
+                                    _ProjectColorTarget.accent,
+                                    offsetX,
+                                    offsetY,
+                                  ),
+                              onPick: () =>
+                                  _pickImage(_ProjectColorTarget.accent),
+                              onRemove: _accentImage.bytes == null
                                   ? null
-                                  : _removeAccentImage,
+                                  : () => _removeImage(
+                                      _ProjectColorTarget.accent,
+                                    ),
                             ),
                           ],
                           const SizedBox(height: 12),
