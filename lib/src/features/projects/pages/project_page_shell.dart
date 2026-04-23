@@ -72,6 +72,9 @@ class _ProjectPageState extends State<ProjectPage> {
 
   late ProjectSectionId _activeSection;
   bool _isCreateMenuOpen = false;
+  final CharactersPinController _charactersPinController =
+      const CharactersPinController();
+  final List<CharacterListItem> _characters = <CharacterListItem>[];
 
   @override
   void initState() {
@@ -114,9 +117,36 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  void _createCharacter() {
+  void _createCharacter() async {
     _setActiveSection(ProjectSectionId.characters);
-    _showComingSoon('Novo personagem');
+    final draft = await showCreateCharacterDialog(context);
+    if (!mounted || draft == null) {
+      return;
+    }
+
+    setState(() {
+      _characters.add(
+        CharacterListItem(
+          data: CharacterCardData(
+            name: draft.name,
+            alias: 'Sem vulgo',
+            accent: draft.accentColor,
+            avatarColor: draft.coverColor,
+            icon: Icons.person_rounded,
+            birthYear: 2000,
+            birthDay: 1,
+            birthMonth: 1,
+            heightCm: 170,
+            weightKg: 70,
+            quote: '',
+            synopsis: draft.synopsis,
+            seed: DateTime.now().microsecondsSinceEpoch,
+          ),
+          unpinnedIndex: _characters.where((item) => !item.isPinned).length,
+        ),
+      );
+      _isCreateMenuOpen = false;
+    });
   }
 
   void _createDiagram() {
@@ -126,12 +156,21 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Widget _buildSectionBody() {
     return switch (_activeSection) {
-      ProjectSectionId.characters => const CharactersSection(),
+      ProjectSectionId.characters => CharactersSection(
+        characters: _characters,
+        onTogglePinned: _togglePinnedCharacter,
+      ),
       _ => _UnderConstructionSection(
           icon: _sectionMeta[_activeSection]!.icon,
           title: _sectionMeta[_activeSection]!.label,
         ),
     };
+  }
+
+  void _togglePinnedCharacter(CharacterListItem character) {
+    setState(() {
+      _charactersPinController.togglePinned(_characters, character);
+    });
   }
 
   @override
