@@ -37,6 +37,7 @@ dependencies:
   google_fonts: ^8.0.2
   flutter_markdown: any
   file_picker: ^10.3.2
+  super_clipboard: ^0.9.1
 
 dev_dependencies:
   flutter_test:

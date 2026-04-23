@@ -7,6 +7,7 @@ import '../utils/characters_utils.dart';
 import 'character_fields.dart';
 
 class ExpandedCharacterBody extends StatelessWidget {
+  final Color accentColor;
   final CharacterDateEntry dateEntry;
   final bool isEditing;
   final String birthdayLabel;
@@ -32,6 +33,7 @@ class ExpandedCharacterBody extends StatelessWidget {
 
   const ExpandedCharacterBody({
     super.key,
+    required this.accentColor,
     required this.dateEntry,
     required this.isEditing,
     required this.birthdayLabel,
@@ -67,15 +69,16 @@ class ExpandedCharacterBody extends StatelessWidget {
             children: [
               Expanded(
                 child: CharacterTimeField(
+                  accentColor: accentColor,
                   dateEntry: dateEntry,
                   onTapClock: onCycleDateType,
                 ),
               ),
               const SizedBox(width: 12),
               MiniGlassButton(
+                accentColor: accentColor,
                 icon: isEditing ? Icons.check_rounded : Icons.edit_outlined,
                 onTap: onToggleEditing,
-                fillColor: Colors.white.withValues(alpha: 0.34),
               ),
             ],
           ),
@@ -84,6 +87,7 @@ class ExpandedCharacterBody extends StatelessWidget {
             controller: synopsisController,
             scrollController: synopsisScrollController,
             isEditing: isEditing,
+            focusedBorderColor: accentColor,
             placeholderText: synopsisPlaceholderText,
             textStyle: const TextStyle(
               color: Color(0xFF8F8990),
@@ -114,14 +118,12 @@ class ExpandedCharacterBody extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
             viewerBuilder: (context, text, style) {
-              return CharacterMarkdownText(
-                data: text,
-                style: style,
-              );
+              return CharacterMarkdownText(data: text, style: style);
             },
           ),
           const SizedBox(height: 12),
           CharacterQuoteStrip(
+            accentColor: accentColor,
             controller: quoteController,
             isEditing: isEditing,
           ),
@@ -130,6 +132,7 @@ class ExpandedCharacterBody extends StatelessWidget {
             children: [
               Expanded(
                 child: CharacterBirthdayField(
+                  accentColor: accentColor,
                   birthdayLabel: birthdayLabel,
                   signData: signData,
                   isEditing: isEditing,
@@ -141,6 +144,7 @@ class ExpandedCharacterBody extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: CharacterHeightField(
+                  accentColor: accentColor,
                   heightLabel: heightLabel,
                   unitLabel: heightUnitCompactLabel(heightUnit),
                   controller: heightController,
@@ -152,6 +156,7 @@ class ExpandedCharacterBody extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: CharacterWeightField(
+                  accentColor: accentColor,
                   weightLabel: weightLabel,
                   unitLabel: weightUnitCompactLabel(weightUnit),
                   controller: weightController,

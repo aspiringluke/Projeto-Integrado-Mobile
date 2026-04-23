@@ -132,6 +132,7 @@ class _ProjectPageState extends State<ProjectPage> {
             alias: 'Sem vulgo',
             accent: draft.accentColor,
             avatarColor: draft.coverColor,
+            profileImage: draft.profileImage,
             icon: Icons.person_rounded,
             birthYear: 2000,
             birthDay: 1,

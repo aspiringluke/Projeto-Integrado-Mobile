@@ -9,6 +9,7 @@ import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
 import 'character_card_expanded_body.dart';
+import 'character_profile_viewer_dialog.dart';
 import 'character_card_visuals.dart';
 
 class CharacterCard extends StatefulWidget {
@@ -126,6 +127,18 @@ class _CharacterCardState extends State<CharacterCard>
       MaterialPageRoute<void>(
         builder: (_) => _CharacterPlaceholderPage(title: widget.data.name),
       ),
+    );
+  }
+
+  Future<void> _openCharacterProfileViewer() async {
+    if (widget.data.profileImage.bytes == null) {
+      return;
+    }
+
+    await showCharacterProfileViewerDialog(
+      context,
+      characterName: widget.data.name,
+      profileImage: widget.data.profileImage,
     );
   }
 
@@ -599,6 +612,8 @@ class _CharacterCardState extends State<CharacterCard>
                                 isExpanded: _isExpanded,
                                 bottomRadius: bottomRadius,
                                 onOpenCharacterPage: _openCharacterPage,
+                                onOpenCharacterProfileViewer:
+                                    _openCharacterProfileViewer,
                                 onToggleExpand: _toggleExpanded,
                               ),
                               ClipRect(
@@ -634,7 +649,8 @@ class _CharacterCardState extends State<CharacterCard>
                                                 child: DecoratedBox(
                                                   decoration: BoxDecoration(
                                                     gradient: LinearGradient(
-                                                      begin: Alignment.topCenter,
+                                                      begin:
+                                                          Alignment.topCenter,
                                                       end: Alignment
                                                           .bottomCenter,
                                                       colors: [
@@ -657,6 +673,7 @@ class _CharacterCardState extends State<CharacterCard>
                                               ),
                                             ),
                                             ExpandedCharacterBody(
+                                              accentColor: widget.data.accent,
                                               dateEntry: _currentDateEntry,
                                               isEditing: _editing,
                                               birthdayLabel:
@@ -689,8 +706,10 @@ class _CharacterCardState extends State<CharacterCard>
                                               onTapSign: _showSignDescription,
                                               onTapAge: _showCharacterAge,
                                               onTapBirthday: _selectBirthday,
-                                              onTapHeightUnit: _selectHeightUnit,
-                                              onTapWeightUnit: _selectWeightUnit,
+                                              onTapHeightUnit:
+                                                  _selectHeightUnit,
+                                              onTapWeightUnit:
+                                                  _selectWeightUnit,
                                               onCommitHeight: () {
                                                 setState(() {
                                                   _commitHeightText();
@@ -739,6 +758,7 @@ class _CharacterHeader extends StatelessWidget {
   final bool isExpanded;
   final Radius bottomRadius;
   final VoidCallback onOpenCharacterPage;
+  final VoidCallback onOpenCharacterProfileViewer;
   final VoidCallback onToggleExpand;
 
   const _CharacterHeader({
@@ -746,6 +766,7 @@ class _CharacterHeader extends StatelessWidget {
     required this.isExpanded,
     required this.bottomRadius,
     required this.onOpenCharacterPage,
+    required this.onOpenCharacterProfileViewer,
     required this.onToggleExpand,
   });
 
@@ -767,7 +788,7 @@ class _CharacterHeader extends StatelessWidget {
         ),
       ),
       child: SizedBox(
-        height: 60,
+        height: characterProfileTileHeight,
         child: Stack(
           children: [
             Positioned.fill(
@@ -791,17 +812,22 @@ class _CharacterHeader extends StatelessWidget {
               child: CharacterAvatarTile(
                 accent: data.accent,
                 avatarColor: data.avatarColor,
+                profileImage: data.profileImage,
                 icon: data.icon,
+                onTap: data.profileImage.bytes == null
+                    ? null
+                    : onOpenCharacterProfileViewer,
               ),
             ),
             Positioned.fill(
+              left: characterProfileTileWidth,
               right: 52,
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: onOpenCharacterPage,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 88, right: 18),
+                    padding: const EdgeInsets.only(left: 14, right: 18),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Column(
@@ -816,7 +842,7 @@ class _CharacterHeader extends StatelessWidget {
                               color: isExpanded
                                   ? const Color(0xFFF9F6FA)
                                   : const Color(0xFFF7F4F8),
-                              fontSize: 18,
+                              fontSize: 18.5,
                               fontWeight: FontWeight.w700,
                               fontStyle: FontStyle.italic,
                               shadows: [

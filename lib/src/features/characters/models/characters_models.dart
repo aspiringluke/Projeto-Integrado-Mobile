@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../projects/models/project_image_data.dart';
+
 class CharacterCardData {
   final String name;
   final String alias;
   final Color accent;
   final Color avatarColor;
+  final ProjectImageData profileImage;
   final IconData icon;
   final int birthYear;
   final int birthDay;
@@ -20,6 +23,7 @@ class CharacterCardData {
     required this.alias,
     required this.accent,
     required this.avatarColor,
+    this.profileImage = const ProjectImageData(),
     required this.icon,
     required this.birthYear,
     required this.birthDay,
