@@ -1,0 +1,22 @@
+@startuml diagrama_UC18
+
+|Usuário|
+start
+:Visualizar cartão de personagem ou projeto;
+:Tocar no ícone de relógio/histórico;
+
+|Sistema|
+:Alternar o tipo de data exibida;
+:Selecionar entre "Último acesso", "Criado em" e "Última modificação";
+:Renderizar rótulo, tempo relativo e data/hora absoluta;
+
+|Usuário|
+if (Deseja alternar novamente?) then (sim)
+  :Tocar novamente no ícone de histórico;
+  |Sistema|
+  :Exibir o próximo marcador temporal disponível;
+else (não)
+endif
+
+stop
+@enduml

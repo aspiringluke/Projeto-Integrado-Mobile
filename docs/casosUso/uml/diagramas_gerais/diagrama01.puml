@@ -16,6 +16,7 @@ rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
         usecase "UC01: Criar Novo Projeto" as UC01
         usecase "UC08: Upload e Compressão de Imagens de Personagens" as UC08
         usecase "UC09: Criação e Categorização de Ideias" as UC09
+        usecase "UC18: Consultar Histórico Temporal de Personagem ou Projeto" as UC18
         usecase "UC15: Exclusão de Entidades e Itens do Projeto" as UC15
     }
 }
@@ -28,6 +29,7 @@ U --> UC09
 U --> UC11
 U --> UC13
 U --> UC15
+U --> UC18
 
 UC01 <.-. UC09: <<extends>>
 UC01 <.-. UC15: <<extends>>

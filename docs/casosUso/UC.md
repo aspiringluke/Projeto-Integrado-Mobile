@@ -16,17 +16,19 @@
 
 ### Pós condições
 
-- Novo projeto criado.
+- Novo projeto criado com data de criação registrada.
 
 ### Fluxo Principal
 
 1. O aplicativo abre a tela inicial.
 2. O usuário clica no botão "Novo Projeto".
-3. Um novo projeto é criado.
+3. O sistema cria um novo projeto.
+4. O sistema registra automaticamente a data de criação do projeto.
 
 ### RF Relacionadas
 
 - RF01
+- RF53
 
 ---
 
@@ -285,6 +287,7 @@
 ### Pós condições
 
 - Imagem comprimida e exibida no perfil do personagem.
+- Última modificação do personagem atualizada após o salvamento.
 
 ### Fluxo Principal
 
@@ -293,6 +296,7 @@
 3. O sistema realiza a compressão *lossy* em segundo plano.
 4. O sistema salva a versão otimizada no banco/storage local.
 5. O usuário confirma a edição salvando o personagem.
+6. O sistema atualiza a data de última modificação do personagem.
 
 ### Fluxo Alternativo
 
@@ -303,6 +307,8 @@
 ### RF Relacionadas
 
 - RF38
+- RF41
+- RF42
 
 ### RNF Relacionadas
 
@@ -708,6 +714,48 @@
 
 - RF36
 - RF45
+
+---
+
+## UC18 — Consultar histórico temporal de personagem ou projeto
+
+### Ator Principal
+
+- Usuário
+
+### Objetivos
+
+- Permitir que o usuário consulte rapidamente o histórico temporal de personagens e projetos.
+- Exibir, de forma alternável, a data de criação, a última modificação e o último acesso da entidade visualizada.
+
+### Pré-condições
+
+- Cartão de personagem ou projeto visível na interface.
+- A entidade selecionada deve possuir metadados temporais registrados.
+
+### Pós condições
+
+- O histórico temporal da entidade é consultado visualmente sem alterar seu conteúdo principal.
+
+### Fluxo Principal
+
+1. O usuário visualiza o cartão de um personagem ou projeto.
+2. O usuário toca no ícone de relógio/histórico do componente temporal.
+3. O sistema alterna o tipo de informação exibida entre "Último acesso", "Criado em" e "Última modificação".
+4. O sistema apresenta o rótulo da informação, o tempo relativo e a data/hora absoluta correspondente.
+
+### Fluxo Alternativo
+
+- **A1 — Nova alternância do histórico:**
+
+    O usuário toca novamente no ícone de relógio/histórico e o sistema exibe o próximo marcador temporal disponível.
+
+### RF Relacionadas
+
+- RF41
+- RF52
+- RF53
+- RF54
 
 ---
 

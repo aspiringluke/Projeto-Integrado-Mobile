@@ -17,6 +17,8 @@ endif
 
 |Usuário|
 :Confirmar edição e salvar personagem;
+|Sistema|
+:Atualizar a data de última modificação do personagem;
 stop
 
 @enduml

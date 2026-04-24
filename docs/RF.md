@@ -201,6 +201,14 @@
 ### RF40 - Exclusão de personagens
 
   O sistema deve permitir a remoção definitiva de personagens do projeto.
+
+### RF41 (Pers.) - Histórico temporal de personagens
+
+  O sistema deve registrar automaticamente, para cada personagem, a data de criação, a última modificação e o último acesso.
+
+### RF42 (Pers.) - Exibição do versionamento visual de personagens
+
+  O sistema deve exibir, no cartão ou ficha do personagem, um componente visual retangular com ícone de relógio/histórico no canto esquerdo, permitindo alternar entre "Criado em", "Última modificação" e "Último acesso", apresentando o rótulo, o tempo relativo e a data/hora absoluta.
  
 
 ---
@@ -208,23 +216,23 @@
 
 ## Configurações gerais
 
-### RF41 - Configuração de Senha de Acesso
+### RF43 - Configuração de Senha de Acesso
 
   O sistema deve permitir ao usuário definir uma senha para o aplicativo.
 
-### RF42 - Configuração de limite de caracteres
+### RF44 - Configuração de limite de caracteres
 
   O sistema deve permitir que o usuário configure o limite de caracteres da sinopse.
   
-### RF43 - Seleção de Idiomas
+### RF45 - Seleção de Idiomas
 
   O sistema deve permitir a troca de idiomas de acordo com a preferência do usuário.
 
-### RF44 - Modo Desempenho
+### RF46 - Modo Desempenho
 
   O sistema deve possuir um "Modo Desempenho".
 
-### RF45 - Assistente de Insights Contextuais (IA)
+### RF47 - Assistente de Insights Contextuais (IA)
 
   O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
   (Projetos, Personagens, Ideias ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização.
@@ -235,22 +243,30 @@
 
 ## Edição de projeto
 
-### RF46 - Editar informações
+### RF48 - Editar informações
 
   O sistema deve permitir ao usuário alterar o nome e a sinopse do projeto.
 
-### RF47 - Imagem do projeto
+### RF49 - Imagem do projeto
 
   O sistema deve permitir ao usuário enviar ou remover uma imagem do cartão do projeto, podendo alterar o modo de mesclagem.
 
-### RF48 - Cor do projeto
+### RF50 - Cor do projeto
 
   O sistema deve permitir ao usuário escolher uma cor de fundo para aparecer no cartão do projeto, podendo alterar o modo de mesclagem.
 
-### RF49 - Tags do projeto
+### RF51 - Tags do projeto
 
   O sistema deve permitir ao usuário inserir e remover tags do projeto.
 
-### RF50 - Personagens do cartão de projeto
+### RF52 - Personagens do cartão de projeto
 
   O sistema deve permitir ao usuário selecionar personagens do projeto cujas imagens aparecerão no respectivo cartão.
+
+### RF53 - Histórico temporal de projetos
+
+  O sistema deve registrar automaticamente, para cada projeto, a data de criação, a última modificação e o último acesso.
+
+### RF54 - Exibição do versionamento visual de projetos
+
+  O sistema deve exibir, no cartão ou na área de detalhes do projeto, um componente visual retangular com ícone de relógio/histórico no canto esquerdo, permitindo alternar entre "Criado em", "Última modificação" e "Último acesso", apresentando o rótulo, o tempo relativo e a data/hora absoluta.

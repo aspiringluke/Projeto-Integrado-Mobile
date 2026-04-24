@@ -9,6 +9,7 @@ start
 
 |Sistema|
 :Cria um novo projeto;
+:Registra automaticamente a data de criação do projeto;
 
 'Será analisado a necessidade de utilizar "Sistema" como ator
 stop
