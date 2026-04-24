@@ -2,11 +2,13 @@ part of 'project_page.dart';
 
 class ProjectPage extends StatefulWidget {
   final String title;
+  final Color accentColor;
   final ProjectSectionId initialSection;
 
   const ProjectPage({
     super.key,
     required this.title,
+    this.accentColor = const Color(0xFFDF6EB8),
     this.initialSection = ProjectSectionId.configProjeto,
   });
 
@@ -162,9 +164,9 @@ class _ProjectPageState extends State<ProjectPage> {
         onTogglePinned: _togglePinnedCharacter,
       ),
       _ => _UnderConstructionSection(
-          icon: _sectionMeta[_activeSection]!.icon,
-          title: _sectionMeta[_activeSection]!.label,
-        ),
+        icon: _sectionMeta[_activeSection]!.icon,
+        title: _sectionMeta[_activeSection]!.label,
+      ),
     };
   }
 
@@ -179,16 +181,14 @@ class _ProjectPageState extends State<ProjectPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
       bottomNavigationBar: _ProjectFooterNav(
+        accentColor: widget.accentColor,
         activeSection: _activeSection,
         onSelect: _setActiveSection,
       ),
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/FUNDO.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
           ),
           Column(
             children: [
@@ -207,9 +207,7 @@ class _ProjectPageState extends State<ProjectPage> {
                 surroundSubtitleWithDots: true,
               ),
               const FuncoesBusca(),
-              Expanded(
-                child: _buildSectionBody(),
-              ),
+              Expanded(child: _buildSectionBody()),
             ],
           ),
           if (_isCreateMenuOpen)
@@ -224,6 +222,7 @@ class _ProjectPageState extends State<ProjectPage> {
             right: 18,
             bottom: 88,
             child: _ProjectCreateFab(
+              accentColor: widget.accentColor,
               isOpen: _isCreateMenuOpen,
               onToggle: _toggleCreateMenu,
               onCreateCharacter: _createCharacter,
@@ -237,10 +236,12 @@ class _ProjectPageState extends State<ProjectPage> {
 }
 
 class _ProjectFooterNav extends StatelessWidget {
+  final Color accentColor;
   final ProjectSectionId activeSection;
   final ValueChanged<ProjectSectionId> onSelect;
 
   const _ProjectFooterNav({
+    required this.accentColor,
     required this.activeSection,
     required this.onSelect,
   });
@@ -249,7 +250,11 @@ class _ProjectFooterNav extends StatelessWidget {
   Widget build(BuildContext context) {
     const items = <(ProjectSectionId, String, IconData)>[
       (ProjectSectionId.configProjeto, 'Pagina inicial', Icons.tune_rounded),
-      (ProjectSectionId.characters, 'Personagens', Icons.person_outline_rounded),
+      (
+        ProjectSectionId.characters,
+        'Personagens',
+        Icons.person_outline_rounded,
+      ),
       (ProjectSectionId.notes, 'Enredo', Icons.auto_stories_outlined),
       (ProjectSectionId.world, 'Mundo', Icons.public_outlined),
     ];
@@ -291,6 +296,7 @@ class _ProjectFooterNav extends StatelessWidget {
                   for (final item in items)
                     Expanded(
                       child: _ProjectFooterItem(
+                        accentColor: accentColor,
                         label: item.$2,
                         icon: item.$3,
                         isActive: activeSection == item.$1,
@@ -308,12 +314,14 @@ class _ProjectFooterNav extends StatelessWidget {
 }
 
 class _ProjectFooterItem extends StatelessWidget {
+  final Color accentColor;
   final String label;
   final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
 
   const _ProjectFooterItem({
+    required this.accentColor,
     required this.label,
     required this.icon,
     required this.isActive,
@@ -338,7 +346,9 @@ class _ProjectFooterItem extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 25,
-                    color: const Color(0xFF1B171C),
+                    color: isActive
+                        ? _darkenProjectAccent(accentColor, 0.34)
+                        : const Color(0xFF1B171C),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -348,7 +358,7 @@ class _ProjectFooterItem extends StatelessWidget {
                   width: isActive ? 16 : 0,
                   height: 2.5,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDF6EB8),
+                    color: accentColor,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -362,12 +372,14 @@ class _ProjectFooterItem extends StatelessWidget {
 }
 
 class _ProjectCreateFab extends StatelessWidget {
+  final Color accentColor;
   final bool? isOpen;
   final VoidCallback onToggle;
   final VoidCallback onCreateCharacter;
   final VoidCallback onCreateDiagram;
 
   const _ProjectCreateFab({
+    required this.accentColor,
     required this.isOpen,
     required this.onToggle,
     required this.onCreateCharacter,
@@ -397,14 +409,14 @@ class _ProjectCreateFab extends StatelessWidget {
                 children: [
                   _CreateActionButton(
                     icon: Icons.account_tree_outlined,
-                    tint: const Color(0xFFDBD8DE),
+                    tint: _lightenProjectAccent(accentColor, 0.3),
                     tooltip: 'Novo diagrama',
                     onTap: onCreateDiagram,
                   ),
                   const SizedBox(height: 10),
                   _CreateActionButton(
                     icon: Icons.person_add_alt_1_rounded,
-                    tint: const Color(0xFFF0C7DE),
+                    tint: _lightenProjectAccent(accentColor, 0.18),
                     tooltip: 'Novo personagem',
                     onTap: onCreateCharacter,
                   ),
@@ -422,21 +434,24 @@ class _ProjectCreateFab extends StatelessWidget {
             diameter: 52,
             onTap: onToggle,
             blurSigma: 10,
-            fillColor: const Color(0xFFF3D5E3).withValues(alpha: 0.58),
+            fillColor: accentColor.withValues(alpha: 0.58),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 Colors.white.withValues(alpha: 0.88),
-                const Color(0xFFF1D1E2).withValues(alpha: 0.92),
-                const Color(0xFFE8BAD3).withValues(alpha: 0.98),
+                _lightenProjectAccent(
+                  accentColor,
+                  0.18,
+                ).withValues(alpha: 0.92),
+                accentColor.withValues(alpha: 0.98),
               ],
               stops: const [0.0, 0.5, 1.0],
             ),
             borderColor: Colors.white.withValues(alpha: 0.9),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFDF6EB8).withValues(alpha: open ? 0.18 : 0.12),
+                color: accentColor.withValues(alpha: open ? 0.18 : 0.12),
                 blurRadius: open ? 18 : 14,
                 offset: const Offset(0, 6),
               ),
@@ -493,23 +508,26 @@ class _CreateActionButton extends StatelessWidget {
           offset: const Offset(0, 4),
         ),
       ],
-      child: Icon(
-        icon,
-        size: 21,
-        color: const Color(0xFF171419),
-      ),
+      child: Icon(icon, size: 21, color: const Color(0xFF171419)),
     );
   }
+}
+
+Color _lightenProjectAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
+}
+
+Color _darkenProjectAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
 }
 
 class _UnderConstructionSection extends StatelessWidget {
   final IconData icon;
   final String title;
 
-  const _UnderConstructionSection({
-    required this.icon,
-    required this.title,
-  });
+  const _UnderConstructionSection({required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {

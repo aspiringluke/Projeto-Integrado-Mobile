@@ -7,6 +7,7 @@ import 'project_image_transform_view.dart';
 
 class ProjectCoverFill extends StatelessWidget {
   final Color color;
+  final Color accentColor;
   final Uint8List? imageBytes;
   final double? imageWidth;
   final double? imageHeight;
@@ -18,6 +19,7 @@ class ProjectCoverFill extends StatelessWidget {
   const ProjectCoverFill({
     super.key,
     required this.color,
+    required this.accentColor,
     this.imageBytes,
     this.imageWidth,
     this.imageHeight,
@@ -33,17 +35,26 @@ class ProjectCoverFill extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: borderRadius,
         gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            color,
             Color.alphaBlend(
-              color.withValues(alpha: 0.32),
-              const Color(0xFFF5EDF2),
+              accentColor.withValues(alpha: 0.76),
+              const Color(0xFF8A7485).withValues(alpha: 0.88),
             ),
-            Colors.white.withValues(alpha: 0.98),
+            Color.alphaBlend(
+              color.withValues(alpha: 0.94),
+              Colors.white.withValues(alpha: 0.18),
+            ),
+            Color.alphaBlend(
+              _lightenProjectCoverColor(
+                accentColor,
+                0.18,
+              ).withValues(alpha: 0.92),
+              Colors.white.withValues(alpha: 0.16),
+            ),
           ],
-          stops: const [0.0, 0.62, 1.0],
+          stops: const [0.0, 0.58, 1.0],
         ),
       ),
       child: imageBytes == null
@@ -76,6 +87,11 @@ class ProjectCoverFill extends StatelessWidget {
             ),
     );
   }
+}
+
+Color _lightenProjectCoverColor(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
 }
 
 class ProjectAccentFill extends StatelessWidget {

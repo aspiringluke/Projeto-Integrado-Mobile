@@ -150,41 +150,34 @@ class _CharacterAvatarExpandHint extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            Colors.white.withValues(alpha: 0.32),
-            accent.withValues(alpha: 0.1),
-            Colors.transparent,
-          ],
-          stops: const [0.0, 0.52, 1.0],
-        ),
+        color: Colors.white.withValues(alpha: 0.2),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: Colors.white.withValues(alpha: 0.72),
           width: 0.8,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: SizedBox(
         width: 18,
         height: 18,
         child: Center(
-          child: Transform.rotate(
-            angle: -0.12,
-            child: Icon(
-              Icons.open_in_full_rounded,
-              size: 10,
-              color: _darkenAccent(accent, 0.22).withValues(alpha: 0.92),
-              shadows: [
-                Shadow(
-                  color: Colors.white.withValues(alpha: 0.46),
-                  blurRadius: 6,
-                ),
-                Shadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
+          child: Icon(
+            Icons.open_in_full_rounded,
+            size: 10,
+            color: Colors.white.withValues(alpha: 0.96),
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.24),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ),
@@ -206,9 +199,4 @@ class CharacterPinBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return PinBadge(isActive: isActive, onTap: onTap);
   }
-}
-
-Color _darkenAccent(Color color, double amount) {
-  final hsl = HSLColor.fromColor(color);
-  return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
 }

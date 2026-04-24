@@ -2,6 +2,7 @@ part of 'project_card.dart';
 
 class _ProjectHeader extends StatelessWidget {
   final Color coverColor;
+  final Color accentColor;
   final ProjectImageData coverImage;
   final bool isExpanded;
   final bool isEditing;
@@ -13,6 +14,7 @@ class _ProjectHeader extends StatelessWidget {
 
   const _ProjectHeader({
     required this.coverColor,
+    required this.accentColor,
     required this.coverImage,
     required this.isExpanded,
     required this.isEditing,
@@ -47,6 +49,7 @@ class _ProjectHeader extends StatelessWidget {
             Positioned.fill(
               child: ProjectCoverFill(
                 color: coverColor,
+                accentColor: accentColor,
                 imageBytes: coverImage.bytes,
                 imageWidth: coverImage.width,
                 imageHeight: coverImage.height,
