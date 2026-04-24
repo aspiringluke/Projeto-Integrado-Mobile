@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -97,6 +98,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   late List<ProjectTagData> _sexualityTags;
   late List<ProjectTagData> _ethnicityTags;
   late List<ProjectTagData> _relevanceTags;
+  bool _bodyExpanded = false;
   bool _detailsExpanded = false;
   String _selectedGenderTag = '';
   String _selectedSexualityTag = '';
@@ -364,6 +366,9 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                               _selectedRelevanceTag,
                             ),
                             onPickBirthday: _selectBirthday,
+                            onOpenBirthdaySign: () => _openBirthdaySignSheet(
+                              zodiacSignFor(_birthdayValue),
+                            ),
                             onPickHeightUnit: _selectHeightUnit,
                             onPickWeightUnit: _selectWeightUnit,
                             onPickGenderTag: () =>
@@ -377,6 +382,12 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                             onToggleDetailsExpanded: () {
                               setState(() {
                                 _detailsExpanded = !_detailsExpanded;
+                              });
+                            },
+                            bodyExpanded: _bodyExpanded,
+                            onToggleBodyExpanded: () {
+                              setState(() {
+                                _bodyExpanded = !_bodyExpanded;
                               });
                             },
                           ),
@@ -624,6 +635,90 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     });
   }
 
+  Future<void> _openBirthdaySignSheet(ZodiacSignData currentSign) async {
+    final selectedDate = await showModalBottomSheet<DateTime>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final accent = _dialogController.accentColor;
+        final signs = _allZodiacSigns();
+
+        return ProjectBottomSheetFrame(
+          title: '${currentSign.symbol} ${currentSign.name}',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: _buildCharacterDialogSurfaceDecoration(
+                  accentColor: accent,
+                  selected: true,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  currentSign.description,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.64),
+                    fontSize: 12,
+                    height: 1.35,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(
+                      context,
+                    ).pop(_randomBirthdayForSign(currentSign));
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(Icons.casino_rounded, size: 18),
+                  label: const Text('Gerar nesse signo'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final sign in signs)
+                    _ZodiacRandomOption(
+                      signData: sign,
+                      accentColor: accent,
+                      isSelected: sign.symbol == currentSign.symbol,
+                      onTap: () {
+                        Navigator.of(context).pop(_randomBirthdayForSign(sign));
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selectedDate == null) {
+      return;
+    }
+
+    setState(() {
+      _birthdayValue = selectedDate;
+    });
+  }
+
   Future<void> _openTagSelector(_CharacterTagKind kind) async {
     final inputController = TextEditingController();
     final selectedLabel = _selectedTagFor(kind);
@@ -840,6 +935,38 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
 enum _CharacterTagKind { gender, sexuality, ethnicity, relevance }
 
+List<ZodiacSignData> _allZodiacSigns() {
+  return [
+    DateTime(2000, 3, 21),
+    DateTime(2000, 4, 20),
+    DateTime(2000, 5, 21),
+    DateTime(2000, 6, 21),
+    DateTime(2000, 7, 23),
+    DateTime(2000, 8, 23),
+    DateTime(2000, 9, 23),
+    DateTime(2000, 10, 23),
+    DateTime(2000, 11, 22),
+    DateTime(2000, 12, 22),
+    DateTime(2000, 1, 20),
+    DateTime(2000, 2, 19),
+  ].map(zodiacSignFor).toList(growable: false);
+}
+
+DateTime _randomBirthdayForSign(ZodiacSignData signData) {
+  final dates = <DateTime>[];
+
+  for (var month = 1; month <= 12; month += 1) {
+    for (var day = 1; day <= daysInMonth(month); day += 1) {
+      final date = DateTime(2000, month, day);
+      if (zodiacSignFor(date).symbol == signData.symbol) {
+        dates.add(date);
+      }
+    }
+  }
+
+  return dates[Random().nextInt(dates.length)];
+}
+
 List<ProjectTagData> _seedCharacterTags(_CharacterTagKind kind) {
   final labels = switch (kind) {
     _CharacterTagKind.gender => const ['Mulher', 'Homem', 'Nao binarie'],
@@ -931,6 +1058,7 @@ class _CreateCharacterNameField extends StatelessWidget {
       controller: nameController,
       hintText: 'Nome do personagem',
       focusedColor: focusedColor,
+      icon: Icons.badge_outlined,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Informe um nome para o personagem.';
@@ -944,6 +1072,7 @@ class _CreateCharacterNameField extends StatelessWidget {
       controller: aliasController,
       hintText: 'Apelido, nome de guerra ou nome publico',
       focusedColor: focusedColor,
+      icon: Icons.alternate_email_rounded,
     );
 
     return LayoutBuilder(
@@ -990,6 +1119,7 @@ class _CharacterMetadataSection extends StatelessWidget {
   final String relevanceLabel;
   final Color? relevanceColor;
   final VoidCallback onPickBirthday;
+  final VoidCallback onOpenBirthdaySign;
   final VoidCallback onPickHeightUnit;
   final VoidCallback onPickWeightUnit;
   final VoidCallback onPickGenderTag;
@@ -997,6 +1127,8 @@ class _CharacterMetadataSection extends StatelessWidget {
   final VoidCallback onPickEthnicityTag;
   final VoidCallback onPickRelevanceTag;
   final VoidCallback onToggleDetailsExpanded;
+  final bool bodyExpanded;
+  final VoidCallback onToggleBodyExpanded;
 
   const _CharacterMetadataSection({
     required this.accentColor,
@@ -1021,6 +1153,7 @@ class _CharacterMetadataSection extends StatelessWidget {
     required this.relevanceLabel,
     required this.relevanceColor,
     required this.onPickBirthday,
+    required this.onOpenBirthdaySign,
     required this.onPickHeightUnit,
     required this.onPickWeightUnit,
     required this.onPickGenderTag,
@@ -1028,11 +1161,14 @@ class _CharacterMetadataSection extends StatelessWidget {
     required this.onPickEthnicityTag,
     required this.onPickRelevanceTag,
     required this.onToggleDetailsExpanded,
+    required this.bodyExpanded,
+    required this.onToggleBodyExpanded,
   });
 
   @override
   Widget build(BuildContext context) {
     final complementaryCount = <String>[
+      mottoController.text.trim(),
       formationsController.text.trim(),
       titlesController.text.trim(),
       genderLabel.trim(),
@@ -1067,73 +1203,82 @@ class _CharacterMetadataSection extends StatelessWidget {
             signData: birthdaySignData,
             accentColor: accentColor,
             onTap: onPickBirthday,
-          ),
-          const SizedBox(height: 10),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final weightField = _CharacterMeasureField(
-                fieldId: CharacterProfileFieldId.weight,
-                label: 'Peso',
-                controller: weightController,
-                hintText: 'Peso do personagem',
-                accentColor: accentColor,
-                visibleFields: visibleFields,
-                onToggleVisibility: onToggleFieldVisibility,
-                icon: Icons.balance_outlined,
-                unitLabel: weightUnitLabel,
-                onPickUnit: onPickWeightUnit,
-              );
-              final heightField = _CharacterMeasureField(
-                fieldId: CharacterProfileFieldId.height,
-                label: 'Altura',
-                controller: heightController,
-                hintText: 'Altura do personagem',
-                accentColor: accentColor,
-                visibleFields: visibleFields,
-                onToggleVisibility: onToggleFieldVisibility,
-                icon: Icons.straighten_rounded,
-                unitLabel: heightUnitLabel,
-                onPickUnit: onPickHeightUnit,
-              );
-
-              if (constraints.maxWidth < 420) {
-                return Column(
-                  children: [
-                    weightField,
-                    const SizedBox(height: 10),
-                    heightField,
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: weightField),
-                  const SizedBox(width: 10),
-                  Expanded(child: heightField),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          _CharacterToggleField(
-            fieldId: CharacterProfileFieldId.motto,
-            label: 'Frase de efeito',
-            controller: mottoController,
-            hintText:
-                'Frase curta, lema ou linha marcante que ajuda a definir o personagem',
-            accentColor: accentColor,
-            visibleFields: visibleFields,
-            onToggleVisibility: onToggleFieldVisibility,
-            maxLines: 2,
-            fieldHeight: 82,
+            onTapSign: onOpenBirthdaySign,
           ),
           const SizedBox(height: 10),
           _CharacterDisclosureTile(
+            title: 'Medidas',
+            summary: 'Peso e altura do personagem',
+            accentColor: accentColor,
+            isExpanded: bodyExpanded,
+            onTap: onToggleBodyExpanded,
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: bodyExpanded
+                ? Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final weightField = _CharacterMeasureField(
+                            fieldId: CharacterProfileFieldId.weight,
+                            label: 'Peso',
+                            controller: weightController,
+                            hintText: 'Peso do personagem',
+                            accentColor: accentColor,
+                            visibleFields: visibleFields,
+                            onToggleVisibility: onToggleFieldVisibility,
+                            icon: Icons.balance_outlined,
+                            unitLabel: weightUnitLabel,
+                            onPickUnit: onPickWeightUnit,
+                          );
+                          final heightField = _CharacterMeasureField(
+                            fieldId: CharacterProfileFieldId.height,
+                            label: 'Altura',
+                            controller: heightController,
+                            hintText: 'Altura do personagem',
+                            accentColor: accentColor,
+                            visibleFields: visibleFields,
+                            onToggleVisibility: onToggleFieldVisibility,
+                            icon: Icons.straighten_rounded,
+                            unitLabel: heightUnitLabel,
+                            onPickUnit: onPickHeightUnit,
+                          );
+
+                          if (constraints.maxWidth < 420) {
+                            return Column(
+                              children: [
+                                weightField,
+                                const SizedBox(height: 10),
+                                heightField,
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: weightField),
+                              const SizedBox(width: 10),
+                              Expanded(child: heightField),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 10),
+          _CharacterDisclosureTile(
+            title: 'Complementos',
+            summary: complementaryCount == 0
+                ? 'Frase, titulos, ocupacoes e tags'
+                : '$complementaryCount campo(s) preenchido(s)',
             accentColor: accentColor,
             isExpanded: detailsExpanded,
-            filledCount: complementaryCount,
             onTap: onToggleDetailsExpanded,
           ),
           AnimatedSize(
@@ -1143,12 +1288,27 @@ class _CharacterMetadataSection extends StatelessWidget {
                 ? Column(
                     children: [
                       const SizedBox(height: 10),
+                      _CharacterToggleField(
+                        fieldId: CharacterProfileFieldId.motto,
+                        label: 'Frase de efeito',
+                        controller: mottoController,
+                        hintText:
+                            'Frase curta, lema ou linha marcante que ajuda a definir o personagem',
+                        accentColor: accentColor,
+                        visibleFields: visibleFields,
+                        onToggleVisibility: onToggleFieldVisibility,
+                        icon: Icons.format_quote_rounded,
+                        maxLines: 2,
+                        fieldHeight: 82,
+                      ),
+                      const SizedBox(height: 10),
                       _CharacterCompactField(
                         label: 'Formacoes e ocupacoes',
                         controller: formationsController,
                         hintText:
                             'Area de estudo, oficio, cargo ou funcao social do personagem',
                         focusedColor: accentColor,
+                        icon: Icons.work_outline_rounded,
                         maxLines: 3,
                         fieldHeight: 90,
                       ),
@@ -1159,6 +1319,7 @@ class _CharacterMetadataSection extends StatelessWidget {
                         hintText:
                             'Honrarias, classificacoes, patentes ou nomes cerimoniais associados ao personagem',
                         focusedColor: accentColor,
+                        icon: Icons.military_tech_outlined,
                         maxLines: 3,
                         fieldHeight: 90,
                       ),
@@ -1250,6 +1411,7 @@ class _CharacterCompactField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final Color focusedColor;
+  final IconData icon;
   final int maxLines;
   final String? Function(String?)? validator;
   final double? fieldHeight;
@@ -1259,6 +1421,7 @@ class _CharacterCompactField extends StatelessWidget {
     required this.controller,
     required this.hintText,
     required this.focusedColor,
+    required this.icon,
     this.maxLines = 1,
     this.validator,
     this.fieldHeight,
@@ -1271,15 +1434,6 @@ class _CharacterCompactField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF3A3339),
-            fontSize: 12.5,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 6),
         SizedBox(
           height: fieldHeight ?? (isMultiline ? 84 : 48),
           child: TextFormField(
@@ -1302,8 +1456,13 @@ class _CharacterCompactField extends StatelessWidget {
             decoration: _buildCharacterDialogFieldDecoration(
               hintText: hintText,
               focusedColor: focusedColor,
+              prefixIcon: _CharacterFieldPrefix(
+                icon: icon,
+                label: label,
+                accentColor: focusedColor,
+              ),
               contentPadding: EdgeInsets.fromLTRB(
-                14,
+                8,
                 isMultiline ? 12 : 0,
                 14,
                 isMultiline ? 12 : 0,
@@ -1324,6 +1483,7 @@ class _CharacterToggleField extends StatelessWidget {
   final Color accentColor;
   final Set<CharacterProfileFieldId> visibleFields;
   final ValueChanged<CharacterProfileFieldId> onToggleVisibility;
+  final IconData icon;
   final int maxLines;
   final double? fieldHeight;
 
@@ -1335,6 +1495,7 @@ class _CharacterToggleField extends StatelessWidget {
     required this.accentColor,
     required this.visibleFields,
     required this.onToggleVisibility,
+    required this.icon,
     this.maxLines = 1,
     this.fieldHeight,
   });
@@ -1350,52 +1511,49 @@ class _CharacterToggleField extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF3A3339),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
+              child: SizedBox(
+                height: fieldHeight ?? (isMultiline ? 84 : 48),
+                child: TextFormField(
+                  controller: controller,
+                  textInputAction: isMultiline
+                      ? TextInputAction.newline
+                      : TextInputAction.next,
+                  minLines: isMultiline ? null : 1,
+                  maxLines: isMultiline ? null : 1,
+                  expands: isMultiline,
+                  textAlignVertical: isMultiline
+                      ? TextAlignVertical.top
+                      : TextAlignVertical.center,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12.5,
+                    height: 1.3,
+                  ),
+                  decoration: _buildCharacterDialogFieldDecoration(
+                    hintText: hintText,
+                    focusedColor: accentColor,
+                    prefixIcon: _CharacterFieldPrefix(
+                      icon: icon,
+                      label: label,
+                      accentColor: accentColor,
+                    ),
+                    contentPadding: EdgeInsets.fromLTRB(
+                      8,
+                      isMultiline ? 12 : 0,
+                      14,
+                      isMultiline ? 12 : 0,
+                    ),
+                  ),
                 ),
               ),
             ),
+            const SizedBox(width: 8),
             _CharacterVisibilityToggle(
               isVisible: isVisible,
               accentColor: accentColor,
               onTap: () => onToggleVisibility(fieldId),
             ),
           ],
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: fieldHeight ?? (isMultiline ? 84 : 48),
-          child: TextFormField(
-            controller: controller,
-            textInputAction: isMultiline
-                ? TextInputAction.newline
-                : TextInputAction.next,
-            minLines: isMultiline ? null : 1,
-            maxLines: isMultiline ? null : 1,
-            expands: isMultiline,
-            textAlignVertical: isMultiline
-                ? TextAlignVertical.top
-                : TextAlignVertical.center,
-            style: const TextStyle(
-              color: Color(0xFF3A3339),
-              fontSize: 12.5,
-              height: 1.3,
-            ),
-            decoration: _buildCharacterDialogFieldDecoration(
-              hintText: hintText,
-              focusedColor: accentColor,
-              contentPadding: EdgeInsets.fromLTRB(
-                14,
-                isMultiline ? 12 : 0,
-                14,
-                isMultiline ? 12 : 0,
-              ),
-            ),
-          ),
         ),
       ],
     );
@@ -1437,28 +1595,8 @@ class _CharacterMeasureField extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF3A3339),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            _CharacterVisibilityToggle(
-              isVisible: isVisible,
-              accentColor: accentColor,
-              onTap: () => onToggleVisibility(fieldId),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: 48,
-          child: Row(
-            children: [
-              Expanded(
+              child: SizedBox(
+                height: 48,
                 child: Container(
                   height: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1468,6 +1606,20 @@ class _CharacterMeasureField extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(icon, size: 18, color: const Color(0xFF171419)),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 44,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF3A3339),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
                       Container(
                         width: 1.3,
                         height: 18,
@@ -1504,14 +1656,20 @@ class _CharacterMeasureField extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              _CharacterUnitPillButton(
-                accentColor: accentColor,
-                label: unitLabel,
-                onTap: onPickUnit,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            _CharacterUnitPillButton(
+              accentColor: accentColor,
+              label: unitLabel,
+              onTap: onPickUnit,
+            ),
+            const SizedBox(width: 8),
+            _CharacterVisibilityToggle(
+              isVisible: isVisible,
+              accentColor: accentColor,
+              onTap: () => onToggleVisibility(fieldId),
+            ),
+          ],
         ),
       ],
     );
@@ -1641,6 +1799,7 @@ class _CharacterBirthdayDraftField extends StatelessWidget {
   final ZodiacSignData signData;
   final Color accentColor;
   final VoidCallback onTap;
+  final VoidCallback onTapSign;
 
   const _CharacterBirthdayDraftField({
     required this.label,
@@ -1648,6 +1807,7 @@ class _CharacterBirthdayDraftField extends StatelessWidget {
     required this.signData,
     required this.accentColor,
     required this.onTap,
+    required this.onTapSign,
   });
 
   @override
@@ -1663,61 +1823,62 @@ class _CharacterBirthdayDraftField extends StatelessWidget {
             accentColor: accentColor,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF3A3339),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
+          child: SizedBox(
+            height: 42,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.cake_outlined,
+                  size: 18,
+                  color: Color(0xFF171419),
                 ),
-              ),
-              const SizedBox(height: 6),
-              SizedBox(
-                height: 34,
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.cake_outlined,
-                      size: 18,
-                      color: Color(0xFF171419),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF3A3339),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
                     ),
-                    Container(
-                      width: 1.3,
-                      height: 18,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: accentColor.withValues(alpha: 0.84),
-                    ),
-                    Expanded(
-                      child: Text(
-                        valueLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.68),
-                          fontSize: 11.8,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _CharacterSignBadge(
-                      accentColor: accentColor,
-                      signData: signData,
-                    ),
-                    const SizedBox(width: 8),
-                    MiniGlassButton(
-                      accentColor: accentColor,
-                      icon: Icons.edit_calendar_outlined,
-                      onTap: onTap,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                Container(
+                  width: 1.3,
+                  height: 18,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  color: accentColor.withValues(alpha: 0.84),
+                ),
+                Expanded(
+                  child: Text(
+                    valueLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.68),
+                      fontSize: 11.8,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _CharacterSignBadge(
+                  accentColor: accentColor,
+                  signData: signData,
+                  onTap: onTapSign,
+                ),
+                const SizedBox(width: 8),
+                MiniGlassButton(
+                  accentColor: accentColor,
+                  icon: Icons.edit_calendar_outlined,
+                  onTap: onTap,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1726,24 +1887,22 @@ class _CharacterBirthdayDraftField extends StatelessWidget {
 }
 
 class _CharacterDisclosureTile extends StatelessWidget {
+  final String title;
+  final String summary;
   final Color accentColor;
   final bool isExpanded;
-  final int filledCount;
   final VoidCallback onTap;
 
   const _CharacterDisclosureTile({
+    required this.title,
+    required this.summary,
     required this.accentColor,
     required this.isExpanded,
-    required this.filledCount,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final summary = filledCount == 0
-        ? 'Titulos, ocupacoes e tags'
-        : '$filledCount campo(s) complementar(es) preenchido(s)';
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1763,8 +1922,8 @@ class _CharacterDisclosureTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'Complementos',
+                    Text(
+                      title,
                       style: TextStyle(
                         color: Color(0xFF3A3339),
                         fontSize: 12.5,
@@ -1802,15 +1961,17 @@ class _CharacterDisclosureTile extends StatelessWidget {
 class _CharacterSignBadge extends StatelessWidget {
   final Color accentColor;
   final ZodiacSignData signData;
+  final VoidCallback? onTap;
 
   const _CharacterSignBadge({
     required this.accentColor,
     required this.signData,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
@@ -1850,6 +2011,19 @@ class _CharacterSignBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: content,
       ),
     );
   }
@@ -1925,6 +2099,73 @@ class _CharacterUnitPillButton extends StatelessWidget {
                     color: _darkenCharacterDialogColor(accentColor, 0.18),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZodiacRandomOption extends StatelessWidget {
+  final ZodiacSignData signData;
+  final Color accentColor;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ZodiacRandomOption({
+    required this.signData,
+    required this.accentColor,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? accentColor.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.34),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isSelected
+                  ? accentColor.withValues(alpha: 0.42)
+                  : Colors.white.withValues(alpha: 0.78),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                signData.symbol,
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(accentColor, 0.2),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                signData.name,
+                style: const TextStyle(
+                  color: Color(0xFF3A3339),
+                  fontSize: 11.5,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.casino_rounded,
+                size: 13,
+                color: _darkenCharacterDialogColor(accentColor, 0.16),
               ),
             ],
           ),
@@ -2508,10 +2749,57 @@ class _CreateCharacterActionsRow extends StatelessWidget {
   }
 }
 
+class _CharacterFieldPrefix extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color accentColor;
+
+  const _CharacterFieldPrefix({
+    required this.icon,
+    required this.label,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, right: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 17, color: const Color(0xFF171419)),
+          const SizedBox(width: 7),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 86),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF3A3339),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Container(
+            width: 1.2,
+            height: 18,
+            margin: const EdgeInsets.only(left: 9),
+            color: accentColor.withValues(alpha: 0.76),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 InputDecoration _buildCharacterDialogFieldDecoration({
   required String hintText,
   required Color focusedColor,
   EdgeInsetsGeometry? contentPadding,
+  Widget? prefixIcon,
 }) {
   final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(16),
@@ -2521,6 +2809,10 @@ InputDecoration _buildCharacterDialogFieldDecoration({
   return InputDecoration(
     hintText: hintText,
     hintMaxLines: 4,
+    prefixIcon: prefixIcon,
+    prefixIconConstraints: prefixIcon == null
+        ? null
+        : const BoxConstraints(minWidth: 0, minHeight: 0),
     hintStyle: const TextStyle(
       color: Color(0xFF8E838B),
       fontSize: 12.5,
