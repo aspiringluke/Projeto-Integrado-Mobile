@@ -943,8 +943,8 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                                   columnCount;
 
                               return Wrap(
-                                alignment: WrapAlignment.center,
-                                runAlignment: WrapAlignment.center,
+                                alignment: WrapAlignment.spaceBetween,
+                                runAlignment: WrapAlignment.spaceBetween,
                                 spacing: spacing,
                                 runSpacing: spacing,
                                 children: [
@@ -1099,7 +1099,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                 child: SizedBox(
                   width: min(screenSize.width - 28, 620),
                   child: _CharacterCenteredMenuFrame(
-                    title: 'Relevancia narrativa',
+                    title: 'Relevância narrativa',
                     child: SizedBox(
                       height: min(screenSize.height * 0.78, 620),
                       child: Column(
@@ -1561,7 +1561,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
     final newTag = ProjectTagData(
       label: sanitized,
-      color: projectTagColorAt(tags.length),
+      color: _tagCategoryColor(kind),
     );
 
     setState(() {
@@ -1687,7 +1687,7 @@ List<_RelevanceParameterConfig> _defaultRelevanceParameters() {
       symbol: 'Me',
       name: 'Mutabilidade estrutural',
       description:
-          'Baixo: permanece estavel. Alto: muda psicologicamente ou reposiciona sua funcao na trama.',
+          'Baixo: permanece estável. Alto: muda psicologicamente ou reposiciona sua função na trama.',
       weight: 0.05,
     ),
   ];
@@ -1717,7 +1717,7 @@ List<_RelevanceCategoryConfig> _defaultRelevanceCategories() {
       color: Color(0xFFDF9C53),
     ),
     _RelevanceCategoryConfig(
-      name: 'Nuclear',
+      name: 'Núcleo',
       min: 8,
       max: 10,
       description: 'Entidade vital da espinha causal da historia.',
@@ -1760,7 +1760,7 @@ DateTime _randomBirthdayForSign(ZodiacSignData signData) {
 
 List<ProjectTagData> _seedCharacterTags(_CharacterTagKind kind) {
   final labels = switch (kind) {
-    _CharacterTagKind.gender => const ['Homem', 'Mulher', 'N/A'],
+    _CharacterTagKind.gender => const ['Masculino', 'Feminino', 'N/A'],
     _CharacterTagKind.sexuality => const [
       'Assexual',
       'Heterossexual',
@@ -1779,8 +1779,20 @@ List<ProjectTagData> _seedCharacterTags(_CharacterTagKind kind) {
 
   return [
     for (var i = 0; i < labels.length; i += 1)
-      ProjectTagData(label: labels[i], color: projectTagColorAt(i)),
+      ProjectTagData(
+        label: labels[i],
+        color: _tagCategoryColor(kind),
+      ),
   ];
+}
+
+Color _tagCategoryColor(_CharacterTagKind kind) {
+  return switch (kind) {
+    _CharacterTagKind.gender => projectTagColorAt(0),
+    _CharacterTagKind.sexuality => projectTagColorAt(1),
+    _CharacterTagKind.ethnicity => projectTagColorAt(2),
+    _CharacterTagKind.function => projectTagColorAt(3),
+  };
 }
 
 String _tagKindTitle(_CharacterTagKind kind) {
@@ -1788,7 +1800,7 @@ String _tagKindTitle(_CharacterTagKind kind) {
     _CharacterTagKind.gender => 'Gênero',
     _CharacterTagKind.sexuality => 'Sexualidade',
     _CharacterTagKind.ethnicity => 'Etnia',
-    _CharacterTagKind.function => 'Funcao',
+    _CharacterTagKind.function => 'Função',
   };
 }
 
@@ -1801,7 +1813,7 @@ String _tagKindDescription(_CharacterTagKind kind) {
     _CharacterTagKind.ethnicity =>
       'Escolha uma opção existente ou adicione uma nova para a etnia do personagem.',
     _CharacterTagKind.function =>
-      'Escolha a funcao dramatica principal do personagem.',
+      'Escolha a função dramática principal do personagem.',
   };
 }
 
@@ -1859,7 +1871,7 @@ class _CreateCharacterNameField extends StatelessWidget {
     final nameField = _CharacterCompactField(
       label: 'Nome *',
       controller: nameController,
-      hintText: 'Nome do personagem',
+      hintText: 'Nome do personagem.',
       focusedColor: focusedColor,
       icon: Icons.badge_outlined,
       prefixWidth: _characterDialogCompactPrefixWidth,
@@ -1875,7 +1887,7 @@ class _CreateCharacterNameField extends StatelessWidget {
     final aliasField = _CharacterCompactField(
       label: 'Vulgo',
       controller: aliasController,
-      hintText: 'Apelido, nome de guerra ou nome publico',
+      hintText: 'Apelido, nome de guerra ou nome público.',
       focusedColor: focusedColor,
       icon: Icons.alternate_email_rounded,
       prefixWidth: _characterDialogCompactPrefixWidth,
@@ -1932,7 +1944,7 @@ class _CharacterMetadataSection extends StatelessWidget {
         _CharacterDisclosureTile(
           title: 'Medidas e complementos',
           summary: complementaryCount == 0
-              ? 'Peso, altura, frase, títulos e ocupações'
+              ? 'Peso, altura, frase, títulos e ocupações.'
               : '$complementaryCount complemento(s) preenchido(s)',
           accentColor: accentColor,
           isExpanded: isExpanded,
@@ -2017,8 +2029,7 @@ class _CharacterMetadataSection extends StatelessWidget {
                     _CharacterToggleField(
                       label: 'Frase de efeito',
                       controller: mottoController,
-                      hintText:
-                          'Frase curta, lema ou linha marcante que ajuda a definir o personagem',
+                      hintText: 'Lema curto ou frase marcante.',
                       accentColor: accentColor,
                       icon: Icons.format_quote_rounded,
                       maxLines: 2,
@@ -2028,8 +2039,7 @@ class _CharacterMetadataSection extends StatelessWidget {
                     _CharacterCompactField(
                       label: 'Formações e ocupações',
                       controller: formationsController,
-                      hintText:
-                          'Área de estudo, ofício, cargo ou função social do personagem',
+                      hintText: 'Estudo, ofício, cargo ou função social.',
                       focusedColor: accentColor,
                       icon: Icons.work_outline_rounded,
                       maxLines: 3,
@@ -2039,8 +2049,7 @@ class _CharacterMetadataSection extends StatelessWidget {
                     _CharacterCompactField(
                       label: 'Títulos',
                       controller: titlesController,
-                      hintText:
-                          'Honrarias, classificações, patentes ou nomes cerimoniais associados ao personagem',
+                      hintText: 'Honrarias, patentes ou nomes cerimoniais.',
                       focusedColor: accentColor,
                       icon: Icons.military_tech_outlined,
                       maxLines: 3,
@@ -2345,7 +2354,7 @@ class _CharacterIdentityTagGrid extends StatelessWidget {
         onTap: onPickEthnicityTag,
       ),
       _CharacterTagSelectorField(
-        label: 'Funcao',
+        label: 'Função',
         value: functionLabel,
         accentColor: accentColor,
         selectedColor: functionColor,
@@ -3551,7 +3560,7 @@ class _RelevanceParameterIconButton extends StatelessWidget {
   }
 }
 
-class _RelevanceParameterControl extends StatelessWidget {
+class _RelevanceParameterControl extends StatefulWidget {
   final _RelevanceParameterConfig parameter;
   final double value;
   final double weight;
@@ -3577,6 +3586,47 @@ class _RelevanceParameterControl extends StatelessWidget {
     required this.onValueChanged,
     required this.onWeightChanged,
   });
+
+  @override
+  State<_RelevanceParameterControl> createState() => _RelevanceParameterControlState();
+}
+
+class _RelevanceParameterControlState extends State<_RelevanceParameterControl> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final FocusNode _nameFocusNode;
+  late final FocusNode _descriptionFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.parameter.name);
+    _descriptionController = TextEditingController(text: widget.parameter.description);
+    _nameFocusNode = FocusNode();
+    _descriptionFocusNode = FocusNode();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RelevanceParameterControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parameter.name != widget.parameter.name && !_nameFocusNode.hasFocus) {
+      _nameController.text = widget.parameter.name;
+      _nameController.selection = TextSelection.collapsed(offset: widget.parameter.name.length);
+    }
+    if (oldWidget.parameter.description != widget.parameter.description && !_descriptionFocusNode.hasFocus) {
+      _descriptionController.text = widget.parameter.description;
+      _descriptionController.selection = TextSelection.collapsed(offset: widget.parameter.description.length);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _nameFocusNode.dispose();
+    _descriptionFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3614,7 +3664,7 @@ class _RelevanceParameterControl extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    parameter.symbol,
+                    widget.parameter.symbol,
                     style: TextStyle(
                       color: _darkenCharacterDialogColor(projectPink, 0.18),
                       fontSize: 10,
@@ -3625,19 +3675,36 @@ class _RelevanceParameterControl extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  parameter.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF3A3339),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                child: widget.isEditing
+                    ? TextField(
+                        controller: _nameController,
+                        focusNode: _nameFocusNode,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          color: Color(0xFF3A3339),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: widget.onNameChanged,
+                      )
+                    : Text(
+                        widget.parameter.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF3A3339),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
               ),
               Text(
-                value.toStringAsFixed(1),
+                widget.value.toStringAsFixed(1),
                 style: const TextStyle(
                   color: Color(0xFF514752),
                   fontSize: 11,
@@ -3646,68 +3713,55 @@ class _RelevanceParameterControl extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               _RelevanceParameterIconButton(
-                icon: isEditing ? Icons.check_rounded : Icons.edit_rounded,
-                onTap: onEdit,
+                icon: widget.isEditing ? Icons.check_rounded : Icons.edit_rounded,
+                onTap: widget.onEdit,
               ),
               _RelevanceParameterIconButton(
                 icon: Icons.delete_outline_rounded,
-                onTap: canRemove ? onRemove : null,
+                onTap: widget.canRemove ? widget.onRemove : null,
               ),
             ],
           ),
           const SizedBox(height: 4),
-          if (isEditing) ...[
-            TextFormField(
-              key: ValueKey('relevance-name-${parameter.id}'),
-              initialValue: parameter.name,
-              textInputAction: TextInputAction.next,
-              onChanged: onNameChanged,
-              decoration: _buildCharacterDialogFieldDecoration(
-                hintText: 'Nome do parametro',
-                focusedColor: projectPink,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
+          widget.isEditing
+              ? TextField(
+                  controller: _descriptionController,
+                  focusNode: _descriptionFocusNode,
+                  minLines: 2,
+                  maxLines: 3,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.54),
+                    fontSize: 10.2,
+                    height: 1.22,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: widget.onDescriptionChanged,
+                )
+              : Text(
+                  widget.parameter.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.54),
+                    fontSize: 10.2,
+                    height: 1.22,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              key: ValueKey('relevance-description-${parameter.id}'),
-              initialValue: parameter.description,
-              minLines: 2,
-              maxLines: 3,
-              onChanged: onDescriptionChanged,
-              decoration: _buildCharacterDialogFieldDecoration(
-                hintText: 'Descricao: o que significa ter pouco ou muito',
-                focusedColor: projectPink,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              ),
-            ),
-          ] else
-            Text(
-              parameter.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.black.withValues(alpha: 0.54),
-                fontSize: 10.2,
-                height: 1.22,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
           const SizedBox(height: 2),
           SliderTheme(
             data: sliderTheme,
             child: Slider(
-              value: value.clamp(0, 10),
+              value: widget.value.clamp(0, 10),
               min: 0,
               max: 10,
               divisions: 20,
-              onChanged: onValueChanged,
+              onChanged: widget.onValueChanged,
             ),
           ),
           Row(
@@ -3724,18 +3778,18 @@ class _RelevanceParameterControl extends StatelessWidget {
                 child: SliderTheme(
                   data: sliderTheme,
                   child: Slider(
-                    value: weight.clamp(0, 1),
+                    value: widget.weight.clamp(0, 1),
                     min: 0,
                     max: 1,
                     divisions: 20,
-                    onChanged: onWeightChanged,
+                    onChanged: widget.onWeightChanged,
                   ),
                 ),
               ),
               SizedBox(
                 width: 38,
                 child: Text(
-                  '${(weight * 100).toStringAsFixed(0)}%',
+                  '${(widget.weight * 100).toStringAsFixed(0)}%',
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     color: Color(0xFF6A6167),
@@ -3789,7 +3843,7 @@ class _CharacterProfilePhotoSection extends StatelessWidget {
           const SizedBox(height: 5),
           CreateProjectDialogFieldDescription(
             text:
-                'Escolha a imagem principal do personagem. O enquadramento abaixo replica a mesma moldura usada no card.',
+                'Escolha a imagem principal do personagem. GIF também é suportado. O enquadramento abaixo replica a mesma moldura usada no card.',
           ),
           const SizedBox(height: 8),
           _CharacterProfileImageEditor(
@@ -4123,6 +4177,14 @@ class _CharacterProfileImageEditor extends StatelessWidget {
                   ),
                 ],
               ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Formatos suportados: JPEG, PNG, GIF e WEBP.',
+              style: TextStyle(
+                color: Color(0xFF6A6167),
+                fontSize: 11,
+              ),
             ),
           ],
         );
