@@ -12,6 +12,7 @@ class CharacterAvatarTile extends StatelessWidget {
   final Color avatarColor;
   final ProjectImageData profileImage;
   final IconData icon;
+  final bool isExpanded;
   final VoidCallback? onTap;
 
   const CharacterAvatarTile({
@@ -20,6 +21,7 @@ class CharacterAvatarTile extends StatelessWidget {
     required this.avatarColor,
     required this.profileImage,
     required this.icon,
+    required this.isExpanded,
     this.onTap,
   });
 
@@ -29,11 +31,11 @@ class CharacterAvatarTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          bottomLeft: Radius.circular(16),
-          topRight: Radius.circular(18),
-          bottomRight: Radius.circular(18),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          bottomLeft: isExpanded ? Radius.zero : const Radius.circular(16),
+          topRight: const Radius.circular(18),
+          bottomRight: const Radius.circular(18),
         ),
         child: SizedBox(
           width: characterProfileTileWidth,
@@ -42,11 +44,11 @@ class CharacterAvatarTile extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                    topRight: Radius.circular(18),
-                    bottomRight: Radius.circular(18),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    bottomLeft: isExpanded ? Radius.zero : const Radius.circular(16),
+                    topRight: const Radius.circular(18),
+                    bottomRight: const Radius.circular(18),
                   ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(

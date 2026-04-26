@@ -30,7 +30,7 @@ class CharacterCard extends StatefulWidget {
 
 class _CharacterCardState extends State<CharacterCard>
     with TickerProviderStateMixin {
-  late bool _isExpanded;
+  bool _isExpanded = false;
   late final AnimationController _controller;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _fadeAnimation;
@@ -53,7 +53,6 @@ class _CharacterCardState extends State<CharacterCard>
   @override
   void initState() {
     super.initState();
-    _isExpanded = false;
     _dateEntries = CharacterDateEntries.fromSeed(widget.data.seed);
     _birthdayValue = DateTime(
       widget.data.birthYear,
@@ -674,6 +673,7 @@ class _CharacterCardState extends State<CharacterCard>
                                             ),
                                             ExpandedCharacterBody(
                                               accentColor: widget.data.accent,
+                                              data: widget.data,
                                               dateEntry: _currentDateEntry,
                                               isEditing: _editing,
                                               birthdayLabel:
@@ -814,6 +814,7 @@ class _CharacterHeader extends StatelessWidget {
                 avatarColor: data.avatarColor,
                 profileImage: data.profileImage,
                 icon: data.icon,
+                isExpanded: isExpanded,
                 onTap: data.profileImage.bytes == null
                     ? null
                     : onOpenCharacterProfileViewer,

@@ -25,6 +25,11 @@ enum ProjectSectionId {
   world,
 }
 
+enum CharacterDisplayMode {
+  list,
+  avatars,
+}
+
 class _ProjectSectionMeta {
   final String label;
   final IconData icon;
@@ -72,16 +77,25 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
       };
 
+  static final Map<String, List<CharacterListItem>> _projectCharactersStorage = {};
+  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode = {};
+  static final Map<String, int> _projectCharactersGridColumns = {};
+
   late ProjectSectionId _activeSection;
   bool _isCreateMenuOpen = false;
   final CharactersPinController _charactersPinController =
       const CharactersPinController();
-  final List<CharacterListItem> _characters = <CharacterListItem>[];
+  late List<CharacterListItem> _characters;
+  late CharacterDisplayMode _characterDisplayMode;
+  late int _avatarGridColumns;
 
   @override
   void initState() {
     super.initState();
     _activeSection = widget.initialSection;
+    _characters = _projectCharactersStorage[widget.title]?.toList() ?? <CharacterListItem>[];
+    _characterDisplayMode = _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
+    _avatarGridColumns = _projectCharactersGridColumns[widget.title] ?? 3;
   }
 
   String get _activeSectionLabel => _sectionMeta[_activeSection]!.label;
@@ -117,6 +131,23 @@ class _ProjectPageState extends State<ProjectPage> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _persistProjectCharacters() {
+    _projectCharactersStorage[widget.title] = _characters.toList();
+    _projectCharactersViewMode[widget.title] = _characterDisplayMode;
+    _projectCharactersGridColumns[widget.title] = _avatarGridColumns;
+  }
+
+  void _setAvatarGridColumns(int columnCount) {
+    if (columnCount < 2 || columnCount > 6) {
+      return;
+    }
+
+    setState(() {
+      _avatarGridColumns = columnCount;
+      _persistProjectCharacters();
+    });
   }
 
   void _createCharacter() async {
@@ -158,6 +189,7 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
       );
       _isCreateMenuOpen = false;
+      _persistProjectCharacters();
     });
   }
 
@@ -170,6 +202,10 @@ class _ProjectPageState extends State<ProjectPage> {
     return switch (_activeSection) {
       ProjectSectionId.characters => CharactersSection(
         characters: _characters,
+        showAvatarGrid: _characterDisplayMode == CharacterDisplayMode.avatars,
+        avatarGridColumns: _avatarGridColumns,
+        onToggleDisplayMode: _toggleCharacterDisplayMode,
+        onChangeAvatarGridColumns: _setAvatarGridColumns,
         onTogglePinned: _togglePinnedCharacter,
       ),
       _ => _UnderConstructionSection(
@@ -182,6 +218,16 @@ class _ProjectPageState extends State<ProjectPage> {
   void _togglePinnedCharacter(CharacterListItem character) {
     setState(() {
       _charactersPinController.togglePinned(_characters, character);
+      _persistProjectCharacters();
+    });
+  }
+
+  void _toggleCharacterDisplayMode() {
+    setState(() {
+      _characterDisplayMode = _characterDisplayMode == CharacterDisplayMode.list
+          ? CharacterDisplayMode.avatars
+          : CharacterDisplayMode.list;
+      _persistProjectCharacters();
     });
   }
 
