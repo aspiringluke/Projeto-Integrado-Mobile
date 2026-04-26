@@ -251,7 +251,7 @@ class _CharacterProfileViewerDialogState
         return;
       }
 
-      _showMessage('Nao foi possivel baixar a imagem.');
+      _showMessage('Não foi possível baixar a imagem.');
     } finally {
       if (mounted) {
         setState(() {
@@ -274,7 +274,7 @@ class _CharacterProfileViewerDialogState
     try {
       final clipboard = SystemClipboard.instance;
       if (clipboard == null) {
-        throw StateError('Clipboard indisponivel');
+        throw StateError('Clipboard indisponível');
       }
 
       final pngBytes = await _convertImageToPng(imageBytes);
@@ -288,13 +288,13 @@ class _CharacterProfileViewerDialogState
         return;
       }
 
-      _showMessage('Imagem copiada para a area de transferencia.');
+      _showMessage('Imagem copiada para a área de transferência.');
     } catch (_) {
       if (!mounted) {
         return;
       }
 
-      _showMessage('Nao foi possivel copiar a imagem.');
+      _showMessage('Não foi possível copiar a imagem.');
     } finally {
       if (mounted) {
         setState(() {

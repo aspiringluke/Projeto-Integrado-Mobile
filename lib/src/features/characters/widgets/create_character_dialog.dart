@@ -12,7 +12,6 @@ import '../../projects/models/project_image_data.dart';
 import '../../projects/models/project_tag_data.dart';
 import '../../projects/widgets/create_project_dialog_image_widgets.dart';
 import '../../projects/widgets/create_project_dialog_sections.dart';
-import '../../projects/widgets/create_project_dialog_support_widgets.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../../projects/widgets/project_image_transform_view.dart';
 import '../utils/characters_utils.dart';
@@ -41,6 +40,7 @@ class CreateCharacterDraft {
   final String genderTag;
   final String sexualityTag;
   final String ethnicityTag;
+  final String functionTag;
   final String relevanceTag;
   final Set<CharacterProfileFieldId> visibleProfileFields;
   final Color coverColor;
@@ -61,6 +61,7 @@ class CreateCharacterDraft {
     required this.genderTag,
     required this.sexualityTag,
     required this.ethnicityTag,
+    required this.functionTag,
     required this.relevanceTag,
     required this.visibleProfileFields,
     required this.coverColor,
@@ -68,6 +69,15 @@ class CreateCharacterDraft {
     required this.profileImage,
   });
 }
+
+const double _characterDialogPrefixWidth = 124;
+const double _characterDialogCompactPrefixWidth = 108;
+const double _characterDialogSingleLineFieldHeight = 58;
+const double _characterDialogNameFieldHeight = 70;
+const double _characterDialogMeasureControlHeight = 50;
+const double _characterDialogMeasureFieldWidth = 150;
+const double _characterDialogMeasureUnitWidth = 44;
+const double _characterDialogMeasureLayoutBreakpoint = 414;
 
 class _CreateCharacterDialog extends StatefulWidget {
   const _CreateCharacterDialog();
@@ -97,12 +107,17 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   late List<ProjectTagData> _genderTags;
   late List<ProjectTagData> _sexualityTags;
   late List<ProjectTagData> _ethnicityTags;
-  late List<ProjectTagData> _relevanceTags;
-  bool _bodyExpanded = false;
+  List<ProjectTagData>? _functionTags;
+  late List<_RelevanceParameterConfig> _relevanceParameters;
+  late List<_RelevanceCategoryConfig> _relevanceCategories;
+  late Map<String, double> _relevanceValues;
+  late Map<String, double> _relevanceWeights;
   bool _detailsExpanded = false;
+  bool? _showRequiredTagErrors = false;
   String _selectedGenderTag = '';
   String _selectedSexualityTag = '';
   String _selectedEthnicityTag = '';
+  String? _selectedFunctionTag = '';
   String _selectedRelevanceTag = '';
 
   static const double _synopsisMaxHeight = 196;
@@ -125,12 +140,8 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _birthdayValue = DateTime(2000, 1, 1);
     _heightUnit = HeightUnit.centimeters;
     _weightUnit = WeightUnit.kilograms;
-    _heightController = TextEditingController(
-      text: formatHeightEditorValue(170, _heightUnit),
-    );
-    _weightController = TextEditingController(
-      text: formatWeightEditorValue(70, _weightUnit),
-    );
+    _heightController = TextEditingController();
+    _weightController = TextEditingController();
     _synopsisController.addListener(_refresh);
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
@@ -147,7 +158,17 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _genderTags = _seedCharacterTags(_CharacterTagKind.gender);
     _sexualityTags = _seedCharacterTags(_CharacterTagKind.sexuality);
     _ethnicityTags = _seedCharacterTags(_CharacterTagKind.ethnicity);
-    _relevanceTags = _seedCharacterTags(_CharacterTagKind.relevance);
+    _functionTags = _seedCharacterTags(_CharacterTagKind.function);
+    _relevanceParameters = _defaultRelevanceParameters();
+    _relevanceCategories = _defaultRelevanceCategories();
+    _relevanceValues = {
+      for (final parameter in _relevanceParameters) parameter.id: 0,
+    };
+    _relevanceWeights = {
+      for (final parameter in _relevanceParameters)
+        parameter.id: parameter.weight,
+    };
+    _selectedRelevanceTag = _relevanceCategoryForScore(0).name;
     _dialogController.addListener(_refresh);
     _imageController.addListener(_refresh);
   }
@@ -201,7 +222,16 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    final formIsValid = _formKey.currentState?.validate() ?? false;
+    final requiredTagsAreValid =
+        _selectedGenderTag.trim().isNotEmpty &&
+        _selectedRelevanceTag.trim().isNotEmpty;
+
+    setState(() {
+      _showRequiredTagErrors = !requiredTagsAreValid;
+    });
+
+    if (!formIsValid || !requiredTagsAreValid) {
       return;
     }
 
@@ -220,6 +250,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         genderTag: _selectedGenderTag,
         sexualityTag: _selectedSexualityTag,
         ethnicityTag: _selectedEthnicityTag,
+        functionTag: _selectedFunctionTag ?? '',
         relevanceTag: _selectedRelevanceTag,
         visibleProfileFields: _visibleProfileFields.toSet(),
         coverColor: _dialogController.coverColor,
@@ -323,28 +354,36 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                               );
                             },
                           ),
-                          const SizedBox(height: 12),
-                          _CharacterMetadataSection(
+                          const SizedBox(height: 10),
+                          _CharacterRelevanceSelectorField(
+                            value: _selectedRelevanceTag,
+                            selectedColor: _relevanceCategoryForScore(
+                              _calculateRelevanceScore(),
+                            ).color,
                             accentColor: _dialogController.accentColor,
-                            visibleFields: _visibleProfileFields,
-                            onToggleFieldVisibility: _toggleFieldVisibility,
-                            mottoController: _mottoController,
-                            formationsController: _formationsController,
-                            titlesController: _titlesController,
-                            detailsExpanded: _detailsExpanded,
-                            weightController: _weightController,
-                            heightController: _heightController,
-                            birthdayLabel: formatBirthdayLabel(
+                            categories: _relevanceCategories,
+                            showError:
+                                _showRequiredTagErrors == true &&
+                                _selectedRelevanceTag.trim().isEmpty,
+                            score: _calculateRelevanceScore(),
+                            onTap: _openRelevanceSelector,
+                          ),
+                          const SizedBox(height: 10),
+                          _CharacterBirthdayDraftField(
+                            label: 'Aniversario',
+                            valueLabel: formatBirthdayLabel(
                               _birthdayValue.day,
                               _birthdayValue.month,
                             ),
-                            birthdaySignData: zodiacSignFor(_birthdayValue),
-                            heightUnitLabel: heightUnitCompactLabel(
-                              _heightUnit,
+                            signData: zodiacSignFor(_birthdayValue),
+                            accentColor: _dialogController.accentColor,
+                            onTap: _selectBirthday,
+                            onTapSign: () => _openBirthdaySignSheet(
+                              zodiacSignFor(_birthdayValue),
                             ),
-                            weightUnitLabel: weightUnitCompactLabel(
-                              _weightUnit,
-                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _CharacterIdentityTagGrid(
                             genderLabel: _selectedGenderTag,
                             genderColor: _tagColorFor(
                               _CharacterTagKind.gender,
@@ -360,34 +399,42 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                               _CharacterTagKind.ethnicity,
                               _selectedEthnicityTag,
                             ),
-                            relevanceLabel: _selectedRelevanceTag,
-                            relevanceColor: _tagColorFor(
-                              _CharacterTagKind.relevance,
-                              _selectedRelevanceTag,
+                            functionLabel: _selectedFunctionTag ?? '',
+                            functionColor: _tagColorFor(
+                              _CharacterTagKind.function,
+                              _selectedFunctionTag ?? '',
                             ),
-                            onPickBirthday: _selectBirthday,
-                            onOpenBirthdaySign: () => _openBirthdaySignSheet(
-                              zodiacSignFor(_birthdayValue),
-                            ),
-                            onPickHeightUnit: _selectHeightUnit,
-                            onPickWeightUnit: _selectWeightUnit,
+                            accentColor: _dialogController.accentColor,
+                            showRequiredErrors: _showRequiredTagErrors == true,
                             onPickGenderTag: () =>
                                 _openTagSelector(_CharacterTagKind.gender),
                             onPickSexualityTag: () =>
                                 _openTagSelector(_CharacterTagKind.sexuality),
                             onPickEthnicityTag: () =>
                                 _openTagSelector(_CharacterTagKind.ethnicity),
-                            onPickRelevanceTag: () =>
-                                _openTagSelector(_CharacterTagKind.relevance),
-                            onToggleDetailsExpanded: () {
+                            onPickFunctionTag: () =>
+                                _openTagSelector(_CharacterTagKind.function),
+                          ),
+                          const SizedBox(height: 12),
+                          _CharacterMetadataSection(
+                            accentColor: _dialogController.accentColor,
+                            mottoController: _mottoController,
+                            formationsController: _formationsController,
+                            titlesController: _titlesController,
+                            weightController: _weightController,
+                            heightController: _heightController,
+                            heightUnitLabel: heightUnitCompactLabel(
+                              _heightUnit,
+                            ),
+                            weightUnitLabel: weightUnitCompactLabel(
+                              _weightUnit,
+                            ),
+                            onPickHeightUnit: _selectHeightUnit,
+                            onPickWeightUnit: _selectWeightUnit,
+                            isExpanded: _detailsExpanded,
+                            onToggleExpanded: () {
                               setState(() {
                                 _detailsExpanded = !_detailsExpanded;
-                              });
-                            },
-                            bodyExpanded: _bodyExpanded,
-                            onToggleBodyExpanded: () {
-                              setState(() {
-                                _bodyExpanded = !_bodyExpanded;
                               });
                             },
                           ),
@@ -429,16 +476,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     );
   }
 
-  void _toggleFieldVisibility(CharacterProfileFieldId fieldId) {
-    setState(() {
-      if (_visibleProfileFields.contains(fieldId)) {
-        _visibleProfileFields.remove(fieldId);
-      } else {
-        _visibleProfileFields.add(fieldId);
-      }
-    });
-  }
-
   Future<void> _selectHeightUnit() async {
     final selectedUnit = await showModalBottomSheet<HeightUnit>(
       context: context,
@@ -466,15 +503,17 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     }
 
     setState(() {
-      final resolvedHeight = parseHeightToCm(
-        _heightController.text,
-        _heightUnit,
-      );
+      final currentText = _heightController.text.trim();
+      final resolvedHeight = currentText.isEmpty
+          ? null
+          : parseHeightToCm(currentText, _heightUnit);
       _heightUnit = selectedUnit;
-      _heightController.text = formatHeightEditorValue(
-        resolvedHeight ?? 170,
-        _heightUnit,
-      );
+      if (resolvedHeight != null) {
+        _heightController.text = formatHeightEditorValue(
+          resolvedHeight,
+          _heightUnit,
+        );
+      }
     });
   }
 
@@ -505,15 +544,17 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     }
 
     setState(() {
-      final resolvedWeight = parseWeightToKg(
-        _weightController.text,
-        _weightUnit,
-      );
+      final currentText = _weightController.text.trim();
+      final resolvedWeight = currentText.isEmpty
+          ? null
+          : parseWeightToKg(currentText, _weightUnit);
       _weightUnit = selectedUnit;
-      _weightController.text = formatWeightEditorValue(
-        resolvedWeight ?? 70,
-        _weightUnit,
-      );
+      if (resolvedWeight != null) {
+        _weightController.text = formatWeightEditorValue(
+          resolvedWeight,
+          _weightUnit,
+        );
+      }
     });
   }
 
@@ -642,6 +683,9 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       builder: (context) {
         final accent = _dialogController.accentColor;
         final signs = _allZodiacSigns();
+        final signDescriptionLines = currentSign.description.split('\n');
+        final signDateRange = signDescriptionLines.first.trim();
+        final signTraits = signDescriptionLines.skip(1).join('\n').trim();
 
         return ProjectBottomSheetFrame(
           title: '${currentSign.symbol} ${currentSign.name}',
@@ -652,57 +696,159 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                decoration: _buildCharacterDialogSurfaceDecoration(
-                  accentColor: accent,
-                  selected: true,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.58),
                   borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  currentSign.description,
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.64),
-                    fontSize: 12,
-                    height: 1.35,
-                    fontStyle: FontStyle.italic,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.72),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(
-                      context,
-                    ).pop(_randomBirthdayForSign(currentSign));
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.date_range_rounded,
+                          size: 16,
+                          color: _darkenCharacterDialogColor(accent, 0.16),
+                        ),
+                        const SizedBox(width: 7),
+                        const Text(
+                          'Período',
+                          style: TextStyle(
+                            color: Color(0xFF3A3339),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: accent.withValues(alpha: 0.22),
+                              ),
+                            ),
+                            child: Text(
+                              signDateRange,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _darkenCharacterDialogColor(
+                                  accent,
+                                  0.22,
+                                ),
+                                fontSize: 11.8,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  icon: const Icon(Icons.casino_rounded, size: 18),
-                  label: const Text('Gerar nesse signo'),
+                    if (signTraits.isNotEmpty) ...[
+                      const SizedBox(height: 9),
+                      Text(
+                        signTraits,
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.64),
+                          fontSize: 12,
+                          height: 1.35,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final sign in signs)
-                    _ZodiacRandomOption(
-                      signData: sign,
-                      accentColor: accent,
-                      isSelected: sign.symbol == currentSign.symbol,
-                      onTap: () {
-                        Navigator.of(context).pop(_randomBirthdayForSign(sign));
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.42),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.casino_rounded,
+                          size: 16,
+                          color: _darkenCharacterDialogColor(accent, 0.16),
+                        ),
+                        const SizedBox(width: 7),
+                        const Expanded(
+                          child: Text(
+                            'Sortear aniversario por signo',
+                            style: TextStyle(
+                              color: Color(0xFF3A3339),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Toque em um signo para gerar uma data aleatória dentro do período.',
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.52),
+                        fontSize: 11,
+                        height: 1.25,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const spacing = 8.0;
+                        final columnCount = constraints.maxWidth < 340 ? 2 : 3;
+                        final optionWidth =
+                            (constraints.maxWidth -
+                                (spacing * (columnCount - 1))) /
+                            columnCount;
+
+                        return Wrap(
+                          alignment: WrapAlignment.center,
+                          runAlignment: WrapAlignment.center,
+                          spacing: spacing,
+                          runSpacing: spacing,
+                          children: [
+                            for (final sign in signs)
+                              SizedBox(
+                                width: optionWidth,
+                                child: _ZodiacRandomOption(
+                                  signData: sign,
+                                  accentColor: accent,
+                                  isSelected: sign.symbol == currentSign.symbol,
+                                  onTap: () {
+                                    Navigator.of(
+                                      context,
+                                    ).pop(_randomBirthdayForSign(sign));
+                                  },
+                                ),
+                              ),
+                          ],
+                        );
                       },
                     ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -722,6 +868,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   Future<void> _openTagSelector(_CharacterTagKind kind) async {
     final inputController = TextEditingController();
     final selectedLabel = _selectedTagFor(kind);
+    final isRequired = _isRequiredTagKind(kind);
 
     final result = await showModalBottomSheet<String>(
       context: context,
@@ -733,84 +880,161 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
             final accent = _dialogController.accentColor;
 
             return ProjectBottomSheetFrame(
-              title: _tagKindTitle(kind),
+              title: '${_tagKindTitle(kind)}${isRequired ? ' *' : ''}',
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _tagKindDescription(kind),
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.56),
-                      fontSize: 12,
-                      height: 1.35,
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.58),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          _tagKindIcon(kind),
+                          size: 16,
+                          color: _darkenCharacterDialogColor(accent, 0.16),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _tagKindDescription(kind),
+                            style: TextStyle(
+                              color: Colors.black.withValues(alpha: 0.58),
+                              fontSize: 12,
+                              height: 1.35,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (tags.isEmpty)
-                    _CharacterTagEmptyState(accentColor: accent)
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final tag in tags)
-                          CreateProjectDialogSelectableTagChip(
-                            tag: tag,
-                            isSelected: tag.label == selectedLabel,
-                            onTap: () => Navigator.of(context).pop(tag.label),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.42),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
+                    ),
+                    child: tags.isEmpty
+                        ? _CharacterTagEmptyState(accentColor: accent)
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              const spacing = 8.0;
+                              final columnCount = constraints.maxWidth < 320
+                                  ? 2
+                                  : 3;
+                              final optionWidth =
+                                  (constraints.maxWidth -
+                                      (spacing * (columnCount - 1))) /
+                                  columnCount;
+
+                              return Wrap(
+                                alignment: WrapAlignment.center,
+                                runAlignment: WrapAlignment.center,
+                                spacing: spacing,
+                                runSpacing: spacing,
+                                children: [
+                                  for (final tag in tags)
+                                    SizedBox(
+                                      width: optionWidth,
+                                      child: _CharacterTagOptionButton(
+                                        tag: tag,
+                                        isSelected: tag.label == selectedLabel,
+                                        onTap: () => Navigator.of(
+                                          context,
+                                        ).pop(tag.label),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
                           ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.42),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 46,
+                            child: TextField(
+                              controller: inputController,
+                              textInputAction: TextInputAction.done,
+                              textAlignVertical: TextAlignVertical.center,
+                              decoration: _buildInputDecoration(
+                                hintText: 'Adicionar nova opção',
+                                focusedColor: accent,
+                              ),
+                              onSubmitted: (value) {
+                                final added = _addTagFor(kind, value);
+                                if (added != null) {
+                                  Navigator.of(context).pop(added);
+                                }
+                              },
+                              onChanged: (_) => setModalState(() {}),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 46,
+                          height: 46,
+                          child: FilledButton(
+                            onPressed: inputController.text.trim().isEmpty
+                                ? null
+                                : () {
+                                    final added = _addTagFor(
+                                      kind,
+                                      inputController.text,
+                                    );
+                                    if (added != null) {
+                                      Navigator.of(context).pop(added);
+                                    }
+                                  },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: accent,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.white.withValues(
+                                alpha: 0.42,
+                              ),
+                              disabledForegroundColor: Colors.black.withValues(
+                                alpha: 0.26,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: const Icon(Icons.add_rounded, size: 20),
+                          ),
+                        ),
                       ],
                     ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: inputController,
-                          textInputAction: TextInputAction.done,
-                          decoration: _buildInputDecoration(
-                            hintText: 'Adicionar nova opcao',
-                            focusedColor: accent,
-                          ),
-                          onSubmitted: (value) {
-                            final added = _addTagFor(kind, value);
-                            if (added != null) {
-                              Navigator.of(context).pop(added);
-                            }
-                          },
-                          onChanged: (_) => setModalState(() {}),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 44,
-                        child: FilledButton(
-                          onPressed: inputController.text.trim().isEmpty
-                              ? null
-                              : () {
-                                  final added = _addTagFor(
-                                    kind,
-                                    inputController.text,
-                                  );
-                                  if (added != null) {
-                                    Navigator.of(context).pop(added);
-                                  }
-                                },
-                          style: FilledButton.styleFrom(
-                            backgroundColor: accent,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                          ),
-                          child: const Icon(Icons.add_rounded, size: 20),
-                        ),
-                      ),
-                    ],
                   ),
-                  if (selectedLabel.isNotEmpty) ...[
+                  if (selectedLabel.isNotEmpty && !isRequired) ...[
                     const SizedBox(height: 10),
                     TextButton.icon(
                       onPressed: () => Navigator.of(context).pop(''),
@@ -819,7 +1043,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                         padding: EdgeInsets.zero,
                       ),
                       icon: const Icon(Icons.close_rounded, size: 16),
-                      label: const Text('Limpar selecao'),
+                      label: const Text('Limpar seleção'),
                     ),
                   ],
                 ],
@@ -841,12 +1065,437 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     });
   }
 
+  Future<void> _openRelevanceSelector() async {
+    var tempParameters = List<_RelevanceParameterConfig>.from(
+      _relevanceParameters,
+    );
+    var editingParameterIds = <String>{};
+    var tempValues = Map<String, double>.from(_relevanceValues);
+    var tempWeights = Map<String, double>.from(_relevanceWeights);
+
+    final result = await showDialog<_RelevanceSelectionResult>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.24),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final accent = _dialogController.accentColor;
+            final screenSize = MediaQuery.sizeOf(context);
+            final score = _calculateRelevanceScore(
+              values: tempValues,
+              weights: tempWeights,
+              parameters: tempParameters,
+            );
+            final category = _relevanceCategoryForScore(score);
+
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 22,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: min(screenSize.width - 28, 620),
+                  child: _CharacterCenteredMenuFrame(
+                    title: 'Relevancia narrativa',
+                    child: SizedBox(
+                      height: min(screenSize.height * 0.78, 620),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _RelevanceScoreSummary(
+                            score: score,
+                            category: category,
+                            categories: _relevanceCategories,
+                            accentColor: accent,
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(
+                                parent: ClampingScrollPhysics(),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _RelevanceFormulaNote(accentColor: accent),
+                                  const SizedBox(height: 10),
+                                  for (final parameter in tempParameters) ...[
+                                    _RelevanceParameterControl(
+                                      parameter: parameter,
+                                      value: tempValues[parameter.id] ?? 0,
+                                      weight:
+                                          tempWeights[parameter.id] ??
+                                          parameter.weight,
+                                      canRemove: tempParameters.length > 1,
+                                      isEditing: editingParameterIds.contains(
+                                        parameter.id,
+                                      ),
+                                      onEdit: () {
+                                        setModalState(() {
+                                          editingParameterIds = {
+                                            ...editingParameterIds,
+                                          };
+                                          if (!editingParameterIds.add(
+                                            parameter.id,
+                                          )) {
+                                            editingParameterIds.remove(
+                                              parameter.id,
+                                            );
+                                          }
+                                        });
+                                      },
+                                      onNameChanged: (value) {
+                                        setModalState(() {
+                                          tempParameters = [
+                                            for (final item in tempParameters)
+                                              item.id == parameter.id
+                                                  ? item.copyWith(name: value)
+                                                  : item,
+                                          ];
+                                        });
+                                      },
+                                      onDescriptionChanged: (value) {
+                                        setModalState(() {
+                                          tempParameters = [
+                                            for (final item in tempParameters)
+                                              item.id == parameter.id
+                                                  ? item.copyWith(
+                                                      description: value,
+                                                    )
+                                                  : item,
+                                          ];
+                                        });
+                                      },
+                                      onRemove: () {
+                                        if (tempParameters.length <= 1) {
+                                          return;
+                                        }
+                                        setModalState(() {
+                                          tempParameters = tempParameters
+                                              .where(
+                                                (item) =>
+                                                    item.id != parameter.id,
+                                              )
+                                              .toList();
+                                          tempValues = {...tempValues}
+                                            ..remove(parameter.id);
+                                          tempWeights = {...tempWeights}
+                                            ..remove(parameter.id);
+                                          editingParameterIds = {
+                                            ...editingParameterIds,
+                                          }..remove(parameter.id);
+                                          tempWeights =
+                                              _normalizeRelevanceWeights(
+                                                parameters: tempParameters,
+                                                weights: tempWeights,
+                                              );
+                                        });
+                                      },
+                                      onValueChanged: (value) {
+                                        setModalState(() {
+                                          tempValues = {
+                                            ...tempValues,
+                                            parameter.id: value,
+                                          };
+                                        });
+                                      },
+                                      onWeightChanged: (value) {
+                                        setModalState(() {
+                                          tempWeights =
+                                              _redistributeRelevanceWeights(
+                                                parameters: tempParameters,
+                                                weights: tempWeights,
+                                                changedId: parameter.id,
+                                                requestedWeight: value,
+                                              );
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  _AddRelevanceParameterButton(
+                                    onTap: () {
+                                      final newParameter =
+                                          _createBlankRelevanceParameter(
+                                            tempParameters,
+                                          );
+                                      setModalState(() {
+                                        tempParameters = [
+                                          ...tempParameters,
+                                          newParameter,
+                                        ];
+                                        tempValues = {
+                                          ...tempValues,
+                                          newParameter.id: 0,
+                                        };
+                                        editingParameterIds = {
+                                          ...editingParameterIds,
+                                          newParameter.id,
+                                        };
+                                        tempWeights =
+                                            _redistributeRelevanceWeights(
+                                              parameters: tempParameters,
+                                              weights: {
+                                                ...tempWeights,
+                                                newParameter.id:
+                                                    newParameter.weight,
+                                              },
+                                              changedId: newParameter.id,
+                                              requestedWeight:
+                                                  newParameter.weight,
+                                            );
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF514752),
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.82,
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: const Text('Cancelar'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(
+                                      _RelevanceSelectionResult(
+                                        values: tempValues,
+                                        weights: tempWeights,
+                                        parameters: tempParameters,
+                                        categoryName: category.name,
+                                      ),
+                                    );
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFFDF6EB8),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: const Text('Aplicar'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      _relevanceParameters = result.parameters;
+      _relevanceValues = result.values;
+      _relevanceWeights = result.weights;
+      _selectedRelevanceTag = result.categoryName;
+    });
+  }
+
+  double _calculateRelevanceScore({
+    Map<String, double>? values,
+    Map<String, double>? weights,
+    List<_RelevanceParameterConfig>? parameters,
+  }) {
+    final activeValues = values ?? _relevanceValues;
+    final activeWeights = weights ?? _relevanceWeights;
+    final activeParameters = parameters ?? _relevanceParameters;
+    var weightedTotal = 0.0;
+    var weightTotal = 0.0;
+    for (final parameter in activeParameters) {
+      final weight = activeWeights[parameter.id] ?? parameter.weight;
+      weightedTotal += (activeValues[parameter.id] ?? 0) * weight;
+      weightTotal += weight;
+    }
+
+    if (weightTotal <= 0) {
+      return 0;
+    }
+
+    return (weightedTotal / weightTotal).clamp(0, 10);
+  }
+
+  Map<String, double> _redistributeRelevanceWeights({
+    List<_RelevanceParameterConfig>? parameters,
+    required Map<String, double> weights,
+    required String changedId,
+    required double requestedWeight,
+  }) {
+    const totalWeightUnits = 20;
+    final activeParameters = parameters ?? _relevanceParameters;
+    final ids = [for (final parameter in activeParameters) parameter.id];
+    final current = {
+      for (final parameter in activeParameters)
+        parameter.id: weights[parameter.id] ?? parameter.weight,
+    };
+    final changedUnits = (requestedWeight.clamp(0.0, 1.0) * totalWeightUnits)
+        .round()
+        .clamp(0, totalWeightUnits);
+    final remainingUnits = totalWeightUnits - changedUnits;
+    final otherIds = ids.where((id) => id != changedId).toList();
+    final otherCurrentTotal = otherIds.fold<double>(
+      0,
+      (total, id) => total + (current[id] ?? 0),
+    );
+
+    final adjustedUnits = <String, int>{changedId: changedUnits};
+    if (otherIds.isEmpty) {
+      return {changedId: changedUnits / totalWeightUnits};
+    }
+
+    if (remainingUnits == 0) {
+      for (final id in otherIds) {
+        adjustedUnits[id] = 0;
+      }
+      return {
+        for (final entry in adjustedUnits.entries)
+          entry.key: entry.value / totalWeightUnits,
+      };
+    }
+
+    if (otherCurrentTotal <= 0) {
+      final baseUnits = remainingUnits ~/ otherIds.length;
+      final leftoverUnits = remainingUnits % otherIds.length;
+      for (var index = 0; index < otherIds.length; index += 1) {
+        adjustedUnits[otherIds[index]] =
+            baseUnits + (index < leftoverUnits ? 1 : 0);
+      }
+      return {
+        for (final entry in adjustedUnits.entries)
+          entry.key: entry.value / totalWeightUnits,
+      };
+    }
+
+    final quotas = <String, double>{};
+    var allocatedUnits = changedUnits;
+    for (final id in otherIds) {
+      final quota = ((current[id] ?? 0) / otherCurrentTotal) * remainingUnits;
+      quotas[id] = quota;
+      final units = quota.floor();
+      adjustedUnits[id] = units;
+      allocatedUnits += units;
+    }
+
+    final sortedRemainders = otherIds.toList()
+      ..sort(
+        (a, b) => ((quotas[b] ?? 0) - (quotas[b] ?? 0).floor()).compareTo(
+          (quotas[a] ?? 0) - (quotas[a] ?? 0).floor(),
+        ),
+      );
+
+    var remainderIndex = 0;
+    while (allocatedUnits < totalWeightUnits) {
+      final id = sortedRemainders[remainderIndex % sortedRemainders.length];
+      adjustedUnits[id] = (adjustedUnits[id] ?? 0) + 1;
+      allocatedUnits += 1;
+      remainderIndex += 1;
+    }
+
+    return {
+      for (final entry in adjustedUnits.entries)
+        entry.key: entry.value / totalWeightUnits,
+    };
+  }
+
+  Map<String, double> _normalizeRelevanceWeights({
+    required List<_RelevanceParameterConfig> parameters,
+    required Map<String, double> weights,
+  }) {
+    if (parameters.isEmpty) {
+      return {};
+    }
+
+    final total = parameters.fold<double>(
+      0,
+      (sum, parameter) => sum + (weights[parameter.id] ?? parameter.weight),
+    );
+
+    if (total <= 0) {
+      final equalWeight = 1 / parameters.length;
+      return {for (final parameter in parameters) parameter.id: equalWeight};
+    }
+
+    return {
+      for (final parameter in parameters)
+        parameter.id: (weights[parameter.id] ?? parameter.weight) / total,
+    };
+  }
+
+  _RelevanceParameterConfig _createBlankRelevanceParameter(
+    List<_RelevanceParameterConfig> parameters,
+  ) {
+    var index = parameters.length + 1;
+    var id = 'custom_$index';
+    while (parameters.any((parameter) => parameter.id == id)) {
+      index += 1;
+      id = 'custom_$index';
+    }
+
+    return _RelevanceParameterConfig(
+      id: id,
+      symbol: 'P$index',
+      name: 'Novo parametro',
+      description: 'Descreva o criterio narrativo.',
+      weight: 0.10,
+    );
+  }
+
+  _RelevanceCategoryConfig _relevanceCategoryForScore(double score) {
+    for (final category in _relevanceCategories) {
+      if (score >= category.min && score <= category.max) {
+        return category;
+      }
+    }
+
+    return _relevanceCategories.last;
+  }
+
   List<ProjectTagData> _knownTagsFor(_CharacterTagKind kind) {
     return switch (kind) {
       _CharacterTagKind.gender => _genderTags,
       _CharacterTagKind.sexuality => _sexualityTags,
       _CharacterTagKind.ethnicity => _ethnicityTags,
-      _CharacterTagKind.relevance => _relevanceTags,
+      _CharacterTagKind.function => _functionTags ??= _seedCharacterTags(
+        _CharacterTagKind.function,
+      ),
     };
   }
 
@@ -855,7 +1504,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       _CharacterTagKind.gender => _selectedGenderTag,
       _CharacterTagKind.sexuality => _selectedSexualityTag,
       _CharacterTagKind.ethnicity => _selectedEthnicityTag,
-      _CharacterTagKind.relevance => _selectedRelevanceTag,
+      _CharacterTagKind.function => _selectedFunctionTag ?? '',
     };
   }
 
@@ -887,10 +1536,14 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       case _CharacterTagKind.ethnicity:
         _selectedEthnicityTag = value;
         break;
-      case _CharacterTagKind.relevance:
-        _selectedRelevanceTag = value;
+      case _CharacterTagKind.function:
+        _selectedFunctionTag = value;
         break;
     }
+  }
+
+  bool _isRequiredTagKind(_CharacterTagKind kind) {
+    return kind == _CharacterTagKind.gender;
   }
 
   String? _addTagFor(_CharacterTagKind kind, String input) {
@@ -923,8 +1576,8 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         case _CharacterTagKind.ethnicity:
           _ethnicityTags = tags;
           break;
-        case _CharacterTagKind.relevance:
-          _relevanceTags = tags;
+        case _CharacterTagKind.function:
+          _functionTags = tags;
           break;
       }
     });
@@ -933,7 +1586,145 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 }
 
-enum _CharacterTagKind { gender, sexuality, ethnicity, relevance }
+enum _CharacterTagKind { gender, sexuality, ethnicity, function }
+
+class _RelevanceParameterConfig {
+  final String id;
+  final String symbol;
+  final String name;
+  final String description;
+  final double weight;
+
+  const _RelevanceParameterConfig({
+    required this.id,
+    required this.symbol,
+    required this.name,
+    required this.description,
+    required this.weight,
+  });
+
+  _RelevanceParameterConfig copyWith({
+    String? name,
+    String? description,
+    double? weight,
+  }) {
+    return _RelevanceParameterConfig(
+      id: id,
+      symbol: symbol,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      weight: weight ?? this.weight,
+    );
+  }
+}
+
+class _RelevanceCategoryConfig {
+  final String name;
+  final double min;
+  final double max;
+  final String description;
+  final Color color;
+
+  const _RelevanceCategoryConfig({
+    required this.name,
+    required this.min,
+    required this.max,
+    required this.description,
+    required this.color,
+  });
+}
+
+class _RelevanceSelectionResult {
+  final Map<String, double> values;
+  final Map<String, double> weights;
+  final List<_RelevanceParameterConfig> parameters;
+  final String categoryName;
+
+  const _RelevanceSelectionResult({
+    required this.values,
+    required this.weights,
+    required this.parameters,
+    required this.categoryName,
+  });
+}
+
+List<_RelevanceParameterConfig> _defaultRelevanceParameters() {
+  return const [
+    _RelevanceParameterConfig(
+      id: 'causal',
+      symbol: 'Cc',
+      name: 'Centralidade causal',
+      description:
+          'Baixo: reage aos eventos. Alto: cria viradas, escolhas vitais e consequencias irreversiveis.',
+      weight: 0.45,
+    ),
+    _RelevanceParameterConfig(
+      id: 'relational',
+      symbol: 'Dr',
+      name: 'Densidade relacional',
+      description:
+          'Baixo: poucas conexoes. Alto: conecta grupos, move relacoes e irradia influencia no elenco.',
+      weight: 0.25,
+    ),
+    _RelevanceParameterConfig(
+      id: 'thematic',
+      symbol: 'Ct',
+      name: 'Carga tematica',
+      description:
+          'Baixo: pouca tese propria. Alto: encarna conflitos, ideias e perguntas centrais da obra.',
+      weight: 0.15,
+    ),
+    _RelevanceParameterConfig(
+      id: 'presence',
+      symbol: 'Pd',
+      name: 'Presenca discursiva',
+      description:
+          'Baixo: aparece pouco. Alto: ocupa cenas, falas, paginas ou atencao recorrente.',
+      weight: 0.10,
+    ),
+    _RelevanceParameterConfig(
+      id: 'mutability',
+      symbol: 'Me',
+      name: 'Mutabilidade estrutural',
+      description:
+          'Baixo: permanece estavel. Alto: muda psicologicamente ou reposiciona sua funcao na trama.',
+      weight: 0.05,
+    ),
+  ];
+}
+
+List<_RelevanceCategoryConfig> _defaultRelevanceCategories() {
+  return const [
+    _RelevanceCategoryConfig(
+      name: 'Contorno',
+      min: 0,
+      max: 1.9,
+      description: 'Figura passiva ou cenografica.',
+      color: Color(0xFF8E838B),
+    ),
+    _RelevanceCategoryConfig(
+      name: 'Periferico',
+      min: 2,
+      max: 4.9,
+      description: 'Agente funcional, gatilho ou catalisador.',
+      color: Color(0xFF8EAFF1),
+    ),
+    _RelevanceCategoryConfig(
+      name: 'Orbital',
+      min: 5,
+      max: 7.9,
+      description: 'Sustentacao critica ao redor do nucleo.',
+      color: Color(0xFFDF9C53),
+    ),
+    _RelevanceCategoryConfig(
+      name: 'Nuclear',
+      min: 8,
+      max: 10,
+      description: 'Entidade vital da espinha causal da historia.',
+      color: Color(0xFFDF6EB8),
+    ),
+  ];
+}
 
 List<ZodiacSignData> _allZodiacSigns() {
   return [
@@ -969,17 +1760,20 @@ DateTime _randomBirthdayForSign(ZodiacSignData signData) {
 
 List<ProjectTagData> _seedCharacterTags(_CharacterTagKind kind) {
   final labels = switch (kind) {
-    _CharacterTagKind.gender => const ['Mulher', 'Homem', 'Nao binarie'],
+    _CharacterTagKind.gender => const ['Homem', 'Mulher', 'N/A'],
     _CharacterTagKind.sexuality => const [
+      'Assexual',
       'Heterossexual',
+      'Homossexual',
       'Bissexual',
-      'Lesbica',
+      'Pansexual',
     ],
-    _CharacterTagKind.ethnicity => const ['Branca', 'Preta', 'Parda'],
-    _CharacterTagKind.relevance => const [
-      'Protagonista',
-      'Secundario',
-      'Antagonista',
+    _CharacterTagKind.ethnicity => const ['Branco', 'Negro', 'Pardo'],
+    _CharacterTagKind.function => const [
+      'Vilao',
+      'Heroi',
+      'Anti-heroi',
+      'Anti-vilao',
     ],
   };
 
@@ -991,23 +1785,32 @@ List<ProjectTagData> _seedCharacterTags(_CharacterTagKind kind) {
 
 String _tagKindTitle(_CharacterTagKind kind) {
   return switch (kind) {
-    _CharacterTagKind.gender => 'Genero',
+    _CharacterTagKind.gender => 'Gênero',
     _CharacterTagKind.sexuality => 'Sexualidade',
     _CharacterTagKind.ethnicity => 'Etnia',
-    _CharacterTagKind.relevance => 'Relevancia',
+    _CharacterTagKind.function => 'Funcao',
   };
 }
 
 String _tagKindDescription(_CharacterTagKind kind) {
   return switch (kind) {
     _CharacterTagKind.gender =>
-      'Escolha uma opcao existente ou adicione uma nova para o genero do personagem.',
+      'Escolha uma opção existente ou adicione uma nova para o gênero do personagem.',
     _CharacterTagKind.sexuality =>
-      'Escolha uma opcao existente ou adicione uma nova para a sexualidade do personagem.',
+      'Escolha uma opção existente ou adicione uma nova para a sexualidade do personagem.',
     _CharacterTagKind.ethnicity =>
-      'Escolha uma opcao existente ou adicione uma nova para a etnia do personagem.',
-    _CharacterTagKind.relevance =>
-      'Escolha uma opcao existente ou adicione uma nova para a relevancia narrativa do personagem.',
+      'Escolha uma opção existente ou adicione uma nova para a etnia do personagem.',
+    _CharacterTagKind.function =>
+      'Escolha a funcao dramatica principal do personagem.',
+  };
+}
+
+IconData _tagKindIcon(_CharacterTagKind kind) {
+  return switch (kind) {
+    _CharacterTagKind.gender => Icons.wc_rounded,
+    _CharacterTagKind.sexuality => Icons.favorite_border_rounded,
+    _CharacterTagKind.ethnicity => Icons.groups_2_outlined,
+    _CharacterTagKind.function => Icons.theater_comedy_outlined,
   };
 }
 
@@ -1059,6 +1862,8 @@ class _CreateCharacterNameField extends StatelessWidget {
       hintText: 'Nome do personagem',
       focusedColor: focusedColor,
       icon: Icons.badge_outlined,
+      prefixWidth: _characterDialogCompactPrefixWidth,
+      fieldHeight: _characterDialogNameFieldHeight,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Informe um nome para o personagem.';
@@ -1073,96 +1878,44 @@ class _CreateCharacterNameField extends StatelessWidget {
       hintText: 'Apelido, nome de guerra ou nome publico',
       focusedColor: focusedColor,
       icon: Icons.alternate_email_rounded,
+      prefixWidth: _characterDialogCompactPrefixWidth,
+      fieldHeight: _characterDialogNameFieldHeight,
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 360) {
-          return Column(
-            children: [nameField, const SizedBox(height: 10), aliasField],
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: nameField),
-            const SizedBox(width: 10),
-            Expanded(child: aliasField),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [nameField, const SizedBox(height: 10), aliasField],
     );
   }
 }
 
 class _CharacterMetadataSection extends StatelessWidget {
   final Color accentColor;
-  final Set<CharacterProfileFieldId> visibleFields;
-  final ValueChanged<CharacterProfileFieldId> onToggleFieldVisibility;
   final TextEditingController mottoController;
   final TextEditingController formationsController;
   final TextEditingController titlesController;
   final TextEditingController weightController;
   final TextEditingController heightController;
-  final bool detailsExpanded;
-  final String birthdayLabel;
-  final ZodiacSignData birthdaySignData;
   final String heightUnitLabel;
   final String weightUnitLabel;
-  final String genderLabel;
-  final Color? genderColor;
-  final String sexualityLabel;
-  final Color? sexualityColor;
-  final String ethnicityLabel;
-  final Color? ethnicityColor;
-  final String relevanceLabel;
-  final Color? relevanceColor;
-  final VoidCallback onPickBirthday;
-  final VoidCallback onOpenBirthdaySign;
   final VoidCallback onPickHeightUnit;
   final VoidCallback onPickWeightUnit;
-  final VoidCallback onPickGenderTag;
-  final VoidCallback onPickSexualityTag;
-  final VoidCallback onPickEthnicityTag;
-  final VoidCallback onPickRelevanceTag;
-  final VoidCallback onToggleDetailsExpanded;
-  final bool bodyExpanded;
-  final VoidCallback onToggleBodyExpanded;
+  final bool isExpanded;
+  final VoidCallback onToggleExpanded;
 
   const _CharacterMetadataSection({
     required this.accentColor,
-    required this.visibleFields,
-    required this.onToggleFieldVisibility,
     required this.mottoController,
     required this.formationsController,
     required this.titlesController,
     required this.weightController,
     required this.heightController,
-    required this.detailsExpanded,
-    required this.birthdayLabel,
-    required this.birthdaySignData,
     required this.heightUnitLabel,
     required this.weightUnitLabel,
-    required this.genderLabel,
-    required this.genderColor,
-    required this.sexualityLabel,
-    required this.sexualityColor,
-    required this.ethnicityLabel,
-    required this.ethnicityColor,
-    required this.relevanceLabel,
-    required this.relevanceColor,
-    required this.onPickBirthday,
-    required this.onOpenBirthdaySign,
     required this.onPickHeightUnit,
     required this.onPickWeightUnit,
-    required this.onPickGenderTag,
-    required this.onPickSexualityTag,
-    required this.onPickEthnicityTag,
-    required this.onPickRelevanceTag,
-    required this.onToggleDetailsExpanded,
-    required this.bodyExpanded,
-    required this.onToggleBodyExpanded,
+    required this.isExpanded,
+    required this.onToggleExpanded,
   });
 
   @override
@@ -1171,237 +1924,133 @@ class _CharacterMetadataSection extends StatelessWidget {
       mottoController.text.trim(),
       formationsController.text.trim(),
       titlesController.text.trim(),
-      genderLabel.trim(),
-      sexualityLabel.trim(),
-      ethnicityLabel.trim(),
-      relevanceLabel.trim(),
     ].where((value) => value.isNotEmpty).length;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.78)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Informacoes do perfil',
-            style: TextStyle(
-              color: Color(0xFF3A3339),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _CharacterBirthdayDraftField(
-            label: 'Aniversario',
-            valueLabel: birthdayLabel,
-            signData: birthdaySignData,
-            accentColor: accentColor,
-            onTap: onPickBirthday,
-            onTapSign: onOpenBirthdaySign,
-          ),
-          const SizedBox(height: 10),
-          _CharacterDisclosureTile(
-            title: 'Medidas',
-            summary: 'Peso e altura do personagem',
-            accentColor: accentColor,
-            isExpanded: bodyExpanded,
-            onTap: onToggleBodyExpanded,
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: bodyExpanded
-                ? Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final weightField = _CharacterMeasureField(
-                            fieldId: CharacterProfileFieldId.weight,
-                            label: 'Peso',
-                            controller: weightController,
-                            hintText: 'Peso do personagem',
-                            accentColor: accentColor,
-                            visibleFields: visibleFields,
-                            onToggleVisibility: onToggleFieldVisibility,
-                            icon: Icons.balance_outlined,
-                            unitLabel: weightUnitLabel,
-                            onPickUnit: onPickWeightUnit,
-                          );
-                          final heightField = _CharacterMeasureField(
-                            fieldId: CharacterProfileFieldId.height,
-                            label: 'Altura',
-                            controller: heightController,
-                            hintText: 'Altura do personagem',
-                            accentColor: accentColor,
-                            visibleFields: visibleFields,
-                            onToggleVisibility: onToggleFieldVisibility,
-                            icon: Icons.straighten_rounded,
-                            unitLabel: heightUnitLabel,
-                            onPickUnit: onPickHeightUnit,
-                          );
-
-                          if (constraints.maxWidth < 420) {
-                            return Column(
-                              children: [
-                                weightField,
-                                const SizedBox(height: 10),
-                                heightField,
-                              ],
-                            );
-                          }
-
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _CharacterDisclosureTile(
+          title: 'Medidas e complementos',
+          summary: complementaryCount == 0
+              ? 'Peso, altura, frase, títulos e ocupações'
+              : '$complementaryCount complemento(s) preenchido(s)',
+          accentColor: accentColor,
+          isExpanded: isExpanded,
+          onTap: onToggleExpanded,
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          child: isExpanded
+              ? Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        Widget measureRow({
+                          required String label,
+                          required TextEditingController controller,
+                          required String hintText,
+                          required IconData icon,
+                          required String unitLabel,
+                          required VoidCallback onPickUnit,
+                        }) {
                           return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Expanded(child: weightField),
-                              const SizedBox(width: 10),
-                              Expanded(child: heightField),
+                              _CharacterMeasureField(
+                                label: label,
+                                controller: controller,
+                                hintText: hintText,
+                                focusedColor: accentColor,
+                                icon: icon,
+                              ),
+                              const SizedBox(width: 8),
+                              _CharacterUnitPillButton(
+                                accentColor: accentColor,
+                                label: unitLabel,
+                                onTap: onPickUnit,
+                              ),
                             ],
                           );
-                        },
-                      ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 10),
-          _CharacterDisclosureTile(
-            title: 'Complementos',
-            summary: complementaryCount == 0
-                ? 'Frase, titulos, ocupacoes e tags'
-                : '$complementaryCount campo(s) preenchido(s)',
-            accentColor: accentColor,
-            isExpanded: detailsExpanded,
-            onTap: onToggleDetailsExpanded,
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: detailsExpanded
-                ? Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      _CharacterToggleField(
-                        fieldId: CharacterProfileFieldId.motto,
-                        label: 'Frase de efeito',
-                        controller: mottoController,
-                        hintText:
-                            'Frase curta, lema ou linha marcante que ajuda a definir o personagem',
-                        accentColor: accentColor,
-                        visibleFields: visibleFields,
-                        onToggleVisibility: onToggleFieldVisibility,
-                        icon: Icons.format_quote_rounded,
-                        maxLines: 2,
-                        fieldHeight: 82,
-                      ),
-                      const SizedBox(height: 10),
-                      _CharacterCompactField(
-                        label: 'Formacoes e ocupacoes',
-                        controller: formationsController,
-                        hintText:
-                            'Area de estudo, oficio, cargo ou funcao social do personagem',
-                        focusedColor: accentColor,
-                        icon: Icons.work_outline_rounded,
-                        maxLines: 3,
-                        fieldHeight: 90,
-                      ),
-                      const SizedBox(height: 10),
-                      _CharacterCompactField(
-                        label: 'Titulos',
-                        controller: titlesController,
-                        hintText:
-                            'Honrarias, classificacoes, patentes ou nomes cerimoniais associados ao personagem',
-                        focusedColor: accentColor,
-                        icon: Icons.military_tech_outlined,
-                        maxLines: 3,
-                        fieldHeight: 90,
-                      ),
-                      const SizedBox(height: 10),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final tagFields = <Widget>[
-                            _CharacterTagSelectorField(
-                              label: 'Genero',
-                              value: genderLabel,
-                              accentColor: accentColor,
-                              selectedColor: genderColor,
-                              onTap: onPickGenderTag,
-                            ),
-                            _CharacterTagSelectorField(
-                              label: 'Sexualidade',
-                              value: sexualityLabel,
-                              accentColor: accentColor,
-                              selectedColor: sexualityColor,
-                              onTap: onPickSexualityTag,
-                            ),
-                            _CharacterTagSelectorField(
-                              label: 'Etnia',
-                              value: ethnicityLabel,
-                              accentColor: accentColor,
-                              selectedColor: ethnicityColor,
-                              onTap: onPickEthnicityTag,
-                            ),
-                            _CharacterTagSelectorField(
-                              label: 'Relevancia',
-                              value: relevanceLabel,
-                              accentColor: accentColor,
-                              selectedColor: relevanceColor,
-                              onTap: onPickRelevanceTag,
-                            ),
-                          ];
+                        }
 
-                          if (constraints.maxWidth < 360) {
-                            return Column(
-                              children: [
-                                for (
-                                  var index = 0;
-                                  index < tagFields.length;
-                                  index++
-                                ) ...[
-                                  tagFields[index],
-                                  if (index < tagFields.length - 1)
-                                    const SizedBox(height: 10),
-                                ],
-                              ],
-                            );
-                          }
+                        final weightRow = measureRow(
+                          label: 'Peso',
+                          controller: weightController,
+                          hintText: 'Peso',
+                          icon: Icons.balance_outlined,
+                          unitLabel: weightUnitLabel,
+                          onPickUnit: onPickWeightUnit,
+                        );
+                        final heightRow = measureRow(
+                          label: 'Altura',
+                          controller: heightController,
+                          hintText: 'Altura',
+                          icon: Icons.straighten_rounded,
+                          unitLabel: heightUnitLabel,
+                          onPickUnit: onPickHeightUnit,
+                        );
 
+                        if (constraints.maxWidth <
+                            _characterDialogMeasureLayoutBreakpoint) {
                           return Column(
                             children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: tagFields[0]),
-                                  const SizedBox(width: 10),
-                                  Expanded(child: tagFields[1]),
-                                ],
-                              ),
+                              weightRow,
                               const SizedBox(height: 10),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: tagFields[2]),
-                                  const SizedBox(width: 10),
-                                  Expanded(child: tagFields[3]),
-                                ],
-                              ),
+                              heightRow,
                             ],
                           );
-                        },
-                      ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
+                        }
+
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: weightRow),
+                            const SizedBox(width: 10),
+                            Expanded(child: heightRow),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _CharacterToggleField(
+                      label: 'Frase de efeito',
+                      controller: mottoController,
+                      hintText:
+                          'Frase curta, lema ou linha marcante que ajuda a definir o personagem',
+                      accentColor: accentColor,
+                      icon: Icons.format_quote_rounded,
+                      maxLines: 2,
+                      fieldHeight: 82,
+                    ),
+                    const SizedBox(height: 10),
+                    _CharacterCompactField(
+                      label: 'Formações e ocupações',
+                      controller: formationsController,
+                      hintText:
+                          'Área de estudo, ofício, cargo ou função social do personagem',
+                      focusedColor: accentColor,
+                      icon: Icons.work_outline_rounded,
+                      maxLines: 3,
+                      fieldHeight: 90,
+                    ),
+                    const SizedBox(height: 10),
+                    _CharacterCompactField(
+                      label: 'Títulos',
+                      controller: titlesController,
+                      hintText:
+                          'Honrarias, classificações, patentes ou nomes cerimoniais associados ao personagem',
+                      focusedColor: accentColor,
+                      icon: Icons.military_tech_outlined,
+                      maxLines: 3,
+                      fieldHeight: 90,
+                    ),
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
@@ -1415,6 +2064,7 @@ class _CharacterCompactField extends StatelessWidget {
   final int maxLines;
   final String? Function(String?)? validator;
   final double? fieldHeight;
+  final double? prefixWidth;
 
   const _CharacterCompactField({
     required this.label,
@@ -1425,29 +2075,32 @@ class _CharacterCompactField extends StatelessWidget {
     this.maxLines = 1,
     this.validator,
     this.fieldHeight,
+    this.prefixWidth,
   });
 
   @override
   Widget build(BuildContext context) {
     final isMultiline = maxLines > 1;
+    final fillsCustomHeight = isMultiline || fieldHeight != null;
+    final resolvedFieldHeight =
+        fieldHeight ??
+        (isMultiline ? 84 : _characterDialogSingleLineFieldHeight);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: fieldHeight ?? (isMultiline ? 84 : 48),
+          height: resolvedFieldHeight,
           child: TextFormField(
             controller: controller,
             textInputAction: isMultiline
                 ? TextInputAction.newline
                 : TextInputAction.next,
-            minLines: isMultiline ? null : 1,
-            maxLines: isMultiline ? null : 1,
-            expands: isMultiline,
+            minLines: fillsCustomHeight ? null : 1,
+            maxLines: fillsCustomHeight ? null : 1,
+            expands: fillsCustomHeight,
             validator: validator,
-            textAlignVertical: isMultiline
-                ? TextAlignVertical.top
-                : TextAlignVertical.center,
+            textAlignVertical: TextAlignVertical.center,
             style: const TextStyle(
               color: Color(0xFF3A3339),
               fontSize: 12.5,
@@ -1460,13 +2113,10 @@ class _CharacterCompactField extends StatelessWidget {
                 icon: icon,
                 label: label,
                 accentColor: focusedColor,
+                width: prefixWidth,
               ),
-              contentPadding: EdgeInsets.fromLTRB(
-                8,
-                isMultiline ? 12 : 0,
-                14,
-                isMultiline ? 12 : 0,
-              ),
+              contentPadding: const EdgeInsets.fromLTRB(8, 0, 14, 0),
+              constraints: BoxConstraints.tightFor(height: resolvedFieldHeight),
             ),
           ),
         ),
@@ -1476,25 +2126,19 @@ class _CharacterCompactField extends StatelessWidget {
 }
 
 class _CharacterToggleField extends StatelessWidget {
-  final CharacterProfileFieldId fieldId;
   final String label;
   final TextEditingController controller;
   final String hintText;
   final Color accentColor;
-  final Set<CharacterProfileFieldId> visibleFields;
-  final ValueChanged<CharacterProfileFieldId> onToggleVisibility;
   final IconData icon;
   final int maxLines;
   final double? fieldHeight;
 
   const _CharacterToggleField({
-    required this.fieldId,
     required this.label,
     required this.controller,
     required this.hintText,
     required this.accentColor,
-    required this.visibleFields,
-    required this.onToggleVisibility,
     required this.icon,
     this.maxLines = 1,
     this.fieldHeight,
@@ -1502,7 +2146,6 @@ class _CharacterToggleField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isVisible = visibleFields.contains(fieldId);
     final isMultiline = maxLines > 1;
 
     return Column(
@@ -1512,7 +2155,9 @@ class _CharacterToggleField extends StatelessWidget {
           children: [
             Expanded(
               child: SizedBox(
-                height: fieldHeight ?? (isMultiline ? 84 : 48),
+                height:
+                    fieldHeight ??
+                    (isMultiline ? 84 : _characterDialogSingleLineFieldHeight),
                 child: TextFormField(
                   controller: controller,
                   textInputAction: isMultiline
@@ -1521,9 +2166,7 @@ class _CharacterToggleField extends StatelessWidget {
                   minLines: isMultiline ? null : 1,
                   maxLines: isMultiline ? null : 1,
                   expands: isMultiline,
-                  textAlignVertical: isMultiline
-                      ? TextAlignVertical.top
-                      : TextAlignVertical.center,
+                  textAlignVertical: TextAlignVertical.center,
                   style: const TextStyle(
                     color: Color(0xFF3A3339),
                     fontSize: 12.5,
@@ -1537,21 +2180,10 @@ class _CharacterToggleField extends StatelessWidget {
                       label: label,
                       accentColor: accentColor,
                     ),
-                    contentPadding: EdgeInsets.fromLTRB(
-                      8,
-                      isMultiline ? 12 : 0,
-                      14,
-                      isMultiline ? 12 : 0,
-                    ),
+                    contentPadding: const EdgeInsets.fromLTRB(8, 0, 14, 0),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            _CharacterVisibilityToggle(
-              isVisible: isVisible,
-              accentColor: accentColor,
-              onTap: () => onToggleVisibility(fieldId),
             ),
           ],
         ),
@@ -1561,114 +2193,183 @@ class _CharacterToggleField extends StatelessWidget {
 }
 
 class _CharacterMeasureField extends StatelessWidget {
-  final CharacterProfileFieldId fieldId;
   final String label;
   final TextEditingController controller;
   final String hintText;
-  final Color accentColor;
-  final Set<CharacterProfileFieldId> visibleFields;
-  final ValueChanged<CharacterProfileFieldId> onToggleVisibility;
+  final Color focusedColor;
   final IconData icon;
-  final String unitLabel;
-  final VoidCallback onPickUnit;
 
   const _CharacterMeasureField({
-    required this.fieldId,
     required this.label,
     required this.controller,
     required this.hintText,
-    required this.accentColor,
-    required this.visibleFields,
-    required this.onToggleVisibility,
+    required this.focusedColor,
     required this.icon,
-    required this.unitLabel,
-    required this.onPickUnit,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isVisible = visibleFields.contains(fieldId);
+    return SizedBox(
+      width: _characterDialogMeasureFieldWidth,
+      height: _characterDialogMeasureControlHeight,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textInputAction: TextInputAction.next,
+        textAlignVertical: TextAlignVertical.center,
+        minLines: null,
+        maxLines: null,
+        expands: true,
+        style: TextStyle(
+          color: Colors.black.withValues(alpha: 0.68),
+          fontSize: 11.8,
+          fontStyle: FontStyle.italic,
+        ),
+        decoration: _buildCharacterDialogFieldDecoration(
+          hintText: hintText,
+          focusedColor: focusedColor,
+          prefixIcon: _CharacterMeasureFieldPrefix(
+            icon: icon,
+            label: label,
+            accentColor: focusedColor,
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(6, 0, 8, 0),
+          constraints: const BoxConstraints.tightFor(
+            height: _characterDialogMeasureControlHeight,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterMeasureFieldPrefix extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color accentColor;
+
+  const _CharacterMeasureFieldPrefix({
+    required this.icon,
+    required this.label,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF171419)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(
+              color: Color(0xFF3A3339),
+              fontSize: 10.8,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Container(
+            width: 1.2,
+            height: 16,
+            margin: const EdgeInsets.only(left: 6),
+            color: accentColor.withValues(alpha: 0.76),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CharacterIdentityTagGrid extends StatelessWidget {
+  final String genderLabel;
+  final Color? genderColor;
+  final String sexualityLabel;
+  final Color? sexualityColor;
+  final String ethnicityLabel;
+  final Color? ethnicityColor;
+  final String functionLabel;
+  final Color? functionColor;
+  final Color accentColor;
+  final bool showRequiredErrors;
+  final VoidCallback onPickGenderTag;
+  final VoidCallback onPickSexualityTag;
+  final VoidCallback onPickEthnicityTag;
+  final VoidCallback onPickFunctionTag;
+
+  const _CharacterIdentityTagGrid({
+    required this.genderLabel,
+    required this.genderColor,
+    required this.sexualityLabel,
+    required this.sexualityColor,
+    required this.ethnicityLabel,
+    required this.ethnicityColor,
+    required this.functionLabel,
+    required this.functionColor,
+    required this.accentColor,
+    required this.showRequiredErrors,
+    required this.onPickGenderTag,
+    required this.onPickSexualityTag,
+    required this.onPickEthnicityTag,
+    required this.onPickFunctionTag,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tagFields = <Widget>[
+      _CharacterTagSelectorField(
+        label: 'Gênero',
+        value: genderLabel,
+        accentColor: accentColor,
+        selectedColor: genderColor,
+        isRequired: true,
+        showError: showRequiredErrors && genderLabel.trim().isEmpty,
+        onTap: onPickGenderTag,
+      ),
+      _CharacterTagSelectorField(
+        label: 'Sexualidade',
+        value: sexualityLabel,
+        accentColor: accentColor,
+        selectedColor: sexualityColor,
+        onTap: onPickSexualityTag,
+      ),
+      _CharacterTagSelectorField(
+        label: 'Etnia',
+        value: ethnicityLabel,
+        accentColor: accentColor,
+        selectedColor: ethnicityColor,
+        onTap: onPickEthnicityTag,
+      ),
+      _CharacterTagSelectorField(
+        label: 'Funcao',
+        value: functionLabel,
+        accentColor: accentColor,
+        selectedColor: functionColor,
+        onTap: onPickFunctionTag,
+      ),
+    ];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: Container(
-                  height: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: _buildCharacterDialogPillDecoration(
-                    accentColor: accentColor,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(icon, size: 18, color: const Color(0xFF171419)),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 44,
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF3A3339),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 1.3,
-                        height: 18,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        color: accentColor.withValues(alpha: 0.84),
-                      ),
-                      Expanded(
-                        child: TextFormField(
-                          controller: controller,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          textInputAction: TextInputAction.next,
-                          textAlignVertical: TextAlignVertical.center,
-                          style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.68),
-                            fontSize: 11.8,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          decoration:
-                              const InputDecoration.collapsed(
-                                hintText: '',
-                              ).copyWith(
-                                hintText: hintText,
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF8E838B),
-                                  fontSize: 11.8,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            _CharacterUnitPillButton(
-              accentColor: accentColor,
-              label: unitLabel,
-              onTap: onPickUnit,
-            ),
-            const SizedBox(width: 8),
-            _CharacterVisibilityToggle(
-              isVisible: isVisible,
-              accentColor: accentColor,
-              onTap: () => onToggleVisibility(fieldId),
-            ),
+            Expanded(child: tagFields[0]),
+            const SizedBox(width: 10),
+            Expanded(child: tagFields[1]),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: tagFields[2]),
+            const SizedBox(width: 10),
+            Expanded(child: tagFields[3]),
           ],
         ),
       ],
@@ -1676,26 +2377,172 @@ class _CharacterMeasureField extends StatelessWidget {
   }
 }
 
-class _CharacterVisibilityToggle extends StatelessWidget {
-  final bool isVisible;
+class _CharacterRelevanceSelectorField extends StatelessWidget {
+  final String value;
+  final Color? selectedColor;
   final Color accentColor;
+  final List<_RelevanceCategoryConfig> categories;
+  final bool showError;
+  final double score;
   final VoidCallback onTap;
 
-  const _CharacterVisibilityToggle({
-    required this.isVisible,
+  const _CharacterRelevanceSelectorField({
+    required this.value,
+    required this.selectedColor,
     required this.accentColor,
+    required this.categories,
+    required this.showError,
+    required this.score,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MiniGlassButton(
-      accentColor: accentColor,
-      icon: isVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-      onTap: onTap,
-      fillColor: isVisible
-          ? accentColor.withValues(alpha: 0.24)
-          : Colors.white.withValues(alpha: 0.28),
+    final hasValue = value.trim().isNotEmpty;
+    final categoryColor = selectedColor ?? accentColor;
+    final surfaceColor = accentColor;
+    final labelColor = showError
+        ? const Color(0xFFC96775)
+        : hasValue
+        ? _darkenCharacterDialogColor(surfaceColor, 0.2)
+        : const Color(0xFF8E838B);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          height: 112,
+          padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
+          decoration: showError
+              ? BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.52),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFC96775),
+                    width: 1.1,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.72),
+                      const Color(0xFFC96775).withValues(alpha: 0.08),
+                    ],
+                  ),
+                )
+              : _buildCharacterDialogSurfaceDecoration(
+                  accentColor: surfaceColor,
+                  selected: hasValue,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: categoryColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.82),
+                  ),
+                ),
+                child: Icon(
+                  Icons.stars_rounded,
+                  size: 17,
+                  color: _darkenCharacterDialogColor(categoryColor, 0.18),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Relevância *',
+                      style: TextStyle(
+                        color: Color(0xFF3A3339),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      hasValue
+                          ? value
+                          : showError
+                          ? 'Campo obrigatório'
+                          : 'Selecionar relevância narrativa',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: labelColor,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: hasValue
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _RelevanceSpectrumBar(
+                      score: score,
+                      categories: categories,
+                      compact: true,
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        for (final category in categories)
+                          Expanded(
+                            flex: ((category.max - category.min) * 10).round(),
+                            child: Text(
+                              category.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.46),
+                                fontSize: 8.2,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 46,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: surfaceColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: surfaceColor.withValues(alpha: 0.28),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    score.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: _darkenCharacterDialogColor(surfaceColor, 0.18),
+                      fontSize: 10.4,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1705,6 +2552,8 @@ class _CharacterTagSelectorField extends StatelessWidget {
   final String value;
   final Color accentColor;
   final Color? selectedColor;
+  final bool isRequired;
+  final bool showError;
   final VoidCallback onTap;
 
   const _CharacterTagSelectorField({
@@ -1712,6 +2561,8 @@ class _CharacterTagSelectorField extends StatelessWidget {
     required this.value,
     required this.accentColor,
     this.selectedColor,
+    this.isRequired = false,
+    this.showError = false,
     required this.onTap,
   });
 
@@ -1719,6 +2570,28 @@ class _CharacterTagSelectorField extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasValue = value.trim().isNotEmpty;
     final effectiveColor = selectedColor ?? accentColor;
+    final borderColor = showError
+        ? const Color(0xFFC96775)
+        : Colors.white.withValues(alpha: 0.82);
+    final decoration = showError
+        ? BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.52),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.1),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.72),
+                const Color(0xFFC96775).withValues(alpha: 0.08),
+              ],
+            ),
+          )
+        : _buildCharacterDialogSurfaceDecoration(
+            accentColor: effectiveColor,
+            selected: hasValue,
+            borderRadius: BorderRadius.circular(16),
+          );
 
     return Material(
       color: Colors.transparent,
@@ -1728,11 +2601,7 @@ class _CharacterTagSelectorField extends StatelessWidget {
         child: Ink(
           height: 78,
           padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-          decoration: _buildCharacterDialogSurfaceDecoration(
-            accentColor: effectiveColor,
-            selected: hasValue,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: decoration,
           child: Row(
             children: [
               Expanded(
@@ -1741,7 +2610,7 @@ class _CharacterTagSelectorField extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      label,
+                      isRequired ? '$label *' : label,
                       style: const TextStyle(
                         color: Color(0xFF3A3339),
                         fontSize: 12,
@@ -1750,11 +2619,17 @@ class _CharacterTagSelectorField extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      hasValue ? value : 'Selecionar ou criar',
+                      hasValue
+                          ? value
+                          : showError
+                          ? 'Campo obrigatório'
+                          : 'Selecionar ou criar',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: hasValue
+                        color: showError
+                            ? const Color(0xFFC96775)
+                            : hasValue
                             ? _darkenCharacterDialogColor(effectiveColor, 0.2)
                             : const Color(0xFF8E838B),
                         fontSize: 12,
@@ -1818,67 +2693,39 @@ class _CharacterBirthdayDraftField extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Ink(
-          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+          height: 48,
+          padding: const EdgeInsets.only(right: 10),
           decoration: _buildCharacterDialogSurfaceDecoration(
             accentColor: accentColor,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: SizedBox(
-            height: 42,
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.cake_outlined,
-                  size: 18,
-                  color: Color(0xFF171419),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 80,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF3A3339),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
+          child: Row(
+            children: [
+              _CharacterFieldPrefix(
+                icon: Icons.cake_outlined,
+                label: label,
+                accentColor: accentColor,
+              ),
+              Expanded(
+                child: Text(
+                  valueLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.68),
+                    fontSize: 11.8,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                Container(
-                  width: 1.3,
-                  height: 18,
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  color: accentColor.withValues(alpha: 0.84),
-                ),
-                Expanded(
-                  child: Text(
-                    valueLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.68),
-                      fontSize: 11.8,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _CharacterSignBadge(
-                  accentColor: accentColor,
-                  signData: signData,
-                  onTap: onTapSign,
-                ),
-                const SizedBox(width: 8),
-                MiniGlassButton(
-                  accentColor: accentColor,
-                  icon: Icons.edit_calendar_outlined,
-                  onTap: onTap,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              _CharacterSignBadge(
+                accentColor: accentColor,
+                signData: signData,
+                onTap: onTapSign,
+              ),
+            ],
           ),
         ),
       ),
@@ -1972,8 +2819,8 @@ class _CharacterSignBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      height: 28,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(999),
@@ -1998,15 +2845,15 @@ class _CharacterSignBadge extends StatelessWidget {
             signData.symbol,
             style: TextStyle(
               color: _darkenCharacterDialogColor(accentColor, 0.24),
-              fontSize: 11,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           Text(
             signData.name,
             style: TextStyle(
               color: Colors.black.withValues(alpha: 0.54),
-              fontSize: 10,
+              fontSize: 11,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -2048,8 +2895,8 @@ class _CharacterUnitPillButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Ink(
-          width: 66,
-          height: 48,
+          width: _characterDialogMeasureUnitWidth,
+          height: _characterDialogMeasureControlHeight,
           decoration: BoxDecoration(
             color: accentColor.withValues(alpha: 0.24),
             borderRadius: BorderRadius.circular(999),
@@ -2067,38 +2914,28 @@ class _CharacterUnitPillButton extends StatelessWidget {
               ],
             ),
           ),
-          child: Column(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Unidade',
-                style: TextStyle(
-                  color: Colors.black.withValues(alpha: 0.46),
-                  fontSize: 7.6,
-                  height: 0.9,
-                  fontStyle: FontStyle.italic,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _darkenCharacterDialogColor(accentColor, 0.22),
+                    fontSize: 9.4,
+                    height: 1,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: _darkenCharacterDialogColor(accentColor, 0.22),
-                      fontSize: 8.8,
-                      height: 0.9,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  Icon(
-                    Icons.expand_more_rounded,
-                    size: 12,
-                    color: _darkenCharacterDialogColor(accentColor, 0.18),
-                  ),
-                ],
+              Icon(
+                Icons.expand_more_rounded,
+                size: 12,
+                color: _darkenCharacterDialogColor(accentColor, 0.18),
               ),
             ],
           ),
@@ -2123,26 +2960,31 @@ class _ZodiacRandomOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foregroundColor = isSelected
+        ? _darkenCharacterDialogColor(accentColor, 0.24)
+        : const Color(0xFF3A3339);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(14),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? accentColor.withValues(alpha: 0.18)
-                : Colors.white.withValues(alpha: 0.34),
-            borderRadius: BorderRadius.circular(999),
+                ? accentColor.withValues(alpha: 0.2)
+                : Colors.white.withValues(alpha: 0.48),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected
-                  ? accentColor.withValues(alpha: 0.42)
+                  ? accentColor.withValues(alpha: 0.46)
                   : Colors.white.withValues(alpha: 0.78),
             ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 signData.symbol,
@@ -2154,19 +2996,21 @@ class _ZodiacRandomOption extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 signData.name,
-                style: const TextStyle(
-                  color: Color(0xFF3A3339),
+                style: TextStyle(
+                  color: foregroundColor,
                   fontSize: 11.5,
                   fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.casino_rounded,
-                size: 13,
-                color: _darkenCharacterDialogColor(accentColor, 0.16),
-              ),
+              if (isSelected) ...[
+                const SizedBox(width: 5),
+                Icon(
+                  Icons.check_rounded,
+                  size: 13,
+                  color: _darkenCharacterDialogColor(accentColor, 0.16),
+                ),
+              ],
             ],
           ),
         ),
@@ -2316,8 +3160,593 @@ class _CharacterTagEmptyState extends StatelessWidget {
         border: Border.all(color: accentColor.withValues(alpha: 0.18)),
       ),
       child: const Text(
-        'Nenhuma opcao cadastrada ainda.',
+        'Nenhuma opção cadastrada ainda.',
         style: TextStyle(color: Color(0xFF6A6167), fontSize: 12),
+      ),
+    );
+  }
+}
+
+class _CharacterTagOptionButton extends StatelessWidget {
+  final ProjectTagData tag;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CharacterTagOptionButton({
+    required this.tag,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? tag.color.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: tag.color.withValues(alpha: isSelected ? 0.86 : 0.42),
+              width: isSelected ? 1.15 : 0.9,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: tag.color,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  tag.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: tag.color.withValues(alpha: 0.98),
+                    fontSize: 11.5,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (isSelected) ...[
+                const SizedBox(width: 5),
+                Icon(Icons.check_rounded, size: 13, color: tag.color),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterCenteredMenuFrame extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _CharacterCenteredMenuFrame({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.38),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.58),
+              width: 0.9,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2C262C),
+                ),
+              ),
+              const SizedBox(height: 14),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelevanceScoreSummary extends StatelessWidget {
+  final double score;
+  final _RelevanceCategoryConfig category;
+  final List<_RelevanceCategoryConfig> categories;
+  final Color accentColor;
+
+  const _RelevanceScoreSummary({
+    required this.score,
+    required this.category,
+    required this.categories,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: category.color.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: category.color.withValues(alpha: 0.42)),
+            ),
+            child: Center(
+              child: Text(
+                score.toStringAsFixed(1),
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(category.color, 0.16),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.name,
+                  style: TextStyle(
+                    color: _darkenCharacterDialogColor(category.color, 0.2),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                _RelevanceSpectrumBar(score: score, categories: categories),
+                const SizedBox(height: 7),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        category.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.58),
+                          fontSize: 11.2,
+                          height: 1.2,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${category.min.toStringAsFixed(1)}-${category.max.toStringAsFixed(1)}',
+                      style: TextStyle(
+                        color: _darkenCharacterDialogColor(
+                          category.color,
+                          0.18,
+                        ),
+                        fontSize: 10.8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelevanceSpectrumBar extends StatelessWidget {
+  final double score;
+  final List<_RelevanceCategoryConfig> categories;
+  final bool compact;
+
+  const _RelevanceSpectrumBar({
+    required this.score,
+    required this.categories,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final markerWidth = compact ? 8.0 : 12.0;
+        final markerHeight = compact ? 14.0 : 20.0;
+        final markerLeft =
+            (constraints.maxWidth - markerWidth) * (score.clamp(0, 10) / 10);
+
+        return SizedBox(
+          height: compact ? 16 : 24,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                top: compact ? 5 : 6,
+                bottom: compact ? 5 : 6,
+                child: Row(
+                  children: [
+                    for (final category in categories)
+                      Expanded(
+                        flex: ((category.max - category.min) * 10).round(),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          decoration: BoxDecoration(
+                            color: category.color.withValues(alpha: 0.62),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Positioned(
+                left: markerLeft,
+                top: compact ? 1 : 2,
+                child: Container(
+                  width: markerWidth,
+                  height: markerHeight,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2C262C),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RelevanceFormulaNote extends StatelessWidget {
+  final Color accentColor;
+
+  const _RelevanceFormulaNote({required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+      ),
+      child: Text(
+        'R usa a soma ponderada das notas. Os pesos sempre fecham 100%; ao ajustar um peso, os demais se redistribuem automaticamente.',
+        style: TextStyle(
+          color: Colors.black.withValues(alpha: 0.56),
+          fontSize: 10.4,
+          height: 1.22,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+}
+
+class _AddRelevanceParameterButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddRelevanceParameterButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const projectPink = Color(0xFFDF6EB8);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          width: double.infinity,
+          height: 42,
+          decoration: BoxDecoration(
+            color: projectPink.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: projectPink.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_rounded,
+                size: 18,
+                color: _darkenCharacterDialogColor(projectPink, 0.18),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Adicionar parametro',
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(projectPink, 0.18),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelevanceParameterIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _RelevanceParameterIconButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final color = enabled ? const Color(0xFF7D6171) : const Color(0xFFB9AFB6);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: Icon(icon, size: 15, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelevanceParameterControl extends StatelessWidget {
+  final _RelevanceParameterConfig parameter;
+  final double value;
+  final double weight;
+  final bool canRemove;
+  final bool isEditing;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
+  final ValueChanged<String> onNameChanged;
+  final ValueChanged<String> onDescriptionChanged;
+  final ValueChanged<double> onValueChanged;
+  final ValueChanged<double> onWeightChanged;
+
+  const _RelevanceParameterControl({
+    required this.parameter,
+    required this.value,
+    required this.weight,
+    required this.canRemove,
+    required this.isEditing,
+    required this.onEdit,
+    required this.onRemove,
+    required this.onNameChanged,
+    required this.onDescriptionChanged,
+    required this.onValueChanged,
+    required this.onWeightChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const projectPink = Color(0xFFDF6EB8);
+    final sliderTheme = SliderTheme.of(context).copyWith(
+      activeTrackColor: projectPink,
+      inactiveTrackColor: projectPink.withValues(alpha: 0.18),
+      activeTickMarkColor: Colors.white.withValues(alpha: 0.42),
+      inactiveTickMarkColor: projectPink.withValues(alpha: 0.28),
+      thumbColor: projectPink,
+      overlayColor: projectPink.withValues(alpha: 0.14),
+      valueIndicatorColor: projectPink,
+      trackHeight: 5,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(9, 8, 9, 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.46),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: projectPink.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    parameter.symbol,
+                    style: TextStyle(
+                      color: _darkenCharacterDialogColor(projectPink, 0.18),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  parameter.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                value.toStringAsFixed(1),
+                style: const TextStyle(
+                  color: Color(0xFF514752),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 4),
+              _RelevanceParameterIconButton(
+                icon: isEditing ? Icons.check_rounded : Icons.edit_rounded,
+                onTap: onEdit,
+              ),
+              _RelevanceParameterIconButton(
+                icon: Icons.delete_outline_rounded,
+                onTap: canRemove ? onRemove : null,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          if (isEditing) ...[
+            TextFormField(
+              key: ValueKey('relevance-name-${parameter.id}'),
+              initialValue: parameter.name,
+              textInputAction: TextInputAction.next,
+              onChanged: onNameChanged,
+              decoration: _buildCharacterDialogFieldDecoration(
+                hintText: 'Nome do parametro',
+                focusedColor: projectPink,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              key: ValueKey('relevance-description-${parameter.id}'),
+              initialValue: parameter.description,
+              minLines: 2,
+              maxLines: 3,
+              onChanged: onDescriptionChanged,
+              decoration: _buildCharacterDialogFieldDecoration(
+                hintText: 'Descricao: o que significa ter pouco ou muito',
+                focusedColor: projectPink,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ] else
+            Text(
+              parameter.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.black.withValues(alpha: 0.54),
+                fontSize: 10.2,
+                height: 1.22,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          const SizedBox(height: 2),
+          SliderTheme(
+            data: sliderTheme,
+            child: Slider(
+              value: value.clamp(0, 10),
+              min: 0,
+              max: 10,
+              divisions: 20,
+              onChanged: onValueChanged,
+            ),
+          ),
+          Row(
+            children: [
+              const Text(
+                'Peso',
+                style: TextStyle(
+                  color: Color(0xFF6A6167),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: sliderTheme,
+                  child: Slider(
+                    value: weight.clamp(0, 1),
+                    min: 0,
+                    max: 1,
+                    divisions: 20,
+                    onChanged: onWeightChanged,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 38,
+                child: Text(
+                  '${(weight * 100).toStringAsFixed(0)}%',
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Color(0xFF6A6167),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2753,43 +4182,48 @@ class _CharacterFieldPrefix extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color accentColor;
+  final double? width;
 
   const _CharacterFieldPrefix({
     required this.icon,
     required this.label,
     required this.accentColor,
+    this.width,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, right: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 17, color: const Color(0xFF171419)),
-          const SizedBox(width: 7),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 86),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF3A3339),
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
+    return SizedBox(
+      width: width ?? _characterDialogPrefixWidth,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12, right: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 17, color: const Color(0xFF171419)),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                softWrap: true,
+                style: const TextStyle(
+                  color: Color(0xFF3A3339),
+                  fontSize: 11.2,
+                  fontWeight: FontWeight.w800,
+                  height: 1.05,
+                ),
               ),
             ),
-          ),
-          Container(
-            width: 1.2,
-            height: 18,
-            margin: const EdgeInsets.only(left: 9),
-            color: accentColor.withValues(alpha: 0.76),
-          ),
-        ],
+            Container(
+              width: 1.2,
+              height: 18,
+              margin: const EdgeInsets.only(left: 8),
+              color: accentColor.withValues(alpha: 0.76),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2800,6 +4234,7 @@ InputDecoration _buildCharacterDialogFieldDecoration({
   required Color focusedColor,
   EdgeInsetsGeometry? contentPadding,
   Widget? prefixIcon,
+  BoxConstraints? constraints,
 }) {
   final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(16),
@@ -2822,6 +4257,7 @@ InputDecoration _buildCharacterDialogFieldDecoration({
     filled: true,
     fillColor: Colors.white.withValues(alpha: 0.56),
     isDense: true,
+    constraints: constraints,
     contentPadding:
         contentPadding ??
         const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
@@ -2868,25 +4304,6 @@ BoxDecoration _buildCharacterDialogSurfaceDecoration({
         offset: const Offset(0, 3),
       ),
     ],
-  );
-}
-
-BoxDecoration _buildCharacterDialogPillDecoration({
-  required Color accentColor,
-}) {
-  return BoxDecoration(
-    color: Colors.white.withValues(alpha: 0.42),
-    borderRadius: BorderRadius.circular(999),
-    border: Border.all(color: Colors.white.withValues(alpha: 0.76)),
-    gradient: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        Colors.white.withValues(alpha: 0.64),
-        accentColor.withValues(alpha: 0.12),
-        _lightenCharacterDialogColor(accentColor, 0.22).withValues(alpha: 0.08),
-      ],
-    ),
   );
 }
 

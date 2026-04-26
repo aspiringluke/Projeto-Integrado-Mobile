@@ -24,6 +24,7 @@ class CharacterCardData {
   final String genderTag;
   final String sexualityTag;
   final String ethnicityTag;
+  final String functionTag;
   final String relevanceTag;
   final Set<CharacterProfileFieldId> visibleProfileFields;
   final Color accent;
@@ -48,6 +49,7 @@ class CharacterCardData {
     this.genderTag = '',
     this.sexualityTag = '',
     this.ethnicityTag = '',
+    this.functionTag = '',
     this.relevanceTag = '',
     this.visibleProfileFields = const <CharacterProfileFieldId>{},
     required this.accent,

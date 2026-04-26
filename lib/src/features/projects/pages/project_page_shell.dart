@@ -138,6 +138,7 @@ class _ProjectPageState extends State<ProjectPage> {
             genderTag: draft.genderTag,
             sexualityTag: draft.sexualityTag,
             ethnicityTag: draft.ethnicityTag,
+            functionTag: draft.functionTag,
             relevanceTag: draft.relevanceTag,
             visibleProfileFields: draft.visibleProfileFields,
             accent: draft.accentColor,
