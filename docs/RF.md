@@ -44,7 +44,7 @@
 
 ### RF09 (Busca) - Buscar itens por atributos ou tags
 
-  O sistema deve oferecer um campo de pesquisa global para encontrar itens (ideias, personagens e demais elementos do projeto) via metadados.
+  O sistema deve oferecer um campo de pesquisa global para encontrar itens (notas, personagens e demais elementos do projeto) via metadados.
 
 
 ---
@@ -142,41 +142,40 @@
 ---
 
 
-## Gerenciamento de Ideias
+## Gerenciamento de notas
 
-### RF30 - Criação de Ideias
+### RF30 - Criação de notas
 
   O sistema deve permitir ao usuário o registro inicial de novos conceitos ou fragmentos de história.
 
-### RF31 - Exclusão de ideias
+### RF31 - Exclusão de notas
 
-  O sistema deve permitir a exclusão permanente de registros de ideias.
+  O sistema deve permitir a exclusão permanente de registros de notas.
 
-### RF32 - Organizar ideias em pastas
+### RF32 - Organizar notas em pastas
 
-  O sistema deve permitir ao usuário organizar suas ideias em pastas.
+  O sistema deve permitir ao usuário organizar suas notas em pastas.
 
 
 ---
 
-# TODO: Alterar o texto para "notas", para alinhar com o que está na interface
-## Edição de Ideias
+## Edição de Notas
 
-### RF33 - Editar texto da ideia
+### RF33 - Editar texto da nota
 
-  O sistema deve permitir ao usuário editar o texto das ideias.
+  O sistema deve permitir ao usuário editar o texto das notas.
 
-### RF34 - Adicionar imagens às ideias
+### RF34 - Adicionar imagens às notas
 
-  O sistema deve permitir o armazenamento de arquivos de imagem referentes às ideias.
+  O sistema deve permitir o armazenamento de arquivos de imagem referentes às notas.
 
-### RF35 - Atribuir títulos às ideias
+### RF35 - Atribuir títulos às notas
 
-  O sistema deve permitir ao usuário adicionar títulos às ideias criadas.
+  O sistema deve permitir ao usuário adicionar títulos às notas criadas.
 
-### RF36 - Adicionar tags às ideias
+### RF36 - Adicionar tags às notas
 
-  O sistema deve permitir ao usuário adicionar e atribuir tags às ideias criadas.
+  O sistema deve permitir ao usuário adicionar e atribuir tags às notas criadas.
 
 
 ---
@@ -249,7 +248,7 @@
 ### RF50 - Assistente de Insights Contextuais (IA)
 
   O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
-  (Projetos, Personagens, Ideias ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização.
+  (Projetos, Personagens, Notas ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização.
 
 
 ---
