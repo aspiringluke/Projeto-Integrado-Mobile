@@ -6,21 +6,43 @@
 
   O sistema deve permitir ao usuário a criação de novos projetos.
 
+## Edição de projeto
+
+### RF02 - Editar informações
+
+  O sistema deve permitir ao usuário alterar o nome e a sinopse do projeto.
+
+### RF03 - Imagem do projeto
+
+  O sistema deve permitir ao usuário enviar ou remover uma imagem do cartão do projeto, podendo alterar o modo de mesclagem.
+
+### RF04 - Cor do projeto
+
+  O sistema deve permitir ao usuário escolher uma cor de fundo para aparecer no cartão do projeto, podendo alterar o modo de mesclagem.
+
+### RF05 - Tags do projeto
+
+  O sistema deve permitir ao usuário inserir e remover tags do projeto.
+
+### RF06 - Personagens do cartão de projeto
+
+  O sistema deve permitir ao usuário selecionar personagens do projeto cujas imagens aparecerão no respectivo cartão.
+
 
 ---
 
 
 ## Funções de Busca
 
-### RF02 (Busca) - Filtrar itens por atributos ou tags
+### RF07 (Busca) - Filtrar itens por atributos ou tags
 
   O sistema deve permitir a filtragem de elementos do projeto com base em categorias ou etiquetas pré-definidas.
 
-### RF03 (Busca) - Ordenar itens por atributos ou tags
+### RF08 (Busca) - Ordenar itens por atributos ou tags
 
   O sistema deve permitir a organização da visualização de itens por ordem alfabética, data ou tags.
 
-### RF04 (Busca) - Buscar itens por atributos ou tags
+### RF09 (Busca) - Buscar itens por atributos ou tags
 
   O sistema deve oferecer um campo de pesquisa global para encontrar itens (ideias, personagens e demais elementos do projeto) via metadados.
 
@@ -30,15 +52,15 @@
 
 ## Gerenciamento de Diagramas
 
-### RF05 - Criar diagramas
+### RF10 - Criar diagramas
 
   O sistema deve permitir ao usuário criar diagramas.
 
-### RF06 - Excluir diagramas
+### RF11 - Excluir diagramas
 
   O sistema deve permitir ao usuário excluir diagramas.
 
-### RF07 - Organizar diagramas em pastas
+### RF12 - Organizar diagramas em pastas
 
   O sistema deve permitir a criação de pastas específicas para o armazenamento e categorização de diferentes diagramas.
 
@@ -48,71 +70,71 @@
 
 ## Edição de Diagramas
 
-### RF08 - Vincular nó a entidade persistente
+### RF13 - Vincular nó a entidade persistente
 
   O sistema deve permitir vincular um nó do diagrama a uma entidade persistente do projeto, como Personagem ou Ideia.
 
-### RF09 - Criar arestas
+### RF14 - Criar arestas
 
   O sistema deve permitir a criação e manipulação de arestas para conectar nós no diagrama.
 
-### RF10 - Adicionar descrição à aresta
+### RF15 - Adicionar descrição à aresta
 
   O sistema deve permitir ao usuário a inserção de textos detalhados ou notas explicativas vinculadas a uma aresta.
 
-### RF11 - Exclusão de arestas
+### RF16 - Exclusão de arestas
 
   O sistema deve excluir automaticamente arestas
 
-### RF12 - Inserir nó
+### RF17 - Inserir nó
 
   O sistema deve permitir a adição de novos pontos de informação (nós) no plano de edição do diagrama.
 
-### RF13 - Mover nó
+### RF18 - Mover nó
 
   O sistema deve permitir o reposicionamento espacial dos nós através de interface de arrastar e soltar.
 
-### RF14 - Excluir nó
+### RF19 - Excluir nó
 
   O sistema deve permitir a remoção definitiva de um nó do diagrama.
 
-### RF15 - Renomear nó
+### RF20 - Renomear nó
 
   O sistema deve permitir a alteração do rótulo textual de identificação de um nó.
 
-### RF16 - Alterar tag do nó
+### RF21 - Alterar tag do nó
 
   O sistema deve permitir a atribuição ou modificação de etiquetas de categorização em um nó.
 
-### RF17 - Adicionar descrição ao nó
+### RF22 - Adicionar descrição ao nó
 
   O sistema deve permitir a inserção de textos detalhados ou notas explicativas vinculadas a um nó.
 
-### RF18 - Criar grupo de nós
+### RF23 - Criar grupo de nós
 
   O sistema deve permitir o agrupamento de múltiplos nós para tratamento coletivo.
 
-### RF19 - Renomear grupo de nós
+### RF24 - Renomear grupo de nós
 
   O sistema deve permitir a edição do nome identificador de um grupo de nós.
 
-### RF20 - Inserir nós em grupos
+### RF25 - Inserir nós em grupos
 
   O sistema deve permitir a inclusão de nós individuais dentro de grupos já existentes.
 
-### RF21 - Remover nós de grupo
+### RF26 - Remover nós de grupo
 
   O sistema deve permitir retirar um nó de um grupo sem excluí-lo do diagrama.
 
-### RF22 - Alternar visibilidade do grupo
+### RF27 - Alternar visibilidade do grupo
 
   O sistema deve permitir ocultar ou exibir grupos inteiros para facilitar a navegação no diagrama.
 
-### RF23 - Excluir grupo
+### RF28 - Excluir grupo
 
   O sistema deve permitir ao usuário excluir grupos de nós.
 
-### RF24 - Aplicar buscas em diagramas
+### RF29 - Aplicar buscas em diagramas
 
   O sistema deve permitir a localização de elementos específicos dentro de um diagrama através de palavras-chave.
 
@@ -122,37 +144,37 @@
 
 ## Gerenciamento de Ideias
 
-### RF25 - Criação de Ideias
+### RF30 - Criação de Ideias
 
   O sistema deve permitir ao usuário o registro inicial de novos conceitos ou fragmentos de história.
 
-### RF26 - Exclusão de ideias
+### RF31 - Exclusão de ideias
 
   O sistema deve permitir a exclusão permanente de registros de ideias.
 
-### RF27 - Organizar ideias em pastas
+### RF32 - Organizar ideias em pastas
 
   O sistema deve permitir ao usuário organizar suas ideias em pastas.
 
 
 ---
 
-
+# TODO: Alterar o texto para "notas", para alinhar com o que está na interface
 ## Edição de Ideias
 
-### RF28 - Editar texto da ideia
+### RF33 - Editar texto da ideia
 
   O sistema deve permitir ao usuário editar o texto das ideias.
 
-### RF29 - Adicionar imagens às ideias
+### RF34 - Adicionar imagens às ideias
 
   O sistema deve permitir o armazenamento de arquivos de imagem referentes às ideias.
 
-### RF30 - Atribuir títulos às ideias
+### RF35 - Atribuir títulos às ideias
 
   O sistema deve permitir ao usuário adicionar títulos às ideias criadas.
 
-### RF31 - Adicionar tags às ideias
+### RF36 - Adicionar tags às ideias
 
   O sistema deve permitir ao usuário adicionar e atribuir tags às ideias criadas.
 
@@ -162,19 +184,19 @@
 
 ## Gerenciamento de Pastas
 
-### RF32 - Criação de Pastas
+### RF37 - Criação de Pastas
 
   O sistema deve permitir ao usuário a criação de diretórios para organizar o conteúdo geral do projeto.
 
-### RF33 - Renomear pastas
+### RF38 - Renomear pastas
 
   O sistema deve permitir a alteração dos nomes identificadores de pastas já existentes.
 
-### RF34 - Mover itens para uma pasta
+### RF39 - Mover itens para uma pasta
 
   O sistema deve permitir a alteração da localização de arquivos e itens entre diferentes pastas.
 
-### RF35 - Exclusão de pastas
+### RF40 - Exclusão de pastas
 
   O sistema deve permitir a remoção de pastas e, opcionalmente, de seu conteúdo.
 
@@ -182,23 +204,23 @@
 
 ## Edição de Projeto (Aba de Gerenciamento de Personagens)
 
-### RF36 - Criação de Personagens
+### RF41 - Criação de Personagens
 
   O sistema deve permitir ao usuário a inclusão de novos personagens no banco de dados do projeto.
 
-### RF37 (Pers.) - Edição de Dados de Personagens
+### RF42 (Pers.) - Edição de Dados de Personagens
 
   O sistema deve permitir a modificação das fichas técnicas e campos cadastrais dos personagens.
 
-### RF38 (Pers.) - Upload de Imagens de Personagem
+### RF43 (Pers.) - Upload de Imagens de Personagem
 
   O sistema deve permitir o armazenamento de arquivos de imagem no perfil do personagem.
 
-### RF39 (Pers.) - Organizar personagens em pastas
+### RF44 (Pers.) - Organizar personagens em pastas
 
   O sistema deve permitir a categorização de personagens em pastas.
 
-### RF40 - Exclusão de personagens
+### RF45 - Exclusão de personagens
 
   O sistema deve permitir a remoção definitiva de personagens do projeto.
  
@@ -208,23 +230,23 @@
 
 ## Configurações gerais
 
-### RF41 - Configuração de Senha de Acesso
+### RF46 - Configuração de Senha de Acesso
 
   O sistema deve permitir ao usuário definir uma senha para o aplicativo.
 
-### RF42 - Configuração de limite de caracteres
+### RF47 - Configuração de limite de caracteres
 
   O sistema deve permitir que o usuário configure o limite de caracteres da sinopse.
   
-### RF43 - Seleção de Idiomas
+### RF48 - Seleção de Idiomas
 
   O sistema deve permitir a troca de idiomas de acordo com a preferência do usuário.
 
-### RF44 - Modo Desempenho
+### RF49 - Modo Desempenho
 
   O sistema deve possuir um "Modo Desempenho".
 
-### RF45 - Assistente de Insights Contextuais (IA)
+### RF50 - Assistente de Insights Contextuais (IA)
 
   O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
   (Projetos, Personagens, Ideias ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização.
@@ -232,25 +254,3 @@
 
 ---
 
-
-## Edição de projeto
-
-### RF46 - Editar informações
-
-  O sistema deve permitir ao usuário alterar o nome e a sinopse do projeto.
-
-### RF47 - Imagem do projeto
-
-  O sistema deve permitir ao usuário enviar ou remover uma imagem do cartão do projeto, podendo alterar o modo de mesclagem.
-
-### RF48 - Cor do projeto
-
-  O sistema deve permitir ao usuário escolher uma cor de fundo para aparecer no cartão do projeto, podendo alterar o modo de mesclagem.
-
-### RF49 - Tags do projeto
-
-  O sistema deve permitir ao usuário inserir e remover tags do projeto.
-
-### RF50 - Personagens do cartão de projeto
-
-  O sistema deve permitir ao usuário selecionar personagens do projeto cujas imagens aparecerão no respectivo cartão.
