@@ -146,7 +146,7 @@
 
 ### RF30 - Criação de notas
 
-  O sistema deve permitir ao usuário o registro inicial de novos conceitos ou fragmentos de história.
+  O sistema deve permitir ao usuário o registro de notas de texto
 
 ### RF31 - Exclusão de notas
 
