@@ -2,12 +2,14 @@
 
 ## Restrições e Validação de Conteúdo
 
+# ??? Remover?
 ### RN01 — Valor Mínimo da Sinopse
 
   O campo de sinopse do projeto deve validar a entrada de dados para garantir que o texto possua, no mínimo, X caracteres antes da confirmação de salvamento.
 
   Requisito relacionado: RF46
 
+# Se a de cima for removida, esta deve ser alterada (limite de caracteres)
 ### RN02 — Intervalo Permitido para o Limite da Sinopse
 
   O valor configurado para o limite de caracteres da sinopse deve permanecer dentro de um intervalo pré-definido pelo sistema.
@@ -19,6 +21,11 @@
   Quando a configuração de limite global for desativada ("Ilimitado"), o sistema não deve aplicar travas de buffer ou contagem de caracteres nos campos de texto longo (áreas de descrição e notas).
 
   Requisito relacionado: RF42
+
+
+---
+
+# BAIXA PRIORIDADE
 
 ## Lógica e Estrutura de Diagramação
 
