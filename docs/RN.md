@@ -14,6 +14,9 @@
 
   Requisito relacionado: RF42
 
+### RN03 — Excluir conteúdo da pasta
+
+  Ao excluir uma pasta, o sistema deve excluir o conteúdo dentro dela também com a confirmação do usuário
 
 ---
 
@@ -21,31 +24,31 @@
 
 ## Lógica e Estrutura de Diagramação
 
-### RN03 — Estrutura Mínima para Salvamento de Diagrama
+### RN04 — Estrutura Mínima para Salvamento de Diagrama
 
   O sistema só deve permitir o salvamento de diagramas que contenham, no mínimo, dois nós conectados por ao menos uma aresta.
 
   Requisitos relacionados: RF05, RF09, RF12
 
-### RN04 — Vínculo de Arestas
+### RN05 — Vínculo de Arestas
 
   Uma aresta não pode existir de forma independente no plano de edição; ela deve obrigatoriamente possuir um nó de origem e um nó de destino vinculados.
 
   Requisito relacionado: RF09
 
-### RN05 — Exclusão em Cascata de Arestas
+### RN06 — Exclusão em Cascata de Arestas
 
   Quando um nó for excluído, todas as suas arestas correspondentes devem ser excluídas também, conforme a regra RN05.
   
   Requisitos relacionados: RF11, RF14
 
-### RN06 — Hierarquia de Nós e Grupos
+### RN07 — Hierarquia de Nós e Grupos
 
   Cada nó individual pode ser independente (não pertencer a nenhum grupo) ou pertencer a múltiplos grupos.
 
   Requisitos relacionados: RF18, RF20, RF21
 
-### RN07 — Sincronização de Entidades Vinculadas
+### RN08 — Sincronização de Entidades Vinculadas
 
   Sempre que a entidade persistente vinculada a um nó do diagrama for alterada, as propriedades refletidas nesse nó (como nome e status) devem ser atualizadas automaticamente.
 

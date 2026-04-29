@@ -87,7 +87,7 @@
 
 ### RF17 - Exclusão de pastas
 
-  O sistema deve permitir a remoção de pastas e, opcionalmente, de seu conteúdo.
+  O sistema deve permitir a remoção de pastas
 
 ---
 
