@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 
 import './pages/shell_page.dart';
 import './widgets/custom_nav_bar.dart';
@@ -8,6 +9,9 @@ class Wireframe extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    verifyDatabaseExistance();
+
     return MaterialApp(
       title: "Wireframe",
       initialRoute: "/projects",
