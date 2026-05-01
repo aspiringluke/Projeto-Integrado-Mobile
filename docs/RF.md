@@ -105,11 +105,8 @@
 
   O sistema deve permitir o armazenamento de arquivos de imagem no perfil do personagem.
 
-### RF21 (Pers.) - Organizar personagens em pastas
 
-  O sistema deve permitir a categorização de personagens em pastas.
-
-### RF22 - Exclusão de personagens
+### RF21 - Exclusão de personagens
 
   O sistema deve permitir a remoção definitiva de personagens do projeto.
  
@@ -119,23 +116,23 @@
 
 ## Configurações gerais
 
-### RF23 - Configuração de Senha de Acesso
+### RF22 - Configuração de Senha de Acesso
 
   O sistema deve permitir ao usuário definir uma senha para o aplicativo.
 
-### RF24 - Configuração de limite de caracteres
+### RF23 - Configuração de limite de caracteres
 
   O sistema deve permitir que o usuário configure o limite de caracteres da sinopse.
   
-### RF25 - Seleção de Idiomas
+### RF24 - Seleção de Idiomas
 
   O sistema deve permitir a troca de idiomas de acordo com a preferência do usuário.
 
-### RF26 - Modo Desempenho
+### RF25 - Modo Desempenho
 
   O sistema deve possuir um "Modo Desempenho".
 
-### RF27 - Assistente de Insights Contextuais (IA)
+### RF26 - Assistente de Insights Contextuais (IA)
 
   O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
   (Projetos, Personagens, Notas ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização.
@@ -150,15 +147,15 @@
 
 ## Funções de Busca
 
-### RF28 (Busca) - Filtrar itens por atributos ou tags
+### RF27 (Busca) - Filtrar itens por atributos ou tags
 
   O sistema deve permitir a filtragem de elementos do projeto com base em categorias ou etiquetas pré-definidas.
 
-### RF29 (Busca) - Ordenar itens por atributos ou tags
+### RF28 (Busca) - Ordenar itens por atributos ou tags
 
   O sistema deve permitir a organização da visualização de itens por ordem alfabética, data ou tags.
 
-### RF30 (Busca) - Buscar itens por atributos ou tags
+### RF29 (Busca) - Buscar itens por atributos ou tags
 
   O sistema deve oferecer um campo de pesquisa global para encontrar itens (notas, personagens e demais elementos do projeto) via metadados.
 
@@ -168,15 +165,15 @@
 
 ## Gerenciamento de Diagramas
 
-### RF31 - Criar diagramas
+### RF30 - Criar diagramas
 
   O sistema deve permitir ao usuário criar diagramas.
 
-### RF32 - Excluir diagramas
+### RF31 - Excluir diagramas
 
   O sistema deve permitir ao usuário excluir diagramas.
 
-### RF33 - Organizar diagramas em pastas
+### RF32 - Organizar diagramas em pastas
 
   O sistema deve permitir a criação de pastas específicas para o armazenamento e categorização de diferentes diagramas.
 
@@ -186,71 +183,71 @@
 
 ## Edição de Diagramas
 
-### RF34 - Vincular nó a entidade persistente
+### RF33 - Vincular nó a entidade persistente
 
   O sistema deve permitir vincular um nó do diagrama a uma entidade persistente do projeto, como Personagem ou Ideia.
 
-### RF35 - Criar arestas
+### RF34 - Criar arestas
 
   O sistema deve permitir a criação e manipulação de arestas para conectar nós no diagrama.
 
-### RF36 - Adicionar descrição à aresta
+### RF35 - Adicionar descrição à aresta
 
   O sistema deve permitir ao usuário a inserção de textos detalhados ou notas explicativas vinculadas a uma aresta.
 
-### RF37 - Exclusão de arestas
+### RF36 - Exclusão de arestas
 
   O sistema deve excluir automaticamente arestas
 
-### RF38 - Inserir nó
+### RF37 - Inserir nó
 
   O sistema deve permitir a adição de novos pontos de informação (nós) no plano de edição do diagrama.
 
-### RF39 - Mover nó
+### RF38 - Mover nó
 
   O sistema deve permitir o reposicionamento espacial dos nós através de interface de arrastar e soltar.
 
-### RF40 - Excluir nó
+### RF39 - Excluir nó
 
   O sistema deve permitir a remoção definitiva de um nó do diagrama.
 
-### RF41 - Renomear nó
+### RF40 - Renomear nó
 
   O sistema deve permitir a alteração do rótulo textual de identificação de um nó.
 
-### RF42 - Alterar tag do nó
+### RF41 - Alterar tag do nó
 
   O sistema deve permitir a atribuição ou modificação de etiquetas de categorização em um nó.
 
-### RF43 - Adicionar descrição ao nó
+### RF42 - Adicionar descrição ao nó
 
   O sistema deve permitir a inserção de textos detalhados ou notas explicativas vinculadas a um nó.
 
-### RF44 - Criar grupo de nós
+### RF43 - Criar grupo de nós
 
   O sistema deve permitir o agrupamento de múltiplos nós para tratamento coletivo.
 
-### RF45 - Renomear grupo de nós
+### RF44 - Renomear grupo de nós
 
   O sistema deve permitir a edição do nome identificador de um grupo de nós.
 
-### RF46 - Inserir nós em grupos
+### RF45 - Inserir nós em grupos
 
   O sistema deve permitir a inclusão de nós individuais dentro de grupos já existentes.
 
-### RF47 - Remover nós de grupo
+### RF46 - Remover nós de grupo
 
   O sistema deve permitir retirar um nó de um grupo sem excluí-lo do diagrama.
 
-### RF48 - Alternar visibilidade do grupo
+### RF47 - Alternar visibilidade do grupo
 
   O sistema deve permitir ocultar ou exibir grupos inteiros para facilitar a navegação no diagrama.
 
-### RF49 - Excluir grupo
+### RF48 - Excluir grupo
 
   O sistema deve permitir ao usuário excluir grupos de nós.
 
-### RF50 - Aplicar buscas em diagramas
+### RF49 - Aplicar buscas em diagramas
 
   O sistema deve permitir a localização de elementos específicos dentro de um diagrama através de palavras-chave.
 
