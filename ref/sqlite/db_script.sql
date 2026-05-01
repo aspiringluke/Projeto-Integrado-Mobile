@@ -9,6 +9,12 @@ CREATE TABLE IF NOT EXISTS Diagramas (
     titulo VARCHAR(100)
 );
 
+
+CREATE TABLE IF NOT EXISTS Pastas (
+    idPasta INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo VARCHAR(100)
+);
+
 CREATE TABLE IF NOT EXISTS Nota (
     idNota INTEGER PRIMARY KEY AUTOINCREMENT,
     descricao VARCHAR(255),
@@ -16,27 +22,22 @@ CREATE TABLE IF NOT EXISTS Nota (
     FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );
 
-CREATE TABLE IF NOT EXISTS Pastas (
-    idPasta INTEGER PRIMARY KEY AUTOINCREMENT,
-    titulo VARCHAR(100)
-);
-
 CREATE TABLE IF NOT EXISTS Projeto (
     idProjeto INTEGER PRIMARY KEY AUTOINCREMENT,
     tag_idTag INTEGER,
     sintese VARCHAR(100),
     nota_idNota INTEGER,
-    estilo JSON,
+    estilo TEXT,
     FOREIGN KEY (tag_idTag) REFERENCES Tags(idTag),
     FOREIGN KEY (nota_idNota) REFERENCES Nota(idNota)
 );
 
 CREATE TABLE IF NOT EXISTS Personagem (
     idPersonagem INTEGER PRIMARY KEY AUTOINCREMENT,
-    informacoes_gerais JSON,
-    aparencia JSON,
-    historia JSON,
-    psique JSON,
+    informacoes_gerais TEXT, 
+    aparencia TEXT,          
+    historia TEXT,           
+    psique TEXT,             
     tag_idTag INTEGER,
     projeto_idProjeto INTEGER,
     FOREIGN KEY (projeto_idProjeto) REFERENCES Projeto(idProjeto),
@@ -56,24 +57,26 @@ CREATE TABLE IF NOT EXISTS Aresta (
     diagrama_idDiagrama INTEGER,
     id_no_origem INTEGER UNIQUE,
     id_no_destino INTEGER UNIQUE,
-    forma_linha ENUM('seccionada', 'continua'),
-    forma_ponta_origem ENUM('vazio', 'traingular', 'quadrada', 'circular'),
-    forma_ponta_destino ENUM('vazio', 'traingular', 'quadrada', 'circular'),
+    forma_linha TEXT CHECK(forma_linha IN ('seccionada', 'continua')), 
+    forma_ponta_origem TEXT CHECK(forma_ponta_origem IN ('vazio', 'traingular', 'quadrada', 'circular')),
+    forma_ponta_destino TEXT CHECK(forma_ponta_destino IN ('vazio', 'traingular', 'quadrada', 'circular')),
     FOREIGN KEY (diagrama_idDiagrama) REFERENCES Diagramas(idDiagrama),
     FOREIGN KEY (id_no_origem) REFERENCES Nos(idNos),
     FOREIGN KEY (id_no_destino) REFERENCES Nos(idNos)
 );
 
 CREATE TABLE IF NOT EXISTS nos_has_tags (
-    nos_idNos INTEGER PRIMARY KEY,
-    tag_idTag INTEGER PRIMARY KEY,
+    nos_idNos INTEGER,
+    tag_idTag INTEGER,
+    PRIMARY KEY (nos_idNos, tag_idTag), -
     FOREIGN KEY (nos_idNos) REFERENCES Nos(idNos),
     FOREIGN KEY (tag_idTag) REFERENCES Tags(idTag)
 );
 
 CREATE TABLE IF NOT EXISTS notas_has_tags (
-    notas_idNotas INTEGER PRIMARY KEY,
-    tag_idTag INTEGER PRIMARY KEY,
+    notas_idNota INTEGER, 
+    tag_idTag INTEGER,
+    PRIMARY KEY (notas_idNota, tag_idTag), 
     FOREIGN KEY (notas_idNota) REFERENCES Nota(idNota),
     FOREIGN KEY (tag_idTag) REFERENCES Tags(idTag)
 );
