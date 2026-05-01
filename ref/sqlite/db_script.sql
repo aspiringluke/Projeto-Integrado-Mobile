@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS Pastas (
 CREATE TABLE IF NOT EXISTS Projeto (
     idProjeto INTEGER PRIMARY KEY AUTOINCREMENT,
     tag_idTag INTEGER,
-    sINTEGERese VARCHAR(100),
+    sintese VARCHAR(100),
     nota_idNota INTEGER,
     estilo JSON,
     FOREIGN KEY (tag_idTag) REFERENCES Tags(idTag),
