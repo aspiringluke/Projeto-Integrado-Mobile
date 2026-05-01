@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../features/ideas/pages/idea_list_page.dart';
+import './idea_list_page.dart';
 import '../../features/projects/pages/project_list_page.dart';
 import '../widgets/custom_nav_bar.dart';
 import '../../shared/widgets/funcoes_busca.dart';
