@@ -61,18 +61,17 @@
 
 - **A1 — Tentativa de salvamento inválido:**
 
-    Se o usuário tentar salvar com menos de dois nós ou sem conexão, o sistema exibe alerta baseado na RN03 e bloqueia a persistência.
+    Se o usuário tentar salvar com menos de dois nós ou sem conexão, o sistema exibe alerta baseado na RN04 e bloqueia a persistência.
 
 ### RF Relacionadas
 
-- RF05
-- RF08
-- RF09
-- RF12
+- RF31
+- RF34
+- RF35
+- RF38
 
 ### RN Relacionadas
 
-- RN03
 - RN04
 
 ### RNF Relacionadas
@@ -116,12 +115,12 @@
 
 ### RF Relacionadas
 
-- RF13
-- RF34
+- RF39
+- RF16
 
 ### RN Relacionadas
 
-- RN06
+- RN07
 
 ### RNF Relacionadas
 
@@ -163,9 +162,9 @@
 
 ### RF Relacionadas
 
-- RF02
-- RF04
-- RF24
+- RF28
+- RF30
+- RF50
 
 ### RNF Relacionadas
 
@@ -202,7 +201,7 @@
 
 ### RF Relacionadas
 
-- RF44
+- RF26
 
 ### RNF Relacionadas
 
@@ -251,15 +250,15 @@
 
 ### RF Relacionadas
 
-- RF18
-- RF19
-- RF20
-- RF21
-- RF23
+- RF44
+- RF45
+- RF46
+- RF47
+- RF49
 
 ### RN Relacionadas
 
-- RN06
+- RN07
 
 ### RNF Relacionadas
 
@@ -302,7 +301,7 @@
 
 ### RF Relacionadas
 
-- RF38
+- RF20
 
 ### RNF Relacionadas
 
@@ -344,11 +343,11 @@
 
 ### RF Relacionadas
 
-- RF25
-- RF28
-- RF29
-- RF30
-- RF31
+- RF07
+- RF10
+- RF11
+- RF12
+- RF13
 
 ### RN Relacionadas
 
@@ -389,7 +388,7 @@
 
 ### RF Relacionadas
 
-- RF41
+- RF23
 
 ---
 
@@ -427,12 +426,12 @@
 
 ### RF Relacionadas
 
-- RF14
+- RF40
 
 ### RN Relacionadas
 
-- RN04
 - RN05
+- RN06
 
 ### RNF Relacionadas
 
@@ -476,8 +475,9 @@
 
 ### RF Relacionadas
 
-- RF34
-- RF35
+- RF15
+- RF16
+- RF17
 
 ---
 
@@ -516,8 +516,8 @@
 
 ### RF Relacionadas
 
-- RF10
-- RF17
+- RF36
+- RF43
 
 ---
 
@@ -549,7 +549,7 @@
 
 ### Fluxo Alternativo
 
-- **A1 — Alterar Idioma (RF44):**
+- **A1 — Alterar Idioma (RF25):**
     1. O usuário seleciona a opção de "Idioma".
     2. O sistema exibe a lista de idiomas suportados.
     3. O usuário seleciona o novo idioma e o sistema atualiza todos os rótulos e menus imediatamente.
@@ -563,8 +563,8 @@
 
 ### RF Relacionadas
 
-- RF42
-- RF43
+- RF24
+- RF25
 
 ### RN Relacionadas
 
@@ -608,10 +608,10 @@
 
 ### RF Relacionadas
 
-- RF03
-- RF06
-- RF26
-- RF40
+- RF08
+- RF22
+- RF29
+- RF32
 
 ---
 
@@ -650,7 +650,7 @@
 
 ### RF Relacionadas
 
-- RF41
+- RF23
 
 ---
 
@@ -706,69 +706,5 @@
 
 ### RF Relacionadas
 
-- RF36
-- RF45
-
----
-
-```md
-UC01 - NECESSITA REALOCAMENTO
-- **A1 — Modificar o atributo de ideias:**
-    1. O usuário clica no botão da guia de ideias.
-    2. O aplicativo abre a tela de ideias.
-    3. O usuário pode criar pastas e textos para as ideias. Além disso, pode também criar diagramas de ideias.
-- **A2 — Modificar o atributo de personagens:**
-    1. Na página inicial, o usuário clica em um dos ícones de personagem.
-    2. O aplicativo abre a tela de gerenciamento de personagens.
-    3. O usuário pode modificar os atributos de personagens, como nome, apelido, data de nascimento, etc. Além disso, pode também criar diagramas de personagens.
-```
-
-```md
-SERÁ RECONSIDERADO
-## UC03 — Sincronizar Dados entre Entidade e Diagrama
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Garantir que alterações em fichas de personagens ou ideias sejam refletidas visualmente nos diagramas existentes.
-
-### Pré-condições
-
-- Existir um diagrama onde um nó está vinculado a uma entidade persistente (Personagem/Ideia).
-
-### Pós condições
-
-- A representação visual do nó no diagrama é atualizada.
-
-### Fluxo Principal
-
-1. O usuário acessa a aba de "Gerenciamento de Personagens".
-2. O usuário altera o nome de um personagem específico.
-3. O usuário clica em "Salvar".
-4. O sistema identifica todos os diagramas que contêm o nó vinculado a este personagem.
-5. O sistema atualiza o rótulo textual (label) de todos os nós correspondentes automaticamente.
-
-### Fluxo Alternativo
-
-- **A1 — Entidade Excluída:**
-
-    Se o personagem for excluído, o sistema remove o vínculo do nó no diagrama, mas mantém o nó como um elemento genérico.
-
-### RF Relacionadas
-
-- RF09
-- RF15
-- RF37
-
-### RN Relacionadas
-
-- RN07
-
-### RNF Relacionadas
-
-- RNF06
-
-```
+- RF18
+- RF27
