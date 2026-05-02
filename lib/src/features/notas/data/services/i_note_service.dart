@@ -1,10 +1,10 @@
+import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 
-
-abstract interface class INotaService
+abstract interface class INoteService
 {
-    bool createNewNote(String text);
-    bool updateNote(int id);
-    Object? getNote(int id);
-    List<Object?> listNotes(); 
-    bool deleteNote(int id);
+    (bool, String) createNewNote(String text, int? idPasta);
+    (bool, String) updateNote(int id, String newText, int? newIdPasta);
+    (bool, Note?, String?) getNote(int id);
+    (bool, List<Note>?, String?) listNotes(); 
+    (bool, String) deleteNote(int id);
 }
