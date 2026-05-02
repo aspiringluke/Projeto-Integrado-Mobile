@@ -9,36 +9,27 @@ abstract interface class FolderRepository
         required this.service
     });
 
-    bool createNewFolder(String title)
+    (bool, String) createNewFolder(String title)
     {
         return service.createNewFolder(title);
     }
 
-    bool updateFolder(int id)
+    (bool, String) updateFolder(int id, String title)
     {
-        return service.updateFolder(id);
+        return service.updateFolder(id, title);
     }
 
-    Folder getFolder(int id)
+    (bool, Folder?, String?) getFolder(int id)
     {
-        final folder = service.getFolder(id);
-        // TODO: Erro caso não encontre
-        // TODO: Não esquece de mudar isso aqui
-        return Folder(title: folder[0].toString());
-    }
-    List<Folder> listFolders()
-    {
-        final folders = service.listFolders();
-        // TODO: Erro caso esteja vazio
-        // TODO: Não esquece de mudar isso aqui
-        return folders.map(
-            (row) => Folder(
-                title: row[0].toString()
-            )
-        ).toList();
+        return service.getFolder(id);
     }
 
-    bool deleteFolder(int id)
+    (bool, List<Folder>?, String?) listFolders()
+    {
+        return service.listFolders();
+    }
+
+    (bool, String) deleteFolder(int id)
     {
         return service.deleteFolder(id);
     }
