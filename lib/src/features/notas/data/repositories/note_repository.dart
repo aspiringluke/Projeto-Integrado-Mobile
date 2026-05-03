@@ -68,4 +68,29 @@ class NoteRepository
 
         return service.deleteNote(id);
     }
+
+    (bool, String) moveNoteToFolder(int id, int? folderId)
+    {
+        final result = getNote(id);
+
+        if(result.$1 == false)
+        {
+            return (false, result.$3 ?? "Erro ao buscar nota");
+        }
+
+        if(result.$2 == null)
+        {
+            return (false, "Nota não encontrada");
+        }
+
+        final oldValues = result.$2!;
+
+        return service.updateNote(
+            id,
+            oldValues.title,
+            oldValues.text,
+            folderId,
+            oldValues.color.toARGB32().toString(),
+        );
+    }
 }

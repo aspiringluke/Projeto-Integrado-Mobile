@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:sqlite3/sqlite3.dart';
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
@@ -70,10 +71,21 @@ class Sqlitefolderservice implements INoteService
     (bool, List<Note>?, String?) listNotes(int? idPasta) {
         final conn = getConnection();
         try {
-            final results = conn.select("""
-                SELECT idNota, titulo, descricao, cor, pastas_idPasta FROM Nota
-                WHERE pastas_idPasta = ?
-            """, [idPasta]);
+            final ResultSet results;
+            if(idPasta == null)
+            {
+                results = conn.select("""
+                    SELECT idNota, titulo, descricao, cor, pastas_idPasta FROM Nota
+                    WHERE pastas_idPasta IS NULL
+                """);
+            }
+            else
+            {
+                results = conn.select("""
+                    SELECT idNota, titulo, descricao, cor, pastas_idPasta FROM Nota
+                    WHERE pastas_idPasta = ?
+                """, [idPasta]);
+            }
             
             return results.isEmpty
                     ? (true, null, null)

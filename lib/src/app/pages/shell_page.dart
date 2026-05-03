@@ -22,6 +22,8 @@ class _ShellPageState extends State<ShellPage> {
   late NavTab _activeTab;
   late bool _toIdeas;
   late final ProjectListController _projectListController;
+  final GlobalKey<IdeasContentState> _ideasContentKey =
+      GlobalKey<IdeasContentState>();
 
   @override
   void initState() {
@@ -47,23 +49,26 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Future<void> _onPrimaryActionPressed() async {
-    if (_activeTab != NavTab.projects) return;
+    if (_activeTab == NavTab.projects) {
+      final draft = await showCreateProjectTextDialog(
+        context,
+        availableTags: _projectListController.availableTags,
+      );
+      if (!mounted || draft == null) return;
 
-    final draft = await showCreateProjectTextDialog(
-      context,
-      availableTags: _projectListController.availableTags,
-    );
-    if (!mounted || draft == null) return;
+      _projectListController.addProject(
+        title: draft.title,
+        synopsis: draft.synopsis,
+        tags: draft.tags,
+        coverColor: draft.coverColor,
+        accentColor: draft.accentColor,
+        coverImage: draft.coverImage,
+        accentImage: draft.accentImage,
+      );
+      return;
+    }
 
-    _projectListController.addProject(
-      title: draft.title,
-      synopsis: draft.synopsis,
-      tags: draft.tags,
-      coverColor: draft.coverColor,
-      accentColor: draft.accentColor,
-      coverImage: draft.coverImage,
-      accentImage: draft.accentImage,
-    );
+    await _ideasContentKey.currentState?.onPrimaryActionPressed();
   }
 
   @override
@@ -122,6 +127,7 @@ class _ShellPageState extends State<ShellPage> {
                   activeTab: _activeTab,
                   toIdeas: _toIdeas,
                   projectListController: _projectListController,
+                  ideasContentKey: _ideasContentKey,
                 ),
               ),
             ],
@@ -136,11 +142,13 @@ class _AnimatedTabContent extends StatelessWidget {
   final NavTab activeTab;
   final bool toIdeas;
   final ProjectListController projectListController;
+  final GlobalKey<IdeasContentState> ideasContentKey;
 
   const _AnimatedTabContent({
     required this.activeTab,
     required this.toIdeas,
     required this.projectListController,
+    required this.ideasContentKey,
   });
 
   @override
@@ -190,11 +198,11 @@ class _AnimatedTabContent extends StatelessWidget {
           },
         );
       },
-      child: KeyedSubtree(
+        child: KeyedSubtree(
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
             ? ProjectListPage(controller: projectListController)
-            : const IdeasContent(),
+            : IdeasContent(key: ideasContentKey),
       ),
     );
   }

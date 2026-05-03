@@ -5,11 +5,15 @@ import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_surfac
 class NoteListCard extends StatelessWidget {
   final String title;
   final VoidCallback? onTap;
+  final VoidCallback? onMoveTo;
+  final bool showActions;
 
   const NoteListCard({
     super.key,
     required this.title,
     this.onTap,
+    this.onMoveTo,
+    this.showActions = true,
   });
 
   @override
@@ -47,14 +51,28 @@ class NoteListCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            InkWell(
-              onTap: onTap,
-              child: const Icon(
-                Icons.keyboard_arrow_down_rounded,
+            if (showActions)
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'move_to') onMoveTo?.call();
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: 'move_to',
+                    child: Text('Mover para'),
+                  ),
+                ],
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: Color(0xFF8D7E88),
+                ),
+              )
+            else
+              const Icon(
+                Icons.drag_indicator_rounded,
                 color: Color(0xFF8D7E88),
-                size: 26,
+                size: 20,
               ),
-            ),
           ],
         ),
       ),

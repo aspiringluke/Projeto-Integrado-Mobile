@@ -10,11 +10,18 @@ class IdeasContent extends StatefulWidget {
   const IdeasContent({super.key});
 
   @override
-  State<IdeasContent> createState() => _IdeasContentState();
+  State<IdeasContent> createState() => IdeasContentState();
 }
 
-class _IdeasContentState extends State<IdeasContent> {
+class IdeasContentState extends State<IdeasContent> {
   IdeasView _activeView = IdeasView.notes;
+  final GlobalKey<NotesSubPageState> _notesSubPageKey =
+      GlobalKey<NotesSubPageState>();
+
+  Future<void> onPrimaryActionPressed() async {
+    if (_activeView != IdeasView.notes) return;
+    await _notesSubPageKey.currentState?.onPrimaryActionPressed();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +110,9 @@ class _IdeasContentState extends State<IdeasContent> {
             );
           },
           child: _activeView == IdeasView.notes
-              ? const NotesSubPage(key: ValueKey(IdeasView.notes))
+              ? NotesSubPage(
+                  key: _notesSubPageKey,
+                )
               : const DiagramsSubPage(key: ValueKey(IdeasView.diagrams)),
         ),
       ],
