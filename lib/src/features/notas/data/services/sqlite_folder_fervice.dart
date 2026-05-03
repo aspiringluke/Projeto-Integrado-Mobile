@@ -8,12 +8,12 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 class SqliteFolderService implements IFolderService
 {
     @override
-    Future<(bool, String)> createNewFolder(String title, String color) async {
+    Future<(bool, String)> createNewFolder(String title, String color, int? parentFolderId) async {
         final conn = await getConnection();
         try {
             conn.execute("""
-                INSERT INTO Pastas(titulo, cor) VALUES (?, ?)
-            """, [title, color]);
+                INSERT INTO Pastas(titulo, cor, pastas_idPasta) VALUES (?, ?, ?)
+            """, [title, color, parentFolderId]);
             
             return (true, "Pasta criada com sucesso");
         } catch(e) {
@@ -28,7 +28,27 @@ class SqliteFolderService implements IFolderService
         final conn = await getConnection();
         try {
             conn.execute("""
-                DELETE FROM Pastas WHERE idPasta = ?
+                WITH RECURSIVE folder_tree(id) AS (
+                    SELECT idPasta FROM Pastas WHERE idPasta = ?
+                    UNION ALL
+                    SELECT p.idPasta
+                    FROM Pastas p
+                    INNER JOIN folder_tree ft ON p.pastas_idPasta = ft.id
+                )
+                DELETE FROM Nota
+                WHERE pastas_idPasta IN (SELECT id FROM folder_tree)
+            """, [id]);
+
+            conn.execute("""
+                WITH RECURSIVE folder_tree(id) AS (
+                    SELECT idPasta FROM Pastas WHERE idPasta = ?
+                    UNION ALL
+                    SELECT p.idPasta
+                    FROM Pastas p
+                    INNER JOIN folder_tree ft ON p.pastas_idPasta = ft.id
+                )
+                DELETE FROM Pastas
+                WHERE idPasta IN (SELECT id FROM folder_tree)
             """, [id]);
             
             return (true, "Pasta $id excluída");
@@ -40,11 +60,30 @@ class SqliteFolderService implements IFolderService
     }
 
     @override
+    Future<(bool, bool, String?)> hasChildFolders(int id) async {
+        final conn = await getConnection();
+        try {
+            final result = conn.select("""
+                SELECT 1
+                FROM Pastas
+                WHERE pastas_idPasta = ?
+                LIMIT 1
+            """, [id]);
+
+            return (true, result.isNotEmpty, null);
+        } catch (e) {
+            return (false, false, cleanError(e));
+        } finally {
+            conn.close();
+        }
+    }
+
+    @override
     Future<(bool, Folder?, String?)> getFolder(int id) async {
         final conn = await getConnection();
         try {
             final result = conn.select("""
-                SELECT idPasta, titulo, cor FROM Pastas WHERE idPasta = ?
+                SELECT idPasta, titulo, cor, pastas_idPasta FROM Pastas WHERE idPasta = ?
             """, [id]);
             
             return result.isEmpty
@@ -53,6 +92,7 @@ class SqliteFolderService implements IFolderService
                         id: result.first["idPasta"],
                         title: result.first["titulo"],
                         color: Color(int.parse(result.first["cor"])),
+                        parentFolderId: result.first["pastas_idPasta"],
                      ), null);
         } catch(e) {
             return (false, null, cleanError(e));
@@ -62,12 +102,18 @@ class SqliteFolderService implements IFolderService
     }
 
     @override
-    Future<(bool, List<Folder>?, String?)> listFolders() async {
+    Future<(bool, List<Folder>?, String?)> listFolders(int? parentFolderId) async {
         final conn = await getConnection();
         try {
-            final results = conn.select("""
-                SELECT idPasta, titulo, cor FROM Pastas
-            """);
+            final results = parentFolderId == null
+                ? conn.select("""
+                    SELECT idPasta, titulo, cor, pastas_idPasta FROM Pastas
+                    WHERE pastas_idPasta IS NULL
+                  """)
+                : conn.select("""
+                    SELECT idPasta, titulo, cor, pastas_idPasta FROM Pastas
+                    WHERE pastas_idPasta = ?
+                  """, [parentFolderId]);
             
             return results.isEmpty
                     ? (true, null, null)
@@ -76,6 +122,7 @@ class SqliteFolderService implements IFolderService
                             id: row["idPasta"],
                             title: row["titulo"],
                             color: Color(int.parse(row["cor"])),
+                            parentFolderId: row["pastas_idPasta"],
                         )
                       ).toList(), null);
         } catch(e) {
@@ -95,6 +142,22 @@ class SqliteFolderService implements IFolderService
             
             return (true, "Pasta $id atualizada");
         } catch(e) {
+            return (false, cleanError(e));
+        } finally {
+            conn.close();
+        }
+    }
+
+    @override
+    Future<(bool, String)> moveFolderToFolder(int id, int? newParentFolderId) async {
+        final conn = await getConnection();
+        try {
+            conn.execute("""
+                UPDATE Pastas SET pastas_idPasta = ? WHERE idPasta = ?
+            """, [newParentFolderId, id]);
+
+            return (true, "Pasta $id movida");
+        } catch (e) {
             return (false, cleanError(e));
         } finally {
             conn.close();

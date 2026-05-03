@@ -6,6 +6,7 @@ class NoteListCard extends StatelessWidget {
   final String title;
   final VoidCallback? onTap;
   final VoidCallback? onMoveTo;
+  final VoidCallback? onDelete;
   final bool showActions;
 
   const NoteListCard({
@@ -13,6 +14,7 @@ class NoteListCard extends StatelessWidget {
     required this.title,
     this.onTap,
     this.onMoveTo,
+    this.onDelete,
     this.showActions = true,
   });
 
@@ -55,11 +57,16 @@ class NoteListCard extends StatelessWidget {
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'move_to') onMoveTo?.call();
+                  if (value == 'delete') onDelete?.call();
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(
                     value: 'move_to',
                     child: Text('Mover para'),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Excluir'),
                   ),
                 ],
                 icon: const Icon(

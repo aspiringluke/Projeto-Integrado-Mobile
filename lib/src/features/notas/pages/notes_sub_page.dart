@@ -8,6 +8,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/fo
 import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/note_repository.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/notes_drag_payload.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/utils/notes_dialogs.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_list_card.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/note_list_card.dart';
@@ -24,14 +25,24 @@ class NotesSubPageState extends State<NotesSubPage> {
   late final NoteController _noteController;
   int? _activeFolderId;
   String? _activeFolderTitle;
+  int? _activeFolderParentId;
 
   Future<void> _bootstrap() async {
-    await _folderController.loadFolders();
-    await _noteController.loadNotes(folderId: null);
+    final foldersResult = await _folderController.loadFolders(parentFolderId: null);
+    final notesResult = await _noteController.loadNotes(folderId: null);
     if (!mounted) return;
+
+    if (!foldersResult.$1) {
+      _showSnack(foldersResult.$2 ?? 'Falha ao carregar pastas');
+    }
+    if (!notesResult.$1) {
+      _showSnack(notesResult.$2 ?? 'Falha ao carregar notas');
+    }
+
     setState(() {
       _activeFolderId = null;
       _activeFolderTitle = null;
+      _activeFolderParentId = null;
     });
   }
 
@@ -66,7 +77,11 @@ class NotesSubPageState extends State<NotesSubPage> {
     final draft = await showFolderFormDialog(context);
     if (!mounted || draft == null) return;
 
-    final result = await _folderController.createFolder(draft.title, draft.color);
+    final result = await _folderController.createFolder(
+      draft.title,
+      draft.color,
+      parentFolderId: _activeFolderId,
+    );
     if (result.$1) {
       _showSnack('Pasta criada com sucesso');
       return;
@@ -131,9 +146,18 @@ class NotesSubPageState extends State<NotesSubPage> {
       return;
     }
 
+    final hasChildrenResult = await _folderController.hasChildFolders(folderId);
+    if (!mounted) return;
+
+    if (!hasChildrenResult.$1) {
+      _showSnack(hasChildrenResult.$3 ?? 'Falha ao verificar subpastas');
+      return;
+    }
+
     final shouldDelete = await showDeleteFolderConfirmation(
       context,
       folderTitle: folder.title,
+      hasChildren: hasChildrenResult.$2,
     );
     if (!mounted || !shouldDelete) return;
 
@@ -144,6 +168,38 @@ class NotesSubPageState extends State<NotesSubPage> {
     }
 
     _showSnack(result.$2 ?? 'Falha ao excluir pasta');
+  }
+
+  Future<void> _moveFolderToFolder({
+    required int folderId,
+    required int? parentFolderId,
+  }) async {
+    final result = await _folderController.moveFolderToFolder(folderId, parentFolderId);
+    if (!mounted) return;
+
+    if (result.$1) {
+      _showSnack('Pasta movida com sucesso');
+      return;
+    }
+
+    _showSnack(result.$2 ?? 'Falha ao mover pasta');
+  }
+
+  Future<void> _moveDraggedItemToParent(NotesDragPayload payload) async {
+    if (_activeFolderId == null) return;
+
+    if (payload.type == NotesDragType.note) {
+      await _moveNoteToFolder(
+        noteId: payload.id,
+        folderId: _activeFolderParentId,
+      );
+      return;
+    }
+
+    await _moveFolderToFolder(
+      folderId: payload.id,
+      parentFolderId: _activeFolderParentId,
+    );
   }
 
   Future<void> _moveNoteToFolder({
@@ -182,6 +238,28 @@ class NotesSubPageState extends State<NotesSubPage> {
     await _moveNoteToFolder(noteId: noteId, folderId: targetFolderId);
   }
 
+  Future<void> _deleteNoteFlow(Note note) async {
+    final noteId = note.id;
+    if (noteId == null) {
+      _showSnack('Nota inválida para exclusão');
+      return;
+    }
+
+    final shouldDelete = await showDeleteNoteConfirmation(
+      context,
+      noteTitle: note.title,
+    );
+    if (!mounted || !shouldDelete) return;
+
+    final result = await _noteController.deleteNote(noteId);
+    if (result.$1) {
+      _showSnack('Nota excluída');
+      return;
+    }
+
+    _showSnack(result.$2 ?? 'Falha ao excluir nota');
+  }
+
   Future<void> _openFolder(Folder folder) async {
     final folderId = folder.id;
     if (folderId == null) {
@@ -190,6 +268,7 @@ class NotesSubPageState extends State<NotesSubPage> {
     }
 
     final result = await _noteController.loadNotes(folderId: folderId);
+    await _folderController.loadFolders(parentFolderId: folderId);
     if (!mounted) return;
 
     if (!result.$1) {
@@ -200,21 +279,40 @@ class NotesSubPageState extends State<NotesSubPage> {
     setState(() {
       _activeFolderId = folderId;
       _activeFolderTitle = folder.title;
+      _activeFolderParentId = folder.parentFolderId;
     });
   }
 
-  Future<void> _backToRoot() async {
-    final result = await _noteController.loadNotes(folderId: null);
+  Future<void> _backToParent() async {
+    final parentId = _activeFolderParentId;
+    final notesResult = await _noteController.loadNotes(folderId: parentId);
+    final foldersResult = await _folderController.loadFolders(parentFolderId: parentId);
     if (!mounted) return;
 
-    if (!result.$1) {
-      _showSnack(result.$2 ?? 'Falha ao voltar para a raiz');
+    if (!notesResult.$1) {
+      _showSnack(notesResult.$2 ?? 'Falha ao voltar');
+      return;
+    }
+    if (!foldersResult.$1) {
+      _showSnack(foldersResult.$2 ?? 'Falha ao voltar');
       return;
     }
 
+    String? parentTitle;
+    int? grandParentId;
+    if (parentId != null) {
+      final parent = await _folderController.getFolder(parentId);
+      if (!mounted) return;
+      if (parent.$1 && parent.$2 != null) {
+        parentTitle = parent.$2!.title;
+        grandParentId = parent.$2!.parentFolderId;
+      }
+    }
+
     setState(() {
-      _activeFolderId = null;
-      _activeFolderTitle = null;
+      _activeFolderId = parentId;
+      _activeFolderTitle = parentTitle;
+      _activeFolderParentId = grandParentId;
     });
   }
 
@@ -230,7 +328,6 @@ class NotesSubPageState extends State<NotesSubPage> {
         final folders = _folderController.folders;
         final notes = _noteController.notes;
         final isLoading = _folderController.isLoading || _noteController.isLoading;
-        final errorMessage = _folderController.errorMessage ?? _noteController.errorMessage;
         final isInsideFolder = _activeFolderId != null;
 
         return Column(
@@ -238,25 +335,50 @@ class NotesSubPageState extends State<NotesSubPage> {
             if (isInsideFolder)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _backToRoot,
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      tooltip: 'Voltar',
-                    ),
-                    Expanded(
-                      child: Text(
-                        _activeFolderTitle ?? 'Pasta',
-                        style: const TextStyle(
-                          color: Color(0xFF5D535A),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                child: DragTarget<NotesDragPayload>(
+                  onWillAcceptWithDetails: (details) {
+                    final payload = details.data;
+                    if (payload.type == NotesDragType.folder &&
+                        payload.id == _activeFolderId) {
+                      return false;
+                    }
+                    return true;
+                  },
+                  onAcceptWithDetails: (details) {
+                    unawaited(_moveDraggedItemToParent(details.data));
+                  },
+                  builder: (context, candidateData, rejectedData) {
+                    final isHoveringParent = candidateData.isNotEmpty;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 120),
+                      decoration: BoxDecoration(
+                        color: isHoveringParent
+                            ? const Color(0x33DF6EB8)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ),
-                  ],
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _backToParent,
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            tooltip: 'Voltar',
+                          ),
+                          Expanded(
+                            child: Text(
+                              _activeFolderTitle ?? 'Pasta',
+                              style: const TextStyle(
+                                color: Color(0xFF5D535A),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             if (isLoading)
@@ -264,42 +386,70 @@ class NotesSubPageState extends State<NotesSubPage> {
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.redAccent),
-                  textAlign: TextAlign.center,
-                ),
-              )
             else ...[
-              if (!isInsideFolder)
-                ...folders.map(
-                  (folder) => FolderListCard(
+              ...folders.map(
+                (folder) {
+                  final folderId = folder.id;
+                  final card = FolderListCard(
                     folder: folder,
                     onTap: () => _openFolder(folder),
                     onRename: () => _renameFolderFlow(folder),
                     onDelete: () => _deleteFolderFlow(folder),
-                    onAcceptNote: folder.id == null
+                    onAcceptNote: folderId == null
                         ? null
                         : (noteId) => _moveNoteToFolder(
                               noteId: noteId,
-                              folderId: folder.id,
+                              folderId: folderId,
                             ),
-                  ),
-                ),
+                    onAcceptFolder: folderId == null
+                        ? null
+                        : (draggedFolderId) => _moveFolderToFolder(
+                              folderId: draggedFolderId,
+                              parentFolderId: folderId,
+                            ),
+                  );
+
+                  if (folderId == null) return card;
+
+                  return LongPressDraggable<NotesDragPayload>(
+                    data: NotesDragPayload(
+                      type: NotesDragType.folder,
+                      id: folderId,
+                    ),
+                    delay: const Duration(milliseconds: 180),
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: Opacity(
+                          opacity: 0.9,
+                          child: card,
+                        ),
+                      ),
+                    ),
+                    childWhenDragging: Opacity(
+                      opacity: 0.35,
+                      child: card,
+                    ),
+                    child: card,
+                  );
+                },
+              ),
               ...notes.map((note) {
                 final noteId = note.id;
                 final card = NoteListCard(
                   title: note.title,
                   onMoveTo: () => _moveNoteByMenuFlow(note),
+                  onDelete: () => _deleteNoteFlow(note),
                 );
 
                 if (noteId == null) return card;
 
-                return LongPressDraggable<int>(
-                  data: noteId,
+                return LongPressDraggable<NotesDragPayload>(
+                  data: NotesDragPayload(
+                    type: NotesDragType.note,
+                    id: noteId,
+                  ),
                   delay: const Duration(milliseconds: 180),
                   feedback: Material(
                     color: Colors.transparent,

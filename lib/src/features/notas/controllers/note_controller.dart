@@ -94,4 +94,16 @@ class NoteController extends ChangeNotifier {
 
     return await loadNotes(folderId: _currentFolderId);
   }
+
+  Future<(bool, String?)> deleteNote(int noteId) async {
+    _setError(null);
+    final result = await repository.deleteNote(noteId);
+
+    if (!result.$1) {
+      _setError(result.$2);
+      return (false, result.$2);
+    }
+
+    return await loadNotes(folderId: _currentFolderId);
+  }
 }

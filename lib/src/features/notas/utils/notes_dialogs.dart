@@ -77,12 +77,42 @@ Future<NoteFormData?> showNoteFormDialog(BuildContext context) {
 Future<bool> showDeleteFolderConfirmation(
   BuildContext context, {
   required String folderTitle,
+  required bool hasChildren,
 }) async {
   final shouldDelete = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: const Text('Excluir pasta'),
-      content: Text('Deseja excluir "$folderTitle"?'),
+      content: Text(
+        hasChildren
+            ? 'A pasta "$folderTitle" possui subpastas. Excluir também removerá todas as subpastas e notas dentro delas. Deseja continuar?'
+            : 'Deseja excluir "$folderTitle"?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Excluir'),
+        ),
+      ],
+    ),
+  );
+
+  return shouldDelete == true;
+}
+
+Future<bool> showDeleteNoteConfirmation(
+  BuildContext context, {
+  required String noteTitle,
+}) async {
+  final shouldDelete = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Excluir nota'),
+      content: Text('Deseja excluir "$noteTitle"?'),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),

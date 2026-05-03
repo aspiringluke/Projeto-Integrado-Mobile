@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/notes_drag_payload.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_surface_card.dart';
 
 class FolderListCard extends StatelessWidget {
@@ -9,6 +10,7 @@ class FolderListCard extends StatelessWidget {
   final VoidCallback? onRename;
   final VoidCallback? onDelete;
   final ValueChanged<int>? onAcceptNote;
+  final ValueChanged<int>? onAcceptFolder;
 
   const FolderListCard({
     super.key,
@@ -17,15 +19,30 @@ class FolderListCard extends StatelessWidget {
     this.onRename,
     this.onDelete,
     this.onAcceptNote,
+    this.onAcceptFolder,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: DragTarget<int>(
-        onWillAcceptWithDetails: (_) => onAcceptNote != null,
-        onAcceptWithDetails: (details) => onAcceptNote?.call(details.data),
+      child: DragTarget<NotesDragPayload>(
+        onWillAcceptWithDetails: (details) {
+          final data = details.data;
+          if (data.type == NotesDragType.note) return onAcceptNote != null;
+          if (data.type == NotesDragType.folder) return onAcceptFolder != null && data.id != folder.id;
+          return false;
+        },
+        onAcceptWithDetails: (details) {
+          final data = details.data;
+          if (data.type == NotesDragType.note) {
+            onAcceptNote?.call(data.id);
+            return;
+          }
+          if (data.type == NotesDragType.folder) {
+            onAcceptFolder?.call(data.id);
+          }
+        },
         builder: (context, candidateData, rejectedData) {
           final isHovering = candidateData.isNotEmpty;
           return AnimatedContainer(

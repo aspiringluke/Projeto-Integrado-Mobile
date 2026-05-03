@@ -47,7 +47,9 @@ CREATE TABLE IF NOT EXISTS Nota (
 CREATE TABLE IF NOT EXISTS Pastas (
     idPasta INTEGER PRIMARY KEY AUTOINCREMENT,
     titulo VARCHAR(100),
-    cor VARCHAR(15)
+    cor VARCHAR(15),
+    pastas_idPasta INTEGER,
+    FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );
 
 CREATE TABLE IF NOT EXISTS Projeto (
@@ -103,6 +105,24 @@ CREATE TABLE IF NOT EXISTS notas_has_tags (
 );
         """
     );
+
+    final hasParentColumn = conn.select(
+      """
+      SELECT 1
+      FROM pragma_table_info('Pastas')
+      WHERE name = 'pastas_idPasta'
+      LIMIT 1
+      """,
+    ).isNotEmpty;
+
+    if (!hasParentColumn) {
+      conn.execute(
+        """
+        ALTER TABLE Pastas
+        ADD COLUMN pastas_idPasta INTEGER REFERENCES Pastas(idPasta)
+        """,
+      );
+    }
     conn.close();
 
     if(!alreadyExists)

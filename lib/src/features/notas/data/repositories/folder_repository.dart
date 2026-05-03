@@ -12,9 +12,9 @@ class FolderRepository
         IFolderService? service,
     }) : service = service ?? SqliteFolderService();
 
-    Future<(bool, String)> createNewFolder(String title, Color color)
+    Future<(bool, String)> createNewFolder(String title, Color color, int? parentFolderId)
     {
-        return service.createNewFolder(title, color.toARGB32().toString());
+        return service.createNewFolder(title, color.toARGB32().toString(), parentFolderId);
     }
 
     Future<(bool, String)> updateFolder(int id, String? title, Color? color) async
@@ -45,13 +45,39 @@ class FolderRepository
         return service.getFolder(id);
     }
 
-    Future<(bool, List<Folder>?, String?)> listFolders()
+    Future<(bool, List<Folder>?, String?)> listFolders(int? parentFolderId)
     {
-        return service.listFolders();
+        return service.listFolders(parentFolderId);
     }
 
     Future<(bool, String)> deleteFolder(int id)
     {
         return service.deleteFolder(id);
+    }
+
+    Future<(bool, String)> moveFolderToFolder(int id, int? parentFolderId) async
+    {
+        final current = await getFolder(id);
+        if(current.$1 == false)
+        {
+            return (false, current.$3 ?? "Erro ao buscar pasta");
+        }
+
+        if(current.$2 == null)
+        {
+            return (false, "Pasta não encontrada");
+        }
+
+        if(parentFolderId == id)
+        {
+            return (false, "Uma pasta não pode conter ela mesma");
+        }
+
+        return await service.moveFolderToFolder(id, parentFolderId);
+    }
+
+    Future<(bool, bool, String?)> hasChildFolders(int id)
+    {
+        return service.hasChildFolders(id);
     }
 }
