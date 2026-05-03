@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 
@@ -9,14 +11,34 @@ abstract interface class NoteRepository
         required this.service
     });
 
-    (bool, String) createNewNote(String title, int? idPasta)
+    (bool, String) createNewNote(String titulo, String descricao, int? idPasta, Color color)
     {
-        return service.createNewNote(title, idPasta);
+        return service.createNewNote(titulo, descricao, idPasta, color.toARGB32().toString());
     }
 
-    (bool, String) updateNote(int id, String title, int? idPasta)
+    (bool, String) updateNote(int id, String? titulo, String? descricao, int? idPasta, Color? color)
     {
-        return service.updateNote(id, title, idPasta);
+        final result = getNote(id);
+
+        if(result.$1 == false)
+        {
+            return (false, result.$3!);
+        }
+
+        if(result.$2 == null)
+        {
+            return (false, "Nota não encontrada");
+        }
+
+        final oldValues = result.$2;
+
+        return service.updateNote(
+            id,
+            titulo ?? oldValues!.title,
+            descricao ?? oldValues!.text,
+            idPasta ?? oldValues!.idPasta,
+            (color ?? oldValues!.color).toARGB32().toString()
+        );
     }
 
     (bool, Note?, String?) getNote(int id)
@@ -24,13 +46,25 @@ abstract interface class NoteRepository
         return service.getNote(id);
     }
 
-    (bool, List<Note>?, String?) listNotes()
+    (bool, List<Note>?, String?) listNotes(int? idPasta)
     {
-        return service.listNotes();
+        return service.listNotes(idPasta);
     }
 
     (bool, String) deleteNote(int id)
     {
+        final result = getNote(id);
+
+        if(result.$1 == false)
+        {
+            return (false, result.$3!);
+        }
+
+        if(result.$2 == null)
+        {
+            return (false, "Nota não encontrada");
+        }
+
         return service.deleteNote(id);
     }
 }

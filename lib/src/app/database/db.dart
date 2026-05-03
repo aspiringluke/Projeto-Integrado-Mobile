@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS Nota (
     idNota INTEGER PRIMARY KEY AUTOINCREMENT,
     titulo VARCHAR(255),
     descricao TEXT,
-    cor VARCHAR(15)
+    cor VARCHAR(15),
     pastas_idPasta INTEGER,
     FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );

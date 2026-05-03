@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
@@ -6,12 +8,12 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 class Sqlitefolderservice implements INoteService
 {
     @override
-    (bool, String) createNewNote(String text, int? idPasta) {
+    (bool, String) createNewNote(String titulo, String descricao, int? idPasta, String color) {
         final conn = getConnection();
         try {
             conn.execute("""
-                INSERT INTO Nota VALUES (?,?)
-            """, [text, idPasta]);
+                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor) VALUES (?,?,?,?)
+            """, [titulo, descricao, idPasta, color]);
             
             return (true, "Nota criada com sucesso");
         } catch(e) {
@@ -42,12 +44,21 @@ class Sqlitefolderservice implements INoteService
         final conn = getConnection();
         try {
             final result = conn.select("""
-                SELECT text, pastas_idPasta FROM Nota WHERE idNota = ?
+                SELECT idNota, titulo, descricao, pastas_idPasta, cor FROM Nota
+                WHERE idNota = ?
             """, [id]);
-            
+
+            final note = result.firstOrNull;
+
             return result.isEmpty
                    ? (true, null, null)
-                   : (true, Note(id: result.first["idNota"], text: result.first["text"]), null);
+                   : (true,Note(
+                        id: note!["idNota"],
+                        title: note["titulo"],
+                        text: note["descricao"],
+                        color: Color(int.parse(note["cor"])),
+                        idPasta: note["pastas_idPasta"]
+                     ), null);
         } catch(e) {
             return (false, null, cleanError(e));
         } finally {
@@ -56,17 +67,24 @@ class Sqlitefolderservice implements INoteService
     }
 
     @override
-    (bool, List<Note>?, String?) listNotes() {
+    (bool, List<Note>?, String?) listNotes(int? idPasta) {
         final conn = getConnection();
         try {
             final results = conn.select("""
-                SELECT idNota, text FROM Nota
-            """);
+                SELECT idNota, titulo, descricao, cor, pastas_idPasta FROM Nota
+                WHERE pastas_idPasta = ?
+            """, [idPasta]);
             
             return results.isEmpty
                     ? (true, null, null)
                     : (true, results.map(
-                        (row) => Note(id: row["idNota"], text: row["text"])
+                        (row) => Note(
+                            id: row["idNota"],
+                            title: row["titulo"],
+                            text: row["descricao"],
+                            color: Color(int.parse(row["cor"])),
+                            idPasta: row["pastas_idPasta"]
+                        )
                       ).toList(), null);
         } catch(e) {
             return (false, null, cleanError(e));
@@ -76,20 +94,20 @@ class Sqlitefolderservice implements INoteService
     }
 
     @override
-    (bool, String) updateNote(int id, String newText, int? idPasta) {
+    (bool, String) updateNote(int id, String newTitulo, String newDescricao, int? idPasta, String color) {
         final conn = getConnection();
         try {
             if(idPasta == null)
             {
                 conn.execute("""
-                    UPDATE Nota SET text = ? WHERE idNota = ?
-                """, [newText, id]);
+                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, pastas_idPasta = NULL WHERE idNota = ?
+                """, [newTitulo, newDescricao, color, id]);
             }
             else
             {
                 conn.execute("""
-                    UPDATE Nota SET text = ?, pastas_idPasta = ? WHERE idNota = ?
-                """, [newText, idPasta, id]);
+                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, pastas_idPasta = ? WHERE idNota = ?
+                """, [newTitulo, newDescricao, color, idPasta, id]);
             }
             return (true, "Nota $id atualizada");
         } catch(e) {
