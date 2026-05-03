@@ -61,6 +61,14 @@ class NotesSubPageState extends State<NotesSubPage> {
     super.dispose();
   }
 
+  Future<void> createNoteFromFab() async {
+    await _createNoteFlow();
+  }
+
+  Future<void> createFolderFromFab() async {
+    await _createFolderFlow();
+  }
+
   Future<void> onPrimaryActionPressed() async {
     final selected = await showNotesCreateActionSheet(context);
     if (!mounted || selected == null) return;

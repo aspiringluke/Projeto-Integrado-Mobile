@@ -17,10 +17,21 @@ class IdeasContentState extends State<IdeasContent> {
   IdeasView _activeView = IdeasView.notes;
   final GlobalKey<NotesSubPageState> _notesSubPageKey =
       GlobalKey<NotesSubPageState>();
+  bool get isNotesView => _activeView == IdeasView.notes;
 
   Future<void> onPrimaryActionPressed() async {
     if (_activeView != IdeasView.notes) return;
     await _notesSubPageKey.currentState?.onPrimaryActionPressed();
+  }
+
+  Future<void> onCreateNoteRequested() async {
+    if (_activeView != IdeasView.notes) return;
+    await _notesSubPageKey.currentState?.createNoteFromFab();
+  }
+
+  Future<void> onCreateFolderRequested() async {
+    if (_activeView != IdeasView.notes) return;
+    await _notesSubPageKey.currentState?.createFolderFromFab();
   }
 
   @override
