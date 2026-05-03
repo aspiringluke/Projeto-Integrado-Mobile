@@ -9,6 +9,30 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 class Sqlitefolderservice implements INoteService
 {
     @override
+    Future<(bool, int?, String?)> createNewNoteWithId(
+        String titulo,
+        String descricao,
+        int? idPasta,
+        String color,
+    ) async {
+        final conn = await getConnection();
+        try {
+            conn.execute("""
+                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor) VALUES (?,?,?,?)
+            """, [titulo, descricao, idPasta, color]);
+
+            final inserted = conn.select("SELECT last_insert_rowid() AS id");
+            final insertedId = inserted.first["id"] as int?;
+
+            return (true, insertedId, null);
+        } catch (e) {
+            return (false, null, cleanError(e));
+        } finally {
+            conn.close();
+        }
+    }
+
+    @override
     Future<(bool, String)> createNewNote(String titulo, String descricao, int? idPasta, String color) async {
         final conn = await getConnection();
         try {

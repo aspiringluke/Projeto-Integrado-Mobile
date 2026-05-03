@@ -12,6 +12,16 @@ class NoteRepository
         INoteService? service,
     }) : service = service ?? Sqlitefolderservice();
 
+    Future<(bool, int?, String?)> createNewNoteWithId(String titulo, String descricao, int? idPasta, Color color)
+    {
+        return service.createNewNoteWithId(
+            titulo,
+            descricao,
+            idPasta,
+            color.toARGB32().toString(),
+        );
+    }
+
     Future<(bool, String)> createNewNote(String titulo, String descricao, int? idPasta, Color color)
     {
         return service.createNewNote(titulo, descricao, idPasta, color.toARGB32().toString());

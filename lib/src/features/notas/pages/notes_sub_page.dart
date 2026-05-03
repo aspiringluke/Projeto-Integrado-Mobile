@@ -9,6 +9,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/no
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/notes_drag_payload.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/pages/note_editor_page.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/utils/notes_dialogs.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_list_card.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/note_list_card.dart';
@@ -99,21 +100,32 @@ class NotesSubPageState extends State<NotesSubPage> {
   }
 
   Future<void> _createNoteFlow() async {
-    final draft = await showNoteFormDialog(context);
-    if (!mounted || draft == null) return;
-
-    final result = await _noteController.createNote(
-      title: draft.title,
-      description: draft.description,
+    final result = await _noteController.createDraftNote(
       folderId: _activeFolderId,
     );
+    if (!mounted) return;
 
-    if (result.$1) {
-      _showSnack('Nota criada com sucesso');
+    if (!result.$1 || result.$2 == null) {
+      _showSnack(result.$3 ?? 'Falha ao criar nota');
       return;
     }
 
-    _showSnack(result.$2 ?? 'Falha ao criar nota');
+    await _openNoteEditor(result.$2!);
+  }
+
+  Future<void> _openNoteEditor(int noteId) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => NoteEditorPage(noteId: noteId),
+      ),
+    );
+    if (!mounted) return;
+
+    if (changed == true) {
+      await _noteController.loadNotes(folderId: _activeFolderId);
+      return;
+    }
+    await _noteController.loadNotes(folderId: _activeFolderId);
   }
 
   Future<void> _renameFolderFlow(Folder folder) async {
@@ -447,6 +459,8 @@ class NotesSubPageState extends State<NotesSubPage> {
                 final noteId = note.id;
                 final card = NoteListCard(
                   title: note.title,
+                  highlightColor: note.color,
+                  onTap: noteId == null ? null : () => _openNoteEditor(noteId),
                   onMoveTo: () => _moveNoteByMenuFlow(note),
                   onDelete: () => _deleteNoteFlow(note),
                 );
@@ -465,6 +479,7 @@ class NotesSubPageState extends State<NotesSubPage> {
                       constraints: const BoxConstraints(maxWidth: 360),
                       child: NoteListCard(
                         title: note.title,
+                        highlightColor: note.color,
                         showActions: false,
                       ),
                     ),

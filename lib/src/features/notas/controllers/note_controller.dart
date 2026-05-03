@@ -80,6 +80,27 @@ class NoteController extends ChangeNotifier {
     return await loadNotes(folderId: folderId ?? _currentFolderId);
   }
 
+  Future<(bool, int?, String?)> createDraftNote({
+    int? folderId,
+    Color color = const Color(0xFF8B7D8B),
+  }) async {
+    _setError(null);
+    final result = await repository.createNewNoteWithId(
+      'Sem título',
+      '',
+      folderId ?? _currentFolderId,
+      color,
+    );
+
+    if (!result.$1) {
+      _setError(result.$3);
+      return (false, null, result.$3);
+    }
+
+    await loadNotes(folderId: folderId ?? _currentFolderId);
+    return result;
+  }
+
   Future<(bool, String?)> moveNoteToFolder({
     required int noteId,
     required int? folderId,
