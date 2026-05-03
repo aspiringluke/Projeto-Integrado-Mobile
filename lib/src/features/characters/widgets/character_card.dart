@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/anchored_info_bubble.dart';
 import '../../../shared/widgets/buttons/botao_voltar.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
@@ -26,7 +27,8 @@ class CharacterCard extends StatefulWidget {
   State<CharacterCard> createState() => _CharacterCardState();
 }
 
-class _CharacterCardState extends State<CharacterCard> with SingleTickerProviderStateMixin {
+class _CharacterCardState extends State<CharacterCard>
+    with SingleTickerProviderStateMixin {
   late bool _isExpanded;
   late final AnimationController _controller;
   late final Animation<double> _expandAnimation;
@@ -129,7 +131,9 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
     final sign = _signData;
     final descriptionLines = sign.description.split('\n');
     final dateRange = descriptionLines.isNotEmpty ? descriptionLines.first : '';
-    final traitsLine = descriptionLines.length > 1 ? descriptionLines.sublist(1).join(' ') : '';
+    final traitsLine = descriptionLines.length > 1
+        ? descriptionLines.sublist(1).join(' ')
+        : '';
     final traits = traitsLine
         .split(',')
         .map((entry) => entry.trim())
@@ -227,7 +231,10 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
       }
       _heightUnit = selectedUnit;
       if (_editing) {
-        _heightTextController.text = formatHeightEditorValue(_heightCm, _heightUnit);
+        _heightTextController.text = formatHeightEditorValue(
+          _heightCm,
+          _heightUnit,
+        );
       }
     });
   }
@@ -264,7 +271,10 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
       }
       _weightUnit = selectedUnit;
       if (_editing) {
-        _weightTextController.text = formatWeightEditorValue(_weightKg, _weightUnit);
+        _weightTextController.text = formatWeightEditorValue(
+          _weightKg,
+          _weightUnit,
+        );
       }
     });
   }
@@ -272,7 +282,9 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
   Future<void> _selectBirthday() async {
     var tempMonth = _birthday.month;
     var tempDay = _birthday.day;
-    final monthController = FixedExtentScrollController(initialItem: tempMonth - 1);
+    final monthController = FixedExtentScrollController(
+      initialItem: tempMonth - 1,
+    );
     final dayController = FixedExtentScrollController(initialItem: tempDay - 1);
 
     final selectedDate = await showModalBottomSheet<DateTime>(
@@ -306,7 +318,11 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                               });
                             },
                             children: [
-                              for (var index = 0; index < monthLabels.length; index += 1)
+                              for (
+                                var index = 0;
+                                index < monthLabels.length;
+                                index += 1
+                              )
                                 Center(
                                   child: Text(
                                     monthLabels[index],
@@ -329,7 +345,11 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                               tempDay = index + 1;
                             },
                             children: [
-                              for (var day = 1; day <= daysInMonth(tempMonth); day += 1)
+                              for (
+                                var day = 1;
+                                day <= daysInMonth(tempMonth);
+                                day += 1
+                              )
                                 Center(
                                   child: Text(
                                     day.toString().padLeft(2, '0'),
@@ -379,26 +399,38 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
   }
 
   void _commitHeightText({bool restoreText = true}) {
-    final parsedHeight = parseHeightToCm(_heightTextController.text, _heightUnit);
+    final parsedHeight = parseHeightToCm(
+      _heightTextController.text,
+      _heightUnit,
+    );
 
     if (parsedHeight != null) {
       _heightCmValue = parsedHeight;
     }
 
     if (restoreText) {
-      _heightTextController.text = formatHeightEditorValue(_heightCm, _heightUnit);
+      _heightTextController.text = formatHeightEditorValue(
+        _heightCm,
+        _heightUnit,
+      );
     }
   }
 
   void _commitWeightText({bool restoreText = true}) {
-    final parsedWeight = parseWeightToKg(_weightTextController.text, _weightUnit);
+    final parsedWeight = parseWeightToKg(
+      _weightTextController.text,
+      _weightUnit,
+    );
 
     if (parsedWeight != null) {
       _weightKgValue = parsedWeight;
     }
 
     if (restoreText) {
-      _weightTextController.text = formatWeightEditorValue(_weightKg, _weightUnit);
+      _weightTextController.text = formatWeightEditorValue(
+        _weightKg,
+        _weightUnit,
+      );
     }
   }
 
@@ -411,8 +443,14 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
         _commitHeightText();
         _commitWeightText();
       } else {
-        _heightTextController.text = formatHeightEditorValue(_heightCm, _heightUnit);
-        _weightTextController.text = formatWeightEditorValue(_weightKg, _weightUnit);
+        _heightTextController.text = formatHeightEditorValue(
+          _heightCm,
+          _heightUnit,
+        );
+        _weightTextController.text = formatWeightEditorValue(
+          _weightKg,
+          _weightUnit,
+        );
       }
 
       _isEditing = !wasEditing;
@@ -424,7 +462,9 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
   }
 
   TextEditingController get _synopsisTextController {
-    return _synopsisController ??= TextEditingController(text: widget.data.synopsis);
+    return _synopsisController ??= TextEditingController(
+      text: widget.data.synopsis,
+    );
   }
 
   TextEditingController get _heightTextController {
@@ -457,7 +497,8 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
     return _dateEntries ??= CharacterDateEntries.fromSeed(widget.data.seed);
   }
 
-  CharacterDateEntry get _currentDateEntry => _effectiveDateEntries.forType(_dateType);
+  CharacterDateEntry get _currentDateEntry =>
+      _effectiveDateEntries.forType(_dateType);
 
   @override
   Widget build(BuildContext context) {
@@ -556,8 +597,10 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                                     child: Align(
                                       alignment: Alignment.centerLeft,
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             widget.data.name,
@@ -568,7 +611,8 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                                               fontStyle: FontStyle.italic,
                                               shadows: [
                                                 Shadow(
-                                                  color: Colors.black.withValues(alpha: 0.28),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.28),
                                                   blurRadius: 6,
                                                   offset: const Offset(0, 1.5),
                                                 ),
@@ -578,12 +622,15 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                                           Text(
                                             widget.data.alias,
                                             style: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.86),
+                                              color: Colors.white.withValues(
+                                                alpha: 0.86,
+                                              ),
                                               fontSize: 11,
                                               fontStyle: FontStyle.italic,
                                               shadows: [
                                                 Shadow(
-                                                  color: Colors.black.withValues(alpha: 0.16),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.16),
                                                   blurRadius: 4,
                                                   offset: const Offset(0, 1),
                                                 ),
@@ -602,14 +649,23 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                                   customBorder: const CircleBorder(),
                                   onTap: _toggleExpanded,
                                   child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(8, 8, 10, 8),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      8,
+                                      8,
+                                      10,
+                                      8,
+                                    ),
                                     child: AnimatedRotation(
                                       turns: _isExpanded ? 0.5 : 0,
-                                      duration: const Duration(milliseconds: 220),
+                                      duration: const Duration(
+                                        milliseconds: 220,
+                                      ),
                                       curve: Curves.easeOutCubic,
                                       child: Icon(
                                         Icons.keyboard_arrow_down_rounded,
-                                        color: Colors.black.withValues(alpha: 0.48),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.48,
+                                        ),
                                         size: 26,
                                       ),
                                     ),
@@ -628,14 +684,24 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
                               child: ExpandedCharacterBody(
                                 dateEntry: _currentDateEntry,
                                 isEditing: _editing,
-                                birthdayLabel: formatBirthdayLabel(_birthday.day, _birthday.month),
-                                heightLabel: formatHeightLabel(_heightCm, _heightUnit),
-                                weightLabel: formatWeightLabel(_weightKg, _weightUnit),
+                                birthdayLabel: formatBirthdayLabel(
+                                  _birthday.day,
+                                  _birthday.month,
+                                ),
+                                heightLabel: formatHeightLabel(
+                                  _heightCm,
+                                  _heightUnit,
+                                ),
+                                weightLabel: formatWeightLabel(
+                                  _weightKg,
+                                  _weightUnit,
+                                ),
                                 heightUnit: _heightUnit,
                                 weightUnit: _weightUnit,
                                 signData: _signData,
                                 synopsisController: _synopsisTextController,
-                                synopsisScrollController: _synopsisScrollController,
+                                synopsisScrollController:
+                                    _synopsisScrollController,
                                 quoteController: _quoteTextController,
                                 heightController: _heightTextController,
                                 weightController: _weightTextController,
@@ -684,9 +750,7 @@ class _CharacterCardState extends State<CharacterCard> with SingleTickerProvider
 class _ZodiacTraitPill extends StatelessWidget {
   final String label;
 
-  const _ZodiacTraitPill({
-    required this.label,
-  });
+  const _ZodiacTraitPill({required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -757,8 +821,12 @@ class _HeightUnitOption extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isSelected ? const Color(0xFFDF6EB8) : const Color(0xFF544959),
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: isSelected
+                      ? const Color(0xFFDF6EB8)
+                      : const Color(0xFF544959),
                 ),
               ],
             ),
@@ -813,9 +881,7 @@ class _CharacterBirthdayWheel extends StatelessWidget {
                   ),
                 ),
                 child: CupertinoTheme(
-                  data: const CupertinoThemeData(
-                    brightness: Brightness.light,
-                  ),
+                  data: const CupertinoThemeData(brightness: Brightness.light),
                   child: CupertinoPicker(
                     scrollController: controller,
                     itemExtent: 36,
@@ -844,183 +910,47 @@ Future<void> _showAnchoredInfoBubble({
   required Widget child,
   double width = 180,
 }) {
-  return showGeneralDialog<void>(
+  return showAnchoredInfoBubbleDialog(
     context: context,
-    barrierLabel: 'Info',
-    barrierDismissible: true,
-    barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 140),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      final screenSize = MediaQuery.of(context).size;
-      const horizontalPadding = 12.0;
-      const arrowSize = 12.0;
-      const verticalGap = 8.0;
-      const estimatedHeight = 110.0;
-      final left = (anchorRect.center.dx - (width / 2))
-          .clamp(
-            horizontalPadding,
-            screenSize.width - width - horizontalPadding,
-          )
-          .toDouble();
-      final showAbove = anchorRect.bottom + estimatedHeight > screenSize.height - 24;
-      final top = (showAbove
-              ? anchorRect.top - estimatedHeight - arrowSize - verticalGap
-              : anchorRect.bottom + verticalGap)
-          .clamp(12.0, screenSize.height - estimatedHeight - 12.0)
-          .toDouble();
-      final pointerLeft = (anchorRect.center.dx - left - (arrowSize / 2))
-          .clamp(
-            18.0,
-            width - 18.0,
-          )
-          .toDouble();
-
-      return Material(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => Navigator.of(context).pop(),
-                child: const SizedBox.expand(),
-              ),
-            ),
-            Positioned(
-              left: left,
-              top: top,
-              width: width,
-              child: TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 140),
-                tween: Tween<double>(begin: 0.96, end: 1),
-                builder: (context, scale, dialogChild) {
-                  return Transform.scale(
-                    scale: scale,
-                    alignment: showAbove ? Alignment.bottomCenter : Alignment.topCenter,
-                    child: dialogChild,
-                  );
-                },
-                child: _AnchoredInfoBubble(
-                  showAbove: showAbove,
-                  pointerLeft: pointerLeft,
-                  arrowSize: arrowSize,
-                  child: child,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(opacity: animation, child: child);
-    },
-  );
-}
-
-class _AnchoredInfoBubble extends StatelessWidget {
-  final bool showAbove;
-  final double pointerLeft;
-  final double arrowSize;
-  final Widget child;
-
-  const _AnchoredInfoBubble({
-    required this.showAbove,
-    required this.pointerLeft,
-    required this.arrowSize,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bubble = ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
+    anchorRect: anchorRect,
+    child: child,
+    width: width,
+    estimatedHeight: 110,
+    bubbleBuilder:
+        (
+          context, {
+          required showAbove,
+          required pointerLeft,
+          required arrowSize,
+          required child,
+        }) {
+          return AnchoredInfoBubbleFrame(
+            showAbove: showAbove,
+            pointerLeft: pointerLeft,
+            arrowSize: arrowSize,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.86),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+            blurSigma: 10,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.86),
+                width: 0.8,
               ),
-            ],
-          ),
-          child: child,
-        ),
-      ),
-    );
-
-    final arrow = Positioned(
-      left: pointerLeft,
-      top: showAbove ? null : 0,
-      bottom: showAbove ? 0 : null,
-      child: CustomPaint(
-        size: Size(arrowSize, arrowSize),
-        painter: _BubbleArrowPainter(
-          color: Colors.white.withValues(alpha: 0.9),
-          pointUp: !showAbove,
-        ),
-      ),
-    );
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Padding(
-          padding: showAbove
-              ? EdgeInsets.only(bottom: arrowSize - 1)
-              : EdgeInsets.only(top: arrowSize - 1),
-          child: bubble,
-        ),
-        arrow,
-      ],
-    );
-  }
-}
-
-class _BubbleArrowPainter extends CustomPainter {
-  final Color color;
-  final bool pointUp;
-
-  const _BubbleArrowPainter({
-    required this.color,
-    required this.pointUp,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path();
-
-    if (pointUp) {
-      path
-        ..moveTo(size.width / 2, 0)
-        ..lineTo(0, size.height)
-        ..lineTo(size.width, size.height)
-        ..close();
-    } else {
-      path
-        ..moveTo(0, 0)
-        ..lineTo(size.width, 0)
-        ..lineTo(size.width / 2, size.height)
-        ..close();
-    }
-
-    canvas.drawPath(path, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(covariant _BubbleArrowPainter oldDelegate) {
-    return oldDelegate.color != color || oldDelegate.pointUp != pointUp;
-  }
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            arrowColor: Colors.white.withValues(alpha: 0.9),
+            child: child,
+          );
+        },
+  );
 }
 
 class _CharacterPlaceholderPage extends StatelessWidget {
@@ -1035,10 +965,7 @@ class _CharacterPlaceholderPage extends StatelessWidget {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/FUNDO.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
           ),
           SafeArea(
             child: Padding(
@@ -1046,9 +973,7 @@ class _CharacterPlaceholderPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  BotaoVoltar(
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
+                  BotaoVoltar(onPressed: () => Navigator.of(context).pop()),
                   const SizedBox(height: 26),
                   Text(
                     title,

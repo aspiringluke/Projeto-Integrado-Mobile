@@ -1,15 +1,16 @@
 import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/data/services/sqlite_note_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 
-abstract interface class NoteRepository
+class NoteRepository
 {
     final INoteService service;
 
     NoteRepository({
-        required this.service
-    });
+        INoteService? service,
+    }) : service = service ?? Sqlitefolderservice();
 
     (bool, String) createNewNote(String titulo, String descricao, int? idPasta, Color color)
     {
@@ -22,7 +23,7 @@ abstract interface class NoteRepository
 
         if(result.$1 == false)
         {
-            return (false, result.$3!);
+            return (false, result.$3 ?? "Erro ao buscar nota");
         }
 
         if(result.$2 == null)
@@ -57,7 +58,7 @@ abstract interface class NoteRepository
 
         if(result.$1 == false)
         {
-            return (false, result.$3!);
+            return (false, result.$3 ?? "Erro ao buscar nota");
         }
 
         if(result.$2 == null)

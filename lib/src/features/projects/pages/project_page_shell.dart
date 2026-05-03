@@ -2,14 +2,26 @@ part of 'project_page.dart';
 
 class ProjectPage extends StatefulWidget {
   final String title;
+  final ProjectSectionId initialSection;
 
-  const ProjectPage({super.key, required this.title});
+  const ProjectPage({
+    super.key,
+    required this.title,
+    this.initialSection = ProjectSectionId.configProjeto,
+  });
 
   @override
   State<ProjectPage> createState() => _ProjectPageState();
 }
 
-enum _ProjectSectionId { home, insights, diagrams, characters, notes, world }
+enum ProjectSectionId {
+  configProjeto,
+  insights,
+  diagrams,
+  characters,
+  notes,
+  world,
+}
 
 class _ProjectSectionMeta {
   final String label;
@@ -24,46 +36,52 @@ class _ProjectSectionMeta {
 }
 
 class _ProjectPageState extends State<ProjectPage> {
-  static const Map<_ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
-      <_ProjectSectionId, _ProjectSectionMeta>{
-        _ProjectSectionId.home: _ProjectSectionMeta(
+  static const Map<ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
+      <ProjectSectionId, _ProjectSectionMeta>{
+        ProjectSectionId.configProjeto: _ProjectSectionMeta(
           label: 'Pagina inicial',
-          icon: Icons.home_outlined,
+          icon: Icons.tune_rounded,
           isImplemented: false,
         ),
-        _ProjectSectionId.insights: _ProjectSectionMeta(
+        ProjectSectionId.insights: _ProjectSectionMeta(
           label: 'IA',
           icon: Icons.auto_awesome_outlined,
           isImplemented: false,
         ),
-        _ProjectSectionId.diagrams: _ProjectSectionMeta(
+        ProjectSectionId.diagrams: _ProjectSectionMeta(
           label: 'Mapa',
           icon: Icons.account_tree_outlined,
           isImplemented: false,
         ),
-        _ProjectSectionId.characters: _ProjectSectionMeta(
+        ProjectSectionId.characters: _ProjectSectionMeta(
           label: 'Personagens',
           icon: Icons.person_outline_rounded,
           isImplemented: true,
         ),
-        _ProjectSectionId.notes: _ProjectSectionMeta(
+        ProjectSectionId.notes: _ProjectSectionMeta(
           label: 'Enredo',
           icon: Icons.edit_note_outlined,
           isImplemented: false,
         ),
-        _ProjectSectionId.world: _ProjectSectionMeta(
+        ProjectSectionId.world: _ProjectSectionMeta(
           label: 'Mundo',
           icon: Icons.public_outlined,
           isImplemented: false,
         ),
       };
 
-  _ProjectSectionId _activeSection = _ProjectSectionId.characters;
+  late ProjectSectionId _activeSection;
   bool _isCreateMenuOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeSection = widget.initialSection;
+  }
 
   String get _activeSectionLabel => _sectionMeta[_activeSection]!.label;
 
-  void _setActiveSection(_ProjectSectionId section) {
+  void _setActiveSection(ProjectSectionId section) {
     setState(() {
       _activeSection = section;
       _isCreateMenuOpen = false;
@@ -97,7 +115,7 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   void _createCharacter() {
-    _setActiveSection(_ProjectSectionId.characters);
+    _setActiveSection(ProjectSectionId.characters);
     _showComingSoon('Novo personagem');
   }
 
@@ -108,7 +126,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Widget _buildSectionBody() {
     return switch (_activeSection) {
-      _ProjectSectionId.characters => const CharactersSection(),
+      ProjectSectionId.characters => const CharactersSection(),
       _ => _UnderConstructionSection(
           icon: _sectionMeta[_activeSection]!.icon,
           title: _sectionMeta[_activeSection]!.label,
@@ -179,8 +197,8 @@ class _ProjectPageState extends State<ProjectPage> {
 }
 
 class _ProjectFooterNav extends StatelessWidget {
-  final _ProjectSectionId activeSection;
-  final ValueChanged<_ProjectSectionId> onSelect;
+  final ProjectSectionId activeSection;
+  final ValueChanged<ProjectSectionId> onSelect;
 
   const _ProjectFooterNav({
     required this.activeSection,
@@ -189,11 +207,11 @@ class _ProjectFooterNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = <(_ProjectSectionId, String, IconData)>[
-      (_ProjectSectionId.home, 'Pagina inicial', Icons.home_rounded),
-      (_ProjectSectionId.characters, 'Personagens', Icons.person_outline_rounded),
-      (_ProjectSectionId.notes, 'Enredo', Icons.auto_stories_outlined),
-      (_ProjectSectionId.world, 'Mundo', Icons.public_outlined),
+    const items = <(ProjectSectionId, String, IconData)>[
+      (ProjectSectionId.configProjeto, 'Pagina inicial', Icons.tune_rounded),
+      (ProjectSectionId.characters, 'Personagens', Icons.person_outline_rounded),
+      (ProjectSectionId.notes, 'Enredo', Icons.auto_stories_outlined),
+      (ProjectSectionId.world, 'Mundo', Icons.public_outlined),
     ];
 
     return SafeArea(

@@ -1,15 +1,16 @@
 import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_folder_service.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/data/services/sqlite_folder_fervice.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 
-abstract interface class FolderRepository
+class FolderRepository
 {
     final IFolderService service;
 
     FolderRepository({
-        required this.service
-    });
+        IFolderService? service,
+    }) : service = service ?? SqliteFolderService();
 
     (bool, String) createNewFolder(String title, Color color)
     {
@@ -22,7 +23,7 @@ abstract interface class FolderRepository
 
         if(result.$1 == false)
         {
-            return (false, result.$3!);
+            return (false, result.$3 ?? "Erro ao buscar pasta");
         }
 
         if(result.$2 == null)

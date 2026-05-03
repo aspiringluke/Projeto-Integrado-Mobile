@@ -1,148 +1,304 @@
 import 'package:flutter/material.dart';
 
-class NotesSubPage extends StatelessWidget {
+import 'package:projeto_integrado_mobile/src/features/notas/controllers/folder_controller.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/folder_repository.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_list_card.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/widgets/note_list_card.dart';
+
+class NotesSubPage extends StatefulWidget {
   const NotesSubPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const Column(
-      children: [
-        _FolderCard(title: "Universo e ambientação"),
-        _FolderCard(title: "Personagens e arcos"),
-        _IdeaCard(title: "Conflito central da trama"),
-        _IdeaCard(title: "Virada do ato 1"),
-        _IdeaCard(title: "Motivação da protagonista"),
-        _IdeaCard(title: "Cenário da cena de abertura"),
-        _IdeaCard(title: "Diálogos-chave do capítulo 3"),
-        _IdeaCard(title: "Final alternativo"),
-      ],
-    );
-  }
+  State<NotesSubPage> createState() => _NotesSubPageState();
 }
 
-class _FolderCard extends StatelessWidget {
-  final String title;
-
-  const _FolderCard({required this.title});
+class _NotesSubPageState extends State<NotesSubPage> {
+  late final FolderController _folderController;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: _IdeasSurfaceCard(
-        height: 68,
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDF6EB8).withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.folder_outlined,
-                color: Color(0xFF8C5B79),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFF342F33),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+  void initState() {
+    super.initState();
+    _folderController = FolderController(repository: FolderRepository());
+    _folderController.loadFolders();
+  }
+
+  @override
+  void dispose() {
+    _folderController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showCreateFolderDialog() async {
+    final titleController = TextEditingController();
+    var selectedColor = const Color(0xFF8C5B79);
+
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Nova pasta'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título',
+                    border: OutlineInputBorder(),
+                  ),
+                  textInputAction: TextInputAction.done,
                 ),
-              ),
+                const SizedBox(height: 12),
+                _FolderColorPicker(
+                  selected: selectedColor,
+                  onSelect: (color) => setState(() => selectedColor = color),
+                ),
+              ],
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8D7E88)),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final result = _folderController.createFolder(
+                    titleController.text,
+                    selectedColor,
+                  );
+                  if (result.$1) {
+                    Navigator.of(dialogContext).pop(true);
+                  }
+                },
+                child: const Text('Criar'),
+              ),
+            ],
+          );
+        },
       ),
     );
+
+    titleController.dispose();
+
+    if (!mounted || created != true) return;
+    _showSnack('Pasta criada com sucesso');
   }
-}
 
-class _IdeaCard extends StatelessWidget {
-  final String title;
+  Future<void> _showRenameFolderDialog(Folder folder) async {
+    final folderId = folder.id;
+    if (folderId == null) {
+      _showSnack('Pasta inválida para edição');
+      return;
+    }
 
-  const _IdeaCard({required this.title});
+    final titleController = TextEditingController(text: folder.title);
+    var selectedColor = folder.color;
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: _IdeasSurfaceCard(
-        height: 68,
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFF8B7D8B).withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.sticky_note_2_outlined,
-                color: Color(0xFF5C4F5C),
-                size: 19,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF342F33),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Editar pasta'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título',
+                    border: OutlineInputBorder(),
+                  ),
+                  textInputAction: TextInputAction.done,
                 ),
+                const SizedBox(height: 12),
+                _FolderColorPicker(
+                  selected: selectedColor,
+                  onSelect: (color) => setState(() => selectedColor = color),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancelar'),
               ),
-            ),
-            const SizedBox(width: 10),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF8D7E88),
-              size: 26,
-            ),
-          ],
-        ),
+              FilledButton(
+                onPressed: () {
+                  final result = _folderController.updateFolder(
+                    folderId,
+                    title: titleController.text,
+                    color: selectedColor,
+                  );
+                  if (result.$1) {
+                    Navigator.of(dialogContext).pop(true);
+                  }
+                },
+                child: const Text('Salvar'),
+              ),
+            ],
+          );
+        },
       ),
     );
+
+    titleController.dispose();
+
+    if (!mounted || updated != true) return;
+    _showSnack('Pasta atualizada');
   }
-}
 
-class _IdeasSurfaceCard extends StatelessWidget {
-  final double height;
-  final Widget child;
+  Future<void> _confirmDeleteFolder(Folder folder) async {
+    final folderId = folder.id;
+    if (folderId == null) {
+      _showSnack('Pasta inválida para exclusão');
+      return;
+    }
 
-  const _IdeasSurfaceCard({required this.height, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.9),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Excluir pasta'),
+        content: Text('Deseja excluir "${folder.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Excluir'),
           ),
         ],
       ),
-      child: child,
+    );
+
+    if (shouldDelete != true) return;
+
+    final result = _folderController.deleteFolder(folderId);
+    if (!mounted) return;
+
+    if (result.$1) {
+      _showSnack('Pasta excluída');
+      return;
+    }
+
+    _showSnack(result.$2 ?? 'Falha ao excluir pasta');
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _folderController,
+      builder: (context, _) {
+        final folders = _folderController.folders;
+        final errorMessage = _folderController.errorMessage;
+        const notesInCurrentFolder = <String>[];
+        final hasAnyItem = folders.isNotEmpty || notesInCurrentFolder.isNotEmpty;
+
+        return Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                onPressed: _showCreateFolderDialog,
+                icon: const Icon(Icons.create_new_folder_outlined),
+                tooltip: 'Nova pasta',
+              ),
+            ),
+            if (_folderController.isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.redAccent),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else ...[
+              ...folders.map(
+                (folder) => FolderListCard(
+                  folder: folder,
+                  onTap: () {},
+                  onRename: () => _showRenameFolderDialog(folder),
+                  onDelete: () => _confirmDeleteFolder(folder),
+                ),
+              ),
+              ...notesInCurrentFolder.map(
+                (title) => NoteListCard(title: title),
+              ),
+              if (!hasAnyItem)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Text(
+                    'Crie uma nova pasta ou nota clicando no +',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF7C7279),
+                      fontSize: 15,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FolderColorPicker extends StatelessWidget {
+  final Color selected;
+  final ValueChanged<Color> onSelect;
+
+  const _FolderColorPicker({
+    required this.selected,
+    required this.onSelect,
+  });
+
+  static const List<Color> _colors = [
+    Color(0xFF8C5B79),
+    Color(0xFFDF6EB8),
+    Color(0xFF6D7C9B),
+    Color(0xFF668F80),
+    Color(0xFFA2785C),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      children: _colors
+          .map(
+            (color) => GestureDetector(
+              onTap: () => onSelect(color),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected == color ? Colors.black : Colors.white,
+                    width: selected == color ? 2 : 1,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(growable: false),
     );
   }
 }
