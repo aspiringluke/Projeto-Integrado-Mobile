@@ -33,14 +33,17 @@ CREATE TABLE IF NOT EXISTS Diagramas (
 
 CREATE TABLE IF NOT EXISTS Nota (
     idNota INTEGER PRIMARY KEY AUTOINCREMENT,
-    descricao VARCHAR(255),
+    titulo VARCHAR(255),
+    descricao TEXT,
+    cor VARCHAR(15)
     pastas_idPasta INTEGER,
     FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );
 
 CREATE TABLE IF NOT EXISTS Pastas (
     idPasta INTEGER PRIMARY KEY AUTOINCREMENT,
-    titulo VARCHAR(100)
+    titulo VARCHAR(100),
+    cor VARCHAR(15)
 );
 
 CREATE TABLE IF NOT EXISTS Projeto (
