@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/projects/controllers/project_list_controller.dart';
 import './idea_list_page.dart';
 import '../../features/projects/pages/project_list_page.dart';
 import '../../features/projects/widgets/create_project_dialog.dart';
