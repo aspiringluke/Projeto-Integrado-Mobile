@@ -63,18 +63,27 @@ class FolderListCard extends StatelessWidget {
             ),
             child: NotesSurfaceCard(
               height: 68,
+              backgroundColor: folder.color,
+              borderColor: folder.color.withValues(alpha: 0.9),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
               child: Row(
                 children: [
                   Container(
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: folder.color.withValues(alpha: 0.2),
+                      color: Colors.black.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.folder_outlined,
-                      color: folder.color,
+                      color: Colors.white,
                       size: 20,
                     ),
                   ),
@@ -85,7 +94,7 @@ class FolderListCard extends StatelessWidget {
                       child: Text(
                         folder.title,
                         style: const TextStyle(
-                          color: Color(0xFF342F33),
+                          color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
@@ -109,7 +118,7 @@ class FolderListCard extends StatelessWidget {
                     ],
                     icon: const Icon(
                       Icons.more_vert_rounded,
-                      color: Color(0xFF8D7E88),
+                      color: Colors.white,
                     ),
                   ),
                 ],
