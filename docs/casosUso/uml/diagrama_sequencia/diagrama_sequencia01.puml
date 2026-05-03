@@ -1,0 +1,57 @@
+@startuml Diagrama de Sequencia - Criacao de Personagem
+
+title Diagrama de Sequencia - Criacao de Personagem
+
+skinparam backgroundColor white
+skinparam sequence {
+    ArrowColor #5B4B54
+    LifeLineBorderColor #8B7380
+    LifeLineBackgroundColor #F8F2F5
+    ParticipantBorderColor #8B7380
+    ParticipantBackgroundColor #FDF7FA
+    ActorBorderColor #6C5562
+    ActorBackgroundColor #F4E8EE
+}
+
+actor "Usuario" as Usuario
+
+participant "ProjectPage / CharactersSection\n<<View>>" as CharacterView
+participant "ProjectViewModel\n<<ViewModel>>" as ProjectVM
+participant "Projeto\n<<Model>>" as Projeto
+participant "Personagem\n<<Model>>" as Personagem
+
+note over ProjectVM
+Os controllers observados na branch paginaPersonagens foram
+documentados com o papel de ViewModel, seguindo MVVM.
+end note
+
+Usuario -> CharacterView: Abrir projeto e tocar no botao "+"
+CharacterView -> CharacterView: Exibir menu de criacao
+Usuario -> CharacterView: Selecionar "Novo personagem"
+CharacterView -> CharacterView: Exibir dialogo de cadastro
+
+alt Usuario confirma o cadastro
+    CharacterView -> ProjectVM: solicitarCriacaoPersonagem(draft)
+    ProjectVM -> Projeto: validarProjetoAtivo()
+    Projeto --> ProjectVM: projeto disponivel
+
+    ProjectVM -> Personagem: criarComDados(draft)
+    Personagem --> ProjectVM: personagem instanciado
+
+    ProjectVM -> Projeto: adicionarPersonagem(personagem)
+    Projeto --> ProjectVM: lista de personagens atualizada
+
+    ProjectVM --> CharacterView: publicarNovoEstado()
+    CharacterView -> CharacterView: Atualizar lista / grade de personagens
+    CharacterView --> Usuario: Exibir personagem criado
+else Usuario cancela o dialogo
+    CharacterView --> Usuario: Encerrar fluxo sem alteracoes
+end
+
+note over Projeto,Personagem
+Referencia estrutural baseada em:
+- diagrama_classe.puml
+- branch paginaPersonagens
+end note
+
+@enduml
