@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_folder_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 
@@ -9,14 +11,32 @@ abstract interface class FolderRepository
         required this.service
     });
 
-    (bool, String) createNewFolder(String title)
+    (bool, String) createNewFolder(String title, Color color)
     {
-        return service.createNewFolder(title);
+        return service.createNewFolder(title, color.toARGB32().toString());
     }
 
-    (bool, String) updateFolder(int id, String title)
+    (bool, String) updateFolder(int id, String? title, Color? color)
     {
-        return service.updateFolder(id, title);
+        final result = getFolder(id);
+
+        if(result.$1 == false)
+        {
+            return (false, result.$3!);
+        }
+
+        if(result.$2 == null)
+        {
+            return (false, "Pasta não encontrada");
+        }
+
+        final oldValues = result.$2!;
+
+        return service.updateFolder(
+            id,
+            title ?? oldValues.title,
+            (color ?? oldValues.color).toARGB32().toString(),
+        );
     }
 
     (bool, Folder?, String?) getFolder(int id)
