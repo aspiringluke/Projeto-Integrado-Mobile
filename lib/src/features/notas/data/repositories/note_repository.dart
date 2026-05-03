@@ -12,14 +12,14 @@ class NoteRepository
         INoteService? service,
     }) : service = service ?? Sqlitefolderservice();
 
-    (bool, String) createNewNote(String titulo, String descricao, int? idPasta, Color color)
+    Future<(bool, String)> createNewNote(String titulo, String descricao, int? idPasta, Color color)
     {
         return service.createNewNote(titulo, descricao, idPasta, color.toARGB32().toString());
     }
 
-    (bool, String) updateNote(int id, String? titulo, String? descricao, int? idPasta, Color? color)
+    Future<(bool, String)> updateNote(int id, String? titulo, String? descricao, int? idPasta, Color? color) async
     {
-        final result = getNote(id);
+        final result = await getNote(id);
 
         if(result.$1 == false)
         {
@@ -33,7 +33,7 @@ class NoteRepository
 
         final oldValues = result.$2;
 
-        return service.updateNote(
+        return await service.updateNote(
             id,
             titulo ?? oldValues!.title,
             descricao ?? oldValues!.text,
@@ -42,19 +42,19 @@ class NoteRepository
         );
     }
 
-    (bool, Note?, String?) getNote(int id)
+    Future<(bool, Note?, String?)> getNote(int id)
     {
         return service.getNote(id);
     }
 
-    (bool, List<Note>?, String?) listNotes(int? idPasta)
+    Future<(bool, List<Note>?, String?)> listNotes(int? idPasta)
     {
         return service.listNotes(idPasta);
     }
 
-    (bool, String) deleteNote(int id)
+    Future<(bool, String)> deleteNote(int id) async
     {
-        final result = getNote(id);
+        final result = await getNote(id);
 
         if(result.$1 == false)
         {
@@ -66,12 +66,12 @@ class NoteRepository
             return (false, "Nota não encontrada");
         }
 
-        return service.deleteNote(id);
+        return await service.deleteNote(id);
     }
 
-    (bool, String) moveNoteToFolder(int id, int? folderId)
+    Future<(bool, String)> moveNoteToFolder(int id, int? folderId) async
     {
-        final result = getNote(id);
+        final result = await getNote(id);
 
         if(result.$1 == false)
         {
@@ -85,7 +85,7 @@ class NoteRepository
 
         final oldValues = result.$2!;
 
-        return service.updateNote(
+        return await service.updateNote(
             id,
             oldValues.title,
             oldValues.text,

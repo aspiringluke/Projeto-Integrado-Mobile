@@ -8,8 +8,8 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 class SqliteFolderService implements IFolderService
 {
     @override
-    (bool, String) createNewFolder(String title, String color) {
-        final conn = getConnection();
+    Future<(bool, String)> createNewFolder(String title, String color) async {
+        final conn = await getConnection();
         try {
             conn.execute("""
                 INSERT INTO Pastas(titulo, cor) VALUES (?, ?)
@@ -24,8 +24,8 @@ class SqliteFolderService implements IFolderService
     }
 
     @override
-    (bool, String) deleteFolder(int id) {
-        final conn = getConnection();
+    Future<(bool, String)> deleteFolder(int id) async {
+        final conn = await getConnection();
         try {
             conn.execute("""
                 DELETE FROM Pastas WHERE idPasta = ?
@@ -40,8 +40,8 @@ class SqliteFolderService implements IFolderService
     }
 
     @override
-    (bool, Folder?, String?) getFolder(int id) {
-        final conn = getConnection();
+    Future<(bool, Folder?, String?)> getFolder(int id) async {
+        final conn = await getConnection();
         try {
             final result = conn.select("""
                 SELECT idPasta, titulo, cor FROM Pastas WHERE idPasta = ?
@@ -62,8 +62,8 @@ class SqliteFolderService implements IFolderService
     }
 
     @override
-    (bool, List<Folder>?, String?) listFolders() {
-        final conn = getConnection();
+    Future<(bool, List<Folder>?, String?)> listFolders() async {
+        final conn = await getConnection();
         try {
             final results = conn.select("""
                 SELECT idPasta, titulo, cor FROM Pastas
@@ -86,8 +86,8 @@ class SqliteFolderService implements IFolderService
     }
 
     @override
-    (bool, String) updateFolder(int id, String newTitle, String newColor) {
-        final conn = getConnection();
+    Future<(bool, String)> updateFolder(int id, String newTitle, String newColor) async {
+        final conn = await getConnection();
         try {
             conn.execute("""
                 UPDATE Pastas SET titulo = ?, cor = ? WHERE idPasta = ?

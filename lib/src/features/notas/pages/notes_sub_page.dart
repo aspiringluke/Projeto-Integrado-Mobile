@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/controllers/folder_controller.dart';
@@ -20,14 +22,25 @@ class NotesSubPage extends StatefulWidget {
 class NotesSubPageState extends State<NotesSubPage> {
   late final FolderController _folderController;
   late final NoteController _noteController;
+  int? _activeFolderId;
+  String? _activeFolderTitle;
+
+  Future<void> _bootstrap() async {
+    await _folderController.loadFolders();
+    await _noteController.loadNotes(folderId: null);
+    if (!mounted) return;
+    setState(() {
+      _activeFolderId = null;
+      _activeFolderTitle = null;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _folderController = FolderController(repository: FolderRepository());
     _noteController = NoteController(repository: NoteRepository());
-    _folderController.loadFolders();
-    _noteController.loadNotes(folderId: null);
+    unawaited(_bootstrap());
   }
 
   @override
@@ -53,7 +66,7 @@ class NotesSubPageState extends State<NotesSubPage> {
     final draft = await showFolderFormDialog(context);
     if (!mounted || draft == null) return;
 
-    final result = _folderController.createFolder(draft.title, draft.color);
+    final result = await _folderController.createFolder(draft.title, draft.color);
     if (result.$1) {
       _showSnack('Pasta criada com sucesso');
       return;
@@ -66,10 +79,10 @@ class NotesSubPageState extends State<NotesSubPage> {
     final draft = await showNoteFormDialog(context);
     if (!mounted || draft == null) return;
 
-    final result = _noteController.createNote(
+    final result = await _noteController.createNote(
       title: draft.title,
       description: draft.description,
-      folderId: null,
+      folderId: _activeFolderId,
     );
 
     if (result.$1) {
@@ -97,7 +110,7 @@ class NotesSubPageState extends State<NotesSubPage> {
 
     if (!mounted || draft == null) return;
 
-    final result = _folderController.updateFolder(
+    final result = await _folderController.updateFolder(
       folderId,
       title: draft.title,
       color: draft.color,
@@ -124,7 +137,7 @@ class NotesSubPageState extends State<NotesSubPage> {
     );
     if (!mounted || !shouldDelete) return;
 
-    final result = _folderController.deleteFolder(folderId);
+    final result = await _folderController.deleteFolder(folderId);
     if (result.$1) {
       _showSnack('Pasta excluída');
       return;
@@ -137,7 +150,7 @@ class NotesSubPageState extends State<NotesSubPage> {
     required int noteId,
     required int? folderId,
   }) async {
-    final result = _noteController.moveNoteToFolder(
+    final result = await _noteController.moveNoteToFolder(
       noteId: noteId,
       folderId: folderId,
     );
@@ -160,13 +173,49 @@ class NotesSubPageState extends State<NotesSubPage> {
     final selected = await showMoveNoteToFolderSheet(
       context,
       folders: _folderController.folders,
-      currentFolderId: note.idPasta,
+      currentFolderId: _activeFolderId,
     );
 
     if (!mounted || selected == null) return;
 
     final targetFolderId = selected == 0 ? null : selected;
     await _moveNoteToFolder(noteId: noteId, folderId: targetFolderId);
+  }
+
+  Future<void> _openFolder(Folder folder) async {
+    final folderId = folder.id;
+    if (folderId == null) {
+      _showSnack('Pasta inválida');
+      return;
+    }
+
+    final result = await _noteController.loadNotes(folderId: folderId);
+    if (!mounted) return;
+
+    if (!result.$1) {
+      _showSnack(result.$2 ?? 'Falha ao abrir pasta');
+      return;
+    }
+
+    setState(() {
+      _activeFolderId = folderId;
+      _activeFolderTitle = folder.title;
+    });
+  }
+
+  Future<void> _backToRoot() async {
+    final result = await _noteController.loadNotes(folderId: null);
+    if (!mounted) return;
+
+    if (!result.$1) {
+      _showSnack(result.$2 ?? 'Falha ao voltar para a raiz');
+      return;
+    }
+
+    setState(() {
+      _activeFolderId = null;
+      _activeFolderTitle = null;
+    });
   }
 
   void _showSnack(String message) {
@@ -182,9 +231,34 @@ class NotesSubPageState extends State<NotesSubPage> {
         final notes = _noteController.notes;
         final isLoading = _folderController.isLoading || _noteController.isLoading;
         final errorMessage = _folderController.errorMessage ?? _noteController.errorMessage;
+        final isInsideFolder = _activeFolderId != null;
 
         return Column(
           children: [
+            if (isInsideFolder)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _backToRoot,
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      tooltip: 'Voltar',
+                    ),
+                    Expanded(
+                      child: Text(
+                        _activeFolderTitle ?? 'Pasta',
+                        style: const TextStyle(
+                          color: Color(0xFF5D535A),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (isLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -200,20 +274,21 @@ class NotesSubPageState extends State<NotesSubPage> {
                 ),
               )
             else ...[
-              ...folders.map(
-                (folder) => FolderListCard(
-                  folder: folder,
-                  onTap: () {},
-                  onRename: () => _renameFolderFlow(folder),
-                  onDelete: () => _deleteFolderFlow(folder),
-                  onAcceptNote: folder.id == null
-                      ? null
-                      : (noteId) => _moveNoteToFolder(
-                            noteId: noteId,
-                            folderId: folder.id,
-                          ),
+              if (!isInsideFolder)
+                ...folders.map(
+                  (folder) => FolderListCard(
+                    folder: folder,
+                    onTap: () => _openFolder(folder),
+                    onRename: () => _renameFolderFlow(folder),
+                    onDelete: () => _deleteFolderFlow(folder),
+                    onAcceptNote: folder.id == null
+                        ? null
+                        : (noteId) => _moveNoteToFolder(
+                              noteId: noteId,
+                              folderId: folder.id,
+                            ),
+                  ),
                 ),
-              ),
               ...notes.map((note) {
                 final noteId = note.id;
                 final card = NoteListCard(
@@ -243,13 +318,15 @@ class NotesSubPageState extends State<NotesSubPage> {
                   child: card,
                 );
               }),
-              if (folders.isEmpty && notes.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 28),
+              if (notes.isEmpty && (isInsideFolder || folders.isEmpty))
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Text(
-                    'Crie uma nova pasta ou nota clicando no +',
+                    isInsideFolder
+                        ? 'Nenhuma nota nesta pasta.'
+                        : 'Crie uma nova pasta ou nota clicando no +',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFF7C7279),
                       fontSize: 15,
                       fontStyle: FontStyle.italic,

@@ -32,12 +32,12 @@ class NoteController extends ChangeNotifier {
     notifyListeners();
   }
 
-  (bool, String?) loadNotes({int? folderId}) {
+  Future<(bool, String?)> loadNotes({int? folderId}) async {
     _setLoading(true);
     _setError(null);
     _currentFolderId = folderId;
 
-    final result = repository.listNotes(folderId);
+    final result = await repository.listNotes(folderId);
     _setLoading(false);
 
     if (!result.$1) {
@@ -51,12 +51,12 @@ class NoteController extends ChangeNotifier {
     return (true, null);
   }
 
-  (bool, String?) createNote({
+  Future<(bool, String?)> createNote({
     required String title,
     required String description,
     int? folderId,
     Color color = const Color(0xFF8B7D8B),
-  }) {
+  }) async {
     if (title.trim().isEmpty) {
       const message = 'O título da nota não pode ser vazio';
       _setError(message);
@@ -65,7 +65,7 @@ class NoteController extends ChangeNotifier {
 
     _setError(null);
 
-    final result = repository.createNewNote(
+    final result = await repository.createNewNote(
       title.trim(),
       description.trim(),
       folderId,
@@ -77,21 +77,21 @@ class NoteController extends ChangeNotifier {
       return (false, result.$2);
     }
 
-    return loadNotes(folderId: folderId ?? _currentFolderId);
+    return await loadNotes(folderId: folderId ?? _currentFolderId);
   }
 
-  (bool, String?) moveNoteToFolder({
+  Future<(bool, String?)> moveNoteToFolder({
     required int noteId,
     required int? folderId,
-  }) {
+  }) async {
     _setError(null);
-    final result = repository.moveNoteToFolder(noteId, folderId);
+    final result = await repository.moveNoteToFolder(noteId, folderId);
 
     if (!result.$1) {
       _setError(result.$2);
       return (false, result.$2);
     }
 
-    return loadNotes(folderId: _currentFolderId);
+    return await loadNotes(folderId: _currentFolderId);
   }
 }

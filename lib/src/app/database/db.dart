@@ -1,25 +1,29 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 final String _databaseName = "wireframe.db";
 
-Database getConnection()
+Future<Database> getConnection() async
 {
-    final Database conn = sqlite3.open(_databaseName);
+    final docsDir = await getApplicationDocumentsDirectory();
+    final databasePath = join(docsDir.path, _databaseName);
+    final Database conn = sqlite3.open(databasePath);
     return conn;
 }
 
-void verifyDatabaseExistance()
+Future<void> initDatabase() async
 {
-    // verify whether the db file exists or not
-    // if it doesn't, open a connection and create
-    // all the necessary tables
-    final databasePath = _databaseName;
-    if(!File(databasePath).existsSync())
-    {
-        final conn = getConnection();
-        conn.execute(
-            """
+    final docsDir = await getApplicationDocumentsDirectory();
+    final databasePath = join(docsDir.path, _databaseName);
+    final databaseFile = File(databasePath);
+    final alreadyExists = await databaseFile.exists();
+
+    final conn = await getConnection();
+    conn.execute(
+        """
 CREATE TABLE IF NOT EXISTS Tags (
     idTag INTEGER PRIMARY KEY AUTOINCREMENT,
     descricao VARCHAR(255),
@@ -97,9 +101,13 @@ CREATE TABLE IF NOT EXISTS notas_has_tags (
     FOREIGN KEY (notas_idNotas) REFERENCES Nota(idNota),
     FOREIGN KEY (tag_idTag) REFERENCES Tags(idTag)
 );
-            """
-        );
-        conn.close();
+        """
+    );
+    conn.close();
+
+    if(!alreadyExists)
+    {
+        debugPrint("Caminho do banco: $databasePath");
     }
     
 }

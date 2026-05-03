@@ -55,112 +55,23 @@ Future<FolderFormData?> showFolderFormDialog(
   String submitLabel = 'Criar',
   String? initialTitle,
   Color initialColor = const Color(0xFF8C5B79),
-}) async {
-  final titleController = TextEditingController(text: initialTitle ?? '');
-  var selectedColor = initialColor;
-
-  final result = await showDialog<FolderFormData>(
+}) {
+  return showDialog<FolderFormData>(
     context: context,
-    builder: (dialogContext) => StatefulBuilder(
-      builder: (context, setState) {
-        return AlertDialog(
-          title: Text(title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Título',
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 12),
-              FolderColorPicker(
-                selected: selectedColor,
-                onSelect: (color) => setState(() => selectedColor = color),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(
-                FolderFormData(
-                  title: titleController.text,
-                  color: selectedColor,
-                ),
-              ),
-              child: Text(submitLabel),
-            ),
-          ],
-        );
-      },
+    builder: (dialogContext) => _FolderFormDialog(
+      title: title,
+      submitLabel: submitLabel,
+      initialTitle: initialTitle,
+      initialColor: initialColor,
     ),
   );
-
-  titleController.dispose();
-  return result;
 }
 
-Future<NoteFormData?> showNoteFormDialog(BuildContext context) async {
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
-
-  final result = await showDialog<NoteFormData>(
+Future<NoteFormData?> showNoteFormDialog(BuildContext context) {
+  return showDialog<NoteFormData>(
     context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Nova nota'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título',
-                border: OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-              textInputAction: TextInputAction.done,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(
-              NoteFormData(
-                title: titleController.text,
-                description: descriptionController.text,
-              ),
-            ),
-            child: const Text('Criar'),
-          ),
-        ],
-      );
-    },
+    builder: (dialogContext) => const _NoteFormDialog(),
   );
-
-  titleController.dispose();
-  descriptionController.dispose();
-  return result;
 }
 
 Future<bool> showDeleteFolderConfirmation(
@@ -231,4 +142,154 @@ Future<int?> showMoveNoteToFolderSheet(
       ),
     ),
   );
+}
+
+class _FolderFormDialog extends StatefulWidget {
+  final String title;
+  final String submitLabel;
+  final String? initialTitle;
+  final Color initialColor;
+
+  const _FolderFormDialog({
+    required this.title,
+    required this.submitLabel,
+    required this.initialTitle,
+    required this.initialColor,
+  });
+
+  @override
+  State<_FolderFormDialog> createState() => _FolderFormDialogState();
+}
+
+class _FolderFormDialogState extends State<_FolderFormDialog> {
+  late final TextEditingController _titleController;
+  late Color _selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialTitle ?? '');
+    _selectedColor = widget.initialColor;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Título',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: 12),
+            FolderColorPicker(
+              selected: _selectedColor,
+              onSelect: (color) => setState(() => _selectedColor = color),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(
+            FolderFormData(
+              title: _titleController.text,
+              color: _selectedColor,
+            ),
+          ),
+          child: Text(widget.submitLabel),
+        ),
+      ],
+    );
+  }
+}
+
+class _NoteFormDialog extends StatefulWidget {
+  const _NoteFormDialog();
+
+  @override
+  State<_NoteFormDialog> createState() => _NoteFormDialogState();
+}
+
+class _NoteFormDialogState extends State<_NoteFormDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController();
+    _descriptionController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nova nota'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Título',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Descrição',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+              textInputAction: TextInputAction.done,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(
+            NoteFormData(
+              title: _titleController.text,
+              description: _descriptionController.text,
+            ),
+          ),
+          child: const Text('Criar'),
+        ),
+      ],
+    );
+  }
 }

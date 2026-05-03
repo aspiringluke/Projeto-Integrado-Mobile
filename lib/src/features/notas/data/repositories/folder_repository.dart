@@ -12,14 +12,14 @@ class FolderRepository
         IFolderService? service,
     }) : service = service ?? SqliteFolderService();
 
-    (bool, String) createNewFolder(String title, Color color)
+    Future<(bool, String)> createNewFolder(String title, Color color)
     {
         return service.createNewFolder(title, color.toARGB32().toString());
     }
 
-    (bool, String) updateFolder(int id, String? title, Color? color)
+    Future<(bool, String)> updateFolder(int id, String? title, Color? color) async
     {
-        final result = getFolder(id);
+        final result = await getFolder(id);
 
         if(result.$1 == false)
         {
@@ -33,24 +33,24 @@ class FolderRepository
 
         final oldValues = result.$2!;
 
-        return service.updateFolder(
+        return await service.updateFolder(
             id,
             title ?? oldValues.title,
             (color ?? oldValues.color).toARGB32().toString(),
         );
     }
 
-    (bool, Folder?, String?) getFolder(int id)
+    Future<(bool, Folder?, String?)> getFolder(int id)
     {
         return service.getFolder(id);
     }
 
-    (bool, List<Folder>?, String?) listFolders()
+    Future<(bool, List<Folder>?, String?)> listFolders()
     {
         return service.listFolders();
     }
 
-    (bool, String) deleteFolder(int id)
+    Future<(bool, String)> deleteFolder(int id)
     {
         return service.deleteFolder(id);
     }

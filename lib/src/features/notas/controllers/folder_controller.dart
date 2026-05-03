@@ -30,11 +30,11 @@ class FolderController extends ChangeNotifier {
     notifyListeners();
   }
 
-  (bool, String?) loadFolders() {
+  Future<(bool, String?)> loadFolders() async {
     _setLoading(true);
     _setError(null);
 
-    final result = repository.listFolders();
+    final result = await repository.listFolders();
 
     _setLoading(false);
 
@@ -48,7 +48,7 @@ class FolderController extends ChangeNotifier {
     return (true, null);
   }
 
-  (bool, String?) createFolder(String title, Color color) {
+  Future<(bool, String?)> createFolder(String title, Color color) async {
     if (title.trim().isEmpty) {
       const message = "O título da pasta não pode ser vazio";
       _setError(message);
@@ -56,17 +56,17 @@ class FolderController extends ChangeNotifier {
     }
 
     _setError(null);
-    final result = repository.createNewFolder(title.trim(), color);
+    final result = await repository.createNewFolder(title.trim(), color);
 
     if (!result.$1) {
       _setError(result.$2);
       return (false, result.$2);
     }
 
-    return loadFolders();
+    return await loadFolders();
   }
 
-  (bool, String?) updateFolder(int id, {String? title, Color? color}) {
+  Future<(bool, String?)> updateFolder(int id, {String? title, Color? color}) async {
     if (title != null && title.trim().isEmpty) {
       const message = "O título da pasta não pode ser vazio";
       _setError(message);
@@ -74,19 +74,19 @@ class FolderController extends ChangeNotifier {
     }
 
     _setError(null);
-    final result = repository.updateFolder(id, title?.trim(), color);
+    final result = await repository.updateFolder(id, title?.trim(), color);
 
     if (!result.$1) {
       _setError(result.$2);
       return (false, result.$2);
     }
 
-    return loadFolders();
+    return await loadFolders();
   }
 
-  (bool, Folder?, String?) getFolder(int id) {
+  Future<(bool, Folder?, String?)> getFolder(int id) async {
     _setError(null);
-    final result = repository.getFolder(id);
+    final result = await repository.getFolder(id);
 
     if (!result.$1) {
       _setError(result.$3);
@@ -96,15 +96,15 @@ class FolderController extends ChangeNotifier {
     return result;
   }
 
-  (bool, String?) deleteFolder(int id) {
+  Future<(bool, String?)> deleteFolder(int id) async {
     _setError(null);
-    final result = repository.deleteFolder(id);
+    final result = await repository.deleteFolder(id);
 
     if (!result.$1) {
       _setError(result.$2);
       return (false, result.$2);
     }
 
-    return loadFolders();
+    return await loadFolders();
   }
 }

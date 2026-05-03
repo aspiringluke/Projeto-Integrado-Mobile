@@ -9,8 +9,8 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 class Sqlitefolderservice implements INoteService
 {
     @override
-    (bool, String) createNewNote(String titulo, String descricao, int? idPasta, String color) {
-        final conn = getConnection();
+    Future<(bool, String)> createNewNote(String titulo, String descricao, int? idPasta, String color) async {
+        final conn = await getConnection();
         try {
             conn.execute("""
                 INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor) VALUES (?,?,?,?)
@@ -25,8 +25,8 @@ class Sqlitefolderservice implements INoteService
     }
 
     @override
-    (bool, String) deleteNote(int id) {
-        final conn = getConnection();
+    Future<(bool, String)> deleteNote(int id) async {
+        final conn = await getConnection();
         try {
             conn.execute("""
                 DELETE FROM Nota WHERE idNota = ?
@@ -41,8 +41,8 @@ class Sqlitefolderservice implements INoteService
     }
 
     @override
-    (bool, Note?, String?) getNote(int id) {
-        final conn = getConnection();
+    Future<(bool, Note?, String?)> getNote(int id) async {
+        final conn = await getConnection();
         try {
             final result = conn.select("""
                 SELECT idNota, titulo, descricao, pastas_idPasta, cor FROM Nota
@@ -68,8 +68,8 @@ class Sqlitefolderservice implements INoteService
     }
 
     @override
-    (bool, List<Note>?, String?) listNotes(int? idPasta) {
-        final conn = getConnection();
+    Future<(bool, List<Note>?, String?)> listNotes(int? idPasta) async {
+        final conn = await getConnection();
         try {
             final ResultSet results;
             if(idPasta == null)
@@ -106,8 +106,8 @@ class Sqlitefolderservice implements INoteService
     }
 
     @override
-    (bool, String) updateNote(int id, String newTitulo, String newDescricao, int? idPasta, String color) {
-        final conn = getConnection();
+    Future<(bool, String)> updateNote(int id, String newTitulo, String newDescricao, int? idPasta, String color) async {
+        final conn = await getConnection();
         try {
             if(idPasta == null)
             {
