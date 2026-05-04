@@ -6,7 +6,7 @@ actor "Usuário"as U
 rectangle "Sistema de Escrita Criativa - Organização" {
     usecase "UC04: Organizar Elementos via Drag-and-Drop" as UC04
     usecase "UC05: Busca Global com Filtros e Tags" as UC05
-    usecase "UC12: Manutenção de Pastas e Conteúdo" as UC12
+    usecase "UC12: Exclusão de Pastas e Conteúdo" as UC12
 }
 
 U --> UC04

@@ -65,10 +65,9 @@
 
 ### RF Relacionadas
 
-- RF31
+- RF30
 - RF34
-- RF35
-- RF38
+- RF37
 
 ### RN Relacionadas
 
@@ -162,9 +161,9 @@
 
 ### RF Relacionadas
 
+- RF27
 - RF28
-- RF30
-- RF50
+- RF29
 
 ### RNF Relacionadas
 
@@ -201,7 +200,7 @@
 
 ### RF Relacionadas
 
-- RF26
+- RF25
 
 ### RNF Relacionadas
 
@@ -388,7 +387,7 @@
 
 ### RF Relacionadas
 
-- RF23
+- RF22
 
 ---
 
@@ -426,7 +425,8 @@
 
 ### RF Relacionadas
 
-- RF40
+- RF36
+- RF39
 
 ### RN Relacionadas
 
@@ -479,6 +479,10 @@
 - RF16
 - RF17
 
+### RN Relacionadas
+
+- RN03
+
 ---
 
 ## UC13 — Gestão de Atributos Detalhados no Diagrama
@@ -516,8 +520,8 @@
 
 ### RF Relacionadas
 
-- RF36
-- RF43
+- RF35
+- RF42
 
 ---
 
@@ -549,7 +553,7 @@
 
 ### Fluxo Alternativo
 
-- **A1 — Alterar Idioma (RF25):**
+- **A1 — Alterar Idioma (RF24):**
     1. O usuário seleciona a opção de "Idioma".
     2. O sistema exibe a lista de idiomas suportados.
     3. O usuário seleciona o novo idioma e o sistema atualiza todos os rótulos e menus imediatamente.
@@ -563,6 +567,7 @@
 
 ### RF Relacionadas
 
+- RF23
 - RF24
 - RF25
 
@@ -609,9 +614,8 @@
 ### RF Relacionadas
 
 - RF08
-- RF22
-- RF29
-- RF32
+- RF21
+- RF31
 
 ---
 
@@ -650,7 +654,7 @@
 
 ### RF Relacionadas
 
-- RF23
+- RF22
 
 ---
 
@@ -707,4 +711,4 @@
 ### RF Relacionadas
 
 - RF18
-- RF27
+- RF26

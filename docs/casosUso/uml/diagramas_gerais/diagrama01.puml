@@ -13,9 +13,9 @@ rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
     }
 
     package "Conteúdo" {
-        usecase "UC01: Criar Novo Projeto" as UC01
+        usecase "UC01: Criar um novo projeto" as UC01
         usecase "UC08: Upload e Compressão de Imagens de Personagens" as UC08
-        usecase "UC09: Criação e Categorização de Ideias" as UC09
+        usecase "UC09: Criação e Categorização de Ideias (Markdown)" as UC09
         usecase "UC15: Exclusão de Entidades e Itens do Projeto" as UC15
     }
 }
