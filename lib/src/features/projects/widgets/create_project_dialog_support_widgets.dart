@@ -134,19 +134,31 @@ class CreateProjectDialogTagColorSwatch extends StatelessWidget {
   }
 }
 
-LinearGradient buildCreateProjectDialogCoverPreviewGradient(Color coverColor) {
+LinearGradient buildCreateProjectDialogCoverPreviewGradient(
+  Color coverColor,
+  Color accentColor,
+) {
   return LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Colors.white.withValues(alpha: 0.95),
       Color.alphaBlend(
-        coverColor.withValues(alpha: 0.24),
-        const Color(0xFFF8F1F5),
+        accentColor.withValues(alpha: 0.76),
+        const Color(0xFF8A7485).withValues(alpha: 0.88),
       ),
-      coverColor,
+      Color.alphaBlend(
+        coverColor.withValues(alpha: 0.94),
+        Colors.white.withValues(alpha: 0.18),
+      ),
+      Color.alphaBlend(
+        _lightenCreateProjectCoverAccent(
+          accentColor,
+          0.18,
+        ).withValues(alpha: 0.92),
+        Colors.white.withValues(alpha: 0.16),
+      ),
     ],
-    stops: const [0.0, 0.54, 1.0],
+    stops: const [0.0, 0.58, 1.0],
   );
 }
 
@@ -174,6 +186,11 @@ LinearGradient buildCreateProjectDialogAccentPreviewGradient(
     ],
     stops: const [0.0, 0.52, 1.0],
   );
+}
+
+Color _lightenCreateProjectCoverAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
 }
 
 class CreateProjectDialogColorTargetChip extends StatelessWidget {

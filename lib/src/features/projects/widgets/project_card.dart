@@ -152,7 +152,10 @@ class _ProjectCardState extends State<ProjectCard>
   void _openProject() {
     widget.onOpenProject?.call();
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ProjectPage(title: widget.title)),
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ProjectPage(title: widget.title, accentColor: widget.accentColor),
+      ),
     );
   }
 
@@ -305,6 +308,7 @@ class _ProjectCardState extends State<ProjectCard>
                             children: [
                               _ProjectHeader(
                                 coverColor: widget.coverColor,
+                                accentColor: widget.accentColor,
                                 coverImage: widget.coverImage,
                                 isExpanded: _isExpanded,
                                 isEditing: _isEditing,

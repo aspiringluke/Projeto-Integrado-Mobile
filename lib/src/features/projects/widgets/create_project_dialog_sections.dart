@@ -281,9 +281,11 @@ class CreateProjectDialogColorSection extends StatelessWidget {
                 color: controller.coverColor,
                 gradient: buildCreateProjectDialogCoverPreviewGradient(
                   controller.coverColor,
+                  controller.accentColor,
                 ),
                 swatchGradient: buildCreateProjectDialogCoverPreviewGradient(
                   controller.coverColor,
+                  controller.accentColor,
                 ),
                 isSelected:
                     controller.activeColorTarget ==
@@ -327,6 +329,7 @@ class CreateProjectDialogColorSection extends StatelessWidget {
               ? 'Preenche o topo do cartão.'
               : 'Aplica a base cromática do cartão.',
           color: controller.activeColor,
+          accentColor: controller.accentColor,
           hslColor: controller.activeHslColor,
           useSolidCoverPreview:
               controller.activeColorTarget ==

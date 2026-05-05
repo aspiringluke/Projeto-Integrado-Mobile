@@ -9,6 +9,7 @@ import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
 import 'character_card_expanded_body.dart';
+import 'character_profile_viewer_dialog.dart';
 import 'character_card_visuals.dart';
 
 class CharacterCard extends StatefulWidget {
@@ -28,11 +29,13 @@ class CharacterCard extends StatefulWidget {
 }
 
 class _CharacterCardState extends State<CharacterCard>
-    with SingleTickerProviderStateMixin {
-  late bool _isExpanded;
+    with TickerProviderStateMixin {
+  bool _isExpanded = false;
   late final AnimationController _controller;
   late final Animation<double> _expandAnimation;
   late final Animation<double> _fadeAnimation;
+  late final AnimationController _entranceController;
+  late final Animation<double> _entranceAnimation;
   late final ScrollController _synopsisScrollController;
   CharacterDateEntries? _dateEntries;
   DateTime? _birthdayValue;
@@ -50,7 +53,6 @@ class _CharacterCardState extends State<CharacterCard>
   @override
   void initState() {
     super.initState();
-    _isExpanded = false;
     _dateEntries = CharacterDateEntries.fromSeed(widget.data.seed);
     _birthdayValue = DateTime(
       widget.data.birthYear,
@@ -83,7 +85,16 @@ class _CharacterCardState extends State<CharacterCard>
       curve: const Interval(0.18, 1, curve: Curves.easeOut),
       reverseCurve: const Interval(0, 0.82, curve: Curves.easeIn),
     );
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _entranceAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutCubic,
+    );
     _synopsisScrollController = ScrollController();
+    _entranceController.forward();
   }
 
   @override
@@ -94,6 +105,7 @@ class _CharacterCardState extends State<CharacterCard>
     _quoteController?.dispose();
     _synopsisController?.dispose();
     _controller.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -114,6 +126,18 @@ class _CharacterCardState extends State<CharacterCard>
       MaterialPageRoute<void>(
         builder: (_) => _CharacterPlaceholderPage(title: widget.data.name),
       ),
+    );
+  }
+
+  Future<void> _openCharacterProfileViewer() async {
+    if (widget.data.profileImage.bytes == null) {
+      return;
+    }
+
+    await showCharacterProfileViewerDialog(
+      context,
+      characterName: widget.data.name,
+      profileImage: widget.data.profileImage,
     );
   }
 
@@ -503,241 +527,420 @@ class _CharacterCardState extends State<CharacterCard>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: RepaintBoundary(
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      widget.data.accent.withValues(alpha: 0.46),
-                      Colors.white.withValues(alpha: 0.62),
-                      const Color(0xFFF4F2F4).withValues(alpha: 0.74),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedBuilder(
+        animation: _entranceAnimation,
+        builder: (context, child) {
+          final offsetY = (1 - _entranceAnimation.value) * 10;
+          return Opacity(
+            opacity: _entranceAnimation.value,
+            child: Transform.translate(
+              offset: Offset(0, offsetY),
+              child: child,
+            ),
+          );
+        },
+        child: RepaintBoundary(
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16, top: 2),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.data.accent.withValues(
+                          alpha: _isExpanded ? 0.12 : 0.08,
+                        ),
+                        blurRadius: _isExpanded ? 12 : 10,
+                        offset: const Offset(0, 4),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _isExpanded ? 0.08 : 0.05,
+                        ),
+                        blurRadius: _isExpanded ? 12 : 9,
+                        offset: const Offset(0, 6),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.68),
-                    width: 0.75,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.white.withValues(alpha: 0.18),
-                                Colors.white.withValues(alpha: 0.03),
-                                const Color(0x2AD8AFC2),
-                              ],
-                              stops: const [0.0, 0.45, 1.0],
-                            ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: _buildCharacterShellGradient(
+                          widget.data.accent,
+                          isExpanded: _isExpanded,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(
+                            alpha: _isExpanded ? 0.7 : 0.58,
                           ),
+                          width: 0.85,
                         ),
                       ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          height: 60,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.vertical(
-                              top: const Radius.circular(16),
-                              bottom: Radius.circular(_isExpanded ? 0 : 16),
-                            ),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                widget.data.accent.withValues(alpha: 0.94),
-                                Colors.white.withValues(alpha: 0.92),
-                                const Color(0xFFF2EED7).withValues(alpha: 0.84),
-                              ],
-                            ),
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.22),
-                                width: 0.8,
-                              ),
-                            ),
-                          ),
-                          child: Row(
+                      foregroundDecoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.13),
+                            Colors.transparent,
+                            Colors.white.withValues(alpha: 0.08),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.28, 0.56, 1.0],
+                        ),
+                      ),
+                      child: AnimatedBuilder(
+                        animation: _expandAnimation,
+                        builder: (context, _) {
+                          final bottomRadius = Radius.circular(
+                            16 * (1 - _expandAnimation.value),
+                          );
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              CharacterAvatarTile(
-                                accent: widget.data.accent,
-                                avatarColor: widget.data.avatarColor,
-                                icon: widget.data.icon,
+                              _CharacterHeader(
+                                data: widget.data,
+                                isExpanded: _isExpanded,
+                                bottomRadius: bottomRadius,
+                                onOpenCharacterPage: _openCharacterPage,
+                                onOpenCharacterProfileViewer:
+                                    _openCharacterProfileViewer,
+                                onToggleExpand: _toggleExpanded,
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: _openCharacterPage,
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            widget.data.name,
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              fontStyle: FontStyle.italic,
-                                              shadows: [
-                                                Shadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.28),
-                                                  blurRadius: 6,
-                                                  offset: const Offset(0, 1.5),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Text(
-                                            widget.data.alias,
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.86,
+                              ClipRect(
+                                child: SizeTransition(
+                                  sizeFactor: _expandAnimation,
+                                  axisAlignment: -1,
+                                  child: FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 8,
+                                        sigmaY: 8,
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient:
+                                              _buildCharacterDetailsGradient(
+                                                widget.data.accent,
                                               ),
-                                              fontSize: 11,
-                                              fontStyle: FontStyle.italic,
-                                              shadows: [
-                                                Shadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.16),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 1),
-                                                ),
-                                              ],
+                                          border: Border(
+                                            top: BorderSide(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.22,
+                                              ),
+                                              width: 0.7,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  customBorder: const CircleBorder(),
-                                  onTap: _toggleExpanded,
-                                  child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      8,
-                                      8,
-                                      10,
-                                      8,
-                                    ),
-                                    child: AnimatedRotation(
-                                      turns: _isExpanded ? 0.5 : 0,
-                                      duration: const Duration(
-                                        milliseconds: 220,
-                                      ),
-                                      curve: Curves.easeOutCubic,
-                                      child: Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: Colors.black.withValues(
-                                          alpha: 0.48,
                                         ),
-                                        size: 26,
+                                        child: Stack(
+                                          children: [
+                                            Positioned.fill(
+                                              child: IgnorePointer(
+                                                child: DecoratedBox(
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      begin:
+                                                          Alignment.topCenter,
+                                                      end: Alignment
+                                                          .bottomCenter,
+                                                      colors: [
+                                                        Colors.white.withValues(
+                                                          alpha: 0.12,
+                                                        ),
+                                                        Colors.white.withValues(
+                                                          alpha: 0.04,
+                                                        ),
+                                                        Colors.transparent,
+                                                      ],
+                                                      stops: const [
+                                                        0.0,
+                                                        0.24,
+                                                        0.6,
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            ExpandedCharacterBody(
+                                              accentColor: widget.data.accent,
+                                              data: widget.data,
+                                              dateEntry: _currentDateEntry,
+                                              isEditing: _editing,
+                                              birthdayLabel:
+                                                  formatBirthdayLabel(
+                                                    _birthday.day,
+                                                    _birthday.month,
+                                                  ),
+                                              heightLabel: formatHeightLabel(
+                                                _heightCm,
+                                                _heightUnit,
+                                              ),
+                                              weightLabel: formatWeightLabel(
+                                                _weightKg,
+                                                _weightUnit,
+                                              ),
+                                              heightUnit: _heightUnit,
+                                              weightUnit: _weightUnit,
+                                              signData: _signData,
+                                              synopsisController:
+                                                  _synopsisTextController,
+                                              synopsisScrollController:
+                                                  _synopsisScrollController,
+                                              quoteController:
+                                                  _quoteTextController,
+                                              heightController:
+                                                  _heightTextController,
+                                              weightController:
+                                                  _weightTextController,
+                                              onCycleDateType: _cycleDateType,
+                                              onTapSign: _showSignDescription,
+                                              onTapAge: _showCharacterAge,
+                                              onTapBirthday: _selectBirthday,
+                                              onTapHeightUnit:
+                                                  _selectHeightUnit,
+                                              onTapWeightUnit:
+                                                  _selectWeightUnit,
+                                              onCommitHeight: () {
+                                                setState(() {
+                                                  _commitHeightText();
+                                                });
+                                              },
+                                              onCommitWeight: () {
+                                                setState(() {
+                                                  _commitWeightText();
+                                                });
+                                              },
+                                              onToggleEditing: _toggleEditing,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                        ClipRect(
-                          child: SizeTransition(
-                            sizeFactor: _expandAnimation,
-                            axisAlignment: -1,
-                            child: FadeTransition(
-                              opacity: _fadeAnimation,
-                              child: ExpandedCharacterBody(
-                                dateEntry: _currentDateEntry,
-                                isEditing: _editing,
-                                birthdayLabel: formatBirthdayLabel(
-                                  _birthday.day,
-                                  _birthday.month,
-                                ),
-                                heightLabel: formatHeightLabel(
-                                  _heightCm,
-                                  _heightUnit,
-                                ),
-                                weightLabel: formatWeightLabel(
-                                  _weightKg,
-                                  _weightUnit,
-                                ),
-                                heightUnit: _heightUnit,
-                                weightUnit: _weightUnit,
-                                signData: _signData,
-                                synopsisController: _synopsisTextController,
-                                synopsisScrollController:
-                                    _synopsisScrollController,
-                                quoteController: _quoteTextController,
-                                heightController: _heightTextController,
-                                weightController: _weightTextController,
-                                onCycleDateType: _cycleDateType,
-                                onTapSign: _showSignDescription,
-                                onTapAge: _showCharacterAge,
-                                onTapBirthday: _selectBirthday,
-                                onTapHeightUnit: _selectHeightUnit,
-                                onTapWeightUnit: _selectWeightUnit,
-                                onCommitHeight: () {
-                                  setState(() {
-                                    _commitHeightText();
-                                  });
-                                },
-                                onCommitWeight: () {
-                                  setState(() {
-                                    _commitWeightText();
-                                  });
-                                },
-                                onToggleEditing: _toggleEditing,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                     ),
-                  ],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: -4,
+                child: CharacterPinBadge(
+                  isActive: widget.isPinned,
+                  onTap: widget.onTogglePinned,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterHeader extends StatelessWidget {
+  final CharacterCardData data;
+  final bool isExpanded;
+  final Radius bottomRadius;
+  final VoidCallback onOpenCharacterPage;
+  final VoidCallback onOpenCharacterProfileViewer;
+  final VoidCallback onToggleExpand;
+
+  const _CharacterHeader({
+    required this.data,
+    required this.isExpanded,
+    required this.bottomRadius,
+    required this.onOpenCharacterPage,
+    required this.onOpenCharacterProfileViewer,
+    required this.onToggleExpand,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.vertical(
+          top: const Radius.circular(16),
+          bottom: bottomRadius,
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: isExpanded
+                ? Colors.white.withValues(alpha: 0.22)
+                : Colors.transparent,
+            width: 0.7,
+          ),
+        ),
+      ),
+      child: SizedBox(
+        height: characterProfileTileHeight,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    top: const Radius.circular(16),
+                    bottom: bottomRadius,
+                  ),
+                  gradient: _buildCharacterHeaderGradient(
+                    data.accent,
+                    data.avatarColor,
+                  ),
                 ),
               ),
             ),
             Positioned(
-              left: -4,
-              top: -4,
-              child: CharacterPinBadge(
-                isActive: widget.isPinned,
-                onTap: widget.onTogglePinned,
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: CharacterAvatarTile(
+                accent: data.accent,
+                avatarColor: data.avatarColor,
+                profileImage: data.profileImage,
+                icon: data.icon,
+                isExpanded: isExpanded,
+                onTap: data.profileImage.bytes == null
+                    ? null
+                    : onOpenCharacterProfileViewer,
+              ),
+            ),
+            Positioned.fill(
+              left: characterProfileTileWidth,
+              right: 52,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onOpenCharacterPage,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 14, right: 18),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            data.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isExpanded
+                                  ? const Color(0xFFF9F6FA)
+                                  : const Color(0xFFF7F4F8),
+                              fontSize: 18.5,
+                              fontWeight: FontWeight.w700,
+                              fontStyle: FontStyle.italic,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.52),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 3),
+                                ),
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.28),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            data.alias,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.86),
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.16),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 26,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top: const Radius.circular(16),
+                      bottom: Radius.circular(bottomRadius.x),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.2),
+                        Colors.white.withValues(alpha: 0.05),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.45, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10,
+              top: 0,
+              bottom: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onToggleExpand,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: Colors.white.withValues(alpha: 0.92),
+                        size: 26,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -1000,4 +1203,69 @@ class _CharacterPlaceholderPage extends StatelessWidget {
       ),
     );
   }
+}
+
+LinearGradient _buildCharacterShellGradient(
+  Color accentColor, {
+  required bool isExpanded,
+}) {
+  final leading = Color.alphaBlend(
+    accentColor.withValues(alpha: isExpanded ? 0.16 : 0.08),
+    Colors.white.withValues(alpha: 0.84),
+  );
+  final center = Colors.white.withValues(alpha: isExpanded ? 0.82 : 0.76);
+  final trailing = Color.alphaBlend(
+    _lightenCharacterColor(
+      accentColor,
+      0.22,
+    ).withValues(alpha: isExpanded ? 0.18 : 0.1),
+    const Color(0xFFF8F2F6).withValues(alpha: 0.82),
+  );
+
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [leading, center, trailing],
+    stops: const [0.0, 0.48, 1.0],
+  );
+}
+
+LinearGradient _buildCharacterHeaderGradient(Color accent, Color avatarColor) {
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color.alphaBlend(
+        accent.withValues(alpha: 0.78),
+        const Color(0xFF8A7485).withValues(alpha: 0.88),
+      ),
+      Color.alphaBlend(
+        avatarColor.withValues(alpha: 0.2),
+        Colors.white.withValues(alpha: 0.18),
+      ),
+      Color.alphaBlend(
+        _lightenCharacterColor(accent, 0.18).withValues(alpha: 0.92),
+        Colors.white.withValues(alpha: 0.16),
+      ),
+    ],
+    stops: const [0.0, 0.58, 1.0],
+  );
+}
+
+LinearGradient _buildCharacterDetailsGradient(Color accentColor) {
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      accentColor.withValues(alpha: 0.12),
+      Colors.white.withValues(alpha: 0.5),
+      const Color(0xFFF6F1F4).withValues(alpha: 0.36),
+    ],
+    stops: const [0.0, 0.46, 1.0],
+  );
+}
+
+Color _lightenCharacterColor(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
 }

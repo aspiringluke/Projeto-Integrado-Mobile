@@ -322,6 +322,7 @@ class _ProjectDetails extends StatelessWidget {
           MaterialPageRoute<void>(
             builder: (_) => ProjectPage(
               title: projectTitle,
+              accentColor: accentColor,
               initialSection: ProjectSectionId.configProjeto,
             ),
           ),

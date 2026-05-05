@@ -10,11 +10,13 @@ import '../utils/characters_utils.dart';
 import 'character_overlays.dart';
 
 class CharacterTimeField extends StatelessWidget {
+  final Color accentColor;
   final CharacterDateEntry dateEntry;
   final VoidCallback onTapClock;
 
   const CharacterTimeField({
     super.key,
+    required this.accentColor,
     required this.dateEntry,
     required this.onTapClock,
   });
@@ -36,7 +38,7 @@ class CharacterTimeField extends StatelessWidget {
               radius: fieldHeight / 2,
               blurSigma: 9,
               padding: const EdgeInsets.only(left: 40, right: 31),
-              fillColor: const Color(0xFFF3EEF3).withValues(alpha: 0.3),
+              fillColor: accentColor.withValues(alpha: 0.16),
               borderColor: Colors.white.withValues(alpha: 0.84),
               borderWidth: 0.75,
               gradient: LinearGradient(
@@ -44,8 +46,11 @@ class CharacterTimeField extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   Colors.white.withValues(alpha: 0.64),
-                  const Color(0xFFF6EEF3).withValues(alpha: 0.32),
-                  const Color(0xFFE3D8E0).withValues(alpha: 0.16),
+                  accentColor.withValues(alpha: 0.18),
+                  _lightenCharacterAccent(
+                    accentColor,
+                    0.24,
+                  ).withValues(alpha: 0.12),
                 ],
                 stops: const [0.0, 0.48, 1.0],
               ),
@@ -69,20 +74,23 @@ class CharacterTimeField extends StatelessWidget {
               diameter: circleDiameter,
               onTap: onTapClock,
               blurSigma: 8,
-              fillColor: const Color(0xFFF0BEDB).withValues(alpha: 0.5),
+              fillColor: accentColor.withValues(alpha: 0.42),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
                   Colors.white.withValues(alpha: 0.7),
-                  const Color(0xFFF4D5E6).withValues(alpha: 0.52),
-                  const Color(0xFFE8C4D9).withValues(alpha: 0.36),
+                  _lightenCharacterAccent(
+                    accentColor,
+                    0.18,
+                  ).withValues(alpha: 0.52),
+                  accentColor.withValues(alpha: 0.42),
                 ],
               ),
               borderColor: Colors.white.withValues(alpha: 0.84),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFDF6EB8).withValues(alpha: 0.08),
+                  color: accentColor.withValues(alpha: 0.12),
                   blurRadius: 9,
                   offset: const Offset(0, 3),
                 ),
@@ -106,41 +114,44 @@ class CharacterTimeField extends StatelessWidget {
 }
 
 class MiniGlassButton extends StatelessWidget {
+  final Color accentColor;
   final IconData icon;
   final VoidCallback onTap;
-  final Color fillColor;
+  final Color? fillColor;
 
   const MiniGlassButton({
     super.key,
+    required this.accentColor,
     required this.icon,
     required this.onTap,
-    this.fillColor = const Color(0x6BFFFFFF),
+    this.fillColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedFillColor = fillColor ?? accentColor.withValues(alpha: 0.22);
+
     return GlassCircleButton(
       diameter: 34,
       onTap: onTap,
       blurSigma: 8,
-      fillColor: fillColor,
+      fillColor: resolvedFillColor,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
           Colors.white.withValues(alpha: 0.58),
-          Color.alphaBlend(
-            const Color(0xFFF7EEF5).withValues(alpha: 0.42),
-            fillColor,
-          ),
-          Color.alphaBlend(
-            const Color(0xFFE4D4E1).withValues(alpha: 0.2),
-            fillColor,
-          ),
+          accentColor.withValues(alpha: 0.22),
+          _lightenCharacterAccent(accentColor, 0.22).withValues(alpha: 0.18),
         ],
       ),
       borderColor: Colors.white.withValues(alpha: 0.8),
       boxShadow: [
+        BoxShadow(
+          color: accentColor.withValues(alpha: 0.14),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.06),
           blurRadius: 9,
@@ -247,11 +258,13 @@ class _CharacterPillSurface extends StatelessWidget {
 }
 
 class CharacterQuoteStrip extends StatelessWidget {
+  final Color accentColor;
   final TextEditingController controller;
   final bool isEditing;
 
   const CharacterQuoteStrip({
     super.key,
+    required this.accentColor,
     required this.controller,
     required this.isEditing,
   });
@@ -268,8 +281,8 @@ class CharacterQuoteStrip extends StatelessWidget {
         end: Alignment.bottomRight,
         colors: [
           Colors.white.withValues(alpha: 0.56),
-          const Color(0xFFF7EEF5).withValues(alpha: 0.28),
-          const Color(0xFFE4D4E1).withValues(alpha: 0.16),
+          accentColor.withValues(alpha: 0.12),
+          _lightenCharacterAccent(accentColor, 0.22).withValues(alpha: 0.08),
         ],
       ),
       child: Row(
@@ -278,11 +291,11 @@ class CharacterQuoteStrip extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: accentColor.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(999),
               border: Border(
                 right: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.52),
+                  color: accentColor.withValues(alpha: 0.3),
                   width: 0.8,
                 ),
               ),
@@ -340,6 +353,7 @@ class CharacterQuoteStrip extends StatelessWidget {
 }
 
 class CharacterBirthdayField extends StatelessWidget {
+  final Color accentColor;
   final String birthdayLabel;
   final ZodiacSignData signData;
   final bool isEditing;
@@ -349,6 +363,7 @@ class CharacterBirthdayField extends StatelessWidget {
 
   const CharacterBirthdayField({
     super.key,
+    required this.accentColor,
     required this.birthdayLabel,
     required this.signData,
     required this.isEditing,
@@ -385,7 +400,7 @@ class CharacterBirthdayField extends StatelessWidget {
                       width: 1.3,
                       height: 18,
                       margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: const Color(0xFFDF6EB8),
+                      color: accentColor.withValues(alpha: 0.84),
                     ),
                     Expanded(
                       child: Align(
@@ -440,7 +455,11 @@ class CharacterBirthdayField extends StatelessWidget {
             right: 3,
             top: 5,
             bottom: 5,
-            child: _CharacterSignButton(signData: signData, onTap: onTapSign),
+            child: _CharacterSignButton(
+              accentColor: accentColor,
+              signData: signData,
+              onTap: onTapSign,
+            ),
           ),
         ],
       ),
@@ -449,6 +468,7 @@ class CharacterBirthdayField extends StatelessWidget {
 }
 
 class CharacterHeightField extends StatelessWidget {
+  final Color accentColor;
   final String heightLabel;
   final String unitLabel;
   final TextEditingController controller;
@@ -458,6 +478,7 @@ class CharacterHeightField extends StatelessWidget {
 
   const CharacterHeightField({
     super.key,
+    required this.accentColor,
     required this.heightLabel,
     required this.unitLabel,
     required this.controller,
@@ -491,7 +512,7 @@ class CharacterHeightField extends StatelessWidget {
                       width: 1.3,
                       height: 18,
                       margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: const Color(0xFFDF6EB8),
+                      color: accentColor.withValues(alpha: 0.84),
                     ),
                     Expanded(
                       child: isEditing
@@ -536,7 +557,11 @@ class CharacterHeightField extends StatelessWidget {
             right: 4,
             top: 4,
             bottom: 4,
-            child: _CharacterUnitButton(label: unitLabel, onTap: onTapUnit),
+            child: _CharacterUnitButton(
+              accentColor: accentColor,
+              label: unitLabel,
+              onTap: onTapUnit,
+            ),
           ),
         ],
       ),
@@ -545,6 +570,7 @@ class CharacterHeightField extends StatelessWidget {
 }
 
 class CharacterWeightField extends StatelessWidget {
+  final Color accentColor;
   final String weightLabel;
   final String unitLabel;
   final TextEditingController controller;
@@ -554,6 +580,7 @@ class CharacterWeightField extends StatelessWidget {
 
   const CharacterWeightField({
     super.key,
+    required this.accentColor,
     required this.weightLabel,
     required this.unitLabel,
     required this.controller,
@@ -587,7 +614,7 @@ class CharacterWeightField extends StatelessWidget {
                       width: 1.3,
                       height: 18,
                       margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: const Color(0xFFDF6EB8),
+                      color: accentColor.withValues(alpha: 0.84),
                     ),
                     Expanded(
                       child: isEditing
@@ -632,7 +659,11 @@ class CharacterWeightField extends StatelessWidget {
             right: 4,
             top: 4,
             bottom: 4,
-            child: _CharacterUnitButton(label: unitLabel, onTap: onTapUnit),
+            child: _CharacterUnitButton(
+              accentColor: accentColor,
+              label: unitLabel,
+              onTap: onTapUnit,
+            ),
           ),
         ],
       ),
@@ -641,10 +672,15 @@ class CharacterWeightField extends StatelessWidget {
 }
 
 class _CharacterSignButton extends StatelessWidget {
+  final Color accentColor;
   final ZodiacSignData signData;
   final ValueChanged<Rect> onTap;
 
-  const _CharacterSignButton({required this.signData, required this.onTap});
+  const _CharacterSignButton({
+    required this.accentColor,
+    required this.signData,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -660,8 +696,20 @@ class _CharacterSignButton extends StatelessWidget {
               width: 40,
               height: 28,
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              fillColor: const Color(0xFFF3D7E6).withValues(alpha: 0.88),
+              fillColor: accentColor.withValues(alpha: 0.3),
               borderColor: Colors.white.withValues(alpha: 0.82),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.62),
+                  _lightenCharacterAccent(
+                    accentColor,
+                    0.18,
+                  ).withValues(alpha: 0.4),
+                  accentColor.withValues(alpha: 0.32),
+                ],
+              ),
               alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -669,10 +717,10 @@ class _CharacterSignButton extends StatelessWidget {
                 children: [
                   Text(
                     signData.symbol,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       height: 0.9,
-                      color: Color(0xFF544959),
+                      color: _darkenCharacterAccent(accentColor, 0.24),
                     ),
                   ),
                   SizedBox(
@@ -684,7 +732,7 @@ class _CharacterSignButton extends StatelessWidget {
                         maxLines: 1,
                         softWrap: false,
                         style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.48),
+                          color: Colors.black.withValues(alpha: 0.5),
                           fontSize: 6.6,
                           height: 0.9,
                           fontStyle: FontStyle.italic,
@@ -703,10 +751,15 @@ class _CharacterSignButton extends StatelessWidget {
 }
 
 class _CharacterUnitButton extends StatelessWidget {
+  final Color accentColor;
   final String label;
   final VoidCallback onTap;
 
-  const _CharacterUnitButton({required this.label, required this.onTap});
+  const _CharacterUnitButton({
+    required this.accentColor,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -719,8 +772,17 @@ class _CharacterUnitButton extends StatelessWidget {
           radius: 999,
           height: 30,
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-          fillColor: const Color(0xFFF0E2EA).withValues(alpha: 0.9),
+          fillColor: accentColor.withValues(alpha: 0.24),
           borderColor: Colors.white.withValues(alpha: 0.82),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.64),
+              _lightenCharacterAccent(accentColor, 0.18).withValues(alpha: 0.3),
+              accentColor.withValues(alpha: 0.28),
+            ],
+          ),
           alignment: Alignment.center,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -729,7 +791,7 @@ class _CharacterUnitButton extends StatelessWidget {
               Text(
                 'Unidade',
                 style: TextStyle(
-                  color: Colors.black.withValues(alpha: 0.42),
+                  color: Colors.black.withValues(alpha: 0.46),
                   fontSize: 7.6,
                   height: 0.9,
                   fontStyle: FontStyle.italic,
@@ -741,7 +803,7 @@ class _CharacterUnitButton extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.42),
+                      color: _darkenCharacterAccent(accentColor, 0.24),
                       fontSize: 8.8,
                       height: 0.9,
                       fontStyle: FontStyle.italic,
@@ -750,7 +812,7 @@ class _CharacterUnitButton extends StatelessWidget {
                   Icon(
                     Icons.expand_more_rounded,
                     size: 12,
-                    color: Colors.black.withValues(alpha: 0.38),
+                    color: _darkenCharacterAccent(accentColor, 0.18),
                   ),
                 ],
               ),
@@ -760,6 +822,16 @@ class _CharacterUnitButton extends StatelessWidget {
       ),
     );
   }
+}
+
+Color _lightenCharacterAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
+}
+
+Color _darkenCharacterAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
 }
 
 class CharacterMarkdownText extends StatelessWidget {

@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class ProjectColorEditor extends StatelessWidget {
   final String title;
   final String description;
   final Color color;
+  final Color accentColor;
   final HSLColor hslColor;
   final bool useSolidCoverPreview;
   final ValueChanged<double> onHueChanged;
@@ -15,6 +16,7 @@ class ProjectColorEditor extends StatelessWidget {
     required this.title,
     required this.description,
     required this.color,
+    required this.accentColor,
     required this.hslColor,
     this.useSolidCoverPreview = false,
     required this.onHueChanged,
@@ -42,7 +44,7 @@ class ProjectColorEditor extends StatelessWidget {
           height: 34,
           decoration: BoxDecoration(
             gradient: useSolidCoverPreview
-                ? _buildCoverPreviewGradient(color)
+                ? _buildCoverPreviewGradient(color, accentColor)
                 : _buildAccentPreviewGradient(color),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
@@ -78,19 +80,25 @@ class ProjectColorEditor extends StatelessWidget {
   }
 }
 
-LinearGradient _buildCoverPreviewGradient(Color coverColor) {
+LinearGradient _buildCoverPreviewGradient(Color coverColor, Color accentColor) {
   return LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Colors.white.withValues(alpha: 0.96),
       Color.alphaBlend(
-        coverColor.withValues(alpha: 0.28),
-        const Color(0xFFF7F0F4),
+        accentColor.withValues(alpha: 0.76),
+        const Color(0xFF8A7485).withValues(alpha: 0.88),
       ),
-      coverColor,
+      Color.alphaBlend(
+        coverColor.withValues(alpha: 0.94),
+        Colors.white.withValues(alpha: 0.18),
+      ),
+      Color.alphaBlend(
+        _lightenCoverPreviewAccent(accentColor, 0.18).withValues(alpha: 0.92),
+        Colors.white.withValues(alpha: 0.16),
+      ),
     ],
-    stops: const [0.0, 0.56, 1.0],
+    stops: const [0.0, 0.58, 1.0],
   );
 }
 
@@ -116,6 +124,11 @@ LinearGradient _buildAccentPreviewGradient(Color accentColor) {
     ],
     stops: const [0.0, 0.5, 1.0],
   );
+}
+
+Color _lightenCoverPreviewAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
 }
 
 LinearGradient _buildHueGradient() {
@@ -144,11 +157,7 @@ LinearGradient _buildSaturationGradient(HSLColor color) {
 
 LinearGradient _buildLightnessGradient(HSLColor color) {
   return LinearGradient(
-    colors: [
-      Colors.black,
-      color.withLightness(0.5).toColor(),
-      Colors.white,
-    ],
+    colors: [Colors.black, color.withLightness(0.5).toColor(), Colors.white],
   );
 }
 

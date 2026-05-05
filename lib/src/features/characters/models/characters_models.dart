@@ -1,10 +1,35 @@
 import 'package:flutter/material.dart';
 
+import '../../projects/models/project_image_data.dart';
+
+enum CharacterProfileFieldId {
+  motto,
+  alias,
+  formationsAndOccupations,
+  titles,
+  weight,
+  height,
+  gender,
+  sexuality,
+  ethnicity,
+  relevance,
+}
+
 class CharacterCardData {
   final String name;
   final String alias;
+  final String motto;
+  final String formationsAndOccupations;
+  final String titles;
+  final String genderTag;
+  final String sexualityTag;
+  final String ethnicityTag;
+  final String functionTag;
+  final String relevanceTag;
+  final Set<CharacterProfileFieldId> visibleProfileFields;
   final Color accent;
   final Color avatarColor;
+  final ProjectImageData profileImage;
   final IconData icon;
   final int birthYear;
   final int birthDay;
@@ -18,8 +43,18 @@ class CharacterCardData {
   const CharacterCardData({
     required this.name,
     required this.alias,
+    this.motto = '',
+    this.formationsAndOccupations = '',
+    this.titles = '',
+    this.genderTag = '',
+    this.sexualityTag = '',
+    this.ethnicityTag = '',
+    this.functionTag = '',
+    this.relevanceTag = '',
+    this.visibleProfileFields = const <CharacterProfileFieldId>{},
     required this.accent,
     required this.avatarColor,
+    this.profileImage = const ProjectImageData(),
     required this.icon,
     required this.birthYear,
     required this.birthDay,
@@ -42,10 +77,7 @@ class CharacterDateEntry {
   final String label;
   final DateTime value;
 
-  const CharacterDateEntry({
-    required this.label,
-    required this.value,
-  });
+  const CharacterDateEntry({required this.label, required this.value});
 }
 
 class CharacterDateEntries {
@@ -63,13 +95,22 @@ class CharacterDateEntries {
     final normalizedSeed = seed.abs();
     final now = DateTime.now();
     final createdAt = now.subtract(
-      Duration(days: 180 + (normalizedSeed % 250), hours: 3 + (normalizedSeed % 9)),
+      Duration(
+        days: 180 + (normalizedSeed % 250),
+        hours: 3 + (normalizedSeed % 9),
+      ),
     );
     final lastModified = now.subtract(
-      Duration(days: 1 + (normalizedSeed % 15), hours: 3 + (normalizedSeed % 7)),
+      Duration(
+        days: 1 + (normalizedSeed % 15),
+        hours: 3 + (normalizedSeed % 7),
+      ),
     );
     final lastAccessed = now.subtract(
-      Duration(hours: 4 + (normalizedSeed % 18), minutes: 8 + (normalizedSeed % 40)),
+      Duration(
+        hours: 4 + (normalizedSeed % 18),
+        minutes: 8 + (normalizedSeed % 40),
+      ),
     );
 
     return CharacterDateEntries(
@@ -81,10 +122,7 @@ class CharacterDateEntries {
         label: 'Ultimo acesso',
         value: lastAccessed,
       ),
-      createdAt: CharacterDateEntry(
-        label: 'Criado em',
-        value: createdAt,
-      ),
+      createdAt: CharacterDateEntry(label: 'Criado em', value: createdAt),
     );
   }
 
@@ -114,8 +152,5 @@ class CharacterListItem {
   bool isPinned = false;
   int unpinnedIndex;
 
-  CharacterListItem({
-    required this.data,
-    required this.unpinnedIndex,
-  });
+  CharacterListItem({required this.data, required this.unpinnedIndex});
 }

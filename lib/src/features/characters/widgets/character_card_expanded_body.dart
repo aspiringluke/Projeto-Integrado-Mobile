@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/outlined_tag_pill.dart';
 import '../../../shared/widgets/synopsis_scroll_box.dart';
+import '../../projects/models/project_tag_data.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
 import 'character_fields.dart';
 
 class ExpandedCharacterBody extends StatelessWidget {
+  final Color accentColor;
+  final CharacterCardData data;
   final CharacterDateEntry dateEntry;
   final bool isEditing;
   final String birthdayLabel;
@@ -32,6 +35,8 @@ class ExpandedCharacterBody extends StatelessWidget {
 
   const ExpandedCharacterBody({
     super.key,
+    required this.accentColor,
+    required this.data,
     required this.dateEntry,
     required this.isEditing,
     required this.birthdayLabel,
@@ -56,6 +61,34 @@ class ExpandedCharacterBody extends StatelessWidget {
     required this.onToggleEditing,
   });
 
+  List<Widget> _buildTagRow() {
+    final tags = <Widget>[];
+    if (data.genderTag.isNotEmpty) {
+      tags.add(OutlinedTagPill(label: data.genderTag, color: projectTagColorAt(0)));
+    }
+    if (data.sexualityTag.isNotEmpty) {
+      tags.add(OutlinedTagPill(label: data.sexualityTag, color: projectTagColorAt(1)));
+    }
+    if (data.ethnicityTag.isNotEmpty) {
+      tags.add(OutlinedTagPill(label: data.ethnicityTag, color: projectTagColorAt(2)));
+    }
+    if (data.functionTag.isNotEmpty) {
+      tags.add(OutlinedTagPill(label: data.functionTag, color: projectTagColorAt(3)));
+    }
+    if (tags.isEmpty) {
+      return const [
+        OutlinedTagPill(label: 'Nenhuma tag selecionada', color: Color(0xFF6A6167)),
+      ];
+    }
+    final result = <Widget>[];
+    for (final tag in tags) {
+      result.add(tag);
+      result.add(const SizedBox(width: 8));
+    }
+    if (result.isNotEmpty) result.removeLast();
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -67,15 +100,16 @@ class ExpandedCharacterBody extends StatelessWidget {
             children: [
               Expanded(
                 child: CharacterTimeField(
+                  accentColor: accentColor,
                   dateEntry: dateEntry,
                   onTapClock: onCycleDateType,
                 ),
               ),
               const SizedBox(width: 12),
               MiniGlassButton(
+                accentColor: accentColor,
                 icon: isEditing ? Icons.check_rounded : Icons.edit_outlined,
                 onTap: onToggleEditing,
-                fillColor: Colors.white.withValues(alpha: 0.34),
               ),
             ],
           ),
@@ -84,6 +118,7 @@ class ExpandedCharacterBody extends StatelessWidget {
             controller: synopsisController,
             scrollController: synopsisScrollController,
             isEditing: isEditing,
+            focusedBorderColor: accentColor,
             placeholderText: synopsisPlaceholderText,
             textStyle: const TextStyle(
               color: Color(0xFF8F8990),
@@ -114,14 +149,12 @@ class ExpandedCharacterBody extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
             viewerBuilder: (context, text, style) {
-              return CharacterMarkdownText(
-                data: text,
-                style: style,
-              );
+              return CharacterMarkdownText(data: text, style: style);
             },
           ),
           const SizedBox(height: 12),
           CharacterQuoteStrip(
+            accentColor: accentColor,
             controller: quoteController,
             isEditing: isEditing,
           ),
@@ -130,6 +163,7 @@ class ExpandedCharacterBody extends StatelessWidget {
             children: [
               Expanded(
                 child: CharacterBirthdayField(
+                  accentColor: accentColor,
                   birthdayLabel: birthdayLabel,
                   signData: signData,
                   isEditing: isEditing,
@@ -141,6 +175,7 @@ class ExpandedCharacterBody extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: CharacterHeightField(
+                  accentColor: accentColor,
                   heightLabel: heightLabel,
                   unitLabel: heightUnitCompactLabel(heightUnit),
                   controller: heightController,
@@ -152,6 +187,7 @@ class ExpandedCharacterBody extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: CharacterWeightField(
+                  accentColor: accentColor,
                   weightLabel: weightLabel,
                   unitLabel: weightUnitCompactLabel(weightUnit),
                   controller: weightController,
@@ -163,12 +199,8 @@ class ExpandedCharacterBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Row(
-            children: [
-              OutlinedTagPill(label: 'Tag 1', color: Color(0xFFEB76AE)),
-              SizedBox(width: 8),
-              OutlinedTagPill(label: 'Tag 2', color: Color(0xFF8EAFF1)),
-            ],
+          Row(
+            children: _buildTagRow(),
           ),
         ],
       ),
