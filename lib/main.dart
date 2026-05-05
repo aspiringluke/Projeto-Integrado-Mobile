@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import './src/app/database/db.dart';
 import './src/app/wireframe.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initDatabase();
   runApp(const Wireframe());
 }

@@ -1,0 +1,132 @@
+import 'package:flutter/material.dart';
+
+import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/notes_drag_payload.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_surface_card.dart';
+
+class FolderListCard extends StatelessWidget {
+  final Folder folder;
+  final VoidCallback? onTap;
+  final VoidCallback? onRename;
+  final VoidCallback? onDelete;
+  final ValueChanged<int>? onAcceptNote;
+  final ValueChanged<int>? onAcceptFolder;
+
+  const FolderListCard({
+    super.key,
+    required this.folder,
+    this.onTap,
+    this.onRename,
+    this.onDelete,
+    this.onAcceptNote,
+    this.onAcceptFolder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: DragTarget<NotesDragPayload>(
+        onWillAcceptWithDetails: (details) {
+          final data = details.data;
+          if (data.type == NotesDragType.note) return onAcceptNote != null;
+          if (data.type == NotesDragType.folder) return onAcceptFolder != null && data.id != folder.id;
+          return false;
+        },
+        onAcceptWithDetails: (details) {
+          final data = details.data;
+          if (data.type == NotesDragType.note) {
+            onAcceptNote?.call(data.id);
+            return;
+          }
+          if (data.type == NotesDragType.folder) {
+            onAcceptFolder?.call(data.id);
+          }
+        },
+        builder: (context, candidateData, rejectedData) {
+          final isHovering = candidateData.isNotEmpty;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: isHovering
+                  ? [
+                      BoxShadow(
+                        color: folder.color.withValues(alpha: 0.35),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: NotesSurfaceCard(
+              height: 68,
+              backgroundColor: folder.color,
+              borderColor: folder.color.withValues(alpha: 0.9),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.folder_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: onTap,
+                      child: Text(
+                        folder.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'rename') onRename?.call();
+                      if (value == 'delete') onDelete?.call();
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'rename',
+                        child: Text('Renomear'),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Excluir'),
+                      ),
+                    ],
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
