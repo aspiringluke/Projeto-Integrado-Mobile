@@ -2,27 +2,19 @@
 
 |Usuário|
 start
-:Pressiona e segura um item (nó ou arquivo);
+:Acessar lista de personagens;
+:Selecionar personagem;
+:Alterar dados da ficha;
+if (Deseja atualizar imagem?) then (sim)
+  :Acionar upload de imagem;
+endif
+:Clicar em "Salvar";
 
-if (Cancelamento de movimento?) then (sim)
-    |Usuário|
-    :Arrasta o item para uma área inválida;
-    
-    |Sistema|
-    :Retorna o item à posição original;
+|Sistema|
+if (Dados válidos?) then (sim)
+  :Persistir alterações da ficha;
 else (não)
-    |Usuário|
-    :Arrasta o item para uma nova coordenada ou para cima de uma pasta;
-
-    |Sistema|
-    :Fornece feedback visual imediato durante o movimento;
-    
-    |Usuário|
-    :Solta o item;
-
-    |Sistema|
-    :Valida a nova posição;
-    :Confirma a alteração de posição;
+  :Exibir inconsistências de validação;
 endif
 
 stop

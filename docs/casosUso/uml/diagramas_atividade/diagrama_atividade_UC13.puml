@@ -2,24 +2,20 @@
 
 |Usuário|
 start
-if (Elemento selecionado?) then (Aresta)
-  :Duplo clique ou pressão longa;
-  |Sistema|
-  :Abrir janela flutuante de texto;
-  |Usuário|
-  :Descrever relação;
-else (Nó)
-  :Clicar e selecionar "Adicionar Descrição";
-  |Sistema|
-  :Abrir campo de notas rápidas;
-  |Usuário|
-  :Inserir notas;
+:Acessa o campo de pesquisa global;
+:Digita uma palavra-chave ou seleciona uma tag específica;
+
+|Sistema|
+:Aplica a latência de debounce para evitar múltiplas requisições;
+
+if (Nenhum resultado encontrado?) then (Sim)
+    |Sistema|
+    :Exibe mensagem amigável de "Nenhum resultado encontrado";
+else (Não)
+    |Sistema|
+    :Consulta o cache/banco;
+    :Retorna os itens correspondentes;
 endif
 
-:Salvar alterações;
-|Sistema|
-:Armazenar metadados;
-:Exibir ícone indicativo no elemento;
 stop
-
 @enduml

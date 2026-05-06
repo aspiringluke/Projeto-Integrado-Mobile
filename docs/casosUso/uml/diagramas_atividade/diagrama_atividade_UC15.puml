@@ -2,25 +2,22 @@
 
 |Usuário|
 start
+:Acessa aba de "Configurações Gerais";
+:Ativa o botão "Modo Desempenho";
 
-if (Deseja facilitar busca?) then (sim)
-  :Utilizar função de ordenação/filtro;
-else (não)
-endif
-:Localizar item (Ideia, Personagem ou Diagrama);
-:Clicar em "Excluir";
 |Sistema|
-:Exibir alerta de confirmação irreversível;
-|Usuário|
+:Desabilita sombras dinâmicas, transparências e animações complexas;
+:Limita o uso da memória para o teto definido;
 
-if (Confirma exclusão?) then (sim)
+if (Desativação do modo?) then (Sim)
+  |Usuário|
+  :Desativa o "Modo Desempenho";
+  
   |Sistema|
-  :Remover registro do Banco de Dados;
-  :Liberar memória;
-  :Atualizar interface instantaneamente;
-else (não)
-  :Cancelar exclusão;
-  :Manter registro no Banco de Dados;
+  :Restaura as configurações gráficas para o padrão;
+else (Não)
+    |Usuário|
+    :Mantém o "Modo Desempenho" ativado;
 endif
 
 stop

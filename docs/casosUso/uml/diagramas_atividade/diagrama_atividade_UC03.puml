@@ -1,0 +1,22 @@
+@startuml diagrama_UC03
+
+|Usuário|
+start
+:Acessar lista de personagens;
+:Clicar em "Criar personagem";
+:Preencher dados da ficha;
+if (Deseja imagem?) then (sim)
+  :Acionar upload de imagem;
+endif
+:Clicar em "Confirmar";
+
+|Sistema|
+if (Campos obrigatórios preenchidos?) then (sim)
+  :Criar personagem no projeto;
+  :Exibir personagem na lista;
+else (não)
+  :Destacar campos pendentes;
+endif
+
+stop
+@enduml

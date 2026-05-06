@@ -2,29 +2,30 @@
 
 |Usuário|
 start
-:Acessar menu de segurança;
+:Seleciona múltiplos nós no editor;
+:Aciona a função "Criar Grupo de Nós";
+:Define um nome e cor para o grupo;
 
-if (Ação?) then (Alterar Senha)
-  |Sistema|
-  :Solicitar senha antiga;
+if (Usuário remover nó do grupo?) then (Sim)
   |Usuário|
-  :Inserir senha atual;
+  :Seleciona o nó a ser removido dentro do grupo;
+  :Aciona a função "Remover do Grupo";
+
   |Sistema|
-  if (Senha correta?) then (sim)
+  :Mantém o nó no diagrama de forma independente;
+else (Não)
+  if (Usuário excluir grupo?) then (Sim)
     |Usuário|
-    :Inserir e confirmar nova senha;
+    :Seleciona o grupo a ser excluído;
+    :Aciona a função "Excluir Grupo";
+    
     |Sistema|
-    :Criptografar e salvar nova credencial;
-  else (não)
-    :Exibir erro de validação;
-  endif
-else (Remover Senha)
-  |Usuário|
-  :Selecionar "Desativar Proteção";
-  :Confirmar identidade;
-  |Sistema|
-  :Remover obrigatoriedade de senha;
+    :Remove o grupo do diagrama;
+    :Mantém os nós do grupo no diagrama de forma independente;
+  else (Não)
+    |Usuário|
+    :Mantém o grupo e os nós agrupados no diagrama;
+    endif
 endif
-
-stop
+    stop
 @enduml

@@ -2,23 +2,30 @@
 
 |Usuário|
 start
-:Acessa aba de "Configurações Gerais";
-:Ativa o botão "Modo Desempenho";
+:Acessar tela de listagem de notas;
+:Criar nova nota e inserir título;
+fork
+  :Escrever texto em Markdown;
+fork again
+  :Adicionar tags;
 
-|Sistema|
-:Desabilita sombras dinâmicas, transparências e animações complexas;
-:Limita o uso da memória para o teto definido;
-
-if (Desativação do modo?) then (Sim)
-  |Usuário|
-  :Desativa o "Modo Desempenho";
-  
-  |Sistema|
-  :Restaura as configurações gráficas para o padrão;
-else (Não)
+  if (Deseja adicionar imagem?) then (sim)
     |Usuário|
-    :Mantém o "Modo Desempenho" ativado;
-endif
+    :Escolher câmera ou galeria;
+    |Sistema|
+    :Capturar arquivo;
+    if (Tamanho respeita RNF05?) then (sim)
+      :Associar imagem à nota;
+    else (não)
+      :Bloquear e exibir erro;
+    endif
+  endif
+end fork
+
+|Usuário|
+:Clicar em "Salvar";
+|Sistema|
+:Persistir nota com conteúdo e tags;
 
 stop
 @enduml

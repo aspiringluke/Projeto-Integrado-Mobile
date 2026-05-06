@@ -2,29 +2,34 @@
 
 |Usuário|
 start
-
-if (Ação selecionada) then (Excluir Nó)
-  :Selecionar nó no editor;
-  :Clicar em "Excluir";
-  |Sistema|
-  :Identificar arestas vinculadas ao nó;
-  fork
-    :Remover o nó selecionado;
-  fork again
-    :Remover todas as arestas órfãs;
-  end fork
-else (Excluir Aresta Individual)
-  |Usuário|
-  :Selecionar apenas a aresta;
-  :Clicar em "Excluir";
-  |Sistema|
-  :Remover aresta mantendo os nós;
-endif
+:Acessar o menu de "Configurações Gerais";
+|Sistema|
+:Apresentar as opções disponíveis (Idioma, Limites, etc.);
 
 |Usuário|
-:Confirmar e Salvar alteração;
+if (Configuração escolhida?) then (Idioma)
+    :Selecionar o novo idioma;
+    |Sistema|
+    :Atualizar todos os rótulos e menus imediatamente;
+elseif (Configuração escolhida?) then (Limite de Sinopse)
+    |Usuário|
+    if (Deseja definir valor?) then (Sim)
+        :Inserir valor numérico no intervalo;
+        |Sistema|
+        :Atualizar regra de validação para campos de sinopse;
+    else (Não / Ilimitado)
+        |Sistema|
+        :Desativar travas de buffer para campos longos;
+    endif
+else (Outras Preferências)
+    |Usuário|
+    :Alterar a configuração desejada (ex: Modo Desempenho);
+endif
+
 |Sistema|
-:Persistir estado do diagrama;
+:Validar a alteração e aplicar preferências globalmente;
+|Usuário|
+:Confirmar e retornar ao menu anterior;
 stop
 
 @enduml

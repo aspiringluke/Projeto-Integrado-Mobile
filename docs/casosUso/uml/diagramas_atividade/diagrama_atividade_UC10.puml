@@ -2,22 +2,24 @@
 
 |Usuário|
 start
-:Acessar "Configurações Gerais";
-:Selecionar "Definir Senha de Acesso";
-:Inserir e confirmar senha;
+:Acessar listagem de itens;
+:Selecionar configurações da pasta;
+:Alterar título (opcional);
+:Selecionar "Excluir Pasta";
 |Sistema|
-:Criptografar e salvar senha;
+:Solicitar tipo de exclusão;
 |Usuário|
-:Reiniciar aplicativo;
-|Sistema|
-repeat
-  :Solicitar senha de acesso;
-  |Usuário|
-  :Inserir senha;
+
+if (Deseja excluir conteúdo?) then (Apenas Pasta)
   |Sistema|
-backward:Exibir "Senha Incorreta";
-repeat while (Senha válida?) is (não)
-:Liberar acesso à Tela Inicial;
+  :Mover itens para o diretório raiz;
+  :Deletar diretório vazio;
+else (Pasta e Conteúdo)
+  |Sistema|
+  :Remover pasta e todos os sub-itens;
+endif
+
+:Atualizar estrutura de diretórios;
 stop
 
 @enduml

@@ -2,50 +2,22 @@
 
 |Usuário|
 start
-
-if (Ação?) then (Solicitar Novo Insight)
-  :Clicar no ícone de "IA";
-  |Sistema|
-  :Coletar dados da hierarquia atual;
-  if (Tela vazia ou sem dados?) then (sim)
-    :Sugerir adição de mais informações;
-    stop
-  else (não)
-    if (Serviço Online?) then (não)
-      :Exibir mensagem de falha de conexão;
-      stop
-    else (sim)
-      |Serviço de IA|
-      :Processar contexto e gerar categorias;
-      if (Tokens disponíveis?) then (não)
-        |Sistema|
-        :Alertar sobre esgotamento de tokens;
-        stop
-      else (sim)
-        :Retornar insights e sugestões de perfis;
-        stop
-      endif
-    endif
-  endif
-else (Consultar Relatórios)
-  |Sistema|
-  :Carregar últimos dashboards salvos localmente;
-endif
-
+:Acessar "Configurações Gerais";
+:Selecionar "Definir Senha de Acesso";
+:Inserir e confirmar senha;
 |Sistema|
-:Redirecionar para tela de relatórios;
-:Renderizar Dashboards (Gráficos e Cards);
-
+:Criptografar e salvar senha;
 |Usuário|
-if (Deseja salvar perfil sugerido?) then (sim)
+:Reiniciar aplicativo;
+|Sistema|
+repeat
+  :Solicitar senha de acesso;
+  |Usuário|
+  :Inserir senha;
   |Sistema|
-  if (Limite de armazenamento atingido?) then (sim)
-    :Alertar necessidade de limpeza;
-  else (não)
-    :Criar novo perfil de personagem;
-  endif
-else (não)
-endif
-
+backward:Exibir "Senha Incorreta";
+repeat while (Senha válida?) is (não)
+:Liberar acesso à Tela Inicial;
 stop
+
 @enduml

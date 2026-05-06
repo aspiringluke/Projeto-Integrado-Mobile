@@ -2,34 +2,29 @@
 
 |Usuário|
 start
-:Acessar o menu de "Configurações Gerais";
-|Sistema|
-:Apresentar as opções disponíveis (Idioma, Limites, etc.);
+:Acessa a seção "Diagramas";
+:Seleciona "Criar novo Diagrama";
 
-|Usuário|
-if (Configuração escolhida?) then (Idioma)
-    :Selecionar o novo idioma;
+|Sistema|
+:Abre o plano de edição de diagramas;
+
+if (Composição do diagrama correta?) then (sim)
+    |Usuário|
+    :Insere dois nós e os conecta através de uma aresta;
+    :Aciona o botão "Salvar";
+    
     |Sistema|
-    :Atualizar todos os rótulos e menus imediatamente;
-elseif (Configuração escolhida?) then (Limite de Sinopse)
+    :Valida as regras de estrutura mínima do diagrama;
+    :Persiste os dados do diagrama;
+else (não)
     |Usuário|
-    if (Deseja definir valor?) then (Sim)
-        :Inserir valor numérico no intervalo;
-        |Sistema|
-        :Atualizar regra de validação para campos de sinopse;
-    else (Não / Ilimitado)
-        |Sistema|
-        :Desativar travas de buffer para campos longos;
-    endif
-else (Outras Preferências)
-    |Usuário|
-    :Alterar a configuração desejada (ex: Modo Desempenho);
+    :Tenta salvar o diagrama com menos de dois nós ou sem arestas;
+    :Recebe uma mensagem de erro;
+
+    |Sistema|
+    :Exibe alerta;
+    :Bloqueia a persistência;
 endif
 
-|Sistema|
-:Validar a alteração e aplicar preferências globalmente;
-|Usuário|
-:Confirmar e retornar ao menu anterior;
 stop
-
 @enduml
