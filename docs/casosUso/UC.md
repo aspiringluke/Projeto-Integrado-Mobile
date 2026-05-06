@@ -45,7 +45,12 @@ Documento consolidado dos casos de uso.
 
 1. Abrir a tela inicial.
 2. Clicar em "Novo Projeto".
-3. Sistema cria o projeto.
+3. Informar nome do projeto.
+4. Sistema cria o projeto.
+
+## Fluxo alternativo
+
+- A1 - Nome não informado: sistema exibe validação de nome obrigatório e bloqueia a criação.
 
 ## Requisitos relacionados
 
@@ -167,6 +172,8 @@ Documento consolidado dos casos de uso.
 ## Fluxo alternativo
 
 - A1 - Arquivo acima do limite: sistema bloqueia upload e exibe erro.
+- A2 - Permissão negada: sistema solicita permissão de acesso à mídia e não conclui o upload.
+- A3 - Formato inválido: sistema bloqueia o arquivo e solicita uma imagem em formato permitido.
 
 ## Requisitos relacionados
 
@@ -198,8 +205,10 @@ Documento consolidado dos casos de uso.
 A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 1. Usuário aciona a opção de adicionar imagem na nota.
-2. Sistema executa o UC08 para seleção e validação da imagem.
+2. Sistema executa o UC05 para seleção e validação da imagem.
 3. Sistema associa a imagem à nota.
+
+- A2 - Nota vazia: ao salvar sem título e sem conteúdo, sistema exibe aviso e bloqueia persistência.
 
 ## Requisitos relacionados
 
@@ -232,7 +241,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 ## Fluxos alternativos
 
-- A1 - Nome inválido ou duplicado: sistema exibe mensagem e solicita novo nome.
+- A1 - Nome inválido: sistema exibe mensagem e solicita novo nome.
 - A2 - Cancelar criação: sistema encerra a ação sem criar pasta.
 
 ## Requisitos relacionados
@@ -278,7 +287,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 # UC09 - Exclusão de entidades e itens do projeto
 
 - Ator principal: Usuário
-- Objetivo: Remover registros de personagens, ideias ou diagramas.
+- Objetivo: Remover registros de personagens, notas ou diagramas.
 - Pré-condições: Listagem de itens aberta.
 - Pós-condições: Item removido do banco e da interface.
 
@@ -292,6 +301,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 ## Fluxo alternativo
 
 - A1 - Ordenação antes da exclusão: usuário ordena itens para facilitar limpeza.
+- A2 - Exclusão com impacto: sistema exibe aviso de impacto quando o item possui vínculos relevantes.
 
 ## Requisitos relacionados
 
@@ -336,7 +346,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 # UC11 - Personalização e configurações de escrita
 
 - Ator principal: Usuário
-- Objetivo: Ajustar idioma, limites de texto e preferências gerais.
+- Objetivo: Ajustar preferências gerais do aplicativo.
 - Pré-condições: Tela de configurações aberta.
 - Pós-condições: Preferências atualizadas.
 
@@ -344,22 +354,17 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 1. Acessar "Configurações Gerais".
 2. Selecionar configuração desejada.
-3. Alterar valor.
+3. Alterar preferência.
 4. Sistema valida e aplica globalmente.
 
 ## Fluxos alternativos
 
-- A1 - Alterar idioma: sistema atualiza rótulos e menus.
-- A2 - Configurar limite de sinopse: sistema aplica novo limite.
-- A3 - Limite ilimitado: sistema desativa restrição de tamanho.
+- A1 - Valor inválido: sistema bloqueia alteração e exibe mensagem de validação.
 
 ## Requisitos relacionados
 
-- RF23
 - RF24
 - RF25
-- RN01
-- RN02
 
 ---
 
@@ -413,6 +418,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 ## Fluxo alternativo
 
 - A1 - Sem resultados: sistema exibe mensagem para revisar termos.
+- A2 - Consulta vazia: sistema exibe itens recentes.
 
 ## Requisitos relacionados
 
@@ -473,6 +479,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 ## Fluxo alternativo
 
 - A1 - Desativar modo: sistema restaura configurações visuais padrão.
+- A2 - Falha na aplicação: sistema mantém configuração anterior e informa o usuário.
 
 ## Requisitos relacionados
 
@@ -532,6 +539,8 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 ## Fluxo alternativo
 
 - A1 - Senha incorreta: sistema bloqueia entrada e permite nova tentativa.
+- A2 - Senha inválida no cadastro: sistema rejeita a senha e solicita correção.
+- A3 - Confirmação divergente: sistema bloqueia cadastro até que senha e confirmação coincidam.
 
 ## Requisitos relacionados
 
@@ -559,6 +568,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 ## Fluxo alternativo
 
 - A1 - Exclusão de aresta individual: remove aresta e mantém nós.
+- A2 - Cancelamento da exclusão de nó: sistema mantém o estado atual do diagrama.
 
 ## Requisitos relacionados
 
@@ -617,6 +627,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 ## Fluxo alternativo
 
 - A1 - Remover senha: usuário desativa proteção após confirmar identidade.
+- A2 - Senha atual incorreta: sistema bloqueia alteração e solicita nova tentativa.
+- A3 - Nova senha inválida: sistema rejeita a senha e solicita correção.
+- A4 - Identidade não confirmada na remoção: sistema cancela a desativação da proteção.
 
 ## Requisitos relacionados
 
