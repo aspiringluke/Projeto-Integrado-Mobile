@@ -4,26 +4,35 @@
 start
 :Acessar menu de segurança;
 
-if (Ação?) then (Alterar Senha)
+if (Ação?) then (Alterar senha)
   |Sistema|
-  :Solicitar senha antiga;
+  :Solicitar senha atual;
   |Usuário|
   :Inserir senha atual;
   |Sistema|
-  if (Senha correta?) then (sim)
+  if (Senha atual correta?) then (sim)
     |Usuário|
     :Inserir e confirmar nova senha;
     |Sistema|
-    :Criptografar e salvar nova credencial;
+    if (Nova senha válida?) then (sim)
+      :Salvar nova credencial;
+    else (não)
+      :Exibir regra de senha inválida;
+    endif
   else (não)
-    :Exibir erro de validação;
+    :Exibir erro de autenticação;
   endif
-else (Remover Senha)
+else (Remover senha)
+  |Sistema|
+  :Solicitar confirmação da identidade;
   |Usuário|
-  :Selecionar "Desativar Proteção";
   :Confirmar identidade;
   |Sistema|
-  :Remover obrigatoriedade de senha;
+  if (Identidade confirmada?) then (sim)
+    :Remover obrigatoriedade de senha;
+  else (não)
+    :Cancelar remoção de senha;
+  endif
 endif
 
 stop

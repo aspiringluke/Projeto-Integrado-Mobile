@@ -2,19 +2,22 @@
 
 |Usuário|
 start
-:Acessa o campo de pesquisa global;
-:Digita uma palavra-chave ou seleciona uma tag específica;
+:Acessar campo de busca global;
+:Digitar palavra-chave ou selecionar tag;
 
 |Sistema|
-:Aplica a latência de debounce para evitar múltiplas requisições;
+:Aplicar debounce;
+if (Consulta vazia?) then (sim)
+  :Exibir itens recentes;
+  stop
+else (não)
+  :Executar consulta;
+endif
 
-if (Nenhum resultado encontrado?) then (Sim)
-    |Sistema|
-    :Exibe mensagem amigável de "Nenhum resultado encontrado";
-else (Não)
-    |Sistema|
-    :Consulta o cache/banco;
-    :Retorna os itens correspondentes;
+if (Nenhum resultado encontrado?) then (sim)
+  :Exibir sugestão para refinar termos;
+else (não)
+  :Retornar itens correspondentes;
 endif
 
 stop

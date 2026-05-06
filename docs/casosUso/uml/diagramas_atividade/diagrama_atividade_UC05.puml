@@ -4,16 +4,27 @@
 start
 :Clicar na área de imagem do item;
 :Selecionar origem (câmera/galeria);
-:Selecionar arquivo;
 
 |Sistema|
-if (Arquivo maior que 5MB?) then (sim)
-  :Exibir mensagem de erro;
-  stop
+if (Permissão concedida?) then (sim)
+  |Usuário|
+  :Selecionar arquivo;
+  |Sistema|
+  if (Arquivo maior que 5MB?) then (sim)
+    :Exibir mensagem de erro;
+    stop
+  else (não)
+    if (Formato permitido?) then (sim)
+      :Salvar imagem no item em edição;
+      :Exibir pré-visualização;
+    else (não)
+      :Exibir erro de formato inválido;
+      stop
+    endif
+  endif
 else (não)
-  :Validar formato da imagem;
-  :Salvar imagem no item em edição;
-  :Exibir pré-visualização;
+  :Solicitar permissão ou cancelar operação;
+  stop
 endif
 
 |Usuário|

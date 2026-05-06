@@ -2,30 +2,25 @@
 
 |Usuário|
 start
-:Seleciona múltiplos nós no editor;
-:Aciona a função "Criar Grupo de Nós";
-:Define um nome e cor para o grupo;
+:Selecionar múltiplos nós no editor;
+:Acionar "Criar grupo de nós";
+:Definir nome e cor;
 
-if (Usuário remover nó do grupo?) then (Sim)
-  |Usuário|
-  :Seleciona o nó a ser removido dentro do grupo;
-  :Aciona a função "Remover do Grupo";
+|Sistema|
+:Criar grupo;
 
+|Usuário|
+if (Deseja ajustar o grupo?) then (sim)
+  if (Ação escolhida?) then (Remover nó)
+  :Selecionar nó e acionar "Remover do grupo";
   |Sistema|
-  :Mantém o nó no diagrama de forma independente;
-else (Não)
-  if (Usuário excluir grupo?) then (Sim)
-    |Usuário|
-    :Seleciona o grupo a ser excluído;
-    :Aciona a função "Excluir Grupo";
-    
+  :Manter nó independente no diagrama;
+  else (Excluir grupo)
+  :Selecionar grupo e acionar "Excluir grupo";
     |Sistema|
-    :Remove o grupo do diagrama;
-    :Mantém os nós do grupo no diagrama de forma independente;
-  else (Não)
-    |Usuário|
-    :Mantém o grupo e os nós agrupados no diagrama;
-    endif
+    :Remover grupo e manter nós no diagrama;
+  endif
 endif
-    stop
+
+stop
 @enduml

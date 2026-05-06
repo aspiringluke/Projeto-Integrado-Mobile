@@ -8,11 +8,11 @@ start
 :Confirmar criação;
 
 |Sistema|
-if (Nome válido e não duplicado?) then (sim)
+if (Nome válido?) then (sim)
   :Criar pasta na estrutura atual;
   :Atualizar listagem;
 else (não)
-  :Exibir mensagem e solicitar novo nome;
+  :Exibir mensagem de nome inválido;
 endif
 
 stop

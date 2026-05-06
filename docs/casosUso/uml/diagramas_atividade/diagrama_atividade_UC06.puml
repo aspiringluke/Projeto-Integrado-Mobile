@@ -10,22 +10,19 @@ fork again
   :Adicionar tags;
 
   if (Deseja adicionar imagem?) then (sim)
-    |Usuário|
-    :Escolher câmera ou galeria;
-    |Sistema|
-    :Capturar arquivo;
-    if (Tamanho respeita RNF05?) then (sim)
-      :Associar imagem à nota;
-    else (não)
-      :Bloquear e exibir erro;
-    endif
+    :Acionar UC05 (Upload de imagem);
   endif
 end fork
 
-|Usuário|
 :Clicar em "Salvar";
+
 |Sistema|
-:Persistir nota com conteúdo e tags;
+if (Título ou conteúdo informado?) then (sim)
+  :Persistir nota com conteúdo e tags;
+  :Atualizar listagem de notas;
+else (não)
+  :Exibir aviso de nota vazia;
+endif
 
 stop
 @enduml

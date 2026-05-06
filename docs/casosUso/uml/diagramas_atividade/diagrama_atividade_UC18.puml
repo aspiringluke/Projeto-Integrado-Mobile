@@ -2,29 +2,31 @@
 
 |Usuário|
 start
-
-if (Ação selecionada) then (Excluir Nó)
+if (Ação selecionada?) then (Excluir nó)
   :Selecionar nó no editor;
   :Clicar em "Excluir";
   |Sistema|
-  :Identificar arestas vinculadas ao nó;
-  fork
-    :Remover o nó selecionado;
-  fork again
-    :Remover todas as arestas órfãs;
-  end fork
-else (Excluir Aresta Individual)
+  :Identificar arestas vinculadas;
+  :Exibir impacto da exclusão;
   |Usuário|
-  :Selecionar apenas a aresta;
+  if (Confirma exclusão?) then (sim)
+    |Sistema|
+    fork
+      :Remover nó;
+    fork again
+      :Remover arestas órfãs;
+    end fork
+  else (não)
+    :Cancelar exclusão;
+  endif
+else (Excluir aresta)
+  :Selecionar aresta;
   :Clicar em "Excluir";
   |Sistema|
-  :Remover aresta mantendo os nós;
+  :Remover aresta e manter nós;
 endif
 
-|Usuário|
-:Confirmar e Salvar alteração;
 |Sistema|
 :Persistir estado do diagrama;
 stop
-
 @enduml

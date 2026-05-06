@@ -16,7 +16,6 @@ endif
 
 |Serviço de IA|
 :Processar solicitação;
-:Gerar resposta;
 
 |Sistema|
 if (Serviço disponível?) then (sim)

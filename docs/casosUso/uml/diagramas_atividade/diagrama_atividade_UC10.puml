@@ -4,22 +4,25 @@
 start
 :Acessar listagem de itens;
 :Selecionar configurações da pasta;
-:Alterar título (opcional);
-:Selecionar "Excluir Pasta";
+if (Deseja renomear?) then (sim)
+  :Informar novo nome;
+endif
+:Selecionar "Excluir pasta";
+
 |Sistema|
 :Solicitar tipo de exclusão;
-|Usuário|
 
-if (Deseja excluir conteúdo?) then (Apenas Pasta)
+|Usuário|
+if (Deseja excluir conteúdo?) then (Apenas pasta)
   |Sistema|
   :Mover itens para o diretório raiz;
-  :Deletar diretório vazio;
-else (Pasta e Conteúdo)
+  :Excluir pasta vazia;
+else (Pasta e conteúdo)
   |Sistema|
-  :Remover pasta e todos os sub-itens;
+  :Confirmar ação irreversível;
+  :Remover pasta e subitens;
 endif
 
 :Atualizar estrutura de diretórios;
 stop
-
 @enduml

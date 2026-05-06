@@ -2,22 +2,22 @@
 
 |Usuário|
 start
-:Acessa aba de "Configurações Gerais";
-:Ativa o botão "Modo Desempenho";
+:Acessar "Configurações Gerais";
+:Ativar "Modo Desempenho";
 
 |Sistema|
-:Desabilita sombras dinâmicas, transparências e animações complexas;
-:Limita o uso da memória para o teto definido;
+:Aplicar perfil visual simplificado;
 
-if (Desativação do modo?) then (Sim)
-  |Usuário|
-  :Desativa o "Modo Desempenho";
-  
+if (Configuração aplicada com sucesso?) then (sim)
+  :Confirmar modo ativo;
+else (não)
+  :Manter configuração anterior e informar falha;
+endif
+
+|Usuário|
+if (Deseja desativar?) then (sim)
   |Sistema|
-  :Restaura as configurações gráficas para o padrão;
-else (Não)
-    |Usuário|
-    :Mantém o "Modo Desempenho" ativado;
+  :Restaurar configuração visual padrão;
 endif
 
 stop

@@ -2,34 +2,19 @@
 
 |Usuário|
 start
-:Acessar o menu de "Configurações Gerais";
-|Sistema|
-:Apresentar as opções disponíveis (Idioma, Limites, etc.);
-
-|Usuário|
-if (Configuração escolhida?) then (Idioma)
-    :Selecionar o novo idioma;
-    |Sistema|
-    :Atualizar todos os rótulos e menus imediatamente;
-elseif (Configuração escolhida?) then (Limite de Sinopse)
-    |Usuário|
-    if (Deseja definir valor?) then (Sim)
-        :Inserir valor numérico no intervalo;
-        |Sistema|
-        :Atualizar regra de validação para campos de sinopse;
-    else (Não / Ilimitado)
-        |Sistema|
-        :Desativar travas de buffer para campos longos;
-    endif
-else (Outras Preferências)
-    |Usuário|
-    :Alterar a configuração desejada (ex: Modo Desempenho);
-endif
+:Acessar "Configurações Gerais";
 
 |Sistema|
-:Validar a alteração e aplicar preferências globalmente;
+:Apresentar opções disponíveis;
+
 |Usuário|
-:Confirmar e retornar ao menu anterior;
+:Selecionar configuração desejada;
+:Alterar preferência;
+
+|Sistema|
+:Aplicar alteração;
+
+|Sistema|
+:Salvar preferências;
 stop
-
 @enduml

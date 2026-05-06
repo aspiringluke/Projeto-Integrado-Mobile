@@ -9,13 +9,15 @@ endif
 :Clicar em "Excluir";
 
 |Sistema|
+if (Item possui vínculos relevantes?) then (sim)
+  :Exibir impacto da exclusão;
+endif
 :Exibir alerta de confirmação irreversível;
 
 |Usuário|
 if (Confirma exclusão?) then (sim)
   |Sistema|
   :Remover registro do banco de dados;
-  :Liberar memória;
   :Atualizar interface;
 else (não)
   |Sistema|

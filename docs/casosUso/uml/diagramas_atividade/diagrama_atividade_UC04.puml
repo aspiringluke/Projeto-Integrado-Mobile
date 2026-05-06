@@ -13,6 +13,7 @@ endif
 |Sistema|
 if (Dados válidos?) then (sim)
   :Persistir alterações da ficha;
+  :Atualizar listagem;
 else (não)
   :Exibir inconsistências de validação;
 endif

@@ -2,28 +2,22 @@
 
 |Usuário|
 start
-:Acessa a seção "Diagramas";
-:Seleciona "Criar novo Diagrama";
+:Acessar seção "Diagramas";
+:Selecionar "Criar novo diagrama";
 
 |Sistema|
-:Abre o plano de edição de diagramas;
+:Inicializar plano de edição;
 
-if (Composição do diagrama correta?) then (sim)
-    |Usuário|
-    :Insere dois nós e os conecta através de uma aresta;
-    :Aciona o botão "Salvar";
-    
-    |Sistema|
-    :Valida as regras de estrutura mínima do diagrama;
-    :Persiste os dados do diagrama;
+|Usuário|
+:Inserir nós e conexões;
+:Clicar em "Salvar";
+
+|Sistema|
+if (Estrutura mínima atendida?) then (sim)
+  :Persistir diagrama;
+  :Exibir confirmação;
 else (não)
-    |Usuário|
-    :Tenta salvar o diagrama com menos de dois nós ou sem arestas;
-    :Recebe uma mensagem de erro;
-
-    |Sistema|
-    :Exibe alerta;
-    :Bloqueia a persistência;
+  :Exibir alerta de estrutura inválida;
 endif
 
 stop
