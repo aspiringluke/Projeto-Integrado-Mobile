@@ -2,24 +2,27 @@
 
 |Usuário|
 start
-:Acessar listagem de itens;
-:Selecionar configurações da pasta;
-:Alterar título (opcional);
-:Selecionar "Excluir Pasta";
-|Sistema|
-:Solicitar tipo de exclusão;
-|Usuário|
+:Acessar chat de IA;
+:Digitar pergunta;
+:Clicar em "Enviar";
 
-if (Deseja excluir conteúdo?) then (Apenas Pasta)
-  |Sistema|
-  :Mover itens para o diretório raiz;
-  :Deletar diretório vazio;
-else (Pasta e Conteúdo)
-  |Sistema|
-  :Remover pasta e todos os sub-itens;
+|Sistema|
+if (Mensagem vazia?) then (sim)
+  :Solicitar texto válido;
+  stop
+else (não)
+  :Encaminhar mensagem para o serviço de IA;
 endif
 
-:Atualizar estrutura de diretórios;
-stop
+|Serviço de IA|
+:Processar solicitação;
 
+|Sistema|
+if (Serviço disponível?) then (sim)
+  :Exibir resposta no chat;
+else (não)
+  :Informar indisponibilidade temporária;
+endif
+
+stop
 @enduml

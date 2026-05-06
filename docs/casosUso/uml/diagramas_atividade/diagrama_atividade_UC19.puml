@@ -1,0 +1,18 @@
+@startuml diagrama_UC19
+
+|Usuário|
+start
+if (Elemento alvo?) then (Aresta)
+  :Abrir edição da aresta;
+  :Inserir descrição da relação;
+else (Nó)
+  :Abrir edição do nó;
+  :Inserir descrição do nó;
+endif
+
+|Sistema|
+:Salvar metadados do elemento;
+:Exibir indicador visual de descrição;
+
+stop
+@enduml

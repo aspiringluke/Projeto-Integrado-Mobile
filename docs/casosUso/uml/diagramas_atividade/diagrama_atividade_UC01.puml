@@ -2,14 +2,19 @@
 
 |Sistema|
 start
-:Abre a tela inicial;
+:Exibir tela inicial;
+:Carregar projetos recentes;
 
 |Usuário|
-:Clica no botão "Novo Projeto";
+:Clicar em "Novo Projeto";
+:Informar nome do projeto;
 
 |Sistema|
-:Cria um novo projeto;
+if (Nome informado?) then (sim)
+  :Criar projeto;
+else (não)
+  :Exibir validação de nome obrigatório;
+endif
 
-'Será analisado a necessidade de utilizar "Sistema" como ator
 stop
 @enduml
