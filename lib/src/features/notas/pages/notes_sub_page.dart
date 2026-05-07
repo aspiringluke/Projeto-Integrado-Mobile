@@ -10,9 +10,12 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/notes_drag_payload.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/pages/note_editor_page.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/utils/note_color_resolver.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/utils/notes_dialogs.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_list_card.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/note_list_card.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
+import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 
 class NotesSubPage extends StatefulWidget {
   const NotesSubPage({super.key});
@@ -29,7 +32,9 @@ class NotesSubPageState extends State<NotesSubPage> {
   int? _activeFolderParentId;
 
   Future<void> _bootstrap() async {
-    final foldersResult = await _folderController.loadFolders(parentFolderId: null);
+    final foldersResult = await _folderController.loadFolders(
+      parentFolderId: null,
+    );
     final notesResult = await _noteController.loadNotes(folderId: null);
     if (!mounted) return;
 
@@ -115,9 +120,7 @@ class NotesSubPageState extends State<NotesSubPage> {
 
   Future<void> _openNoteEditor(int noteId) async {
     final changed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => NoteEditorPage(noteId: noteId),
-      ),
+      MaterialPageRoute(builder: (_) => NoteEditorPage(noteId: noteId)),
     );
     if (!mounted) return;
 
@@ -194,7 +197,10 @@ class NotesSubPageState extends State<NotesSubPage> {
     required int folderId,
     required int? parentFolderId,
   }) async {
-    final result = await _folderController.moveFolderToFolder(folderId, parentFolderId);
+    final result = await _folderController.moveFolderToFolder(
+      folderId,
+      parentFolderId,
+    );
     if (!mounted) return;
 
     if (result.$1) {
@@ -306,7 +312,9 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _backToParent() async {
     final parentId = _activeFolderParentId;
     final notesResult = await _noteController.loadNotes(folderId: parentId);
-    final foldersResult = await _folderController.loadFolders(parentFolderId: parentId);
+    final foldersResult = await _folderController.loadFolders(
+      parentFolderId: parentId,
+    );
     if (!mounted) return;
 
     if (!notesResult.$1) {
@@ -337,21 +345,112 @@ class NotesSubPageState extends State<NotesSubPage> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_folderController, _noteController]),
+      animation: Listenable.merge([
+        _folderController,
+        _noteController,
+        StoryRegistry.instance,
+      ]),
       builder: (context, _) {
         final folders = _folderController.folders;
         final notes = _noteController.notes;
-        final isLoading = _folderController.isLoading || _noteController.isLoading;
+        final isLoading =
+            _folderController.isLoading || _noteController.isLoading;
         final isInsideFolder = _activeFolderId != null;
 
         return Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: NotesGlassCard(
+                elevated: true,
+                accentColor: _activeFolderId == null
+                    ? kNotesPink
+                    : const Color(0xFFB78AA4),
+                radius: 22,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0x26DF6EB8), Color(0x14FFFFFF)],
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.88),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.auto_stories_outlined,
+                        color: kNotesPlum,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _activeFolderTitle ?? 'Notas',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: kNotesText,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isInsideFolder
+                                ? 'Notas e pastas dentro desta camada.'
+                                : 'Notas, pastas e ações rápidas em um só lugar.',
+                            style: const TextStyle(
+                              color: kNotesMutedText,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.84),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                      child: Text(
+                        '${notes.length + folders.length}',
+                        style: const TextStyle(
+                          color: kNotesPlum,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             if (isInsideFolder)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -372,30 +471,54 @@ class NotesSubPageState extends State<NotesSubPage> {
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 120),
                       decoration: BoxDecoration(
-                        color: isHoveringParent
-                            ? const Color(0x33DF6EB8)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: isHoveringParent
+                            ? [
+                                BoxShadow(
+                                  color: kNotesPink.withValues(alpha: 0.2),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
                       ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: _backToParent,
-                            icon: const Icon(Icons.arrow_back_rounded),
-                            tooltip: 'Voltar',
-                          ),
-                          Expanded(
-                            child: Text(
-                              _activeFolderTitle ?? 'Pasta',
-                              style: const TextStyle(
-                                color: Color(0xFF5D535A),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                      child: NotesGlassCard(
+                        accentColor: isHoveringParent
+                            ? kNotesPink
+                            : const Color(0xFFB78AA4),
+                        elevated: true,
+                        radius: 18,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: _backToParent,
+                              icon: const Icon(Icons.arrow_back_rounded),
+                              color: kNotesPlum,
+                              tooltip: 'Voltar',
                             ),
-                          ),
-                        ],
+                            Expanded(
+                              child: Text(
+                                _activeFolderTitle ?? 'Pasta',
+                                style: const TextStyle(
+                                  color: kNotesText,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isHoveringParent)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8),
+                                child: Icon(
+                                  Icons.file_download_done_rounded,
+                                  color: kNotesPink,
+                                  size: 18,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -403,63 +526,60 @@ class NotesSubPageState extends State<NotesSubPage> {
               ),
             if (isLoading)
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 18),
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
-              ...folders.map(
-                (folder) {
-                  final folderId = folder.id;
-                  final card = FolderListCard(
-                    folder: folder,
-                    onTap: () => _openFolder(folder),
-                    onRename: () => _renameFolderFlow(folder),
-                    onDelete: () => _deleteFolderFlow(folder),
-                    onAcceptNote: folderId == null
-                        ? null
-                        : (noteId) => _moveNoteToFolder(
-                              noteId: noteId,
-                              folderId: folderId,
-                            ),
-                    onAcceptFolder: folderId == null
-                        ? null
-                        : (draggedFolderId) => _moveFolderToFolder(
-                              folderId: draggedFolderId,
-                              parentFolderId: folderId,
-                            ),
-                  );
-
-                  if (folderId == null) return card;
-
-                  return LongPressDraggable<NotesDragPayload>(
-                    data: NotesDragPayload(
-                      type: NotesDragType.folder,
-                      id: folderId,
-                    ),
-                    delay: const Duration(milliseconds: 180),
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 360),
-                        child: Opacity(
-                          opacity: 0.9,
-                          child: card,
+              ...folders.map((folder) {
+                final folderId = folder.id;
+                final card = FolderListCard(
+                  folder: folder,
+                  onTap: () => _openFolder(folder),
+                  onRename: () => _renameFolderFlow(folder),
+                  onDelete: () => _deleteFolderFlow(folder),
+                  onAcceptNote: folderId == null
+                      ? null
+                      : (noteId) => _moveNoteToFolder(
+                          noteId: noteId,
+                          folderId: folderId,
                         ),
-                      ),
+                  onAcceptFolder: folderId == null
+                      ? null
+                      : (draggedFolderId) => _moveFolderToFolder(
+                          folderId: draggedFolderId,
+                          parentFolderId: folderId,
+                        ),
+                );
+
+                if (folderId == null) return card;
+
+                return LongPressDraggable<NotesDragPayload>(
+                  data: NotesDragPayload(
+                    type: NotesDragType.folder,
+                    id: folderId,
+                  ),
+                  delay: const Duration(milliseconds: 180),
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      child: Opacity(opacity: 0.9, child: card),
                     ),
-                    childWhenDragging: Opacity(
-                      opacity: 0.35,
-                      child: card,
-                    ),
-                    child: card,
-                  );
-                },
-              ),
+                  ),
+                  childWhenDragging: Opacity(opacity: 0.35, child: card),
+                  child: card,
+                );
+              }),
               ...notes.map((note) {
                 final noteId = note.id;
+                final effectiveNoteColor = resolveNoteAccentColor(
+                  metadata: note.metadata,
+                  fallbackColor: note.color,
+                  registry: StoryRegistry.instance,
+                );
                 final card = NoteListCard(
                   title: note.title,
-                  highlightColor: note.color,
+                  highlightColor: effectiveNoteColor,
                   onTap: noteId == null ? null : () => _openNoteEditor(noteId),
                   onMoveTo: () => _moveNoteByMenuFlow(note),
                   onDelete: () => _deleteNoteFlow(note),
@@ -468,10 +588,7 @@ class NotesSubPageState extends State<NotesSubPage> {
                 if (noteId == null) return card;
 
                 return LongPressDraggable<NotesDragPayload>(
-                  data: NotesDragPayload(
-                    type: NotesDragType.note,
-                    id: noteId,
-                  ),
+                  data: NotesDragPayload(type: NotesDragType.note, id: noteId),
                   delay: const Duration(milliseconds: 180),
                   feedback: Material(
                     color: Colors.transparent,
@@ -479,30 +596,31 @@ class NotesSubPageState extends State<NotesSubPage> {
                       constraints: const BoxConstraints(maxWidth: 360),
                       child: NoteListCard(
                         title: note.title,
-                        highlightColor: note.color,
+                        highlightColor: effectiveNoteColor,
                         showActions: false,
                       ),
                     ),
                   ),
-                  childWhenDragging: Opacity(
-                    opacity: 0.35,
-                    child: card,
-                  ),
+                  childWhenDragging: Opacity(opacity: 0.35, child: card),
                   child: card,
                 );
               }),
               if (notes.isEmpty && (isInsideFolder || folders.isEmpty))
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 28),
-                  child: Text(
-                    isInsideFolder
-                        ? 'Nenhuma nota nesta pasta.'
-                        : 'Crie uma nova pasta ou nota clicando no +',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFF7C7279),
-                      fontSize: 15,
-                      fontStyle: FontStyle.italic,
+                  child: NotesGlassCard(
+                    accentColor: kNotesPink,
+                    radius: 20,
+                    child: Text(
+                      isInsideFolder
+                          ? 'Nenhuma nota nesta pasta.'
+                          : 'Crie uma nova pasta ou nota clicando no +',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: kNotesMutedText,
+                        fontSize: 15,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
                 ),

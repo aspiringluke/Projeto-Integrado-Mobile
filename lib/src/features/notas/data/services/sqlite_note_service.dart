@@ -1,10 +1,11 @@
 import 'dart:ui';
 
-import 'package:sqlite3/common.dart';
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
+import 'package:sqlite3/common.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
 
 class Sqlitefolderservice implements INoteService {
   @override
@@ -12,15 +13,22 @@ class Sqlitefolderservice implements INoteService {
     String titulo,
     String descricao,
     int? idPasta,
-    String color,
-  ) async {
+    String color, {
+    String? metadataJson,
+  }) async {
     final conn = await getConnection();
     try {
       conn.execute(
         """
-                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor) VALUES (?,?,?,?)
+                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor, metadata) VALUES (?,?,?,?,?)
             """,
-        [titulo, descricao, idPasta, color],
+        [
+          titulo,
+          descricao,
+          idPasta,
+          color,
+          metadataJson ?? NoteMetadata.empty().toJsonString(),
+        ],
       );
 
       final inserted = conn.select("SELECT last_insert_rowid() AS id");
@@ -39,15 +47,22 @@ class Sqlitefolderservice implements INoteService {
     String titulo,
     String descricao,
     int? idPasta,
-    String color,
-  ) async {
+    String color, {
+    String? metadataJson,
+  }) async {
     final conn = await getConnection();
     try {
       conn.execute(
         """
-                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor) VALUES (?,?,?,?)
+                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor, metadata) VALUES (?,?,?,?,?)
             """,
-        [titulo, descricao, idPasta, color],
+        [
+          titulo,
+          descricao,
+          idPasta,
+          color,
+          metadataJson ?? NoteMetadata.empty().toJsonString(),
+        ],
       );
 
       return (true, "Nota criada com sucesso");
@@ -83,7 +98,7 @@ class Sqlitefolderservice implements INoteService {
     try {
       final result = conn.select(
         """
-                SELECT idNota, titulo, descricao, pastas_idPasta, cor FROM Nota
+                SELECT idNota, titulo, descricao, pastas_idPasta, cor, metadata FROM Nota
                 WHERE idNota = ?
             """,
         [id],
@@ -101,6 +116,9 @@ class Sqlitefolderservice implements INoteService {
                 text: note["descricao"],
                 color: Color(int.parse(note["cor"])),
                 idPasta: note["pastas_idPasta"],
+                metadata: NoteMetadata.fromJsonString(
+                  note["metadata"] as String?,
+                ),
               ),
               null,
             );
@@ -118,13 +136,13 @@ class Sqlitefolderservice implements INoteService {
       final ResultSet results;
       if (idPasta == null) {
         results = conn.select("""
-                    SELECT idNota, titulo, descricao, cor, pastas_idPasta FROM Nota
+                    SELECT idNota, titulo, descricao, cor, pastas_idPasta, metadata FROM Nota
                     WHERE pastas_idPasta IS NULL
                 """);
       } else {
         results = conn.select(
           """
-                    SELECT idNota, titulo, descricao, cor, pastas_idPasta FROM Nota
+                    SELECT idNota, titulo, descricao, cor, pastas_idPasta, metadata FROM Nota
                     WHERE pastas_idPasta = ?
                 """,
           [idPasta],
@@ -143,6 +161,9 @@ class Sqlitefolderservice implements INoteService {
                       text: row["descricao"],
                       color: Color(int.parse(row["cor"])),
                       idPasta: row["pastas_idPasta"],
+                      metadata: NoteMetadata.fromJsonString(
+                        row["metadata"] as String?,
+                      ),
                     ),
                   )
                   .toList(),
@@ -161,23 +182,37 @@ class Sqlitefolderservice implements INoteService {
     String newTitulo,
     String newDescricao,
     int? idPasta,
-    String color,
-  ) async {
+    String color, {
+    String? metadataJson,
+  }) async {
     final conn = await getConnection();
     try {
       if (idPasta == null) {
         conn.execute(
           """
-                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, pastas_idPasta = NULL WHERE idNota = ?
+                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, metadata = ?, pastas_idPasta = NULL WHERE idNota = ?
                 """,
-          [newTitulo, newDescricao, color, id],
+          [
+            newTitulo,
+            newDescricao,
+            color,
+            metadataJson ?? NoteMetadata.empty().toJsonString(),
+            id,
+          ],
         );
       } else {
         conn.execute(
           """
-                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, pastas_idPasta = ? WHERE idNota = ?
+                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, metadata = ?, pastas_idPasta = ? WHERE idNota = ?
                 """,
-          [newTitulo, newDescricao, color, idPasta, id],
+          [
+            newTitulo,
+            newDescricao,
+            color,
+            metadataJson ?? NoteMetadata.empty().toJsonString(),
+            idPasta,
+            id,
+          ],
         );
       }
       return (true, "Nota $id atualizada");

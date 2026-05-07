@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS Nota (
     titulo VARCHAR(255),
     descricao TEXT,
     cor VARCHAR(15),
+    metadata TEXT,
     pastas_idPasta INTEGER,
     FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );
@@ -115,6 +116,20 @@ CREATE TABLE IF NOT EXISTS notas_has_tags (
     conn.execute("""
         ALTER TABLE Pastas
         ADD COLUMN pastas_idPasta INTEGER REFERENCES Pastas(idPasta)
+        """);
+  }
+
+  final hasMetadataColumn = conn.select("""
+      SELECT 1
+      FROM pragma_table_info('Nota')
+      WHERE name = 'metadata'
+      LIMIT 1
+      """).isNotEmpty;
+
+  if (!hasMetadataColumn) {
+    conn.execute("""
+        ALTER TABLE Nota
+        ADD COLUMN metadata TEXT
         """);
   }
 

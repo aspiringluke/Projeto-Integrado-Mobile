@@ -1,18 +1,24 @@
 import 'dart:ui';
 
-class Note
-{
-    final int? id;
-    final String title;
-    final String text;
-    final Color color;
-    final int? idPasta;
+import 'note_metadata.dart';
 
-    Note({
-        this.id,
-        required this.title,
-        required this.text,
-        required this.color,
-        this.idPasta
-    });
+class Note {
+  final int? id;
+  final String title;
+  final String text;
+  final Color color;
+  final int? idPasta;
+  final NoteMetadata metadata;
+
+  Note({
+    this.id,
+    required this.title,
+    required this.text,
+    required this.color,
+    this.idPasta,
+    this.metadata = const NoteMetadata(
+      tagGroups: <NoteTagGroup>[],
+      linkTarget: NoteLinkTarget(),
+    ),
+  });
 }

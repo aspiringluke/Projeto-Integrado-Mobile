@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'notes_visuals.dart';
+
 class NotesSurfaceCard extends StatelessWidget {
   final double height;
   final Widget child;
@@ -18,25 +20,31 @@ class NotesSurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final accent = borderColor ?? backgroundColor ?? kNotesPink;
+
+    return SizedBox(
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: borderColor ?? Colors.white.withValues(alpha: 0.9),
-        ),
-        boxShadow: boxShadow ??
+      child: NotesGlassCard(
+        accentColor: accent,
+        elevated: true,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        radius: 16,
+        boxShadow:
+            boxShadow ??
             [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
+                color: accent.withValues(alpha: 0.16),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.07),
                 blurRadius: 10,
-                offset: const Offset(0, 5),
+                offset: const Offset(0, 4),
               ),
             ],
+        child: child,
       ),
-      child: child,
     );
   }
 }

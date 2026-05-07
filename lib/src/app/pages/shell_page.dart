@@ -8,6 +8,7 @@ import '../widgets/custom_nav_bar.dart';
 import '../../shared/widgets/funcoes_busca.dart';
 import '../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../shared/widgets/main_header.dart';
+import '../../features/notas/widgets/notes_visuals.dart';
 
 class ShellPage extends StatefulWidget {
   final NavTab initialTab;
@@ -91,7 +92,8 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Widget _buildFloatingActionArea() {
-    final showQuickActions = _activeTab == NavTab.ideas && _showIdeasQuickActions;
+    final showQuickActions =
+        _activeTab == NavTab.ideas && _showIdeasQuickActions;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -120,7 +122,9 @@ class _ShellPageState extends State<ShellPage> {
                     const SizedBox(height: 12),
                   ],
                 )
-              : const SizedBox.shrink(key: ValueKey('ideas_quick_actions_empty')),
+              : const SizedBox.shrink(
+                  key: ValueKey('ideas_quick_actions_empty'),
+                ),
         ),
         GlassCircleButton(
           diameter: 56,
@@ -215,26 +219,33 @@ class _IdeasQuickActionButton extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.94),
+                kNotesPink.withValues(alpha: 0.12),
+              ],
+            ),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: Colors.white.withValues(alpha: 0.96)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: kNotesPink.withValues(alpha: 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF4B3F48)),
+              Icon(icon, size: 18, color: kNotesPlum),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: const TextStyle(
-                  color: Color(0xFF4B3F48),
+                  color: kNotesPlum,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -307,7 +318,7 @@ class _AnimatedTabContent extends StatelessWidget {
           },
         );
       },
-        child: KeyedSubtree(
+      child: KeyedSubtree(
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
             ? ProjectListPage(controller: projectListController)

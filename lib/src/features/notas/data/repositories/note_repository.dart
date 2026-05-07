@@ -3,104 +3,124 @@ import 'dart:ui';
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/sqlite_note_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
 
-class NoteRepository
-{
-    final INoteService service;
+class NoteRepository {
+  final INoteService service;
 
-    NoteRepository({
-        INoteService? service,
-    }) : service = service ?? Sqlitefolderservice();
+  NoteRepository({INoteService? service})
+    : service = service ?? Sqlitefolderservice();
 
-    Future<(bool, int?, String?)> createNewNoteWithId(String titulo, String descricao, int? idPasta, Color color)
-    {
-        return service.createNewNoteWithId(
-            titulo,
-            descricao,
-            idPasta,
-            color.toARGB32().toString(),
-        );
+  Future<(bool, int?, String?)> createNewNoteWithId(
+    String titulo,
+    String descricao,
+    int? idPasta,
+    Color color, {
+    NoteMetadata metadata = const NoteMetadata(
+      tagGroups: <NoteTagGroup>[],
+      linkTarget: NoteLinkTarget(),
+    ),
+  }) {
+    return service.createNewNoteWithId(
+      titulo,
+      descricao,
+      idPasta,
+      color.toARGB32().toString(),
+      metadataJson: metadata.toJsonString(),
+    );
+  }
+
+  Future<(bool, String)> createNewNote(
+    String titulo,
+    String descricao,
+    int? idPasta,
+    Color color, {
+    NoteMetadata metadata = const NoteMetadata(
+      tagGroups: <NoteTagGroup>[],
+      linkTarget: NoteLinkTarget(),
+    ),
+  }) {
+    return service.createNewNote(
+      titulo,
+      descricao,
+      idPasta,
+      color.toARGB32().toString(),
+      metadataJson: metadata.toJsonString(),
+    );
+  }
+
+  Future<(bool, String)> updateNote(
+    int id,
+    String? titulo,
+    String? descricao,
+    int? idPasta,
+    Color? color, {
+    NoteMetadata? metadata,
+  }) async {
+    final result = await getNote(id);
+
+    if (result.$1 == false) {
+      return (false, result.$3 ?? "Erro ao buscar nota");
     }
 
-    Future<(bool, String)> createNewNote(String titulo, String descricao, int? idPasta, Color color)
-    {
-        return service.createNewNote(titulo, descricao, idPasta, color.toARGB32().toString());
+    if (result.$2 == null) {
+      return (false, "Nota não encontrada");
     }
 
-    Future<(bool, String)> updateNote(int id, String? titulo, String? descricao, int? idPasta, Color? color) async
-    {
-        final result = await getNote(id);
+    final oldValues = result.$2;
 
-        if(result.$1 == false)
-        {
-            return (false, result.$3 ?? "Erro ao buscar nota");
-        }
+    return await service.updateNote(
+      id,
+      titulo ?? oldValues!.title,
+      descricao ?? oldValues!.text,
+      idPasta ?? oldValues!.idPasta,
+      (color ?? oldValues!.color).toARGB32().toString(),
+      metadataJson: (metadata ?? oldValues!.metadata).toJsonString(),
+    );
+  }
 
-        if(result.$2 == null)
-        {
-            return (false, "Nota não encontrada");
-        }
+  Future<(bool, Note?, String?)> getNote(int id) {
+    return service.getNote(id);
+  }
 
-        final oldValues = result.$2;
+  Future<(bool, List<Note>?, String?)> listNotes(int? idPasta) {
+    return service.listNotes(idPasta);
+  }
 
-        return await service.updateNote(
-            id,
-            titulo ?? oldValues!.title,
-            descricao ?? oldValues!.text,
-            idPasta ?? oldValues!.idPasta,
-            (color ?? oldValues!.color).toARGB32().toString()
-        );
+  Future<(bool, String)> deleteNote(int id) async {
+    final result = await getNote(id);
+
+    if (result.$1 == false) {
+      return (false, result.$3 ?? "Erro ao buscar nota");
     }
 
-    Future<(bool, Note?, String?)> getNote(int id)
-    {
-        return service.getNote(id);
+    if (result.$2 == null) {
+      return (false, "Nota não encontrada");
     }
 
-    Future<(bool, List<Note>?, String?)> listNotes(int? idPasta)
-    {
-        return service.listNotes(idPasta);
+    return await service.deleteNote(id);
+  }
+
+  Future<(bool, String)> moveNoteToFolder(int id, int? folderId) async {
+    final result = await getNote(id);
+
+    if (result.$1 == false) {
+      return (false, result.$3 ?? "Erro ao buscar nota");
     }
 
-    Future<(bool, String)> deleteNote(int id) async
-    {
-        final result = await getNote(id);
-
-        if(result.$1 == false)
-        {
-            return (false, result.$3 ?? "Erro ao buscar nota");
-        }
-
-        if(result.$2 == null)
-        {
-            return (false, "Nota não encontrada");
-        }
-
-        return await service.deleteNote(id);
+    if (result.$2 == null) {
+      return (false, "Nota não encontrada");
     }
 
-    Future<(bool, String)> moveNoteToFolder(int id, int? folderId) async
-    {
-        final result = await getNote(id);
+    final oldValues = result.$2!;
 
-        if(result.$1 == false)
-        {
-            return (false, result.$3 ?? "Erro ao buscar nota");
-        }
-
-        if(result.$2 == null)
-        {
-            return (false, "Nota não encontrada");
-        }
-
-        final oldValues = result.$2!;
-
-        return await service.updateNote(
-            id,
-            oldValues.title,
-            oldValues.text,
-            folderId,
-            oldValues.color.toARGB32().toString(),
-        );
-    }
+    return await service.updateNote(
+      id,
+      oldValues.title,
+      oldValues.text,
+      folderId,
+      oldValues.color.toARGB32().toString(),
+      metadataJson: oldValues.metadata.toJsonString(),
+    );
+  }
 }

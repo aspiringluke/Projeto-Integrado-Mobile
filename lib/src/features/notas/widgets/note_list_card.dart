@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_surface_card.dart';
+import 'notes_visuals.dart';
 
 class NoteListCard extends StatelessWidget {
   final String title;
@@ -24,78 +24,141 @@ class NoteListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onTap: onTap,
-        child: NotesSurfaceCard(
-          height: 68,
-          borderColor: highlightColor.withValues(alpha: 0.82),
-          boxShadow: [
-            BoxShadow(
-              color: highlightColor.withValues(alpha: 0.16),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: highlightColor.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: highlightColor.withValues(alpha: 0.55),
-                  ),
-                ),
-                child: Icon(
-                  Icons.sticky_note_2_outlined,
-                  color: highlightColor,
-                  size: 19,
-                ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: NotesGlassCard(
+            height: 70,
+            accentColor: highlightColor,
+            elevated: true,
+            radius: 18,
+            boxShadow: [
+              BoxShadow(
+                color: highlightColor.withValues(alpha: 0.18),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF342F33),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 10),
-              if (showActions)
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'move_to') onMoveTo?.call();
-                    if (value == 'delete') onDelete?.call();
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'move_to',
-                      child: Text('Mover para'),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text('Excluir'),
-                    ),
-                  ],
-                  icon: const Icon(
-                    Icons.more_vert_rounded,
-                    color: Color(0xFF8D7E88),
-                  ),
-                )
-              else
-                const Icon(
-                  Icons.drag_indicator_rounded,
-                  color: Color(0xFF8D7E88),
-                  size: 20,
-                ),
             ],
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.3),
+                        highlightColor.withValues(alpha: 0.2),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: highlightColor.withValues(alpha: 0.55),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: highlightColor.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.sticky_note_2_outlined,
+                    color: highlightColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: kNotesText,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                if (showActions)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ActionButton(
+                        icon: Icons.drive_file_move_outline,
+                        tooltip: 'Mover nota',
+                        onTap: onMoveTo,
+                      ),
+                      const SizedBox(width: 6),
+                      _ActionButton(
+                        icon: Icons.delete_outline_rounded,
+                        tooltip: 'Excluir nota',
+                        onTap: onDelete,
+                        destructive: true,
+                      ),
+                    ],
+                  )
+                else
+                  const Icon(
+                    Icons.drag_indicator_rounded,
+                    color: kNotesMutedText,
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final bool destructive;
+
+  const _ActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = destructive ? const Color(0xFFE05E8A) : kNotesPlum;
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: tint.withValues(alpha: 0.1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.84)),
+            ),
+            child: Icon(icon, size: 18, color: tint),
           ),
         ),
       ),

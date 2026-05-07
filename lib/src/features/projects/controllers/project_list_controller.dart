@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/project_image_data.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
+import '../../shared/story_registry.dart';
 
 class ProjectListItem {
   String title;
@@ -73,6 +74,11 @@ class ProjectListController extends ChangeNotifier {
       ),
     );
 
+    StoryRegistry.instance.registerProject(
+      title: sanitizedTitle,
+      accentColor: accentColor,
+    );
+
     notifyListeners();
   }
 
@@ -110,9 +116,18 @@ class ProjectListController extends ChangeNotifier {
     required String title,
     required String synopsis,
   }) {
+    final oldTitle = project.title;
     project.title = title;
     project.synopsis = synopsis;
     project.lastModified = DateTime.now();
+    if (oldTitle.trim() != title.trim()) {
+      StoryRegistry.instance.renameProject(oldTitle, title);
+    } else {
+      StoryRegistry.instance.registerProject(
+        title: title,
+        accentColor: project.accentColor,
+      );
+    }
     notifyListeners();
   }
 

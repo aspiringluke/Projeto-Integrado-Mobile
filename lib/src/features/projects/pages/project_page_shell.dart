@@ -25,10 +25,7 @@ enum ProjectSectionId {
   world,
 }
 
-enum CharacterDisplayMode {
-  list,
-  avatars,
-}
+enum CharacterDisplayMode { list, avatars }
 
 class _ProjectSectionMeta {
   final String label;
@@ -77,8 +74,10 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
       };
 
-  static final Map<String, List<CharacterListItem>> _projectCharactersStorage = {};
-  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode = {};
+  static final Map<String, List<CharacterListItem>> _projectCharactersStorage =
+      {};
+  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode =
+      {};
   static final Map<String, int> _projectCharactersGridColumns = {};
 
   late ProjectSectionId _activeSection;
@@ -93,8 +92,11 @@ class _ProjectPageState extends State<ProjectPage> {
   void initState() {
     super.initState();
     _activeSection = widget.initialSection;
-    _characters = _projectCharactersStorage[widget.title]?.toList() ?? <CharacterListItem>[];
-    _characterDisplayMode = _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
+    _characters =
+        _projectCharactersStorage[widget.title]?.toList() ??
+        <CharacterListItem>[];
+    _characterDisplayMode =
+        _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
     _avatarGridColumns = _projectCharactersGridColumns[widget.title] ?? 3;
   }
 
@@ -187,6 +189,11 @@ class _ProjectPageState extends State<ProjectPage> {
           ),
           unpinnedIndex: _characters.where((item) => !item.isPinned).length,
         ),
+      );
+      StoryRegistry.instance.registerCharacter(
+        projectTitle: widget.title,
+        name: draft.name,
+        accentColor: draft.accentColor,
       );
       _isCreateMenuOpen = false;
       _persistProjectCharacters();
