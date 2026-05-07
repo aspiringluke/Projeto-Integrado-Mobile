@@ -17,15 +17,20 @@ class Projeto {
     excluirPersonagem(id: int)
 }
 
-class Ideias {
-    gerenciarNotas()
-    gerenciarDiagramas()
-}
 
 class Nota {
     título: string
     tags: tag[]
     conteúdo: string
+    cor: string
+    idPastaPai: int?
+}
+
+class Pasta {
+    título: string
+    tags: tag[]
+    cor: string
+    idPastaPai: int?
 }
 
 class Diagrama {
@@ -69,8 +74,9 @@ Aresta --* Nó: Conecta
 Taggable <.. Projeto
 Taggable <.. Diagrama
 Taggable <.. Personagem
+Taggable <.. Nota
 
-Ideias --> Diagrama: Gerencia
-Ideias --> Nota: Gerencia
+Pasta --> Pasta: Contém
+Pasta --> Nota: Contém
 
 @enduml
