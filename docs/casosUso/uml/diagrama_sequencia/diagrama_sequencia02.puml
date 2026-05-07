@@ -16,44 +16,17 @@ skinparam sequence {
 actor "Usuario" as Usuario
 
 participant "IdeasContent / NotesSection\n<<View>>" as NotesView
-participant "IdeasViewModel\n<<ViewModel>>" as IdeasVM
-participant "Ideias\n<<Model>>" as Ideias
+participant "NotaController\n<<Controller>>" as NotaCtrl
+participant "FolderController\n<<Controller>>" as FolderCtrl
 participant "Nota\n<<Model>>" as Nota
-participant "Pasta\n<<Model>>" as Pasta
-participant "FolderRepository\n<<Repository>>" as FolderRepository
 participant "NoteRepository\n<<Repository>>" as NoteRepository
-participant "SqliteFolderService\n<<Service>>" as FolderService
 participant "SqliteNoteService\n<<Service>>" as NoteService
 participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
-participant "Projeto\n<<Model>>" as Projeto
-
-note over IdeasVM
-As classes de service e repository das branches feat-notas e sqlite
-foram mantidas como camadas de persistencia dentro do fluxo MVVM.
-end note
 
 Usuario -> NotesView: Criar nova nota
-NotesView -> IdeasVM: salvarNota(texto, idPasta)
+NotesView -> NotaCtrl: salvarNota(texto, idPasta)
 
-IdeasVM -> Ideias: prepararNota(texto)
-Ideias -> Nota: instanciar(texto)
-Nota --> Ideias: nota pronta
-Ideias --> IdeasVM: nota validada
-
-alt Nota vinculada a uma pasta
-    IdeasVM -> FolderRepository: getFolder(idPasta)
-    FolderRepository -> FolderService: getFolder(idPasta)
-    FolderService -> SQLiteDB: SELECT titulo FROM Pastas WHERE idPasta = ?
-    SQLiteDB --> FolderService: dados da pasta
-    FolderService --> FolderRepository: (true, pasta, null)
-    FolderRepository --> IdeasVM: pasta encontrada
-    IdeasVM -> Pasta: associarNota(nota)
-    Pasta --> IdeasVM: vinculo logico confirmado
-else Nota sem pasta
-    IdeasVM --> IdeasVM: Manter nota na raiz do projeto
-end
-
-IdeasVM -> NoteRepository: createNewNote(nota.text, idPasta)
+NotaCtrl -> NoteRepository: createNewNote(nota.text, idPasta)
 NoteRepository -> NoteService: createNewNote(texto, idPasta)
 NoteService -> SQLiteDB: getConnection()
 SQLiteDB --> NoteService: conexao aberta
@@ -61,27 +34,30 @@ NoteService -> SQLiteDB: INSERT INTO Nota (descricao, pastas_idPasta)
 
 alt Persistencia realizada com sucesso
     SQLiteDB --> NoteService: idNota gerado / operacao confirmada
-    NoteService --> NoteRepository: (true, "Nota criada com sucesso")
-    NoteRepository --> IdeasVM: confirmacao de persistencia
+    NoteService --> NoteRepository: sucesso
+    NoteRepository --> NotaCtrl: confirmacao de persistencia
 
-    IdeasVM -> Projeto: atualizarContextoCriativo()
-    Projeto --> IdeasVM: projeto sincronizado
-
-    IdeasVM --> NotesView: publicarNovaListaDeNotas()
-    NotesView -> NotesView: Renderizar nota na interface
-    NotesView --> Usuario: Exibir confirmacao de salvamento
+    NotaCtrl -> NoteRepository: listNotes()
+    NoteRepository -> NoteService: listNotes()
+    NoteService -> SQLiteDB: getConnection()
+    SQLiteDB --> NoteService: conexao aberta
+    NoteService -> SQLiteDB: SELECT * FROM Nota
+    SQLiteDB --> NoteService: linhas[]
+    loop linhas.length times
+        NoteService --> Nota: instanciarNota(linhas[n])
+        Nota --> NoteService: new Nota
+    end
+    NoteService --> NoteRepository: notas[]
+    NoteRepository --> NotaCtrl: notas[]
+    NotaCtrl --> NotesView: atualizar(notas)
+    NotesView -> NotesView: Atualizar estado
+    NotesView --> Usuario: Exibir novo estado
 else Falha ao persistir nota
     SQLiteDB --> NoteService: erro de banco / integridade
     NoteService --> NoteRepository: (false, mensagemErro)
-    NoteRepository --> IdeasVM: falha na criacao
-    IdeasVM --> NotesView: exibirErro(mensagemErro)
+    NoteRepository --> NotaCtrl: falha na criacao
+    NotaCtrl --> NotesView: exibirErro(mensagemErro)
     NotesView --> Usuario: Informar erro de persistencia
 end
-
-note over Nota,SQLiteDB
-Referencia estrutural baseada em:
-- diagrama_classe.puml
-- branches feat-notas e sqlite
-end note
 
 @enduml
