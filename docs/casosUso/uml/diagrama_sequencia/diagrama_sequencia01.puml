@@ -1,6 +1,6 @@
 @startuml Diagrama de Sequencia - Criacao de Personagem
 
-title Diagrama de Sequencia - Criacao de Personagem
+title Diagrama de Sequencia - Criacao de Personagem (com Data Layer)
 
 skinparam backgroundColor white
 skinparam sequence {
@@ -15,32 +15,51 @@ skinparam sequence {
 
 actor "Usuario" as Usuario
 
-participant "ProjectPage / CharactersSection\n<<View>>" as CharacterView
-participant "ProjectViewModel\n<<ViewModel>>" as ProjectVM
-participant "Projeto\n<<Model>>" as Projeto
+participant "CharactersPage / CharacterForm\n<<View>>" as CharacterView
+participant "CharacterController\n<<Controller>>" as CharacterCtrl
 participant "Personagem\n<<Model>>" as Personagem
+participant "Projeto\n<<Model>>" as Projeto
+participant "CharacterRepository\n<<Repository>>" as CharacterRepository
+participant "ProjectRepository\n<<Repository>>" as ProjectRepository
+participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
 
 Usuario -> CharacterView: Abrir projeto e tocar no botao "+"
-CharacterView -> CharacterView: Exibir menu de criacao
-Usuario -> CharacterView: Selecionar "Novo personagem"
-CharacterView -> CharacterView: Exibir dialogo de cadastro
+CharacterView -> CharacterView: Exibir formulario de personagem
+Usuario -> CharacterView: Preencher dados e confirmar
 
-alt Usuario confirma o cadastro
-    CharacterView -> ProjectVM: solicitarCriacaoPersonagem(draft)
-    ProjectVM -> Projeto: validarProjetoAtivo()
-    Projeto --> ProjectVM: projeto disponivel
+CharacterView -> CharacterCtrl: submitNovoPersonagem(idProjeto, draft)
+CharacterCtrl -> CharacterCtrl: validarCamposObrigatorios(draft)
 
-    ProjectVM -> Personagem: criarComDados(draft)
-    Personagem --> ProjectVM: personagem instanciado
+alt Dados obrigatorios invalidos
+    CharacterCtrl --> CharacterView: exibirErrosFormulario(campos)
+    CharacterView --> Usuario: Solicitar correcao dos dados
+else Dados obrigatorios validos
+    opt Imagem informada
+        CharacterCtrl -> CharacterCtrl: validarRegrasDeUpload(imagem)
+    end
 
-    ProjectVM -> Projeto: adicionarPersonagem(personagem)
-    Projeto --> ProjectVM: lista de personagens atualizada
+    CharacterCtrl -> Personagem: criarComDados(draft)
+    Personagem --> CharacterCtrl: entidadePronta
 
-    ProjectVM --> CharacterView: publicarNovoEstado()
-    CharacterView -> CharacterView: Atualizar lista / grade de personagens
-    CharacterView --> Usuario: Exibir personagem criado
-else Usuario cancela o dialogo
-    CharacterView --> Usuario: Encerrar fluxo sem alteracoes
+    CharacterCtrl -> CharacterRepository: create(idProjeto, entidadePronta)
+    CharacterRepository -> SQLiteDB: INSERT INTO Personagem(...)
+
+    alt Persistencia do personagem com sucesso
+        SQLiteDB --> CharacterRepository: sucesso
+        CharacterRepository --> CharacterCtrl: sucesso
+
+        CharacterCtrl --> CharacterView: atualizar()
+        CharacterView --> Usuario: Exibir novo estado
+    else Falha na persistencia
+        SQLiteDB --> CharacterRepository: erroBanco
+        CharacterRepository --> CharacterCtrl: falhaPersistencia(mensagem)
+        CharacterCtrl --> CharacterView: exibirErroPersistencia(mensagem)
+        CharacterView --> Usuario: Informar falha na criacao
+    end
 end
+
+note over CharacterCtrl,SQLiteDB
+Fluxo alinhado aos UCs de criacao/edicao de personagem
+end note
 
 @enduml
