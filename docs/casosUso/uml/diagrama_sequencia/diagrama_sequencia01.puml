@@ -20,11 +20,6 @@ participant "ProjectViewModel\n<<ViewModel>>" as ProjectVM
 participant "Projeto\n<<Model>>" as Projeto
 participant "Personagem\n<<Model>>" as Personagem
 
-note over ProjectVM
-Os controllers observados na branch paginaPersonagens foram
-documentados com o papel de ViewModel, seguindo MVVM.
-end note
-
 Usuario -> CharacterView: Abrir projeto e tocar no botao "+"
 CharacterView -> CharacterView: Exibir menu de criacao
 Usuario -> CharacterView: Selecionar "Novo personagem"
@@ -47,11 +42,5 @@ alt Usuario confirma o cadastro
 else Usuario cancela o dialogo
     CharacterView --> Usuario: Encerrar fluxo sem alteracoes
 end
-
-note over Projeto,Personagem
-Referencia estrutural baseada em:
-- diagrama_classe.puml
-- branch paginaPersonagens
-end note
 
 @enduml

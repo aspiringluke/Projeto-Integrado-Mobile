@@ -27,11 +27,6 @@ participant "SqliteNoteService\n<<Service>>" as NoteService
 participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
 participant "Projeto\n<<Model>>" as Projeto
 
-note over IdeasVM
-As classes de service e repository das branches feat-notas e sqlite
-foram mantidas como camadas de persistencia dentro do fluxo MVVM.
-end note
-
 Usuario -> NotesView: Criar nova nota
 NotesView -> IdeasVM: salvarNota(texto, idPasta)
 
@@ -77,11 +72,5 @@ else Falha ao persistir nota
     IdeasVM --> NotesView: exibirErro(mensagemErro)
     NotesView --> Usuario: Informar erro de persistencia
 end
-
-note over Nota,SQLiteDB
-Referencia estrutural baseada em:
-- diagrama_classe.puml
-- branches feat-notas e sqlite
-end note
 
 @enduml
