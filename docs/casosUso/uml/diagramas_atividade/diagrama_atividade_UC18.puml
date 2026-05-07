@@ -1,0 +1,32 @@
+@startuml diagrama_UC18
+
+|Usuário|
+start
+if (Ação selecionada?) then (Excluir nó)
+  :Selecionar nó no editor;
+  :Clicar em "Excluir";
+  |Sistema|
+  :Identificar arestas vinculadas;
+  :Exibir impacto da exclusão;
+  |Usuário|
+  if (Confirma exclusão?) then (sim)
+    |Sistema|
+    fork
+      :Remover nó;
+    fork again
+      :Remover arestas órfãs;
+    end fork
+  else (não)
+    :Cancelar exclusão;
+  endif
+else (Excluir aresta)
+  :Selecionar aresta;
+  :Clicar em "Excluir";
+  |Sistema|
+  :Remover aresta e manter nós;
+endif
+
+|Sistema|
+:Persistir estado do diagrama;
+stop
+@enduml

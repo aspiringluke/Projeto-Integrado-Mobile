@@ -2,22 +2,26 @@
 
 |Usuário|
 start
-:Acessa aba de "Configurações Gerais";
-:Ativa o botão "Modo Desempenho";
+:Acessar tela de listagem de notas;
+:Criar nova nota e inserir título;
+fork
+  :Escrever texto em Markdown;
+fork again
+  :Adicionar tags;
+
+  if (Deseja adicionar imagem?) then (sim)
+    :Acionar UC05 (Upload de imagem);
+  endif
+end fork
+
+:Clicar em "Salvar";
 
 |Sistema|
-:Desabilita sombras dinâmicas, transparências e animações complexas;
-:Limita o uso da memória para o teto definido;
-
-if (Desativação do modo?) then (Sim)
-  |Usuário|
-  :Desativa o "Modo Desempenho";
-  
-  |Sistema|
-  :Restaura as configurações gráficas para o padrão;
-else (Não)
-    |Usuário|
-    :Mantém o "Modo Desempenho" ativado;
+if (Título ou conteúdo informado?) then (sim)
+  :Persistir nota com conteúdo e tags;
+  :Atualizar listagem de notas;
+else (não)
+  :Exibir aviso de nota vazia;
 endif
 
 stop

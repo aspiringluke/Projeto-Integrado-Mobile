@@ -1,19 +1,19 @@
-@startuml Diagrama03
+@startuml UC_Configuracoes
 left to right direction
 
 actor "Usuário" as U
 
 rectangle "Sistema de Escrita Criativa - Configurações" {
-    usecase "UC06: Configurar e Utilizar Modo Desempenho" as UC06
-    usecase "UC10: Proteção de Acesso ao Aplicativo" as UC10
-    usecase "UC14: Personalização e Configurações de Escrita" as UC14
-    usecase "UC16: Gerenciamento de Segurança (Senha)" as UC16
+    usecase "UC15: Configurar e usar modo desempenho" as UC15
+    usecase "UC17: Proteção de acesso ao aplicativo" as UC17
+    usecase "UC11: Personalização e configurações de escrita" as UC11
+    usecase "UC20: Gerenciamento de segurança (senha)" as UC20
 }
 
-UC14 <.-. UC16: <<extends>>
+UC11 <.-. UC20: <<extends>>
 
-U --> UC06
-U --> UC10
-U --> UC14
-U --> UC16
+U --> UC15
+U --> UC17
+U --> UC11
+U --> UC20
 @enduml

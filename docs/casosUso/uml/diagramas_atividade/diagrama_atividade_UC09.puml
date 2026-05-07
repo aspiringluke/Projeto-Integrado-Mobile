@@ -2,31 +2,27 @@
 
 |Usuário|
 start
-:Acessar "Gerenciamento de Ideias";
-:Criar nova ideia e inserir título;
-fork
-  :Escrever texto em Markdown;
-fork again
-  :Adicionar tags de categoria;
+if (Deseja facilitar busca?) then (sim)
+  :Utilizar ordenação/filtro;
+endif
+:Localizar item (Nota, Personagem ou Diagrama);
+:Clicar em "Excluir";
 
-  if (Deseja adicionar imagem?) then (sim)
-    |Usuário|
-    :Escolher "Tirar foto" ou "Galeria";
-    |Sistema|
-    :Capturar arquivo;
-    if (Tamanho respeita RNF05?) then (sim)
-      :Adicionar imagem ao corpo da ideia;
-    else (não)
-      :Bloquear e exibir erro;
-    endif
-  else (não)
-  endif
-end fork
+|Sistema|
+if (Item possui vínculos relevantes?) then (sim)
+  :Exibir impacto da exclusão;
+endif
+:Exibir alerta de confirmação irreversível;
 
 |Usuário|
-:Clicar em "Salvar";
-|Sistema|
-:Persistir ideia com formatação e tags;
+if (Confirma exclusão?) then (sim)
+  |Sistema|
+  :Remover registro do banco de dados;
+  :Atualizar interface;
+else (não)
+  |Sistema|
+  :Cancelar exclusão;
+endif
 
 stop
 @enduml
