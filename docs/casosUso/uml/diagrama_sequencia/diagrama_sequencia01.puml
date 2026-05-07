@@ -16,7 +16,7 @@ skinparam sequence {
 actor "Usuario" as Usuario
 
 participant "CharactersPage / CharacterForm\n<<View>>" as CharacterView
-participant "CharacterViewModel\n<<ViewModel>>" as CharacterVM
+participant "CharacterController\n<<Controller>>" as CharacterCtrl
 participant "Personagem\n<<Model>>" as Personagem
 participant "Projeto\n<<Model>>" as Projeto
 participant "CharacterRepository\n<<Repository>>" as CharacterRepository
@@ -27,51 +27,39 @@ Usuario -> CharacterView: Abrir projeto e tocar no botao "+"
 CharacterView -> CharacterView: Exibir formulario de personagem
 Usuario -> CharacterView: Preencher dados e confirmar
 
-CharacterView -> CharacterVM: submitNovoPersonagem(idProjeto, draft)
-CharacterVM -> CharacterVM: validarCamposObrigatorios(draft)
+CharacterView -> CharacterCtrl: submitNovoPersonagem(idProjeto, draft)
+CharacterCtrl -> CharacterCtrl: validarCamposObrigatorios(draft)
 
 alt Dados obrigatorios invalidos
-    CharacterVM --> CharacterView: exibirErrosFormulario(campos)
+    CharacterCtrl --> CharacterView: exibirErrosFormulario(campos)
     CharacterView --> Usuario: Solicitar correcao dos dados
 else Dados obrigatorios validos
     opt Imagem informada
-        CharacterVM -> CharacterVM: validarRegrasDeUpload(imagem)
+        CharacterCtrl -> CharacterCtrl: validarRegrasDeUpload(imagem)
     end
 
-    CharacterVM -> Personagem: criarComDados(draft)
-    Personagem --> CharacterVM: entidadePronta
+    CharacterCtrl -> Personagem: criarComDados(draft)
+    Personagem --> CharacterCtrl: entidadePronta
 
-    CharacterVM -> Projeto: vincularPersonagem(entidadePronta)
-    Projeto --> CharacterVM: vinculoLogicoAtualizado
-
-    CharacterVM -> CharacterRepository: create(idProjeto, entidadePronta)
+    CharacterCtrl -> CharacterRepository: create(idProjeto, entidadePronta)
     CharacterRepository -> SQLiteDB: INSERT INTO Personagem(...)
 
     alt Persistencia do personagem com sucesso
-        SQLiteDB --> CharacterRepository: idPersonagem
-        CharacterRepository --> CharacterVM: personagemPersistido
+        SQLiteDB --> CharacterRepository: sucesso
+        CharacterRepository --> CharacterCtrl: sucesso
 
-        CharacterVM -> ProjectRepository: updateProjetoPersonagens(idProjeto, idPersonagem)
-        ProjectRepository -> SQLiteDB: UPDATE Projeto ...
-        SQLiteDB --> ProjectRepository: ok
-        ProjectRepository --> CharacterVM: ok
-
-        CharacterVM -> Projeto: sincronizarPersonagens()
-        Projeto --> CharacterVM: estadoAtualizado
-        CharacterVM --> CharacterView: publicarNovoEstado()
-        CharacterView -> CharacterView: Atualizar lista de personagens
-        CharacterView --> Usuario: Exibir personagem criado
+        CharacterCtrl --> CharacterView: atualizar()
+        CharacterView --> Usuario: Exibir novo estado
     else Falha na persistencia
         SQLiteDB --> CharacterRepository: erroBanco
-        CharacterRepository --> CharacterVM: falhaPersistencia(mensagem)
-        CharacterVM --> CharacterView: exibirErroPersistencia(mensagem)
+        CharacterRepository --> CharacterCtrl: falhaPersistencia(mensagem)
+        CharacterCtrl --> CharacterView: exibirErroPersistencia(mensagem)
         CharacterView --> Usuario: Informar falha na criacao
     end
 end
 
-note over CharacterVM,SQLiteDB
+note over CharacterCtrl,SQLiteDB
 Fluxo alinhado aos UCs de criacao/edicao de personagem
-com foco em MVVM + Repository + Database.
 end note
 
 @enduml
