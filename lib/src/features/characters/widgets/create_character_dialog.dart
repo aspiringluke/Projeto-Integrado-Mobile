@@ -1713,7 +1713,7 @@ List<_RelevanceCategoryConfig> _defaultRelevanceCategories() {
       name: 'Orbital',
       min: 5,
       max: 7.9,
-      description: 'Sustentacao critica ao redor do nucleo.',
+      description: 'Sustentação crítica ao redor do núcleo.',
       color: Color(0xFFDF9C53),
     ),
     _RelevanceCategoryConfig(

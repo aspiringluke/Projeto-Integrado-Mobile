@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 
@@ -85,7 +85,7 @@ class SqliteFolderService implements IFolderService {
         [id],
       );
 
-      return (true, "Pasta $id excluÃ­da");
+      return (true, "Pasta $id excluída");
     } catch (e) {
       return (false, cleanError(e));
     } finally {
@@ -454,3 +454,4 @@ DateTime _parseDate(Object? value) {
 }
 
 String _nowIso() => DateTime.now().toIso8601String();
+

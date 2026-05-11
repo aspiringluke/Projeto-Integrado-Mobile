@@ -115,11 +115,11 @@ class CharacterDateEntries {
 
     return CharacterDateEntries(
       lastModified: CharacterDateEntry(
-        label: 'Ultima modificacao',
+        label: 'Última modificação',
         value: lastModified,
       ),
       lastAccessed: CharacterDateEntry(
-        label: 'Ultimo acesso',
+        label: 'Último acesso',
         value: lastAccessed,
       ),
       createdAt: CharacterDateEntry(label: 'Criado em', value: createdAt),

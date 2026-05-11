@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 import 'package:sqlite3/common.dart';
@@ -110,7 +110,7 @@ class Sqlitefolderservice implements INoteService {
         [id],
       );
 
-      return (true, "Nota $id excluÃ­da");
+      return (true, "Nota $id excluída");
     } catch (e) {
       return (false, cleanError(e));
     } finally {
@@ -372,3 +372,4 @@ DateTime _parseDate(Object? value) {
 }
 
 String _nowIso() => DateTime.now().toIso8601String();
+

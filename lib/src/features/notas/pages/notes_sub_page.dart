@@ -190,7 +190,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _renameFolderFlow(Folder folder) async {
     final folderId = folder.id;
     if (folderId == null) {
-      _showSnack('Pasta invÃ¡lida para ediÃ§Ã£o');
+      _showSnack('Pasta inválida para edição');
       return;
     }
 
@@ -224,7 +224,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _deleteFolderFlow(Folder folder) async {
     final folderId = folder.id;
     if (folderId == null) {
-      _showSnack('Pasta invÃ¡lida para exclusÃ£o');
+      _showSnack('Pasta inválida para exclusão');
       return;
     }
 
@@ -247,7 +247,7 @@ class NotesSubPageState extends State<NotesSubPage> {
     final statsResult = await _folderController.getFolderTreeStats(folderId);
     if (!mounted) return;
     if (!statsResult.$1 || statsResult.$2 == null) {
-      _showSnack(statsResult.$3 ?? 'Falha ao calcular mÃ©tricas da pasta');
+      _showSnack(statsResult.$3 ?? 'Falha ao calcular métricas da pasta');
       return;
     }
 
@@ -262,7 +262,7 @@ class NotesSubPageState extends State<NotesSubPage> {
 
     final result = await _folderController.deleteFolder(folderId);
     if (result.$1) {
-      _showSnack('Pasta excluÃ­da');
+      _showSnack('Pasta excluída');
       await _refreshVisibleStats();
       return;
     }
@@ -273,7 +273,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _toggleFolderPin(Folder folder) async {
     final folderId = folder.id;
     if (folderId == null) {
-      _showSnack('Pasta invÃ¡lida para fixar');
+      _showSnack('Pasta inválida para fixar');
       return;
     }
 
@@ -288,7 +288,7 @@ class NotesSubPageState extends State<NotesSubPage> {
       return;
     }
 
-    _showSnack(result.$2 ?? 'Falha ao alterar fixaÃ§Ã£o da pasta');
+    _showSnack(result.$2 ?? 'Falha ao alterar fixação da pasta');
   }
 
   Future<void> _moveFolderToFolder({
@@ -348,7 +348,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _moveNoteByMenuFlow(Note note) async {
     final noteId = note.id;
     if (noteId == null) {
-      _showSnack('Nota invÃ¡lida para mover');
+      _showSnack('Nota inválida para mover');
       return;
     }
 
@@ -367,7 +367,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _toggleNotePin(Note note) async {
     final noteId = note.id;
     if (noteId == null) {
-      _showSnack('Nota invÃ¡lida para fixar');
+      _showSnack('Nota inválida para fixar');
       return;
     }
 
@@ -382,7 +382,7 @@ class NotesSubPageState extends State<NotesSubPage> {
       return;
     }
 
-    _showSnack(result.$2 ?? 'Falha ao alterar fixaÃ§Ã£o da nota');
+    _showSnack(result.$2 ?? 'Falha ao alterar fixação da nota');
   }
 
   Future<void> _deleteSelectedItems() async {
@@ -509,7 +509,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _deleteNoteFlow(Note note) async {
     final noteId = note.id;
     if (noteId == null) {
-      _showSnack('Nota invÃ¡lida para exclusÃ£o');
+      _showSnack('Nota inválida para exclusão');
       return;
     }
 
@@ -524,7 +524,7 @@ class NotesSubPageState extends State<NotesSubPage> {
 
     final result = await _noteController.deleteNote(noteId);
     if (result.$1) {
-      _showSnack('Nota excluÃ­da');
+      _showSnack('Nota excluída');
       await _refreshVisibleStats();
       return;
     }
@@ -535,7 +535,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   Future<void> _openFolder(Folder folder) async {
     final folderId = folder.id;
     if (folderId == null) {
-      _showSnack('Pasta invÃ¡lida');
+      _showSnack('Pasta inválida');
       return;
     }
 
@@ -1495,3 +1495,4 @@ class _BreadcrumbLabel extends StatelessWidget {
     );
   }
 }
+

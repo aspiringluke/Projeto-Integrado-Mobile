@@ -163,8 +163,8 @@ Future<bool> showDeleteFolderConfirmation(
       child: _ConfirmDialog(
         title: 'Excluir pasta',
         message: hasChildren
-            ? 'A pasta "$folderTitle" possui subpastas e $noteCount nota(s). Excluir tambÃ©m remove tudo que estÃ¡ dentro.'
-            : 'A pasta "$folderTitle" possui $noteCount nota(s). Deseja excluir e apagar tudo que estÃ¡ salvo dentro?',
+            ? 'A pasta "$folderTitle" possui subpastas e $noteCount nota(s). Excluir também remove tudo que está dentro.'
+            : 'A pasta "$folderTitle" possui $noteCount nota(s). Deseja excluir e apagar tudo que está salvo dentro?',
         confirmLabel: 'Excluir',
         confirmColor: const Color(0xFFE05E8A),
         confirmRequiresHold: true,
@@ -209,7 +209,7 @@ Future<bool> showDeleteSelectionConfirmation(
   List<String> noteTitles = const <String>[],
 }) async {
   final message = folderCount > 0
-      ? 'VocÃª vai excluir $noteCount nota(s) e $folderCount pasta(s), afetando $totalNotesAffected nota(s) no total. A confirmaÃ§Ã£o abaixo tambÃ©m remove o conteÃºdo dentro das pastas selecionadas.'
+      ? 'Você vai excluir $noteCount nota(s) e $folderCount pasta(s), afetando $totalNotesAffected nota(s) no total. A confirmação abaixo também remove o conteúdo dentro das pastas selecionadas.'
       : _buildDeleteNoteMessage(noteCount, noteTitles);
   final shouldDelete = await showDialog<bool>(
     context: context,
@@ -282,7 +282,7 @@ Future<int?> showMoveNoteToFolderSheet(
               const SizedBox(height: 14),
               _MoveTargetTile(
                 icon: Icons.home_outlined,
-                title: 'PÃ¡gina raiz',
+                title: 'Página raiz',
                 color: kNotesPlum,
                 enabled: currentFolderId != null,
                 onTap: currentFolderId == null
@@ -434,7 +434,7 @@ class _FolderFormDialogState extends State<_FolderFormDialog> {
             TextField(
               controller: _titleController,
               decoration: notesInputDecoration(
-                labelText: 'TÃ­tulo',
+                labelText: 'Título',
                 prefixIcon: const Icon(Icons.edit_note_rounded),
               ),
               textInputAction: TextInputAction.done,
@@ -460,7 +460,7 @@ class _FolderFormDialogState extends State<_FolderFormDialog> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _CompactActionRow(
-                    label: 'Nova classificaÃ§Ã£o',
+                    label: 'Nova classificação',
                     icon: Icons.add_rounded,
                     onTap: () =>
                         setState(() => _composerExpanded = !_composerExpanded),
@@ -504,7 +504,7 @@ class _FolderFormDialogState extends State<_FolderFormDialog> {
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        'Nenhuma classificaÃ§Ã£o criada ainda.',
+                        'Nenhuma classificação criada ainda.',
                         style: TextStyle(color: kNotesMutedText),
                       ),
                     )
@@ -679,7 +679,7 @@ class _NoteFormDialogState extends State<_NoteFormDialog> {
             TextField(
               controller: _titleController,
               decoration: notesInputDecoration(
-                labelText: 'TÃ­tulo',
+                labelText: 'Título',
                 prefixIcon: const Icon(Icons.title_rounded),
               ),
               textInputAction: TextInputAction.next,
@@ -688,7 +688,7 @@ class _NoteFormDialogState extends State<_NoteFormDialog> {
             TextField(
               controller: _descriptionController,
               decoration: notesInputDecoration(
-                labelText: 'DescriÃ§Ã£o',
+                labelText: 'Descrição',
                 prefixIcon: const Icon(Icons.notes_rounded),
               ),
               maxLines: 4,
@@ -860,7 +860,7 @@ class _ConfirmDialog extends StatelessWidget {
           if (confirmRequiresHold) ...[
             const SizedBox(height: 10),
             Text(
-              'Segure o botÃ£o "$confirmLabel" por 2 segundos para confirmar.',
+              'Segure o botão "$confirmLabel" por 2 segundos para confirmar.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: kNotesMutedText.withValues(alpha: 0.88),
@@ -899,7 +899,7 @@ class _DeleteMetricsSummary extends StatelessWidget {
         ),
         _DeleteSummaryChip(
           icon: Icons.alternate_email_rounded,
-          label: '${formatCompactCount(stats.mentions)} menÃ§Ãµes',
+          label: '${formatCompactCount(stats.mentions)} menções',
           tint: const Color(0xFFDA6A9E),
         ),
       ],
@@ -1195,7 +1195,7 @@ String _folderMetadataSummary(NoteMetadata metadata) {
 
 String _folderTagsSummary(NoteMetadata metadata) {
   if (metadata.tagGroups.isEmpty) {
-    return 'Nenhuma classificaÃ§Ã£o criada';
+    return 'Nenhuma classificação criada';
   }
 
   final tagCount = metadata.tagGroups.fold<int>(
@@ -1555,7 +1555,7 @@ class _InlineTagInputState extends State<_InlineTagInput> {
             controller: _controller,
             decoration: notesInputDecoration(
               labelText: 'Nova tag',
-              hintText: 'Adicionar tag a esta classificaÃ§Ã£o',
+              hintText: 'Adicionar tag a esta classificação',
               prefixIcon: Icon(
                 Icons.label_outline_rounded,
                 color: widget.color,
@@ -1936,7 +1936,7 @@ class _FolderMetadataEditorSheetState
                 children: [
                   const Expanded(
                     child: Text(
-                      'Tags e vÃ­nculos',
+                      'Tags e vínculos',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: kNotesText,
@@ -1957,7 +1957,7 @@ class _FolderMetadataEditorSheetState
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: _SheetHint(
                 text:
-                    'Use vÃ­nculos para contexto e tags para classificar a pasta.',
+                    'Use vínculos para contexto e tags para classificar a pasta.',
               ),
             ),
             const SizedBox(height: 10),
@@ -1969,10 +1969,10 @@ class _FolderMetadataEditorSheetState
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _SheetSection(
-                      title: 'VÃ­nculos',
+                      title: 'Vínculos',
                       subtitle: _folderMetadataSummary(_metadata),
                       hintText:
-                          'Selecione projeto e personagem para manter o contexto da pasta visÃ­vel.',
+                          'Selecione projeto e personagem para manter o contexto da pasta visível.',
                       isExpanded: true,
                       onToggle: () {},
                       child: _FolderLinksBody(
@@ -2000,19 +2000,19 @@ class _FolderMetadataEditorSheetState
                     ),
                     const SizedBox(height: 12),
                     _SheetSection(
-                      title: 'ClassificaÃ§Ãµes',
+                      title: 'Classificações',
                       subtitle: _metadata.tagGroups.isEmpty
                           ? 'Nenhuma criada'
                           : '${_metadata.tagGroups.length} grupo(s)',
                       hintText:
-                          'Crie grupos para organizar tags por intenÃ§Ã£o e encontrar depois com menos atrito.',
+                          'Crie grupos para organizar tags por intenção e encontrar depois com menos atrito.',
                       isExpanded: true,
                       onToggle: () {},
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _CompactActionRow(
-                            label: 'Nova classificaÃ§Ã£o',
+                            label: 'Nova classificação',
                             icon: Icons.add_rounded,
                             onTap: () => setState(
                               () => _composerExpanded = !_composerExpanded,
@@ -2040,7 +2040,7 @@ class _FolderMetadataEditorSheetState
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'Nenhuma classificaÃ§Ã£o criada ainda.',
+                                'Nenhuma classificação criada ainda.',
                                 style: TextStyle(color: kNotesMutedText),
                               ),
                             )
@@ -2165,7 +2165,7 @@ class _FolderTagGroupEditDialogState extends State<_FolderTagGroupEditDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Editar classificaÃ§Ã£o',
+              'Editar classificação',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: kNotesText,
@@ -2177,7 +2177,7 @@ class _FolderTagGroupEditDialogState extends State<_FolderTagGroupEditDialog> {
             TextField(
               controller: _titleController,
               decoration: notesInputDecoration(
-                labelText: 'Nome da classificaÃ§Ã£o',
+                labelText: 'Nome da classificação',
                 prefixIcon: const Icon(Icons.sell_outlined),
               ),
               textInputAction: TextInputAction.done,
@@ -2196,7 +2196,7 @@ class _FolderTagGroupEditDialogState extends State<_FolderTagGroupEditDialog> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Paleta padrÃ£o',
+              'Paleta padrão',
               style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
@@ -2357,7 +2357,7 @@ class _FolderLinksBody extends StatelessWidget {
         const SizedBox(height: 8),
         if (projects.isEmpty)
           const Text(
-            'Nenhum projeto disponÃ­vel.',
+            'Nenhum projeto disponível.',
             style: TextStyle(color: kNotesMutedText, fontSize: 13),
           )
         else
@@ -2366,7 +2366,7 @@ class _FolderLinksBody extends StatelessWidget {
             runSpacing: 8,
             children: [
               _AssociationChoiceChip(
-                label: 'Sem vÃ­nculo',
+                label: 'Sem vínculo',
                 isSelected: selectedProjectTitle == null,
                 color: const Color(0xFF8B93A8),
                 onTap: onClearProject,
@@ -2394,7 +2394,7 @@ class _FolderLinksBody extends StatelessWidget {
           )
         else if (characters.isEmpty)
           const Text(
-            'Esse projeto ainda nÃ£o possui personagens registrados.',
+            'Esse projeto ainda não possui personagens registrados.',
             style: TextStyle(color: kNotesMutedText, fontSize: 13),
           )
         else
@@ -2403,7 +2403,7 @@ class _FolderLinksBody extends StatelessWidget {
             runSpacing: 8,
             children: [
               _AssociationChoiceChip(
-                label: 'Sem vÃ­nculo',
+                label: 'Sem vínculo',
                 isSelected: selectedCharacterName == null,
                 color: const Color(0xFF8B93A8),
                 onTap: onClearCharacter,
@@ -2452,7 +2452,7 @@ class _FolderTagGroupComposer extends StatelessWidget {
             TextField(
               controller: titleController,
               decoration: notesInputDecoration(
-                labelText: 'Nome da classificaÃ§Ã£o',
+                labelText: 'Nome da classificação',
                 prefixIcon: const Icon(Icons.sell_outlined),
               ),
             ),
@@ -2485,7 +2485,7 @@ class _FolderTagGroupComposer extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Paleta padrÃ£o',
+              'Paleta padrão',
               style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
@@ -2608,3 +2608,4 @@ class _FolderTagGroupCard extends StatelessWidget {
 
 // ignore: unused_element
 bool _sameColor(Color a, Color b) => a.toARGB32() == b.toARGB32();
+

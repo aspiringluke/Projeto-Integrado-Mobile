@@ -640,7 +640,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                     children: [
                       const Expanded(
                         child: Text(
-                          'Tags e vinculos',
+                          'Tags e vínculos',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: kNotesText,
@@ -661,7 +661,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: _SheetHint(
                     text:
-                        'Use os vinculos para contexto e as classificacoes para separar tags sem abrir cada bloco.',
+                        'Use os vínculos para contexto e as classificações para separar tags sem abrir cada bloco.',
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -673,7 +673,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _SheetSection(
-                          title: 'Vinculos',
+                          title: 'Vínculos',
                           subtitle: _buildLinksSubtitle(
                             projectTitle: selectedProject,
                             characterName: validCharacterValue?.name,
@@ -706,12 +706,12 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                         ),
                         const SizedBox(height: 12),
                         _SheetSection(
-                          title: 'Classificacoes',
+                          title: 'Classificações',
                           subtitle: widget.controller.tagGroups.isEmpty
                               ? 'Nenhuma criada'
                               : '${widget.controller.tagGroups.length} grupo(s)',
                           hintText:
-                              'Crie grupos para organizar tags por intencao e achar depois com menos atrito.',
+                              'Crie grupos para organizar tags por inten\u00e7\u00e3o e achar depois com menos atrito.',
                           isExpanded: _classificationsExpanded,
                           onToggle: () => setState(
                             () => _classificationsExpanded =
@@ -721,7 +721,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               _CompactActionRow(
-                                label: 'Nova classificacao',
+                                label: 'Nova classificação',
                                 icon: Icons.add_rounded,
                                 onTap: () => setState(
                                   () => _composerExpanded = !_composerExpanded,
@@ -748,7 +748,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                                 const Padding(
                                   padding: EdgeInsets.symmetric(vertical: 8),
                                   child: Text(
-                                    'Nenhuma classificacao criada ainda.',
+                                    'Nenhuma classificação criada ainda.',
                                     style: TextStyle(color: kNotesMutedText),
                                   ),
                                 )
@@ -1094,7 +1094,7 @@ class _LinksSectionBody extends StatelessWidget {
             runSpacing: 8,
             children: [
               _AssociationChoiceChip(
-                label: 'Sem vinculo',
+                label: 'Sem vínculo',
                 isSelected: selectedProjectTitle == null,
                 color: const Color(0xFF8B93A8),
                 onTap: onClearProject,
@@ -1122,7 +1122,7 @@ class _LinksSectionBody extends StatelessWidget {
           )
         else if (characters.isEmpty)
           const Text(
-            'Esse projeto ainda nao possui personagens registrados.',
+            'Esse projeto ainda não possui personagens registrados.',
             style: TextStyle(color: kNotesMutedText, fontSize: 13),
           )
         else
@@ -1131,7 +1131,7 @@ class _LinksSectionBody extends StatelessWidget {
             runSpacing: 8,
             children: [
               _AssociationChoiceChip(
-                label: 'Sem vinculo',
+                label: 'Sem vínculo',
                 isSelected: selectedCharacterName == null,
                 color: const Color(0xFF8B93A8),
                 onTap: onClearCharacter,
@@ -1287,7 +1287,7 @@ class _TagGroupComposer extends StatelessWidget {
             TextField(
               controller: titleController,
               decoration: notesInputDecoration(
-                labelText: 'Nome da classificacao',
+                labelText: 'Nome da classificação',
                 prefixIcon: const Icon(Icons.sell_outlined),
               ),
             ),
@@ -1301,7 +1301,7 @@ class _TagGroupComposer extends StatelessWidget {
                       final label = value.text.trim();
                       return _ClassificationPreviewChip(
                         label: label.isEmpty
-                            ? 'Preview da classificacao'
+                            ? 'Preview da classificação'
                             : label,
                         color: selectedColor,
                       );
@@ -1322,7 +1322,7 @@ class _TagGroupComposer extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Paleta padrao',
+              'Paleta padrão',
               style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
@@ -1396,7 +1396,7 @@ class _TagGroupEditDialogState extends State<_TagGroupEditDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Editar classificacao',
+              'Editar classificação',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: kNotesText,
@@ -1408,7 +1408,7 @@ class _TagGroupEditDialogState extends State<_TagGroupEditDialog> {
             TextField(
               controller: _titleController,
               decoration: notesInputDecoration(
-                labelText: 'Nome da classificacao',
+                labelText: 'Nome da classificação',
                 prefixIcon: const Icon(Icons.sell_outlined),
               ),
               textInputAction: TextInputAction.done,
@@ -1420,14 +1420,14 @@ class _TagGroupEditDialogState extends State<_TagGroupEditDialog> {
               builder: (context, value, _) {
                 final label = value.text.trim();
                 return _ClassificationPreviewChip(
-                  label: label.isEmpty ? 'Preview da classificacao' : label,
+                  label: label.isEmpty ? 'Preview da classificação' : label,
                   color: _selectedColor,
                 );
               },
             ),
             const SizedBox(height: 14),
             const Text(
-              'Paleta padrao',
+              'Paleta padrão',
               style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
@@ -1691,7 +1691,7 @@ class _CompactHslEditor extends StatelessWidget {
           onChanged: onHueChanged,
         ),
         _HslSliderField(
-          label: 'Saturacao',
+          label: 'Saturação',
           value: hslColor.saturation,
           min: 0,
           max: 1,
@@ -1872,12 +1872,12 @@ String _buildLinksSubtitle({
   required String? characterName,
 }) {
   if (projectTitle == null && characterName == null) {
-    return 'Sem vinculos';
+    return 'Sem vínculos';
   }
   if (projectTitle != null && characterName != null) {
     return '$projectTitle -> $characterName';
   }
-  return projectTitle ?? characterName ?? 'Sem vinculos';
+  return projectTitle ?? characterName ?? 'Sem vínculos';
 }
 
 class _InlineTagInput extends StatefulWidget {
@@ -1925,7 +1925,7 @@ class _InlineTagInputState extends State<_InlineTagInput> {
             controller: _controller,
             decoration: notesInputDecoration(
               labelText: 'Nova tag',
-              hintText: 'Adicionar tag a esta classificacao',
+              hintText: 'Adicionar tag a esta classificação',
               prefixIcon: Icon(
                 Icons.label_outline_rounded,
                 color: widget.color,
@@ -2000,7 +2000,7 @@ class _EditorContextCard extends StatelessWidget {
               const SizedBox(width: 10),
               _HeaderActionButton(
                 icon: Icons.sell_outlined,
-                tooltip: 'Editar tags e vinculos',
+                tooltip: 'Editar tags e vínculos',
                 onTap: onEditAssociations,
                 tint: accent,
               ),
@@ -2484,7 +2484,7 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
                         minLines: null,
                         textAlignVertical: TextAlignVertical.top,
                         decoration: InputDecoration(
-                          hintText: 'Markdown ÃƒÆ’Ã‚Â© suportado.',
+                          hintText: 'Markdown é suportado.',
                           filled: true,
                           fillColor: Colors.transparent,
                           hintStyle: TextStyle(
@@ -3295,7 +3295,7 @@ class _NoteSummaryRow extends StatelessWidget {
 
     if (chips.isEmpty) {
       return const Text(
-        'Sem tags ou vinculos. Use o icone ao lado para classificar a nota.',
+        'Sem tags ou vínculos. Use o ícone ao lado para classificar a nota.',
         style: TextStyle(color: kNotesMutedText, fontSize: 12.5, height: 1.2),
       );
     }
@@ -3512,3 +3512,4 @@ class _DialogActionButton extends StatelessWidget {
     );
   }
 }
+

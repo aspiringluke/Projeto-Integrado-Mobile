@@ -14,7 +14,7 @@
 
 - Tela inicial aberta.
 
-### Pós condições
+### Pós-condições
 
 - Novo projeto criado.
 
@@ -44,7 +44,7 @@
 
 - O usuário deve estar dentro de um projeto ativo.
 
-### Pós condições
+### Pós-condições
 
 - Um novo diagrama é persistido no banco de dados local.
 
@@ -96,7 +96,7 @@
 
 - Interface de listagem (projetos/ideias) ou editor de diagramas aberto.
 
-### Pós condições
+### Pós-condições
 
 - Nova posição espacial ou hierárquica salva.
 
@@ -144,7 +144,7 @@
 
 - Existirem itens (ideias, personagens, diagramas) cadastrados.
 
-### Pós condições
+### Pós-condições
 
 - Listagem filtrada exibida na tela.
 
@@ -183,7 +183,7 @@
 
 - Otimizar a experiência em dispositivos com hardware limitado.
 
-### Pós condições
+### Pós-condições
 
 - Interface simplificada e consumo de recursos reduzido.
 
@@ -224,7 +224,7 @@
 
 - Diagrama com múltiplos nós existentes.
 
-### Pós condições
+### Pós-condições
 
 - Grupo criado.
 
@@ -282,7 +282,7 @@
 - Ficha de personagem aberta em modo de edição.
 - Permissão para acessar imagens na galeria concedida.
 
-### Pós condições
+### Pós-condições
 
 - Imagem comprimida e exibida no perfil do personagem.
 
@@ -320,7 +320,7 @@
 
 - Registrar e estilizar fragmentos criativos rapidamente.
 
-### Pós condições
+### Pós-condições
 
 - Ideia persistida com formatação e tags.
 
@@ -370,7 +370,7 @@
 
 - Garantir a privacidade do conteúdo criativo do autor.
 
-### Pós condições
+### Pós-condições
 
 - Senha de acesso configurada e ativa.
 
@@ -407,7 +407,7 @@
 
 - Diagrama aberto com ao menos dois nós conectados a cada aresta existente.
 
-### Pós condições
+### Pós-condições
 
 - Nó e arestas vinculadas removidos permanentemente.
 
@@ -454,7 +454,7 @@
 
 - Exisitir pelo menos uma pasta criada.
 
-### Pós condições
+### Pós-condições
 
 - Estrutura de diretórios atualizada ou removida.
 
@@ -495,7 +495,7 @@
 
 - Editor de diagrama aberto com elementos (nós e arestas) presentes.
 
-### Pós condições
+### Pós-condições
 
 - Metadados salvos nos elementos do diagrama.
 
@@ -535,7 +535,7 @@
 
 - Aplicativo aberto na tela de configurações.
 
-### Pós condições
+### Pós-condições
 
 - Preferências de sistema e limites de validação alterados conforme a escolha do usuário.
 
@@ -587,7 +587,7 @@
 
 - Listagem de itens aberta.
 
-### Pós condições
+### Pós-condições
 
 - Item removido e memória liberada.
 
@@ -630,7 +630,7 @@
 - Acesso às configurações gerais.
 - Proteção estar ativa.
 
-### Pós condições
+### Pós-condições
 
 - Status de segurança do app atualizado.
 
@@ -672,7 +672,7 @@
 - O usuário deve estar em uma página de conteúdo (Projeto, Personagem, Ideia ou Diagrama).
 - Conexão ativa com o serviço de IA.
 
-### Pós condições
+### Pós-condições
 
 - Os insights são armazenados e exibidos na tela de relatórios do projeto.
 - Novos perfis de personagens podem ser criados a partir das sugestões.
@@ -739,7 +739,7 @@ SERÁ RECONSIDERADO
 
 - Existir um diagrama onde um nó está vinculado a uma entidade persistente (Personagem/Ideia).
 
-### Pós condições
+### Pós-condições
 
 - A representação visual do nó no diagrama é atualizada.
 
