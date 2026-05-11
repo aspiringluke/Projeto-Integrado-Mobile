@@ -28,9 +28,7 @@ class CustomNavBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.22),
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.34),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.34)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -45,7 +43,8 @@ class CustomNavBar extends StatelessWidget {
                   final tabWidth = constraints.maxWidth / 2;
                   const projectsUnderlineOffset = 16.0;
                   const ideasUnderlineOffset = 12.0;
-                  final indicatorLeft = (activeTab == NavTab.projects ? 0 : 1) * tabWidth +
+                  final indicatorLeft =
+                      (activeTab == NavTab.projects ? 0 : 1) * tabWidth +
                       ((tabWidth - indicatorWidth) / 2) +
                       (activeTab == NavTab.projects
                           ? projectsUnderlineOffset
@@ -89,7 +88,9 @@ class CustomNavBar extends StatelessWidget {
                               borderRadius: BorderRadius.circular(999),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFEB76AE).withValues(alpha: 0.26),
+                                  color: const Color(
+                                    0xFFEB76AE,
+                                  ).withValues(alpha: 0.26),
                                   blurRadius: 6,
                                   offset: const Offset(0, 1),
                                 ),

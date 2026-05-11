@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 
@@ -454,4 +454,3 @@ DateTime _parseDate(Object? value) {
 }
 
 String _nowIso() => DateTime.now().toIso8601String();
-

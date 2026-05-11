@@ -5,10 +5,7 @@ import './glass_circle_button.dart';
 class BotaoConfig extends StatelessWidget {
   final VoidCallback? onPressed;
 
-  const BotaoConfig({
-    super.key,
-    this.onPressed,
-  });
+  const BotaoConfig({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) {

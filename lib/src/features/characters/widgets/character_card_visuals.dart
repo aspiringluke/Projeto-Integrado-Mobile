@@ -46,7 +46,9 @@ class CharacterAvatarTile extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(16),
-                    bottomLeft: isExpanded ? Radius.zero : const Radius.circular(16),
+                    bottomLeft: isExpanded
+                        ? Radius.zero
+                        : const Radius.circular(16),
                     topRight: const Radius.circular(18),
                     bottomRight: const Radius.circular(18),
                   ),

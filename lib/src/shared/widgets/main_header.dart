@@ -133,11 +133,7 @@ class _HeaderContent extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [
-            Color(0xFF726876),
-            Color(0xFFB083AA),
-            Color(0xFFDF6EB8),
-          ],
+          colors: [Color(0xFF726876), Color(0xFFB083AA), Color(0xFFDF6EB8)],
           stops: [0, 0.56, 1],
         ),
       ),
@@ -150,10 +146,7 @@ class _HeaderContent extends StatelessWidget {
             child: IgnorePointer(
               child: _HeaderGlow(
                 size: 170,
-                colors: [
-                  const Color(0x26FFFFFF),
-                  const Color(0x00FFFFFF),
-                ],
+                colors: [const Color(0x26FFFFFF), const Color(0x00FFFFFF)],
               ),
             ),
           ),
@@ -163,10 +156,7 @@ class _HeaderContent extends StatelessWidget {
             child: IgnorePointer(
               child: _HeaderGlow(
                 size: 190,
-                colors: [
-                  const Color(0x34F7C6E2),
-                  const Color(0x00F7C6E2),
-                ],
+                colors: [const Color(0x34F7C6E2), const Color(0x00F7C6E2)],
               ),
             ),
           ),
@@ -187,7 +177,9 @@ class _HeaderContent extends StatelessWidget {
                   ),
                   Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: titleHorizontalPadding),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: titleHorizontalPadding,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -207,7 +199,9 @@ class _HeaderContent extends StatelessWidget {
                               effectiveSubtitle,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: const Color(0xFFF7EEF4).withValues(alpha: 0.9),
+                                color: const Color(
+                                  0xFFF7EEF4,
+                                ).withValues(alpha: 0.9),
                                 fontSize: 13,
                                 fontStyle: FontStyle.italic,
                                 letterSpacing: 0.3,
@@ -232,10 +226,7 @@ class _HeaderGlow extends StatelessWidget {
   final double size;
   final List<Color> colors;
 
-  const _HeaderGlow({
-    required this.size,
-    required this.colors,
-  });
+  const _HeaderGlow({required this.size, required this.colors});
 
   @override
   Widget build(BuildContext context) {

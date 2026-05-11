@@ -15,6 +15,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/utils/note_color_res
 import 'package:projeto_integrado_mobile/src/features/notas/utils/notes_dialogs.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_list_card.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/note_list_card.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_card_widgets.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 
@@ -109,7 +110,8 @@ class NotesSubPageState extends State<NotesSubPage> {
   }
 
   void _syncContentDividerVisibility() {
-    final shouldShow = _contentScrollController.hasClients &&
+    final shouldShow =
+        _contentScrollController.hasClients &&
         _contentScrollController.offset > 0.0;
     if (shouldShow == _showContentDivider || !mounted) return;
 
@@ -958,7 +960,7 @@ class NotesSubPageState extends State<NotesSubPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  _SelectionActionButton(
+                                  NotesActionIconButton(
                                     icon: _isSelectionMode
                                         ? Icons.close_rounded
                                         : Icons.checklist_rounded,
@@ -968,7 +970,7 @@ class NotesSubPageState extends State<NotesSubPage> {
                                     onTap: _toggleSelectionMode,
                                   ),
                                   const SizedBox(width: 8),
-                                  _SelectionActionButton(
+                                  NotesActionIconButton(
                                     icon: Icons.select_all_rounded,
                                     tooltip: 'Selecionar tudo',
                                     onTap: _selectAllVisibleItems,
@@ -1108,20 +1110,20 @@ class NotesSubPageState extends State<NotesSubPage> {
                                               ),
                                             ),
                                           ),
-                                          _SelectionActionButton(
+                                          NotesActionIconButton(
                                             icon: Icons.close_rounded,
                                             tooltip: 'Cancelar seleção',
                                             onTap: _clearSelection,
                                           ),
                                           const SizedBox(width: 8),
-                                          _SelectionActionButton(
+                                          NotesActionIconButton(
                                             icon: Icons.delete_outline_rounded,
                                             tooltip: 'Excluir selecionados',
                                             onTap: _deleteSelectedItems,
                                             destructive: true,
                                           ),
                                           const SizedBox(width: 8),
-                                          _SelectionActionButton(
+                                          NotesActionIconButton(
                                             icon: Icons.drive_file_move_outline,
                                             tooltip: 'Mover selecionados',
                                             onTap: _moveSelectedItemsToFolder,
@@ -1398,46 +1400,6 @@ class _NotesBreadcrumb extends StatelessWidget {
   }
 }
 
-class _SelectionActionButton extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onTap;
-  final bool destructive;
-
-  const _SelectionActionButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-    this.destructive = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tint = destructive ? const Color(0xFFE05E8A) : kNotesPlum;
-
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: tint.withValues(alpha: 0.1),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.84)),
-            ),
-            child: Icon(icon, size: 18, color: tint),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _BreadcrumbLabel extends StatelessWidget {
   final String label;
   final bool isCurrent;
@@ -1495,4 +1457,3 @@ class _BreadcrumbLabel extends StatelessWidget {
     );
   }
 }
-

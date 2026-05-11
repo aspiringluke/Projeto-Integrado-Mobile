@@ -1189,7 +1189,7 @@ class _CharacterPlaceholderPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Pagina interna do personagem em construcao.',
+                    'Página interna do personagem em construção.',
                     style: TextStyle(
                       fontSize: 15,
                       color: Colors.black.withValues(alpha: 0.58),

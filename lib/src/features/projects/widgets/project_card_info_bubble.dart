@@ -77,7 +77,7 @@ Future<void> _showAnchoredInfoBubble({
 }
 
 class _ProjectInfoButton extends StatelessWidget {
-  const _ProjectInfoButton({super.key});
+  const _ProjectInfoButton();
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +90,7 @@ class _ProjectInfoButton extends StatelessWidget {
 }
 
 class _DottedCircle extends StatelessWidget {
-  const _DottedCircle({super.key});
+  const _DottedCircle();
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +126,6 @@ class _DottedCirclePainter extends CustomPainter {
 
     final dashLength = 5.0;
     final gapLength = 4.0;
-    final circumference = 2 * 3.1415926535897932 * radius;
     final dashAngle = dashLength / radius;
     final gapAngle = gapLength / radius;
 

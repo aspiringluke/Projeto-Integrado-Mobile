@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_folder_service.dart';
-import 'package:projeto_integrado_mobile/src/features/notas/data/services/sqlite_folder_fervice.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/data/services/sqlite_folder_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/content_stats.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 

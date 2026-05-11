@@ -4,8 +4,5 @@ class ProjectImagePickResult {
   final String name;
   final Uint8List bytes;
 
-  const ProjectImagePickResult({
-    required this.name,
-    required this.bytes,
-  });
+  const ProjectImagePickResult({required this.name, required this.bytes});
 }

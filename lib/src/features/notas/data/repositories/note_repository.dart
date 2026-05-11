@@ -9,7 +9,7 @@ class NoteRepository {
   final INoteService service;
 
   NoteRepository({INoteService? service})
-    : service = service ?? Sqlitefolderservice();
+    : service = service ?? SqliteNoteService();
 
   Future<(bool, int?, String?)> createNewNoteWithId(
     String titulo,

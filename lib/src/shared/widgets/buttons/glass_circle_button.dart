@@ -79,10 +79,7 @@ class GlassCircleButton extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: fillColor,
                   gradient: effectiveGradient,
-                  border: Border.all(
-                    color: borderColor,
-                    width: borderWidth,
-                  ),
+                  border: Border.all(color: borderColor, width: borderWidth),
                 ),
                 foregroundDecoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -109,9 +106,6 @@ class GlassCircleButton extends StatelessWidget {
       return button;
     }
 
-    return Tooltip(
-      message: tooltip!,
-      child: button,
-    );
+    return Tooltip(message: tooltip!, child: button);
   }
 }

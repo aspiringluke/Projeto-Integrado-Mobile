@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:projeto_integrado_mobile/src/app/database/db.dart';
 import 'package:sqlite3/common.dart';
@@ -7,7 +7,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
 
-class Sqlitefolderservice implements INoteService {
+class SqliteNoteService implements INoteService {
   @override
   Future<(bool, int?, String?)> createNewNoteWithId(
     String titulo,
@@ -372,4 +372,3 @@ DateTime _parseDate(Object? value) {
 }
 
 String _nowIso() => DateTime.now().toIso8601String();
-

@@ -127,10 +127,7 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
       constraints: BoxConstraints(maxHeight: widget.height),
       child: Stack(
         children: [
-          Padding(
-            padding: widget.contentPadding,
-            child: scrollableChild,
-          ),
+          Padding(padding: widget.contentPadding, child: scrollableChild),
           if (scrollMetrics.isVisible)
             Positioned(
               right: 0,
@@ -340,14 +337,12 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
         gradient: widget.backgroundGradient,
         borderRadius: widget.borderRadius,
         border: isFocused
-            ? Border.all(
-                color: focusedBorderColor,
-                width: 1.1,
-              )
-            : widget.border ?? Border.all(
-                color: Colors.white.withValues(alpha: 0.74),
-                width: 1.0,
-              ),
+            ? Border.all(color: focusedBorderColor, width: 1.1)
+            : widget.border ??
+                  Border.all(
+                    color: Colors.white.withValues(alpha: 0.74),
+                    width: 1.0,
+                  ),
       ),
       child: SynopsisScrollBox(
         controller: widget.scrollController,
@@ -375,12 +370,12 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
                 style: widget.textStyle,
               )
             : isEmpty
-                ? Text(widget.placeholderText, style: effectivePlaceholderStyle)
-                : widget.viewerBuilder(
-                    context,
-                    widget.controller.text,
-                    widget.textStyle,
-                  ),
+            ? Text(widget.placeholderText, style: effectivePlaceholderStyle)
+            : widget.viewerBuilder(
+                context,
+                widget.controller.text,
+                widget.textStyle,
+              ),
       ),
     );
 

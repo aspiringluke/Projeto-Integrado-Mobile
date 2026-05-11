@@ -43,7 +43,7 @@ class _ProjectPageState extends State<ProjectPage> {
   static const Map<ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
       <ProjectSectionId, _ProjectSectionMeta>{
         ProjectSectionId.configProjeto: _ProjectSectionMeta(
-          label: 'Pagina inicial',
+          label: 'Página inicial',
           icon: Icons.tune_rounded,
           isImplemented: false,
         ),
@@ -129,7 +129,7 @@ class _ProjectPageState extends State<ProjectPage> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label em construcao.'),
+        content: Text('$label em construção.'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -311,7 +311,7 @@ class _ProjectFooterNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = <(ProjectSectionId, String, IconData)>[
-      (ProjectSectionId.configProjeto, 'Pagina inicial', Icons.tune_rounded),
+      (ProjectSectionId.configProjeto, 'Página inicial', Icons.tune_rounded),
       (
         ProjectSectionId.characters,
         'Personagens',
@@ -625,7 +625,7 @@ class _UnderConstructionSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Esta secao ainda esta em construcao dentro do projeto.',
+                    'Esta seção ainda está em construção dentro do projeto.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.58),
