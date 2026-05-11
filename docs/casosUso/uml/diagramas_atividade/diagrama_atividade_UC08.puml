@@ -2,21 +2,22 @@
 
 |Usuário|
 start
-:Clicar na área de imagem do personagem;
-:Selecionar imagem da galeria;
-|Sistema|
+:Pressionar e segurar item;
+:Arrastar item para novo destino;
 
-if (Tamanho do arquivo maior que 5MB?) then (sim)
-  :Exibir mensagem de erro;
-  stop
+|Sistema|
+:Exibir feedback visual de destino;
+|Usuário|
+:Soltar item;
+
+|Sistema|
+if (Destino válido?) then (sim)
+  :Aplicar nova posição/localização;
+  :Confirmar alteração;
 else (não)
-  :Realizar compressão lossy em segundo plano;
-  :Salvar versão otimizada no storage local;
-  :Exibir miniatura da imagem;
+  :Retornar item à posição original;
+  :Exibir aviso de área inválida;
 endif
 
-|Usuário|
-:Confirmar edição e salvar personagem;
 stop
-
 @enduml

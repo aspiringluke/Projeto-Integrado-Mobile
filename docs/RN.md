@@ -2,23 +2,27 @@
 
 ## Restrições e Validação de Conteúdo
 
-### RN01 — Valor Mínimo da Sinopse
+### RN01 — Limite da Sinopse
 
-  O campo de sinopse do projeto deve validar a entrada de dados para garantir que o texto possua, no mínimo, X caracteres antes da confirmação de salvamento.
+  O valor configurado para o limite de caracteres da sinopse deve permanecer abaixo de um limite pré-definido pelo sistema.
 
-  Requisito relacionado: RF46
+  Requisito relacionado: RF23
 
-### RN02 — Intervalo Permitido para o Limite da Sinopse
-
-  O valor configurado para o limite de caracteres da sinopse deve permanecer dentro de um intervalo pré-definido pelo sistema.
-
-  Requisito relacionado: RF42
-
-### RN03 — Modo de Texto Ilimitado
+### RN02 — Modo de Texto Ilimitado
 
   Quando a configuração de limite global for desativada ("Ilimitado"), o sistema não deve aplicar travas de buffer ou contagem de caracteres nos campos de texto longo (áreas de descrição e notas).
 
-  Requisito relacionado: RF42
+  Requisito relacionado: RF23
+
+### RN03 — Excluir conteúdo da pasta
+
+  Ao excluir uma pasta, o sistema deve excluir o conteúdo dentro dela também com a confirmação do usuário
+
+  Requisito relacionado: RF17
+
+---
+
+# BAIXA PRIORIDADE
 
 ## Lógica e Estrutura de Diagramação
 
@@ -26,28 +30,28 @@
 
   O sistema só deve permitir o salvamento de diagramas que contenham, no mínimo, dois nós conectados por ao menos uma aresta.
 
-  Requisitos relacionados: RF05, RF09, RF12
+  Requisitos relacionados: RF30, RF34, RF37
 
 ### RN05 — Vínculo de Arestas
 
   Uma aresta não pode existir de forma independente no plano de edição; ela deve obrigatoriamente possuir um nó de origem e um nó de destino vinculados.
 
-  Requisito relacionado: RF09
+  Requisito relacionado: RF34
 
 ### RN06 — Exclusão em Cascata de Arestas
 
   Quando um nó for excluído, todas as suas arestas correspondentes devem ser excluídas também, conforme a regra RN05.
   
-  Requisitos relacionados: RF11, RF14
+  Requisitos relacionados: RF36, RF39
 
 ### RN07 — Hierarquia de Nós e Grupos
 
   Cada nó individual pode ser independente (não pertencer a nenhum grupo) ou pertencer a múltiplos grupos.
 
-  Requisitos relacionados: RF18, RF20, RF21
+  Requisitos relacionados: RF43, RF45, RF46, RF47
 
 ### RN08 — Sincronização de Entidades Vinculadas
 
   Sempre que a entidade persistente vinculada a um nó do diagrama for alterada, as propriedades refletidas nesse nó (como nome e status) devem ser atualizadas automaticamente.
 
-  Requisito relacionado: RF08
+  Requisito relacionado: RF33

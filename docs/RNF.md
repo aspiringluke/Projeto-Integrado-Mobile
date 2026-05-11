@@ -14,9 +14,9 @@
 #### Relacionados aos Requisitos Funcionais
 
 - RF01
-- RF05
-- RF12
-- RF34
+- RF16
+- RF31
+- RF38
 
 ## Eficiência de Desempenho
 
@@ -31,7 +31,7 @@
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF43
+- RF25
 
 ### RNF03 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) - Latência de Busca
 
@@ -44,10 +44,9 @@
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF02
-- RF03
-- RF04
-- RF23
+- RF27
+- RF28
+- RF29
 
 ### RNF04 (Eficiência de Desempenho — Comportamento em Relação ao Tempo) - Renderização em Tempo Real
 
@@ -60,8 +59,8 @@
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF09
-- RF12
+- RF34
+- RF38
 
 #### Relacionados às Regras de Negócio
 
@@ -79,8 +78,8 @@
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF28
-- RF37
+- RF11
+- RF20
 
 ## Confiabilidade
 
@@ -95,10 +94,11 @@
 
 #### Relacionados aos Requisitos Funcionais
 
-- RF09
-- RF27
-- RF36
-- RF45
+- RF07
+- RF10
+- RF18
+- RF19
+- RF30
 
 #### Relacionados às Regras de Negócio
 

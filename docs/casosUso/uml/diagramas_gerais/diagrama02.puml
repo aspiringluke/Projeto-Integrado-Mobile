@@ -1,15 +1,15 @@
-@startuml Diagrama02
+@startuml UC_Organizacao
 left to right direction
 
 actor "Usuário"as U
 
 rectangle "Sistema de Escrita Criativa - Organização" {
-    usecase "UC04: Organizar Elementos via Drag-and-Drop" as UC04
-    usecase "UC05: Busca Global com Filtros e Tags" as UC05
-    usecase "UC12: Manutenção de Pastas e Conteúdo" as UC12
+    usecase "UC08: Organizar elementos via drag-and-drop" as UC08
+    usecase "UC13: Busca global com filtros e tags" as UC13
+    usecase "UC10: Exclusão de pastas e conteúdo" as UC10
 }
 
-U --> UC04
-U --> UC05
-U --> UC12
+U --> UC08
+U --> UC13
+U --> UC10
 @enduml

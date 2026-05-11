@@ -2,28 +2,24 @@
 
 |Usuário|
 start
-:Acessar menu de segurança;
+:Selecionar múltiplos nós no editor;
+:Acionar "Criar grupo de nós";
+:Definir nome e cor;
 
-if (Ação?) then (Alterar Senha)
+|Sistema|
+:Criar grupo;
+
+|Usuário|
+if (Deseja ajustar o grupo?) then (sim)
+  if (Ação escolhida?) then (Remover nó)
+  :Selecionar nó e acionar "Remover do grupo";
   |Sistema|
-  :Solicitar senha antiga;
-  |Usuário|
-  :Inserir senha atual;
-  |Sistema|
-  if (Senha correta?) then (sim)
-    |Usuário|
-    :Inserir e confirmar nova senha;
+  :Manter nó independente no diagrama;
+  else (Excluir grupo)
+  :Selecionar grupo e acionar "Excluir grupo";
     |Sistema|
-    :Criptografar e salvar nova credencial;
-  else (não)
-    :Exibir erro de validação;
+    :Remover grupo e manter nós no diagrama;
   endif
-else (Remover Senha)
-  |Usuário|
-  :Selecionar "Desativar Proteção";
-  :Confirmar identidade;
-  |Sistema|
-  :Remover obrigatoriedade de senha;
 endif
 
 stop
