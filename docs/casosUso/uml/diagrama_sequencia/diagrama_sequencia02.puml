@@ -1,0 +1,63 @@
+@startuml Diagrama de Sequencia - Persistencia de Nota
+
+title Diagrama de Sequencia - Persistencia de Nota
+
+skinparam backgroundColor white
+skinparam sequence {
+    ArrowColor #5B4B54
+    LifeLineBorderColor #8B7380
+    LifeLineBackgroundColor #F8F2F5
+    ParticipantBorderColor #8B7380
+    ParticipantBackgroundColor #FDF7FA
+    ActorBorderColor #6C5562
+    ActorBackgroundColor #F4E8EE
+}
+
+actor "Usuario" as Usuario
+
+participant "IdeasContent / NotesSection\n<<View>>" as NotesView
+participant "NotaController\n<<Controller>>" as NotaCtrl
+participant "FolderController\n<<Controller>>" as FolderCtrl
+participant "Nota\n<<Model>>" as Nota
+participant "NoteRepository\n<<Repository>>" as NoteRepository
+participant "SqliteNoteService\n<<Service>>" as NoteService
+participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
+
+Usuario -> NotesView: Criar nova nota
+NotesView -> NotaCtrl: salvarNota(texto, idPasta)
+
+NotaCtrl -> NoteRepository: createNewNote(nota.text, idPasta)
+NoteRepository -> NoteService: createNewNote(texto, idPasta)
+NoteService -> SQLiteDB: getConnection()
+SQLiteDB --> NoteService: conexao aberta
+NoteService -> SQLiteDB: INSERT INTO Nota (descricao, pastas_idPasta)
+
+alt Persistencia realizada com sucesso
+    SQLiteDB --> NoteService: idNota gerado / operacao confirmada
+    NoteService --> NoteRepository: sucesso
+    NoteRepository --> NotaCtrl: confirmacao de persistencia
+
+    NotaCtrl -> NoteRepository: listNotes()
+    NoteRepository -> NoteService: listNotes()
+    NoteService -> SQLiteDB: getConnection()
+    SQLiteDB --> NoteService: conexao aberta
+    NoteService -> SQLiteDB: SELECT * FROM Nota
+    SQLiteDB --> NoteService: linhas[]
+    loop linhas.length times
+        NoteService --> Nota: instanciarNota(linhas[n])
+        Nota --> NoteService: new Nota
+    end
+    NoteService --> NoteRepository: notas[]
+    NoteRepository --> NotaCtrl: notas[]
+    NotaCtrl --> NotesView: atualizar(notas)
+    NotesView -> NotesView: Atualizar estado
+    NotesView --> Usuario: Exibir novo estado
+else Falha ao persistir nota
+    SQLiteDB --> NoteService: erro de banco / integridade
+    NoteService --> NoteRepository: (false, mensagemErro)
+    NoteRepository --> NotaCtrl: falha na criacao
+    NotaCtrl --> NotesView: exibirErro(mensagemErro)
+    NotesView --> Usuario: Informar erro de persistencia
+end
+
+@enduml

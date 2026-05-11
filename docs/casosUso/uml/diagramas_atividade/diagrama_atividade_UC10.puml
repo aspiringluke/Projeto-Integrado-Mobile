@@ -2,22 +2,27 @@
 
 |Usuário|
 start
-:Acessar "Configurações Gerais";
-:Selecionar "Definir Senha de Acesso";
-:Inserir e confirmar senha;
-|Sistema|
-:Criptografar e salvar senha;
-|Usuário|
-:Reiniciar aplicativo;
-|Sistema|
-repeat
-  :Solicitar senha de acesso;
-  |Usuário|
-  :Inserir senha;
-  |Sistema|
-backward:Exibir "Senha Incorreta";
-repeat while (Senha válida?) is (não)
-:Liberar acesso à Tela Inicial;
-stop
+:Acessar listagem de itens;
+:Selecionar configurações da pasta;
+if (Deseja renomear?) then (sim)
+  :Informar novo nome;
+endif
+:Selecionar "Excluir pasta";
 
+|Sistema|
+:Solicitar tipo de exclusão;
+
+|Usuário|
+if (Deseja excluir conteúdo?) then (Apenas pasta)
+  |Sistema|
+  :Mover itens para o diretório raiz;
+  :Excluir pasta vazia;
+else (Pasta e conteúdo)
+  |Sistema|
+  :Confirmar ação irreversível;
+  :Remover pasta e subitens;
+endif
+
+:Atualizar estrutura de diretórios;
+stop
 @enduml

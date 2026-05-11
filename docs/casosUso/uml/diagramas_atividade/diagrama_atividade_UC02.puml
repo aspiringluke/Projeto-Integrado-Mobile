@@ -2,28 +2,18 @@
 
 |Usuário|
 start
-:Acessa a seção "Diagramas";
-:Seleciona "Criar novo Diagrama";
+:Acessar tela de edição do projeto;
+:Alterar nome e/ou sinopse;
+:Atualizar imagem/cor/tags/personagens do cartão;
+:Clicar em "Salvar";
 
 |Sistema|
-:Abre o plano de edição de diagramas;
-
-if (Composição do diagrama correta?) then (sim)
-    |Usuário|
-    :Insere dois nós e os conecta através de uma aresta;
-    :Aciona o botão "Salvar";
-    
-    |Sistema|
-    :Valida as regras de estrutura mínima do diagrama;
-    :Persiste os dados do diagrama;
+if (Dados válidos?) then (sim)
+  :Persistir alterações do projeto;
+  :Exibir confirmação de sucesso;
 else (não)
-    |Usuário|
-    :Tenta salvar o diagrama com menos de dois nós ou sem arestas;
-    :Recebe uma mensagem de erro;
-
-    |Sistema|
-    :Exibe alerta;
-    :Bloqueia a persistência;
+  :Exibir erros de validação;
+  :Manter usuário na edição;
 endif
 
 stop
