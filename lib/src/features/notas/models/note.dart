@@ -9,6 +9,9 @@ class Note {
   final Color color;
   final int? idPasta;
   final NoteMetadata metadata;
+  final DateTime createdAt;
+  final DateTime lastModified;
+  final DateTime lastAccessed;
 
   Note({
     this.id,
@@ -20,5 +23,8 @@ class Note {
       tagGroups: <NoteTagGroup>[],
       linkTarget: NoteLinkTarget(),
     ),
+    required this.createdAt,
+    required this.lastModified,
+    required this.lastAccessed,
   });
 }

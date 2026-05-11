@@ -25,5 +25,7 @@ abstract interface class INoteService {
   });
   Future<(bool, Note?, String?)> getNote(int id);
   Future<(bool, List<Note>?, String?)> listNotes(int? idPasta);
+  Future<(bool, List<Note>?, String?)> listAllNotes();
   Future<(bool, String)> deleteNote(int id);
+  Future<(bool, String)> touchNote(int id);
 }

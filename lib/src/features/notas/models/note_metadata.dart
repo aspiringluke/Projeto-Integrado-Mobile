@@ -73,8 +73,13 @@ class NoteLinkTarget {
 class NoteMetadata {
   final List<NoteTagGroup> tagGroups;
   final NoteLinkTarget linkTarget;
+  final bool pinned;
 
-  const NoteMetadata({required this.tagGroups, required this.linkTarget});
+  const NoteMetadata({
+    required this.tagGroups,
+    required this.linkTarget,
+    this.pinned = false,
+  });
 
   factory NoteMetadata.empty() {
     return const NoteMetadata(
@@ -88,6 +93,7 @@ class NoteMetadata {
         .map((group) => group.toJson())
         .toList(growable: false),
     'linkTarget': linkTarget.toJson(),
+    if (pinned) 'pinned': true,
   };
 
   String toJsonString() => jsonEncode(toJson());
@@ -121,7 +127,13 @@ class NoteMetadata {
           ? NoteLinkTarget.fromJson(Map<String, dynamic>.from(rawTarget))
           : const NoteLinkTarget();
 
-      return NoteMetadata(tagGroups: tagGroups, linkTarget: linkTarget);
+      final pinned = map['pinned'] == true;
+
+      return NoteMetadata(
+        tagGroups: tagGroups,
+        linkTarget: linkTarget,
+        pinned: pinned,
+      );
     } catch (_) {
       return NoteMetadata.empty();
     }
@@ -130,10 +142,12 @@ class NoteMetadata {
   NoteMetadata copyWith({
     List<NoteTagGroup>? tagGroups,
     NoteLinkTarget? linkTarget,
+    bool? pinned,
   }) {
     return NoteMetadata(
       tagGroups: tagGroups ?? this.tagGroups,
       linkTarget: linkTarget ?? this.linkTarget,
+      pinned: pinned ?? this.pinned,
     );
   }
 }

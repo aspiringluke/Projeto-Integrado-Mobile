@@ -17,10 +17,20 @@ class Sqlitefolderservice implements INoteService {
     String? metadataJson,
   }) async {
     final conn = await getConnection();
+    final now = _nowIso();
     try {
       conn.execute(
         """
-                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor, metadata) VALUES (?,?,?,?,?)
+                INSERT INTO Nota(
+                  titulo,
+                  descricao,
+                  pastas_idPasta,
+                  cor,
+                  metadata,
+                  createdAt,
+                  lastModified,
+                  lastAccessed
+                ) VALUES (?,?,?,?,?,?,?,?)
             """,
         [
           titulo,
@@ -28,6 +38,9 @@ class Sqlitefolderservice implements INoteService {
           idPasta,
           color,
           metadataJson ?? NoteMetadata.empty().toJsonString(),
+          now,
+          now,
+          now,
         ],
       );
 
@@ -51,10 +64,20 @@ class Sqlitefolderservice implements INoteService {
     String? metadataJson,
   }) async {
     final conn = await getConnection();
+    final now = _nowIso();
     try {
       conn.execute(
         """
-                INSERT INTO Nota(titulo, descricao, pastas_idPasta, cor, metadata) VALUES (?,?,?,?,?)
+                INSERT INTO Nota(
+                  titulo,
+                  descricao,
+                  pastas_idPasta,
+                  cor,
+                  metadata,
+                  createdAt,
+                  lastModified,
+                  lastAccessed
+                ) VALUES (?,?,?,?,?,?,?,?)
             """,
         [
           titulo,
@@ -62,6 +85,9 @@ class Sqlitefolderservice implements INoteService {
           idPasta,
           color,
           metadataJson ?? NoteMetadata.empty().toJsonString(),
+          now,
+          now,
+          now,
         ],
       );
 
@@ -84,7 +110,7 @@ class Sqlitefolderservice implements INoteService {
         [id],
       );
 
-      return (true, "Nota $id excluída");
+      return (true, "Nota $id excluÃ­da");
     } catch (e) {
       return (false, cleanError(e));
     } finally {
@@ -98,7 +124,17 @@ class Sqlitefolderservice implements INoteService {
     try {
       final result = conn.select(
         """
-                SELECT idNota, titulo, descricao, pastas_idPasta, cor, metadata FROM Nota
+                SELECT
+                  idNota,
+                  titulo,
+                  descricao,
+                  pastas_idPasta,
+                  cor,
+                  metadata,
+                  createdAt,
+                  lastModified,
+                  lastAccessed
+                FROM Nota
                 WHERE idNota = ?
             """,
         [id],
@@ -119,6 +155,9 @@ class Sqlitefolderservice implements INoteService {
                 metadata: NoteMetadata.fromJsonString(
                   note["metadata"] as String?,
                 ),
+                createdAt: _parseDate(note["createdAt"]),
+                lastModified: _parseDate(note["lastModified"]),
+                lastAccessed: _parseDate(note["lastAccessed"]),
               ),
               null,
             );
@@ -136,13 +175,33 @@ class Sqlitefolderservice implements INoteService {
       final ResultSet results;
       if (idPasta == null) {
         results = conn.select("""
-                    SELECT idNota, titulo, descricao, cor, pastas_idPasta, metadata FROM Nota
+                    SELECT
+                      idNota,
+                      titulo,
+                      descricao,
+                      cor,
+                      pastas_idPasta,
+                      metadata,
+                      createdAt,
+                      lastModified,
+                      lastAccessed
+                    FROM Nota
                     WHERE pastas_idPasta IS NULL
                 """);
       } else {
         results = conn.select(
           """
-                    SELECT idNota, titulo, descricao, cor, pastas_idPasta, metadata FROM Nota
+                    SELECT
+                      idNota,
+                      titulo,
+                      descricao,
+                      cor,
+                      pastas_idPasta,
+                      metadata,
+                      createdAt,
+                      lastModified,
+                      lastAccessed
+                    FROM Nota
                     WHERE pastas_idPasta = ?
                 """,
           [idPasta],
@@ -164,6 +223,57 @@ class Sqlitefolderservice implements INoteService {
                       metadata: NoteMetadata.fromJsonString(
                         row["metadata"] as String?,
                       ),
+                      createdAt: _parseDate(row["createdAt"]),
+                      lastModified: _parseDate(row["lastModified"]),
+                      lastAccessed: _parseDate(row["lastAccessed"]),
+                    ),
+                  )
+                  .toList(),
+              null,
+            );
+    } catch (e) {
+      return (false, null, cleanError(e));
+    } finally {
+      conn.close();
+    }
+  }
+
+  @override
+  Future<(bool, List<Note>?, String?)> listAllNotes() async {
+    final conn = await getConnection();
+    try {
+      final results = conn.select("""
+                    SELECT
+                      idNota,
+                      titulo,
+                      descricao,
+                      cor,
+                      pastas_idPasta,
+                      metadata,
+                      createdAt,
+                      lastModified,
+                      lastAccessed
+                    FROM Nota
+                """);
+
+      return results.isEmpty
+          ? (true, null, null)
+          : (
+              true,
+              results
+                  .map(
+                    (row) => Note(
+                      id: row["idNota"],
+                      title: row["titulo"],
+                      text: row["descricao"],
+                      color: Color(int.parse(row["cor"])),
+                      idPasta: row["pastas_idPasta"],
+                      metadata: NoteMetadata.fromJsonString(
+                        row["metadata"] as String?,
+                      ),
+                      createdAt: _parseDate(row["createdAt"]),
+                      lastModified: _parseDate(row["lastModified"]),
+                      lastAccessed: _parseDate(row["lastAccessed"]),
                     ),
                   )
                   .toList(),
@@ -186,24 +296,30 @@ class Sqlitefolderservice implements INoteService {
     String? metadataJson,
   }) async {
     final conn = await getConnection();
+    final now = _nowIso();
     try {
       if (idPasta == null) {
         conn.execute(
           """
-                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, metadata = ?, pastas_idPasta = NULL WHERE idNota = ?
+                    UPDATE Nota
+                    SET titulo = ?, descricao = ?, cor = ?, metadata = ?, pastas_idPasta = NULL, lastModified = ?
+                    WHERE idNota = ?
                 """,
           [
             newTitulo,
             newDescricao,
             color,
             metadataJson ?? NoteMetadata.empty().toJsonString(),
+            now,
             id,
           ],
         );
       } else {
         conn.execute(
           """
-                    UPDATE Nota SET titulo = ?, descricao = ?, cor = ?, metadata = ?, pastas_idPasta = ? WHERE idNota = ?
+                    UPDATE Nota
+                    SET titulo = ?, descricao = ?, cor = ?, metadata = ?, pastas_idPasta = ?, lastModified = ?
+                    WHERE idNota = ?
                 """,
           [
             newTitulo,
@@ -211,6 +327,7 @@ class Sqlitefolderservice implements INoteService {
             color,
             metadataJson ?? NoteMetadata.empty().toJsonString(),
             idPasta,
+            now,
             id,
           ],
         );
@@ -223,7 +340,35 @@ class Sqlitefolderservice implements INoteService {
     }
   }
 
+  @override
+  Future<(bool, String)> touchNote(int id) async {
+    final conn = await getConnection();
+    try {
+      conn.execute(
+        """
+                UPDATE Nota SET lastAccessed = ? WHERE idNota = ?
+            """,
+        [_nowIso(), id],
+      );
+      return (true, "Nota $id acessada");
+    } catch (e) {
+      return (false, cleanError(e));
+    } finally {
+      conn.close();
+    }
+  }
+
   String cleanError(Object error) {
     return error.toString().replaceAll("Exception: ", "");
   }
 }
+
+DateTime _parseDate(Object? value) {
+  if (value is String && value.trim().isNotEmpty) {
+    return DateTime.tryParse(value) ?? DateTime.now();
+  }
+
+  return DateTime.now();
+}
+
+String _nowIso() => DateTime.now().toIso8601String();

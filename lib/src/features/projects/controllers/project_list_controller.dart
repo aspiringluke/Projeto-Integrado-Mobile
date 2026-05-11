@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../notas/data/repositories/folder_repository.dart';
 import '../models/project_image_data.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
@@ -78,6 +81,7 @@ class ProjectListController extends ChangeNotifier {
       title: sanitizedTitle,
       accentColor: accentColor,
     );
+    unawaited(_ensureAutoFolderForProject(sanitizedTitle, accentColor));
 
     notifyListeners();
   }
@@ -117,18 +121,56 @@ class ProjectListController extends ChangeNotifier {
     required String synopsis,
   }) {
     final oldTitle = project.title;
-    project.title = title;
+    final sanitizedTitle = title.trim();
+    if (sanitizedTitle.isEmpty) return;
+
+    project.title = sanitizedTitle;
     project.synopsis = synopsis;
     project.lastModified = DateTime.now();
-    if (oldTitle.trim() != title.trim()) {
-      StoryRegistry.instance.renameProject(oldTitle, title);
+    if (oldTitle.trim() != sanitizedTitle) {
+      StoryRegistry.instance.renameProject(oldTitle, sanitizedTitle);
+      unawaited(_syncAutoFolderRename(oldTitle, sanitizedTitle));
     } else {
       StoryRegistry.instance.registerProject(
-        title: title,
+        title: sanitizedTitle,
         accentColor: project.accentColor,
       );
     }
     notifyListeners();
+  }
+
+  Future<void> _syncAutoFolderRename(String oldTitle, String newTitle) async {
+    final normalizedOldTitle = oldTitle.trim();
+    final normalizedNewTitle = newTitle.trim();
+    if (normalizedOldTitle.isEmpty ||
+        normalizedNewTitle.isEmpty ||
+        normalizedOldTitle == normalizedNewTitle) {
+      return;
+    }
+
+    final folderRepository = FolderRepository();
+    final folder = await folderRepository.findRootFolderByTitle(
+      normalizedOldTitle,
+    );
+    if (folder == null || folder.id == null) {
+      return;
+    }
+
+    await folderRepository.updateFolder(folder.id!, normalizedNewTitle, null);
+  }
+
+  Future<void> _ensureAutoFolderForProject(
+    String title,
+    Color accentColor,
+  ) async {
+    final normalizedTitle = title.trim();
+    if (normalizedTitle.isEmpty) return;
+
+    final folderRepository = FolderRepository();
+    await folderRepository.ensureRootFolder(
+      title: normalizedTitle,
+      color: accentColor,
+    );
   }
 
   void reorderProjects(int oldIndex, int newIndex) {

@@ -1,16 +1,122 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import 'package:projeto_integrado_mobile/src/features/notas/controllers/note_editor_controller.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/note_repository.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/utils/note_color_resolver.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_color_picker.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
-import 'package:projeto_integrado_mobile/src/features/projects/models/project_tag_data.dart';
+import 'package:projeto_integrado_mobile/src/features/projects/pages/project_page.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
+import 'package:projeto_integrado_mobile/src/shared/widgets/synopsis_scroll_box.dart';
+
+class _MentionGhost {
+  final int start;
+  final int end;
+  final MentionTargetRef target;
+  final String suffix;
+
+  const _MentionGhost({
+    required this.start,
+    required this.end,
+    required this.target,
+    required this.suffix,
+  });
+}
+
+class _MentionAutocompleteTextController extends TextEditingController {
+  _MentionGhost? _ghost;
+  TapGestureRecognizer? ghostTapRecognizer;
+
+  void updateGhost(_MentionGhost? ghost) {
+    if (_sameGhost(_ghost, ghost)) return;
+    _ghost = ghost;
+    notifyListeners();
+  }
+
+  bool _sameGhost(_MentionGhost? left, _MentionGhost? right) {
+    if (identical(left, right)) return true;
+    if (left == null || right == null) return false;
+    return left.start == right.start &&
+        left.end == right.end &&
+        left.target.uri == right.target.uri &&
+        left.suffix == right.suffix;
+  }
+
+  bool acceptGhostSuggestion() {
+    final ghost = _ghost;
+    if (ghost == null) return false;
+
+    final insertText = '@${ghost.target.label} ';
+    final updatedText = text.replaceRange(ghost.start, ghost.end, insertText);
+    value = TextEditingValue(
+      text: updatedText,
+      selection: TextSelection.collapsed(
+        offset: ghost.start + insertText.length,
+      ),
+    );
+    return true;
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final baseStyle = style ?? const TextStyle();
+    final ghost = _ghost;
+    if (ghost == null) {
+      return super.buildTextSpan(
+        context: context,
+        style: baseStyle,
+        withComposing: withComposing,
+      );
+    }
+
+    if (ghost.start < 0 ||
+        ghost.end < ghost.start ||
+        ghost.end > text.length ||
+        ghost.start > text.length) {
+      return super.buildTextSpan(
+        context: context,
+        style: baseStyle,
+        withComposing: withComposing,
+      );
+    }
+
+    final prefix = text.substring(0, ghost.start);
+    final active = text.substring(ghost.start, ghost.end);
+    final suffix = text.substring(ghost.end);
+    final ghostStyle = baseStyle.copyWith(
+      color: ghost.target.accentColor.withValues(alpha: 0.4),
+      fontStyle: FontStyle.italic,
+    );
+    final recognizer = ghostTapRecognizer;
+
+    return TextSpan(
+      style: baseStyle,
+      children: [
+        if (prefix.isNotEmpty) TextSpan(text: prefix),
+        if (active.isNotEmpty) TextSpan(text: active),
+        if (ghost.suffix.isNotEmpty)
+          TextSpan(
+            text: ghost.suffix,
+            style: ghostStyle,
+            recognizer: recognizer,
+          ),
+        if (suffix.isNotEmpty) TextSpan(text: suffix),
+      ],
+    );
+  }
+}
 
 class NoteEditorPage extends StatefulWidget {
   final int noteId;
@@ -24,7 +130,7 @@ class NoteEditorPage extends StatefulWidget {
 class _NoteEditorPageState extends State<NoteEditorPage> {
   late final NoteEditorController _controller;
   late final TextEditingController _titleController;
-  late final TextEditingController _descriptionController;
+  late final _MentionAutocompleteTextController _descriptionController;
   final FocusNode _descriptionFocusNode = FocusNode();
   final ScrollController _editorScrollController = ScrollController();
   final ScrollController _previewScrollController = ScrollController();
@@ -38,7 +144,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       noteId: widget.noteId,
     );
     _titleController = TextEditingController();
-    _descriptionController = TextEditingController();
+    _descriptionController = _MentionAutocompleteTextController();
     _load();
   }
 
@@ -181,6 +287,66 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
+  Future<void> _handleMentionTap(String? href) async {
+    if (href == null || href.trim().isEmpty) {
+      return;
+    }
+
+    final target = StoryRegistry.instance.findMentionTargetByUri(href);
+    if (!mounted || target == null) {
+      return;
+    }
+
+    switch (target.kind) {
+      case MentionTargetKind.project:
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ProjectPage(
+              title: target.label,
+              accentColor: target.accentColor,
+            ),
+          ),
+        );
+        return;
+      case MentionTargetKind.character:
+        final projectTitle = target.projectTitle?.trim();
+        if (projectTitle == null || projectTitle.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Personagem sem projeto vinculado')),
+          );
+          return;
+        }
+
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ProjectPage(
+              title: projectTitle,
+              accentColor: target.accentColor,
+              initialSection: ProjectSectionId.characters,
+            ),
+          ),
+        );
+        return;
+      case MentionTargetKind.note:
+        final noteId = target.noteId;
+        if (noteId == null || noteId <= 0) {
+          return;
+        }
+
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => NoteEditorPage(noteId: noteId),
+          ),
+        );
+        return;
+      case MentionTargetKind.folder:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Pasta mencionada: ${target.label}')),
+        );
+        return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -294,6 +460,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                                     key: const ValueKey('preview'),
                                     text: _descriptionController.text,
                                     scrollController: _previewScrollController,
+                                    onTapLink: _handleMentionTap,
                                   )
                                 : _MarkdownEditorPane(
                                     key: const ValueKey('editor'),
@@ -349,7 +516,6 @@ class _NoteAssociationSheet extends StatefulWidget {
 class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
   late final TextEditingController _groupTitleController;
   late Color _draftGroupColor;
-  late HSLColor _draftGroupHsl;
   bool _linksExpanded = true;
   bool _classificationsExpanded = true;
   bool _composerExpanded = false;
@@ -358,8 +524,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
   void initState() {
     super.initState();
     _groupTitleController = TextEditingController();
-    _draftGroupColor = projectTagPalette.first;
-    _draftGroupHsl = HSLColor.fromColor(_draftGroupColor);
+    _draftGroupColor = FolderColorPicker.colors.first;
   }
 
   @override
@@ -369,31 +534,7 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
   }
 
   void _setDraftGroupColor(Color color) {
-    setState(() {
-      _draftGroupColor = color;
-      _draftGroupHsl = HSLColor.fromColor(color);
-    });
-  }
-
-  void _setDraftHue(double value) {
-    setState(() {
-      _draftGroupHsl = _draftGroupHsl.withHue(value);
-      _draftGroupColor = _draftGroupHsl.toColor();
-    });
-  }
-
-  void _setDraftSaturation(double value) {
-    setState(() {
-      _draftGroupHsl = _draftGroupHsl.withSaturation(value);
-      _draftGroupColor = _draftGroupHsl.toColor();
-    });
-  }
-
-  void _setDraftLightness(double value) {
-    setState(() {
-      _draftGroupHsl = _draftGroupHsl.withLightness(value);
-      _draftGroupColor = _draftGroupHsl.toColor();
-    });
+    setState(() => _draftGroupColor = color);
   }
 
   void _createGroup() {
@@ -407,6 +548,53 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
       _groupTitleController.clear();
       setState(() => _composerExpanded = false);
     });
+  }
+
+  Future<void> _editTagGroup(int index) async {
+    if (index < 0 || index >= widget.controller.tagGroups.length) return;
+
+    final group = widget.controller.tagGroups[index];
+    final result = await showDialog<_TagGroupEditData>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.22),
+      builder: (dialogContext) => _TagGroupEditDialog(
+        initialTitle: group.title,
+        initialColor: group.color,
+      ),
+    );
+    if (!mounted || result == null) return;
+
+    widget.controller.updateTagGroup(
+      groupIndex: index,
+      title: result.title,
+      color: result.color,
+    );
+  }
+
+  Future<void> _editTag({
+    required int groupIndex,
+    required int tagIndex,
+  }) async {
+    if (groupIndex < 0 || groupIndex >= widget.controller.tagGroups.length) {
+      return;
+    }
+
+    final group = widget.controller.tagGroups[groupIndex];
+    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
+
+    final tag = group.tags[tagIndex];
+    final result = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.22),
+      builder: (dialogContext) => _TagEditDialog(initialLabel: tag.label),
+    );
+    if (!mounted || result == null) return;
+
+    widget.controller.updateTag(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+      label: result,
+    );
   }
 
   @override
@@ -434,137 +622,199 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
           validCharacterValue = null;
         }
 
-        return NotesGlassCard(
-          elevated: true,
-          radius: 24,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: SingleChildScrollView(
+        final maxSheetHeight = MediaQuery.sizeOf(context).height * 0.86;
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxSheetHeight),
+          child: NotesGlassCard(
+            elevated: true,
+            radius: 24,
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Tags e vinculos',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: kNotesText,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const _SheetHint(
-                  text:
-                      'Use vinculos para contextualizar a nota e classificacoes para organizar tags relacionadas.',
-                ),
-                const SizedBox(height: 16),
-                _SheetSection(
-                  title: 'Vinculos',
-                  subtitle: _buildLinksSubtitle(
-                    projectTitle: selectedProject,
-                    characterName: validCharacterValue?.name,
-                  ),
-                  isExpanded: _linksExpanded,
-                  onToggle: () =>
-                      setState(() => _linksExpanded = !_linksExpanded),
-                  child: _LinksSectionBody(
-                    projects: projects,
-                    characters: filteredCharacters,
-                    selectedProjectTitle: selectedProject,
-                    selectedCharacterName: validCharacterValue?.name,
-                    onClearProject: () => widget.controller.clearProjectLink(),
-                    onSelectProject: (project) {
-                      widget.controller.setProjectLink(project.title);
-                      widget.controller.clearCharacterLink();
-                    },
-                    onClearCharacter: () =>
-                        widget.controller.clearCharacterLink(),
-                    onSelectCharacter: (character) {
-                      widget.controller.setCharacterLink(
-                        characterName: character.name,
-                        projectTitle: character.projectTitle,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _SheetSection(
-                  title: 'Classificacoes',
-                  subtitle: widget.controller.tagGroups.isEmpty
-                      ? 'Nenhuma criada'
-                      : '${widget.controller.tagGroups.length} grupo(s)',
-                  isExpanded: _classificationsExpanded,
-                  onToggle: () => setState(
-                    () => _classificationsExpanded = !_classificationsExpanded,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 10, 10),
+                  child: Row(
                     children: [
-                      _CompactActionRow(
-                        label: 'Nova classificacao',
-                        icon: Icons.add_rounded,
-                        onTap: () => setState(
-                          () => _composerExpanded = !_composerExpanded,
-                        ),
-                      ),
-                      AnimatedCrossFade(
-                        duration: const Duration(milliseconds: 180),
-                        firstChild: const SizedBox.shrink(),
-                        secondChild: Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: _TagGroupComposer(
-                            titleController: _groupTitleController,
-                            selectedColor: _draftGroupColor,
-                            hslColor: _draftGroupHsl,
-                            onSelectPresetColor: _setDraftGroupColor,
-                            onHueChanged: _setDraftHue,
-                            onSaturationChanged: _setDraftSaturation,
-                            onLightnessChanged: _setDraftLightness,
-                            onCreate: _createGroup,
+                      const Expanded(
+                        child: Text(
+                          'Tags e vinculos',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: kNotesText,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        crossFadeState: _composerExpanded
-                            ? CrossFadeState.showSecond
-                            : CrossFadeState.showFirst,
                       ),
-                      const SizedBox(height: 12),
-                      if (widget.controller.tagGroups.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            'Nenhuma classificacao criada ainda.',
-                            style: TextStyle(color: kNotesMutedText),
+                      _HeaderActionButton(
+                        icon: Icons.close_rounded,
+                        tooltip: 'Fechar',
+                        onTap: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: _SheetHint(
+                    text:
+                        'Use os vinculos para contexto e as classificacoes para separar tags sem abrir cada bloco.',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _SheetSection(
+                          title: 'Vinculos',
+                          subtitle: _buildLinksSubtitle(
+                            projectTitle: selectedProject,
+                            characterName: validCharacterValue?.name,
                           ),
-                        )
-                      else
-                        Column(
-                          children: [
-                            for (
-                              var index = 0;
-                              index < widget.controller.tagGroups.length;
-                              index += 1
-                            )
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: _TagGroupCard(
-                                  group: widget.controller.tagGroups[index],
-                                  onRemoveGroup: () =>
-                                      widget.controller.removeTagGroup(index),
-                                  onAddTag: (value) =>
-                                      widget.controller.addTagToGroup(
-                                        groupIndex: index,
-                                        tagLabel: value,
-                                      ),
-                                  onRemoveTag: ({required int tagIndex}) {
-                                    widget.controller.removeTagFromGroup(
-                                      groupIndex: index,
-                                      tagIndex: tagIndex,
-                                    );
-                                  },
+                          hintText:
+                              'Selecione projeto e personagem para manter o contexto da nota visivel.',
+                          isExpanded: _linksExpanded,
+                          onToggle: () =>
+                              setState(() => _linksExpanded = !_linksExpanded),
+                          child: _LinksSectionBody(
+                            projects: projects,
+                            characters: filteredCharacters,
+                            selectedProjectTitle: selectedProject,
+                            selectedCharacterName: validCharacterValue?.name,
+                            onClearProject: () =>
+                                widget.controller.clearProjectLink(),
+                            onSelectProject: (project) {
+                              widget.controller.setProjectLink(project.title);
+                              widget.controller.clearCharacterLink();
+                            },
+                            onClearCharacter: () =>
+                                widget.controller.clearCharacterLink(),
+                            onSelectCharacter: (character) {
+                              widget.controller.setCharacterLink(
+                                characterName: character.name,
+                                projectTitle: character.projectTitle,
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _SheetSection(
+                          title: 'Classificacoes',
+                          subtitle: widget.controller.tagGroups.isEmpty
+                              ? 'Nenhuma criada'
+                              : '${widget.controller.tagGroups.length} grupo(s)',
+                          hintText:
+                              'Crie grupos para organizar tags por intencao e achar depois com menos atrito.',
+                          isExpanded: _classificationsExpanded,
+                          onToggle: () => setState(
+                            () => _classificationsExpanded =
+                                !_classificationsExpanded,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _CompactActionRow(
+                                label: 'Nova classificacao',
+                                icon: Icons.add_rounded,
+                                onTap: () => setState(
+                                  () => _composerExpanded = !_composerExpanded,
                                 ),
                               ),
-                          ],
+                              AnimatedCrossFade(
+                                duration: const Duration(milliseconds: 180),
+                                firstChild: const SizedBox.shrink(),
+                                secondChild: Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: _TagGroupComposer(
+                                    titleController: _groupTitleController,
+                                    selectedColor: _draftGroupColor,
+                                    onSelectPresetColor: _setDraftGroupColor,
+                                    onCreate: _createGroup,
+                                  ),
+                                ),
+                                crossFadeState: _composerExpanded
+                                    ? CrossFadeState.showSecond
+                                    : CrossFadeState.showFirst,
+                              ),
+                              const SizedBox(height: 12),
+                              if (widget.controller.tagGroups.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(
+                                    'Nenhuma classificacao criada ainda.',
+                                    style: TextStyle(color: kNotesMutedText),
+                                  ),
+                                )
+                              else
+                                Column(
+                                  children: [
+                                    for (
+                                      var index = 0;
+                                      index <
+                                          widget.controller.tagGroups.length;
+                                      index += 1
+                                    )
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 10,
+                                        ),
+                                        child: _TagGroupCard(
+                                          group: widget
+                                              .controller
+                                              .tagGroups[index],
+                                          onRemoveGroup: () => widget.controller
+                                              .removeTagGroup(index),
+                                          onEditGroup: () =>
+                                              _editTagGroup(index),
+                                          onAddTag: (value) =>
+                                              widget.controller.addTagToGroup(
+                                                groupIndex: index,
+                                                tagLabel: value,
+                                              ),
+                                          onEditTag:
+                                              ({required int tagIndex}) =>
+                                                  _editTag(
+                                                    groupIndex: index,
+                                                    tagIndex: tagIndex,
+                                                  ),
+                                          onRemoveTag:
+                                              ({required int tagIndex}) {
+                                                widget.controller
+                                                    .removeTagFromGroup(
+                                                      groupIndex: index,
+                                                      tagIndex: tagIndex,
+                                                    );
+                                              },
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _DialogActionButton(
+                          label: 'OK',
+                          tint: kNotesPink,
+                          textColor: Colors.white,
+                          onTap: () => Navigator.of(context).pop(),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -580,13 +830,17 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
 class _TagGroupCard extends StatefulWidget {
   final NoteTagGroup group;
   final VoidCallback onRemoveGroup;
+  final VoidCallback onEditGroup;
   final ValueChanged<String> onAddTag;
+  final void Function({required int tagIndex}) onEditTag;
   final void Function({required int tagIndex}) onRemoveTag;
 
   const _TagGroupCard({
     required this.group,
     required this.onRemoveGroup,
+    required this.onEditGroup,
     required this.onAddTag,
+    required this.onEditTag,
     required this.onRemoveTag,
   });
 
@@ -644,6 +898,12 @@ class _TagGroupCardState extends State<_TagGroupCard> {
                       ),
                     ),
                     IconButton(
+                      onPressed: widget.onEditGroup,
+                      icon: const Icon(Icons.edit_outlined),
+                      color: kNotesMutedText,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    IconButton(
                       onPressed: () =>
                           setState(() => _isExpanded = !_isExpanded),
                       icon: Icon(
@@ -675,6 +935,7 @@ class _TagGroupCardState extends State<_TagGroupCard> {
                       _TagChip(
                         label: widget.group.tags[tagIndex].label,
                         color: widget.group.color,
+                        onEdit: () => widget.onEditTag(tagIndex: tagIndex),
                         onRemove: () => widget.onRemoveTag(tagIndex: tagIndex),
                       ),
                   ],
@@ -705,6 +966,7 @@ class _TagGroupCardState extends State<_TagGroupCard> {
 class _SheetSection extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String? hintText;
   final bool isExpanded;
   final VoidCallback onToggle;
   final Widget child;
@@ -712,6 +974,7 @@ class _SheetSection extends StatelessWidget {
   const _SheetSection({
     required this.title,
     required this.subtitle,
+    this.hintText,
     required this.isExpanded,
     required this.onToggle,
     required this.child,
@@ -754,6 +1017,10 @@ class _SheetSection extends StatelessWidget {
                               fontSize: 12.5,
                             ),
                           ),
+                          if (hintText != null) ...[
+                            const SizedBox(height: 8),
+                            _SheetHint(text: hintText!),
+                          ],
                         ],
                       ),
                     ),
@@ -811,11 +1078,6 @@ class _LinksSectionBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SheetHint(
-          text:
-              'Vincule a nota a um projeto ou personagem para manter contexto narrativo e visual.',
-        ),
-        const SizedBox(height: 10),
         const Text(
           'Projeto',
           style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
@@ -974,10 +1236,10 @@ class _CompactActionRow extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: kNotesPink),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Nova classificacao',
-                  style: TextStyle(
+                  label,
+                  style: const TextStyle(
                     color: kNotesText,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -999,21 +1261,13 @@ class _CompactActionRow extends StatelessWidget {
 class _TagGroupComposer extends StatelessWidget {
   final TextEditingController titleController;
   final Color selectedColor;
-  final HSLColor hslColor;
   final ValueChanged<Color> onSelectPresetColor;
-  final ValueChanged<double> onHueChanged;
-  final ValueChanged<double> onSaturationChanged;
-  final ValueChanged<double> onLightnessChanged;
   final VoidCallback onCreate;
 
   const _TagGroupComposer({
     required this.titleController,
     required this.selectedColor,
-    required this.hslColor,
     required this.onSelectPresetColor,
-    required this.onHueChanged,
-    required this.onSaturationChanged,
-    required this.onLightnessChanged,
     required this.onCreate,
   });
 
@@ -1030,11 +1284,6 @@ class _TagGroupComposer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SheetHint(
-              text:
-                  'Classificacoes separam tags por intencao e deixam a nota mais facil de localizar depois.',
-            ),
-            const SizedBox(height: 10),
             TextField(
               controller: titleController,
               decoration: notesInputDecoration(
@@ -1077,26 +1326,227 @@ class _TagGroupComposer extends StatelessWidget {
               style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: projectTagPalette
-                  .map(
-                    (color) => _TagColorSwatch(
-                      color: color,
-                      isSelected: _sameColor(selectedColor, color),
-                      onTap: () => onSelectPresetColor(color),
-                    ),
-                  )
-                  .toList(growable: false),
+            FolderColorPicker(
+              selected: selectedColor,
+              onSelect: onSelectPresetColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TagGroupEditData {
+  final String title;
+  final Color color;
+
+  const _TagGroupEditData({required this.title, required this.color});
+}
+
+class _TagGroupEditDialog extends StatefulWidget {
+  final String initialTitle;
+  final Color initialColor;
+
+  const _TagGroupEditDialog({
+    required this.initialTitle,
+    required this.initialColor,
+  });
+
+  @override
+  State<_TagGroupEditDialog> createState() => _TagGroupEditDialogState();
+}
+
+class _TagGroupEditDialogState extends State<_TagGroupEditDialog> {
+  late final TextEditingController _titleController;
+  late Color _selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialTitle);
+    _selectedColor = widget.initialColor;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) return;
+    Navigator.of(
+      context,
+    ).pop(_TagGroupEditData(title: title, color: _selectedColor));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: NotesGlassCard(
+        elevated: true,
+        radius: 24,
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Editar classificacao',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: kNotesText,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 14),
-            _CompactHslEditor(
-              color: selectedColor,
-              hslColor: hslColor,
-              onHueChanged: onHueChanged,
-              onSaturationChanged: onSaturationChanged,
-              onLightnessChanged: onLightnessChanged,
+            TextField(
+              controller: _titleController,
+              decoration: notesInputDecoration(
+                labelText: 'Nome da classificacao',
+                prefixIcon: const Icon(Icons.sell_outlined),
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 12),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _titleController,
+              builder: (context, value, _) {
+                final label = value.text.trim();
+                return _ClassificationPreviewChip(
+                  label: label.isEmpty ? 'Preview da classificacao' : label,
+                  color: _selectedColor,
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Paleta padrao',
+              style: TextStyle(color: kNotesPlum, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            FolderColorPicker(
+              selected: _selectedColor,
+              onSelect: (color) => setState(() => _selectedColor = color),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Cancelar',
+                    tint: Colors.white,
+                    textColor: kNotesPlum,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Salvar',
+                    tint: _selectedColor,
+                    textColor: Colors.white,
+                    onTap: _save,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TagEditDialog extends StatefulWidget {
+  final String initialLabel;
+
+  const _TagEditDialog({required this.initialLabel});
+
+  @override
+  State<_TagEditDialog> createState() => _TagEditDialogState();
+}
+
+class _TagEditDialogState extends State<_TagEditDialog> {
+  late final TextEditingController _labelController;
+
+  @override
+  void initState() {
+    super.initState();
+    _labelController = TextEditingController(text: widget.initialLabel);
+  }
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final label = _labelController.text.trim();
+    if (label.isEmpty) return;
+    Navigator.of(context).pop(label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: NotesGlassCard(
+        elevated: true,
+        radius: 24,
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Editar tag',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: kNotesText,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _labelController,
+              decoration: notesInputDecoration(
+                labelText: 'Nome da tag',
+                prefixIcon: const Icon(Icons.label_outline_rounded),
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Cancelar',
+                    tint: Colors.white,
+                    textColor: kNotesPlum,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Salvar',
+                    tint: kNotesPink,
+                    textColor: Colors.white,
+                    onTap: _save,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1147,6 +1597,7 @@ class _ClassificationPreviewChip extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _TagColorSwatch extends StatelessWidget {
   final Color color;
   final bool isSelected;
@@ -1196,6 +1647,7 @@ class _TagColorSwatch extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _CompactHslEditor extends StatelessWidget {
   final Color color;
   final HSLColor hslColor;
@@ -1259,6 +1711,7 @@ class _CompactHslEditor extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _HslSliderField extends StatelessWidget {
   final String label;
   final double value;
@@ -1353,6 +1806,7 @@ class _HslSliderField extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 LinearGradient _buildAccentPreviewGradient(Color accentColor) {
   final hsl = HSLColor.fromColor(accentColor);
   final lighter = hsl
@@ -1377,6 +1831,7 @@ LinearGradient _buildAccentPreviewGradient(Color accentColor) {
   );
 }
 
+// ignore: unused_element
 LinearGradient _buildHueGradient() {
   return const LinearGradient(
     colors: [
@@ -1392,6 +1847,7 @@ LinearGradient _buildHueGradient() {
   );
 }
 
+// ignore: unused_element
 LinearGradient _buildSaturationGradient(HSLColor color) {
   return LinearGradient(
     colors: [
@@ -1401,12 +1857,14 @@ LinearGradient _buildSaturationGradient(HSLColor color) {
   );
 }
 
+// ignore: unused_element
 LinearGradient _buildLightnessGradient(HSLColor color) {
   return LinearGradient(
     colors: [Colors.black, color.withLightness(0.5).toColor(), Colors.white],
   );
 }
 
+// ignore: unused_element
 bool _sameColor(Color a, Color b) => a.toARGB32() == b.toARGB32();
 
 String _buildLinksSubtitle({
@@ -1677,11 +2135,13 @@ class _ModeToggleButton extends StatelessWidget {
 class _MarkdownPreviewPane extends StatelessWidget {
   final String text;
   final ScrollController scrollController;
+  final ValueChanged<String?> onTapLink;
 
   const _MarkdownPreviewPane({
     super.key,
     required this.text,
     required this.scrollController,
+    required this.onTapLink,
   });
 
   @override
@@ -1706,65 +2166,86 @@ class _MarkdownPreviewPane extends StatelessWidget {
       );
     }
 
-    return SizedBox.expand(
-      child: _NotesScrollBox(
-        controller: scrollController,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Align(
-              alignment: Alignment.topLeft,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
-                  child: MarkdownBody(
-                    data: text,
-                    selectable: false,
-                    styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                        .copyWith(
-                          p: const TextStyle(
-                            color: kNotesText,
-                            fontSize: 15,
-                            height: 1.5,
-                          ),
-                          h1: const TextStyle(
-                            color: kNotesText,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          h2: const TextStyle(
-                            color: kNotesText,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          h3: const TextStyle(
-                            color: kNotesPlum,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          blockquote: const TextStyle(
-                            color: kNotesMutedText,
-                            fontSize: 14,
-                            height: 1.45,
-                          ),
-                          code: const TextStyle(
-                            color: Color(0xFF3A3140),
-                            backgroundColor: Color(0x14DF6EB8),
-                          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SynopsisScrollBox(
+          controller: scrollController,
+          height: constraints.maxHeight,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+                    child: MarkdownBody(
+                      data: text,
+                      selectable: false,
+                      inlineSyntaxes: <md.InlineSyntax>[
+                        _MentionInlineSyntax.fromRegistry(
+                          StoryRegistry.instance,
                         ),
+                      ],
+                      builders: <String, MarkdownElementBuilder>{
+                        'mention': _MentionPreviewBuilder(
+                          onTapMention: onTapLink,
+                        ),
+                      },
+                      onTapLink: (text, href, title) => onTapLink(href),
+                      styleSheet:
+                          MarkdownStyleSheet.fromTheme(
+                            Theme.of(context),
+                          ).copyWith(
+                            a: const TextStyle(
+                              color: kNotesPink,
+                              decoration: TextDecoration.none,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            p: const TextStyle(
+                              color: kNotesText,
+                              fontSize: 15,
+                              height: 1.5,
+                            ),
+                            h1: const TextStyle(
+                              color: kNotesText,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            h2: const TextStyle(
+                              color: kNotesText,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            h3: const TextStyle(
+                              color: kNotesPlum,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            blockquote: const TextStyle(
+                              color: kNotesMutedText,
+                              fontSize: 14,
+                              height: 1.45,
+                            ),
+                            code: const TextStyle(
+                              color: Color(0xFF3A3140),
+                              backgroundColor: Color(0x14DF6EB8),
+                            ),
+                          ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
 
-class _MarkdownEditorPane extends StatelessWidget {
-  final TextEditingController controller;
+class _MarkdownEditorPane extends StatefulWidget {
+  final _MentionAutocompleteTextController controller;
   final FocusNode focusNode;
   final ScrollController scrollController;
   final VoidCallback onChanged;
@@ -1778,51 +2259,650 @@ class _MarkdownEditorPane extends StatelessWidget {
   });
 
   @override
+  State<_MarkdownEditorPane> createState() => _MarkdownEditorPaneState();
+}
+
+class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
+  late final TapGestureRecognizer _ghostTapRecognizer;
+  String? _mentionQuery;
+  List<MentionTargetRef> _mentionOptions = const <MentionTargetRef>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _ghostTapRecognizer = TapGestureRecognizer()..onTap = _acceptGhost;
+    widget.controller.ghostTapRecognizer = _ghostTapRecognizer;
+    widget.controller.addListener(_syncMentionState);
+    widget.focusNode.addListener(_syncMentionState);
+    _syncMentionState();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MarkdownEditorPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_syncMentionState);
+      widget.controller.addListener(_syncMentionState);
+    }
+    if (oldWidget.focusNode != widget.focusNode) {
+      oldWidget.focusNode.removeListener(_syncMentionState);
+      widget.focusNode.addListener(_syncMentionState);
+    }
+    _syncMentionState();
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_syncMentionState);
+    widget.focusNode.removeListener(_syncMentionState);
+    widget.controller.ghostTapRecognizer = null;
+    _ghostTapRecognizer.dispose();
+    super.dispose();
+  }
+
+  void _syncMentionState() {
+    final controller = widget.controller;
+    if (!widget.focusNode.hasFocus) {
+      _mentionQuery = null;
+      _mentionOptions = const <MentionTargetRef>[];
+      controller.updateGhost(null);
+      return;
+    }
+
+    final value = controller.value;
+    final selection = value.selection;
+    if (!selection.isValid || !selection.isCollapsed) {
+      _mentionQuery = null;
+      _mentionOptions = const <MentionTargetRef>[];
+      controller.updateGhost(null);
+      return;
+    }
+
+    final query = _extractMentionQuery(value);
+    if (query == null) {
+      _mentionQuery = null;
+      _mentionOptions = const <MentionTargetRef>[];
+      controller.updateGhost(null);
+      return;
+    }
+
+    final atIndex = value.text.lastIndexOf('@', selection.end - 1);
+    if (atIndex == -1) {
+      _mentionQuery = null;
+      _mentionOptions = const <MentionTargetRef>[];
+      controller.updateGhost(null);
+      return;
+    }
+
+    final options = StoryRegistry.instance.searchMentionTargets(
+      query,
+      limit: 6,
+    );
+    _mentionQuery = query;
+    _mentionOptions = options;
+    if (options.isEmpty) {
+      controller.updateGhost(null);
+      return;
+    }
+
+    final target = _resolveGhostTarget(query, options)!;
+    final suffix = _resolveGhostSuffix(query, target.label);
+    if (suffix.isEmpty) {
+      _mentionQuery = query;
+      _mentionOptions = options;
+      controller.updateGhost(null);
+      return;
+    }
+
+    controller.updateGhost(
+      _MentionGhost(
+        start: atIndex,
+        end: selection.end,
+        target: target,
+        suffix: suffix,
+      ),
+    );
+  }
+
+  String? _extractMentionQuery(TextEditingValue value) {
+    final selection = value.selection;
+    if (!selection.isValid) return null;
+
+    final cursor = selection.end.clamp(0, value.text.length);
+    final prefix = value.text.substring(0, cursor);
+    final atIndex = prefix.lastIndexOf('@');
+    if (atIndex == -1) return null;
+
+    if (atIndex > 0) {
+      final previous = prefix[atIndex - 1];
+      if (RegExp(r'[A-Za-z0-9_.%+-]').hasMatch(previous)) {
+        return null;
+      }
+    }
+
+    final query = prefix.substring(atIndex + 1);
+    if (query.contains(RegExp(r'[\s\r\n]'))) return null;
+    return query;
+  }
+
+  void _insertMention(MentionTargetRef target) {
+    final controller = widget.controller;
+    final selection = controller.selection;
+    if (!selection.isValid || !selection.isCollapsed) return;
+
+    final cursor = selection.end.clamp(0, controller.text.length);
+    final prefix = controller.text.substring(0, cursor);
+    final atIndex = prefix.lastIndexOf('@');
+    if (atIndex == -1) return;
+
+    final insertText = '@${target.label} ';
+    final updatedText = controller.text.replaceRange(
+      atIndex,
+      cursor,
+      insertText,
+    );
+    controller.value = TextEditingValue(
+      text: updatedText,
+      selection: TextSelection.collapsed(offset: atIndex + insertText.length),
+    );
+    widget.onChanged();
+    _syncMentionState();
+  }
+
+  void _acceptGhost() {
+    if (widget.controller.acceptGhostSuggestion()) {
+      widget.onChanged();
+      _syncMentionState();
+    }
+  }
+
+  bool _acceptMentionSuggestion() {
+    if (widget.controller.acceptGhostSuggestion()) {
+      widget.onChanged();
+      _syncMentionState();
+      return true;
+    }
+
+    if (_mentionOptions.isEmpty) {
+      return false;
+    }
+
+    _insertMention(_mentionOptions.first);
+    return true;
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    if (_mentionQuery == null || _mentionOptions.isEmpty) {
+      return KeyEventResult.ignored;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.tab ||
+        event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      return _acceptMentionSuggestion()
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: _NotesScrollBox(
-        controller: scrollController,
-        childIsScrollable: true,
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          scrollController: scrollController,
-          scrollPhysics: const ClampingScrollPhysics(),
-          expands: true,
-          maxLines: null,
-          minLines: null,
-          textAlignVertical: TextAlignVertical.top,
-          decoration: InputDecoration(
-            hintText: 'Markdown é suportado.',
-            filled: true,
-            fillColor: Colors.transparent,
-            hintStyle: TextStyle(
-              color: kNotesMutedText.withValues(alpha: 0.72),
-              height: 1.4,
+    return LayoutBuilder(
+      builder: (context, _) {
+        final showSuggestions = _shouldShowMentionPanel();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showSuggestions)
+              _MentionSuggestionPanel(
+                query: _mentionQuery ?? '',
+                options: _mentionOptions,
+                onSelected: _insertMention,
+              ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, innerConstraints) {
+                  return SynopsisScrollBox(
+                    controller: widget.scrollController,
+                    childIsScrollable: true,
+                    height: innerConstraints.maxHeight,
+                    child: Focus(
+                      onKeyEvent: _handleKeyEvent,
+                      child: TextField(
+                        controller: widget.controller,
+                        focusNode: widget.focusNode,
+                        scrollController: widget.scrollController,
+                        scrollPhysics: const ClampingScrollPhysics(),
+                        expands: true,
+                        maxLines: null,
+                        minLines: null,
+                        textAlignVertical: TextAlignVertical.top,
+                        decoration: InputDecoration(
+                          hintText: 'Markdown ÃƒÆ’Ã‚Â© suportado.',
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          hintStyle: TextStyle(
+                            color: kNotesMutedText.withValues(alpha: 0.72),
+                            height: 1.4,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.fromLTRB(
+                            14,
+                            14,
+                            14,
+                            18,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: kNotesText,
+                          fontSize: 15,
+                          height: 1.5,
+                        ),
+                        onChanged: (_) {
+                          widget.onChanged();
+                          _syncMentionState();
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
-          ),
-          style: const TextStyle(color: kNotesText, fontSize: 15, height: 1.5),
-          onChanged: (_) => onChanged(),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _shouldShowMentionPanel() => _mentionQuery != null;
+}
+
+class _MentionSuggestionPanel extends StatelessWidget {
+  final String query;
+  final List<MentionTargetRef> options;
+  final ValueChanged<MentionTargetRef> onSelected;
+
+  const _MentionSuggestionPanel({
+    required this.query,
+    required this.options,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bestMatch = options.isEmpty
+        ? null
+        : _resolveGhostTarget(query, options);
+    final ghostSuffix = bestMatch == null
+        ? ''
+        : _resolveGhostSuffix(query, bestMatch.label);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: kNotesPlum.withValues(alpha: 0.11)),
+          boxShadow: [
+            BoxShadow(
+              color: kNotesPlum.withValues(alpha: 0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (bestMatch != null && ghostSuffix.isNotEmpty) ...[
+              _GhostMentionSuggestion(
+                query: query,
+                target: bestMatch,
+                ghostSuffix: ghostSuffix,
+              ),
+              const SizedBox(height: 6),
+            ],
+            if (options.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                child: Text(
+                  'Sem resultados',
+                  style: TextStyle(color: kNotesMutedText, fontSize: 11),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 176),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: options.length,
+                  separatorBuilder: (context, _) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    final option = options[index];
+                    return _MentionSuggestionTile(
+                      option: option,
+                      onTap: () => onSelected(option),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
+class _MentionSuggestionTile extends StatelessWidget {
+  final MentionTargetRef option;
+  final VoidCallback onTap;
+
+  const _MentionSuggestionTile({required this.option, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = _mentionKindIcon(option.kind);
+    final kindLabel = _mentionKindLabel(option.kind);
+
+    return Material(
+      color: option.accentColor.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: option.accentColor),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  '@${option.label}',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: option.accentColor,
+                    fontSize: 12.2,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                kindLabel,
+                style: TextStyle(
+                  color: kNotesMutedText.withValues(alpha: 0.82),
+                  fontSize: 10.4,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+IconData _mentionKindIcon(MentionTargetKind kind) {
+  return switch (kind) {
+    MentionTargetKind.project => Icons.work_outline_rounded,
+    MentionTargetKind.character => Icons.person_outline_rounded,
+    MentionTargetKind.note => Icons.description_outlined,
+    MentionTargetKind.folder => Icons.folder_outlined,
+  };
+}
+
+String _mentionKindLabel(MentionTargetKind kind) {
+  return switch (kind) {
+    MentionTargetKind.project => 'Projeto',
+    MentionTargetKind.character => 'Personagem',
+    MentionTargetKind.note => 'Nota',
+    MentionTargetKind.folder => 'Pasta',
+  };
+}
+
+IconData _mentionInlineIcon(MentionTargetKind kind) {
+  return switch (kind) {
+    MentionTargetKind.project => Icons.work_outline_rounded,
+    MentionTargetKind.character => Icons.person_outline_rounded,
+    MentionTargetKind.note => Icons.description_outlined,
+    MentionTargetKind.folder => Icons.folder_outlined,
+  };
+}
+
+MentionTargetRef? _resolveGhostTarget(
+  String query,
+  List<MentionTargetRef> options,
+) {
+  final normalizedQuery = _normalizeMentionToken(query);
+  if (normalizedQuery.isEmpty) return options.isEmpty ? null : options.first;
+
+  for (final option in options) {
+    final normalizedLabel = _normalizeMentionToken(option.label);
+    if (normalizedLabel.startsWith(normalizedQuery)) {
+      return option;
+    }
+  }
+
+  return options.first;
+}
+
+String _resolveGhostSuffix(String query, String label) {
+  final normalizedQuery = _normalizeMentionToken(query);
+  final normalizedLabel = _normalizeMentionToken(label);
+  if (normalizedQuery.isEmpty) return '';
+  if (!normalizedLabel.startsWith(normalizedQuery)) return '';
+
+  final typedLength = query.length.clamp(0, label.length);
+  return label.substring(typedLength);
+}
+
+class _GhostMentionSuggestion extends StatelessWidget {
+  final String query;
+  final MentionTargetRef target;
+  final String ghostSuffix;
+
+  const _GhostMentionSuggestion({
+    required this.query,
+    required this.target,
+    required this.ghostSuffix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = target.accentColor;
+    final fadedAccent = accent.withValues(alpha: 0.34);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withValues(alpha: 0.14)),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: 11.3,
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+          children: [
+            TextSpan(
+              text: '@',
+              style: TextStyle(color: accent.withValues(alpha: 0.92)),
+            ),
+            TextSpan(
+              text: query,
+              style: TextStyle(color: accent),
+            ),
+            TextSpan(
+              text: ghostSuffix,
+              style: TextStyle(color: fadedAccent),
+            ),
+            TextSpan(
+              text: '  toque para inserir',
+              style: TextStyle(
+                color: kNotesMutedText.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MentionPreviewBuilder extends MarkdownElementBuilder {
+  final ValueChanged<String?> onTapMention;
+
+  _MentionPreviewBuilder({required this.onTapMention});
+
+  @override
+  Widget visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final href = element.attributes['href'];
+    final target = href == null
+        ? null
+        : StoryRegistry.instance.findMentionTargetByUri(href);
+    final accent = target?.accentColor ?? kNotesPink;
+    final label = element.textContent.trim().replaceFirst(RegExp(r'^@'), '');
+
+    return _MentionInlineLink(
+      label: '@$label',
+      kind: target?.kind ?? MentionTargetKind.note,
+      accentColor: accent,
+      onTap: () => onTapMention(href),
+    );
+  }
+}
+
+class _MentionInlineLink extends StatelessWidget {
+  final String label;
+  final MentionTargetKind kind;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  const _MentionInlineLink({
+    required this.label,
+    required this.kind,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1),
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(
+                color: accentColor,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                decoration: TextDecoration.none,
+                height: 1.0,
+              ),
+              children: [
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Icon(
+                    _mentionInlineIcon(kind),
+                    size: 13,
+                    color: accentColor,
+                  ),
+                ),
+                const WidgetSpan(child: SizedBox(width: 4)),
+                TextSpan(text: label),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MentionInlineSyntax extends md.InlineSyntax {
+  final Map<String, MentionTargetRef> _targetsByToken;
+
+  _MentionInlineSyntax._(this._targetsByToken, String pattern)
+    : super(pattern, startCharacter: 0x40, caseSensitive: false);
+
+  factory _MentionInlineSyntax.fromRegistry(StoryRegistry registry) {
+    final targetsByToken = <String, MentionTargetRef>{};
+
+    void registerToken(String token, MentionTargetRef target) {
+      final normalized = _normalizeMentionToken(token);
+      if (normalized.isEmpty) return;
+      targetsByToken.putIfAbsent(normalized, () => target);
+    }
+
+    for (final target in registry.mentionTargets) {
+      registerToken(target.label, target);
+      for (final term in target.searchTerms) {
+        registerToken(term, target);
+      }
+    }
+
+    final pattern =
+        r'@[^\s\r\n`<>\[\]\(\){}@,.;:!?]+(?:\s+[^\s\r\n`<>\[\]\(\){}@,.;:!?]+)*';
+
+    return _MentionInlineSyntax._(targetsByToken, pattern);
+  }
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final raw = match[0]!;
+    final token = raw.substring(1).trim();
+    final target = _targetsByToken[_normalizeMentionToken(token)];
+    if (target == null) {
+      parser.addNode(md.Text(raw));
+      return true;
+    }
+
+    final element = md.Element.text('mention', raw);
+    element.attributes['href'] = target.uri;
+    parser.addNode(element);
+    return true;
+  }
+}
+
+String _normalizeMentionToken(String value) {
+  return value.trim().toLowerCase();
+}
+
 class _NotesScrollBox extends StatefulWidget {
   final ScrollController controller;
   final Widget child;
-  final bool childIsScrollable;
 
-  const _NotesScrollBox({
-    required this.controller,
-    required this.child,
-    this.childIsScrollable = false,
-  });
+  const _NotesScrollBox({required this.controller, required this.child});
 
   @override
   State<_NotesScrollBox> createState() => _NotesScrollBoxState();
@@ -1901,18 +2981,13 @@ class _NotesScrollBoxState extends State<_NotesScrollBox> {
         },
         child: ScrollConfiguration(
           behavior: scrollBehavior,
-          child: widget.childIsScrollable
-              ? widget.child
-              : SingleChildScrollView(
-                  controller: widget.controller,
-                  physics: const BouncingScrollPhysics(
-                    parent: ClampingScrollPhysics(),
-                  ),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: widget.child,
-                  ),
-                ),
+          child: SingleChildScrollView(
+            controller: widget.controller,
+            physics: const BouncingScrollPhysics(
+              parent: ClampingScrollPhysics(),
+            ),
+            child: Align(alignment: Alignment.topLeft, child: widget.child),
+          ),
         ),
       ),
     );
@@ -2043,11 +3118,13 @@ class _NotesScrollMetrics {
 class _TagChip extends StatelessWidget {
   final String label;
   final Color color;
+  final VoidCallback onEdit;
   final VoidCallback onRemove;
 
   const _TagChip({
     required this.label,
     required this.color,
+    required this.onEdit,
     required this.onRemove,
   });
 
@@ -2057,9 +3134,9 @@ class _TagChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
-        onTap: onRemove,
+        onTap: onEdit,
         child: Container(
-          padding: const EdgeInsets.only(left: 3, right: 8, top: 3, bottom: 3),
+          padding: const EdgeInsets.only(left: 8, right: 3, top: 3, bottom: 3),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(999),
@@ -2068,16 +3145,6 @@ class _TagChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withValues(alpha: 0.14),
-                ),
-                child: Icon(Icons.close_rounded, size: 14, color: color),
-              ),
-              const SizedBox(width: 7),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 180),
                 child: Text(
@@ -2090,8 +3157,57 @@ class _TagChip extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
+              _MiniTagButton(
+                icon: Icons.edit_outlined,
+                tint: color,
+                onTap: onEdit,
+              ),
+              const SizedBox(width: 2),
+              _MiniTagButton(
+                icon: Icons.close_rounded,
+                tint: color,
+                onTap: onRemove,
+                destructive: true,
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniTagButton extends StatelessWidget {
+  final IconData icon;
+  final Color tint;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  const _MiniTagButton({
+    required this.icon,
+    required this.tint,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveTint = destructive ? const Color(0xFFE05E8A) : tint;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: effectiveTint.withValues(alpha: 0.12),
+          ),
+          child: Icon(icon, size: 12, color: effectiveTint),
         ),
       ),
     );
@@ -2107,20 +3223,34 @@ class _SheetHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: kNotesMutedText,
-          fontSize: 12,
-          height: 1.3,
-          fontStyle: FontStyle.italic,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: kNotesMutedText,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: kNotesMutedText,
+                fontSize: 11.8,
+                height: 1.25,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

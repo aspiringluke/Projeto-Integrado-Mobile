@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS Pastas (
     titulo VARCHAR(100),
     cor VARCHAR(15),
     pastas_idPasta INTEGER,
+    metadata TEXT,
     FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );
 
@@ -120,6 +121,20 @@ CREATE TABLE IF NOT EXISTS notas_has_tags (
         """);
   }
 
+  final hasFolderMetadataColumn = conn.select("""
+      SELECT 1
+      FROM pragma_table_info('Pastas')
+      WHERE name = 'metadata'
+      LIMIT 1
+      """).isNotEmpty;
+
+  if (!hasFolderMetadataColumn) {
+    conn.execute("""
+        ALTER TABLE Pastas
+        ADD COLUMN metadata TEXT
+        """);
+  }
+
   final hasMetadataColumn = conn.select("""
       SELECT 1
       FROM pragma_table_info('Nota')
@@ -134,5 +149,34 @@ CREATE TABLE IF NOT EXISTS notas_has_tags (
         """);
   }
 
+  _ensureTimestampColumns(conn, 'Nota');
+  _ensureTimestampColumns(conn, 'Pastas');
+
   conn.close();
+}
+
+void _ensureTimestampColumns(CommonDatabase conn, String tableName) {
+  for (final column in const ['createdAt', 'lastModified', 'lastAccessed']) {
+    final hasColumn = conn.select("""
+        SELECT 1
+        FROM pragma_table_info('$tableName')
+        WHERE name = '$column'
+        LIMIT 1
+        """).isNotEmpty;
+
+    if (!hasColumn) {
+      conn.execute("""
+          ALTER TABLE $tableName
+          ADD COLUMN $column TEXT
+          """);
+    }
+
+    conn.execute(
+      """
+        UPDATE $tableName
+        SET $column = COALESCE($column, ?)
+        """,
+      [DateTime.now().toIso8601String()],
+    );
+  }
 }

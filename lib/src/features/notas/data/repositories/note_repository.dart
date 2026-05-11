@@ -87,6 +87,10 @@ class NoteRepository {
     return service.listNotes(idPasta);
   }
 
+  Future<(bool, List<Note>?, String?)> listAllNotes() {
+    return service.listAllNotes();
+  }
+
   Future<(bool, String)> deleteNote(int id) async {
     final result = await getNote(id);
 
@@ -99,6 +103,10 @@ class NoteRepository {
     }
 
     return await service.deleteNote(id);
+  }
+
+  Future<(bool, String)> touchNote(int id) {
+    return service.touchNote(id);
   }
 
   Future<(bool, String)> moveNoteToFolder(int id, int? folderId) async {

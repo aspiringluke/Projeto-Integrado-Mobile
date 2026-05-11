@@ -2,14 +2,22 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/folder_repository.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/note_repository.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
+import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 
 class NoteEditorController extends ChangeNotifier {
   final NoteRepository repository;
+  final FolderRepository folderRepository;
   final int noteId;
 
-  NoteEditorController({required this.repository, required this.noteId});
+  NoteEditorController({
+    required this.repository,
+    FolderRepository? folderRepository,
+    required this.noteId,
+  }) : folderRepository = folderRepository ?? FolderRepository();
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -63,6 +71,23 @@ class NoteEditorController extends ChangeNotifier {
     _color = note.color;
     _folderId = note.idPasta;
     _metadata = note.metadata;
+    if (_metadata.linkTarget.projectTitle == null ||
+        _metadata.linkTarget.projectTitle!.trim().isEmpty) {
+      final projectTitle = await _resolveProjectTitleFromFolder(_folderId);
+      if (projectTitle != null && projectTitle.isNotEmpty) {
+        _metadata = _metadata.copyWith(
+          linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        );
+      }
+    }
+    if (note.id != null) {
+      StoryRegistry.instance.registerNote(
+        id: note.id!,
+        title: note.title,
+        accentColor: note.color,
+      );
+    }
+    await repository.touchNote(noteId);
     notifyListeners();
     return (true, null);
   }
@@ -100,6 +125,27 @@ class NoteEditorController extends ChangeNotifier {
         ),
       ],
     );
+    notifyListeners();
+  }
+
+  void updateTagGroup({
+    required int groupIndex,
+    required String title,
+    required Color color,
+  }) {
+    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
+
+    final sanitizedTitle = title.trim();
+    if (sanitizedTitle.isEmpty) return;
+
+    final groups = _metadata.tagGroups.toList(growable: true);
+    final group = groups[groupIndex];
+    groups[groupIndex] = NoteTagGroup(
+      title: sanitizedTitle,
+      color: color,
+      tags: group.tags,
+    );
+    _metadata = _metadata.copyWith(tagGroups: groups);
     notifyListeners();
   }
 
@@ -143,6 +189,30 @@ class NoteEditorController extends ChangeNotifier {
 
     final groups = _metadata.tagGroups.toList(growable: true);
     final tags = group.tags.toList(growable: true)..removeAt(tagIndex);
+    groups[groupIndex] = NoteTagGroup(
+      title: group.title,
+      color: group.color,
+      tags: tags,
+    );
+    _metadata = _metadata.copyWith(tagGroups: groups);
+    notifyListeners();
+  }
+
+  void updateTag({
+    required int groupIndex,
+    required int tagIndex,
+    required String label,
+  }) {
+    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
+    final group = _metadata.tagGroups[groupIndex];
+    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
+
+    final sanitizedLabel = label.trim();
+    if (sanitizedLabel.isEmpty) return;
+
+    final groups = _metadata.tagGroups.toList(growable: true);
+    final tags = group.tags.toList(growable: true);
+    tags[tagIndex] = NoteTagItem(label: sanitizedLabel);
     groups[groupIndex] = NoteTagGroup(
       title: group.title,
       color: group.color,
@@ -200,11 +270,29 @@ class NoteEditorController extends ChangeNotifier {
     _setError(null);
     notifyListeners();
 
+    final resolvedProjectTitle = await _resolveProjectTitleFromFolder(
+      _folderId,
+    );
+    if ((_metadata.linkTarget.projectTitle == null ||
+            _metadata.linkTarget.projectTitle!.trim().isEmpty) &&
+        resolvedProjectTitle != null &&
+        resolvedProjectTitle.isNotEmpty) {
+      _metadata = _metadata.copyWith(
+        linkTarget: NoteLinkTarget(projectTitle: resolvedProjectTitle),
+      );
+    }
+
+    final targetFolderId = await _resolveTargetFolderId(
+      _metadata.linkTarget.projectTitle,
+      fallbackFolderId: _folderId,
+    );
+    _folderId = targetFolderId;
+
     final result = await repository.updateNote(
       noteId,
       _title.trim().isEmpty ? 'Sem título' : _title.trim(),
       _description,
-      _folderId,
+      targetFolderId,
       _color,
       metadata: _metadata,
     );
@@ -217,7 +305,81 @@ class NoteEditorController extends ChangeNotifier {
       return (false, result.$2);
     }
 
+    StoryRegistry.instance.registerNote(
+      id: noteId,
+      title: _title.trim().isEmpty ? 'Sem título' : _title.trim(),
+      accentColor: _color,
+    );
     notifyListeners();
     return (true, null);
+  }
+
+  Future<String?> _resolveProjectTitleFromFolder(int? folderId) async {
+    if (folderId == null) return null;
+
+    Folder? current;
+    int? currentId = folderId;
+    final knownProjectTitles = StoryRegistry.instance.projects
+        .map((project) => project.title.trim().toLowerCase())
+        .where((title) => title.isNotEmpty)
+        .toSet();
+
+    while (currentId != null) {
+      final result = await folderRepository.getFolder(currentId);
+      if (!result.$1 || result.$2 == null) {
+        return null;
+      }
+
+      current = result.$2!;
+      final currentTitle = current.title.trim();
+      final normalizedTitle = currentTitle.toLowerCase();
+      if (normalizedTitle.isNotEmpty &&
+          normalizedTitle != 'sem vínculo' &&
+          knownProjectTitles.contains(normalizedTitle)) {
+        return currentTitle;
+      }
+      currentId = current.parentFolderId;
+    }
+
+    final rootTitle = current?.title.trim() ?? '';
+    if (rootTitle.isEmpty || rootTitle.toLowerCase() == 'sem vínculo') {
+      return null;
+    }
+
+    return rootTitle;
+  }
+
+  Future<int?> _resolveTargetFolderId(
+    String? projectTitle, {
+    required int? fallbackFolderId,
+  }) async {
+    final normalizedProjectTitle = projectTitle?.trim();
+    if (normalizedProjectTitle == null || normalizedProjectTitle.isEmpty) {
+      return fallbackFolderId;
+    }
+
+    var accentColor = _color;
+    for (final project in StoryRegistry.instance.projects) {
+      if (project.title.trim().toLowerCase() ==
+          normalizedProjectTitle.toLowerCase()) {
+        accentColor = project.accentColor;
+        break;
+      }
+    }
+
+    final folder = await folderRepository.ensureRootFolder(
+      title: normalizedProjectTitle,
+      color: accentColor,
+    );
+    if (folder?.id == null || folder!.id! <= 0) {
+      return fallbackFolderId;
+    }
+
+    StoryRegistry.instance.registerFolder(
+      id: folder.id!,
+      title: folder.title,
+      accentColor: folder.color,
+    );
+    return folder.id;
   }
 }

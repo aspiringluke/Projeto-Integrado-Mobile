@@ -13,11 +13,11 @@ class FolderColorPicker extends StatelessWidget {
   });
 
   static const List<Color> colors = [
-    Color(0xFF8C5B79),
-    Color(0xFFDF6EB8),
-    Color(0xFF6D7C9B),
-    Color(0xFF668F80),
-    Color(0xFFA2785C),
+    Color(0xFFA85A82),
+    Color(0xFFE85BB8),
+    Color(0xFF6A7EB5),
+    Color(0xFF62A67E),
+    Color(0xFFB8744B),
   ];
 
   @override
