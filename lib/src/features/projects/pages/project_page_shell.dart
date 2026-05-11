@@ -25,10 +25,7 @@ enum ProjectSectionId {
   world,
 }
 
-enum CharacterDisplayMode {
-  list,
-  avatars,
-}
+enum CharacterDisplayMode { list, avatars }
 
 class _ProjectSectionMeta {
   final String label;
@@ -46,7 +43,7 @@ class _ProjectPageState extends State<ProjectPage> {
   static const Map<ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
       <ProjectSectionId, _ProjectSectionMeta>{
         ProjectSectionId.configProjeto: _ProjectSectionMeta(
-          label: 'Pagina inicial',
+          label: 'Página inicial',
           icon: Icons.tune_rounded,
           isImplemented: false,
         ),
@@ -77,8 +74,10 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
       };
 
-  static final Map<String, List<CharacterListItem>> _projectCharactersStorage = {};
-  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode = {};
+  static final Map<String, List<CharacterListItem>> _projectCharactersStorage =
+      {};
+  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode =
+      {};
   static final Map<String, int> _projectCharactersGridColumns = {};
 
   late ProjectSectionId _activeSection;
@@ -93,8 +92,11 @@ class _ProjectPageState extends State<ProjectPage> {
   void initState() {
     super.initState();
     _activeSection = widget.initialSection;
-    _characters = _projectCharactersStorage[widget.title]?.toList() ?? <CharacterListItem>[];
-    _characterDisplayMode = _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
+    _characters =
+        _projectCharactersStorage[widget.title]?.toList() ??
+        <CharacterListItem>[];
+    _characterDisplayMode =
+        _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
     _avatarGridColumns = _projectCharactersGridColumns[widget.title] ?? 3;
   }
 
@@ -127,7 +129,7 @@ class _ProjectPageState extends State<ProjectPage> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label em construcao.'),
+        content: Text('$label em construção.'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -187,6 +189,11 @@ class _ProjectPageState extends State<ProjectPage> {
           ),
           unpinnedIndex: _characters.where((item) => !item.isPinned).length,
         ),
+      );
+      StoryRegistry.instance.registerCharacter(
+        projectTitle: widget.title,
+        name: draft.name,
+        accentColor: draft.accentColor,
       );
       _isCreateMenuOpen = false;
       _persistProjectCharacters();
@@ -304,7 +311,7 @@ class _ProjectFooterNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = <(ProjectSectionId, String, IconData)>[
-      (ProjectSectionId.configProjeto, 'Pagina inicial', Icons.tune_rounded),
+      (ProjectSectionId.configProjeto, 'Página inicial', Icons.tune_rounded),
       (
         ProjectSectionId.characters,
         'Personagens',
@@ -618,7 +625,7 @@ class _UnderConstructionSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Esta secao ainda esta em construcao dentro do projeto.',
+                    'Esta seção ainda está em construção dentro do projeto.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.58),

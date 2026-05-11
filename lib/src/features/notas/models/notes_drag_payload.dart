@@ -4,8 +4,5 @@ class NotesDragPayload {
   final NotesDragType type;
   final int id;
 
-  const NotesDragPayload({
-    required this.type,
-    required this.id,
-  });
+  const NotesDragPayload({required this.type, required this.id});
 }

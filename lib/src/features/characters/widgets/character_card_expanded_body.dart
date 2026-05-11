@@ -64,20 +64,31 @@ class ExpandedCharacterBody extends StatelessWidget {
   List<Widget> _buildTagRow() {
     final tags = <Widget>[];
     if (data.genderTag.isNotEmpty) {
-      tags.add(OutlinedTagPill(label: data.genderTag, color: projectTagColorAt(0)));
+      tags.add(
+        OutlinedTagPill(label: data.genderTag, color: projectTagColorAt(0)),
+      );
     }
     if (data.sexualityTag.isNotEmpty) {
-      tags.add(OutlinedTagPill(label: data.sexualityTag, color: projectTagColorAt(1)));
+      tags.add(
+        OutlinedTagPill(label: data.sexualityTag, color: projectTagColorAt(1)),
+      );
     }
     if (data.ethnicityTag.isNotEmpty) {
-      tags.add(OutlinedTagPill(label: data.ethnicityTag, color: projectTagColorAt(2)));
+      tags.add(
+        OutlinedTagPill(label: data.ethnicityTag, color: projectTagColorAt(2)),
+      );
     }
     if (data.functionTag.isNotEmpty) {
-      tags.add(OutlinedTagPill(label: data.functionTag, color: projectTagColorAt(3)));
+      tags.add(
+        OutlinedTagPill(label: data.functionTag, color: projectTagColorAt(3)),
+      );
     }
     if (tags.isEmpty) {
       return const [
-        OutlinedTagPill(label: 'Nenhuma tag selecionada', color: Color(0xFF6A6167)),
+        OutlinedTagPill(
+          label: 'Nenhuma tag selecionada',
+          color: Color(0xFF6A6167),
+        ),
       ];
     }
     final result = <Widget>[];
@@ -199,9 +210,7 @@ class ExpandedCharacterBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: _buildTagRow(),
-          ),
+          Row(children: _buildTagRow()),
         ],
       ),
     );

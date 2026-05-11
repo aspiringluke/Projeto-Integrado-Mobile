@@ -185,11 +185,7 @@ class ProjectImageTransformView extends StatelessWidget {
           maxWidth: double.infinity,
           maxHeight: double.infinity,
           alignment: Alignment.center,
-          child: SizedBox(
-            width: size.width,
-            height: size.height,
-            child: image,
-          ),
+          child: SizedBox(width: size.width, height: size.height, child: image),
         );
       },
     );

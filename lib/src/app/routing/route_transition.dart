@@ -1,7 +1,4 @@
-enum SlideDirection {
-  left,
-  right,
-}
+enum SlideDirection { left, right }
 
 class RouteTransitionArgs {
   final SlideDirection direction;

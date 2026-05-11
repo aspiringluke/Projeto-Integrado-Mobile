@@ -70,7 +70,11 @@ class CharactersSection extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.grid_view, color: Color(0xFF544959), size: 20),
+                      const Icon(
+                        Icons.grid_view,
+                        color: Color(0xFF544959),
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '$avatarGridColumns colunas',
@@ -94,16 +98,13 @@ class CharactersSection extends StatelessWidget {
               ),
               Text(
                 showAvatarGrid ? 'Fotos' : 'Lista',
-                style: const TextStyle(
-                  color: Color(0xFF544959),
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Color(0xFF544959), fontSize: 14),
               ),
             ],
           ),
         ),
         Expanded(
-          child: showAvatarGrid ? _buildAvatarGrid(context) : _buildCharacterList(),
+          child: showAvatarGrid ? _buildAvatarGrid() : _buildCharacterList(),
         ),
       ],
     );
@@ -125,162 +126,167 @@ class CharactersSection extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatarGrid(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = (constraints.maxWidth ~/ 148).clamp(2, 5);
-
-        return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 160),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: avatarGridColumns,
-            crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
-            childAspectRatio: 0.94,
-          ),
-          itemCount: characters.length,
-          itemBuilder: (context, index) {
-            final character = characters[index];
-            return Tooltip(
-              message: character.data.name,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+  Widget _buildAvatarGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 160),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: avatarGridColumns,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 0.94,
+      ),
+      itemCount: characters.length,
+      itemBuilder: (context, index) {
+        final character = characters[index];
+        return Tooltip(
+          message: character.data.name,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: CharacterAvatarTile(
+                      accent: character.data.accent,
+                      avatarColor: character.data.avatarColor,
+                      profileImage: character.data.profileImage,
+                      icon: character.data.icon,
+                      isExpanded: false,
+                      onTap: null,
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CharacterAvatarTile(
-                          accent: character.data.accent,
-                          avatarColor: character.data.avatarColor,
-                          profileImage: character.data.profileImage,
-                          icon: character.data.icon,
-                          isExpanded: false,
-                          onTap: null,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  character.data.accent.withOpacity(0.08),
-                                  Colors.transparent,
-                                  character.data.avatarColor.withOpacity(0.06),
-                                ],
-                                stops: const [0.0, 0.48, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (avatarGridColumns == 3)
-                        Positioned(
-                          left: 10,
-                          right: 10,
-                          bottom: 10,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  character.data.accent.withOpacity(0.72),
-                                  character.data.avatarColor.withOpacity(0.28),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.24),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.16),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.9),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      character.data.name.split(' ').first,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.2,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () => onTogglePinned(character),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.84),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.14),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              character.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-                              size: 18,
-                              color: character.isPinned ? const Color(0xFF7C4E63) : const Color(0xFF544959),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                ),
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              character.data.accent.withValues(alpha: 0.08),
+                              Colors.transparent,
+                              character.data.avatarColor.withValues(
+                                alpha: 0.06,
+                              ),
+                            ],
+                            stops: const [0.0, 0.48, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (avatarGridColumns == 3)
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              character.data.accent.withValues(alpha: 0.72),
+                              character.data.avatarColor.withValues(
+                                alpha: 0.28,
+                              ),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.24),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.16),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  character.data.name.split(' ').first,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => onTogglePinned(character),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.84),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.14),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          character.isPinned
+                              ? Icons.push_pin
+                              : Icons.push_pin_outlined,
+                          size: 18,
+                          color: character.isPinned
+                              ? const Color(0xFF7C4E63)
+                              : const Color(0xFF544959),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS Notas (
     titulo VARCHAR(255),
     descricao TEXT,
     cor VARCHAR(15),
+    metadata TEXT,
     pastas_idPasta INTEGER,
     FOREIGN KEY (pastas_idPasta) REFERENCES Pastas(idPasta)
 );

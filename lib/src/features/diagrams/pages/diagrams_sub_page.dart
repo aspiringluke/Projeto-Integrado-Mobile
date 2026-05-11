@@ -5,23 +5,24 @@ class DiagramsSubPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      children: [
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: const [
         _DiagramGroupCard(
-          title: "Mapa da história",
-          subtitle: "Linha do tempo dos eventos",
+          title: 'Mapa da história',
+          subtitle: 'Linha do tempo dos eventos',
         ),
         _DiagramGroupCard(
-          title: "Relações de personagens",
-          subtitle: "Conflitos, alianças e segredos",
+          title: 'Relações de personagens',
+          subtitle: 'Conflitos, alianças e segredos',
         ),
         _DiagramGroupCard(
-          title: "Estrutura por atos",
-          subtitle: "Setup, confronto e resolução",
+          title: 'Estrutura por atos',
+          subtitle: 'Setup, confronto e resolução',
         ),
         _DiagramGroupCard(
-          title: "Fluxo de capítulos",
-          subtitle: "Objetivo, obstáculo e gancho",
+          title: 'Fluxo de capítulos',
+          subtitle: 'Objetivo, obstáculo e gancho',
         ),
       ],
     );
@@ -83,15 +84,9 @@ class _DiagramGroupCard extends StatelessWidget {
             const Spacer(),
             Row(
               children: [
-                _DiagramChip(
-                  label: "Nós",
-                  color: Color(0x26DF6EB8),
-                ),
+                _DiagramChip(label: 'Nós', color: Color(0x26DF6EB8)),
                 SizedBox(width: 8),
-                _DiagramChip(
-                  label: "Fluxos",
-                  color: Color(0x298B7D8B),
-                ),
+                _DiagramChip(label: 'Fluxos', color: Color(0x298B7D8B)),
                 Spacer(),
                 Icon(Icons.open_in_full_rounded, color: Color(0xFF7B6E77)),
               ],
@@ -120,7 +115,7 @@ class _DiagramChip extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          color: Color(0xFF4A3F47),
+          color: Color(0xFF3B3238),
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),

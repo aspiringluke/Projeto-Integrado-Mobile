@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../features/projects/controllers/project_list_controller.dart';
@@ -8,6 +10,7 @@ import '../widgets/custom_nav_bar.dart';
 import '../../shared/widgets/funcoes_busca.dart';
 import '../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../shared/widgets/main_header.dart';
+import '../../features/notas/widgets/notes_visuals.dart';
 
 class ShellPage extends StatefulWidget {
   final NavTab initialTab;
@@ -91,7 +94,8 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Widget _buildFloatingActionArea() {
-    final showQuickActions = _activeTab == NavTab.ideas && _showIdeasQuickActions;
+    final showQuickActions =
+        _activeTab == NavTab.ideas && _showIdeasQuickActions;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -120,7 +124,9 @@ class _ShellPageState extends State<ShellPage> {
                     const SizedBox(height: 12),
                   ],
                 )
-              : const SizedBox.shrink(key: ValueKey('ideas_quick_actions_empty')),
+              : const SizedBox.shrink(
+                  key: ValueKey('ideas_quick_actions_empty'),
+                ),
         ),
         GlassCircleButton(
           diameter: 56,
@@ -212,34 +218,47 @@ class _IdeasQuickActionButton extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
         onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.96)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: const Color(0xFF4B3F48)),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF4B3F48),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.24),
+                    kNotesPink.withValues(alpha: 0.08),
+                  ],
                 ),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.74)),
+                boxShadow: [
+                  BoxShadow(
+                    color: kNotesPink.withValues(alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 18, color: kNotesPlum),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: kNotesPlum,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -307,7 +326,7 @@ class _AnimatedTabContent extends StatelessWidget {
           },
         );
       },
-        child: KeyedSubtree(
+      child: KeyedSubtree(
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
             ? ProjectListPage(controller: projectListController)

@@ -36,9 +36,7 @@ class FuncoesBusca extends StatelessWidget {
               const SizedBox(width: 10),
               const _ActionIcon(icon: Icons.auto_awesome_outlined),
               const SizedBox(width: 14),
-              const Expanded(
-                child: _SearchField(),
-              ),
+              const Expanded(child: _SearchField()),
             ],
           ),
         ),
@@ -51,10 +49,26 @@ class _SearchField extends StatelessWidget {
   const _SearchField();
 
   static const List<double> _desaturateMatrix = <double>[
-    0.65, 0.25, 0.10, 0, 0,
-    0.20, 0.65, 0.15, 0, 0,
-    0.16, 0.24, 0.60, 0, 0,
-    0, 0, 0, 1, 0,
+    0.65,
+    0.25,
+    0.10,
+    0,
+    0,
+    0.20,
+    0.65,
+    0.15,
+    0,
+    0,
+    0.16,
+    0.24,
+    0.60,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
   ];
 
   @override
@@ -177,11 +191,7 @@ class _ActionIcon extends StatelessWidget {
         width: 30,
         height: 30,
         child: Center(
-          child: Icon(
-            icon,
-            color: const Color(0xFF151419),
-            size: 28,
-          ),
+          child: Icon(icon, color: const Color(0xFF151419), size: 28),
         ),
       ),
     );
