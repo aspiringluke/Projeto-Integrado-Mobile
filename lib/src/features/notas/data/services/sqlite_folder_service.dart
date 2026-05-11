@@ -9,11 +9,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata
 
 class SqliteFolderService implements IFolderService {
   @override
-  Future<(bool, int?, String?)> createNewFolder(
-    String title,
-    String color,
-    int? parentFolderId,
-  ) async {
+  Future<(bool, int?, String?)> createNewFolder(String title, String color, int? parentFolderId, [NoteMetadata? metadata]) async {
     final conn = await getConnection();
     final now = _nowIso();
     try {
@@ -33,7 +29,7 @@ class SqliteFolderService implements IFolderService {
           title,
           color,
           parentFolderId,
-          NoteMetadata.empty().toJsonString(),
+          (metadata ?? NoteMetadata.empty()).toJsonString(),
           now,
           now,
           now,
@@ -55,6 +51,28 @@ class SqliteFolderService implements IFolderService {
   Future<(bool, String)> deleteFolder(int id) async {
     final conn = await getConnection();
     try {
+      final folder = conn.select(
+        """
+                SELECT metadata
+                FROM Pastas
+                WHERE idPasta = ?
+            """,
+        [id],
+      );
+      if (folder.isEmpty) {
+        return (false, "Pasta não encontrada");
+      }
+
+      final metadata = NoteMetadata.fromJsonString(
+        folder.first["metadata"] as String?,
+      );
+      if (metadata.isProjectRoot) {
+        return (
+          false,
+          "Esta pasta de projeto não pode ser excluída. Apague o conteúdo da pasta em vez disso.",
+        );
+      }
+
       conn.execute(
         """
                 WITH RECURSIVE folder_tree(id) AS (
@@ -86,6 +104,61 @@ class SqliteFolderService implements IFolderService {
       );
 
       return (true, "Pasta $id excluída");
+    } catch (e) {
+      return (false, cleanError(e));
+    } finally {
+      conn.close();
+    }
+  }
+
+  @override
+  Future<(bool, String)> deleteFolderContents(int id) async {
+    final conn = await getConnection();
+    try {
+      final folder = conn.select(
+        """
+                SELECT metadata
+                FROM Pastas
+                WHERE idPasta = ?
+            """,
+        [id],
+      );
+      if (folder.isEmpty) {
+        return (false, "Pasta não encontrada");
+      }
+
+      conn.execute(
+        """
+                WITH RECURSIVE folder_tree(id) AS (
+                    SELECT idPasta FROM Pastas WHERE pastas_idPasta = ?
+                    UNION ALL
+                    SELECT p.idPasta
+                    FROM Pastas p
+                    INNER JOIN folder_tree ft ON p.pastas_idPasta = ft.id
+                )
+                DELETE FROM Nota
+                WHERE pastas_idPasta = ?
+                   OR pastas_idPasta IN (SELECT id FROM folder_tree)
+            """,
+        [id, id],
+      );
+
+      conn.execute(
+        """
+                WITH RECURSIVE folder_tree(id) AS (
+                    SELECT idPasta FROM Pastas WHERE pastas_idPasta = ?
+                    UNION ALL
+                    SELECT p.idPasta
+                    FROM Pastas p
+                    INNER JOIN folder_tree ft ON p.pastas_idPasta = ft.id
+                )
+                DELETE FROM Pastas
+                WHERE idPasta IN (SELECT id FROM folder_tree)
+            """,
+        [id],
+      );
+
+      return (true, "Conteúdo da pasta $id excluído");
     } catch (e) {
       return (false, cleanError(e));
     } finally {

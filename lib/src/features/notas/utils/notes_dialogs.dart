@@ -158,6 +158,7 @@ Future<bool> showDeleteFolderConfirmation(
   required bool hasChildren,
   int noteCount = 0,
   required ContentStats stats,
+  bool preserveFolder = false,
 }) async {
   final shouldDelete = await showDialog<bool>(
     context: context,
@@ -166,11 +167,15 @@ Future<bool> showDeleteFolderConfirmation(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: _ConfirmDialog(
-        title: 'Excluir pasta',
-        message: hasChildren
+        title: preserveFolder ? 'Apagar conteúdo da pasta' : 'Excluir pasta',
+        message: preserveFolder
+            ? (hasChildren
+                  ? 'A pasta "$folderTitle" é vinculada a um projeto. Apagar o conteúdo remove tudo que está dentro, incluindo subpastas.'
+                  : 'A pasta "$folderTitle" é vinculada a um projeto. Deseja apagar todo o conteúdo dela sem excluir a pasta?')
+            : hasChildren
             ? 'A pasta "$folderTitle" possui subpastas e $noteCount nota(s). Excluir também remove tudo que está dentro.'
             : 'A pasta "$folderTitle" possui $noteCount nota(s). Deseja excluir e apagar tudo que está salvo dentro?',
-        confirmLabel: 'Excluir',
+        confirmLabel: preserveFolder ? 'Apagar conteúdo' : 'Excluir',
         confirmColor: const Color(0xFFE05E8A),
         confirmRequiresHold: true,
         body: _DeleteMetricsSummary(stats: stats),

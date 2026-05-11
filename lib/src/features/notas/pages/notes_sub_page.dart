@@ -259,12 +259,17 @@ class NotesSubPageState extends State<NotesSubPage> {
       hasChildren: hasChildrenResult.$2,
       noteCount: countsResult.$2,
       stats: statsResult.$2!,
+      preserveFolder: folder.isProjectRoot,
     );
     if (!mounted || !shouldDelete) return;
 
-    final result = await _folderController.deleteFolder(folderId);
+    final result = folder.isProjectRoot
+        ? await _folderController.deleteFolderContents(folderId)
+        : await _folderController.deleteFolder(folderId);
     if (result.$1) {
-      _showSnack('Pasta excluída');
+      _showSnack(
+        folder.isProjectRoot ? 'Conteúdo da pasta apagado' : 'Pasta excluída',
+      );
       await _refreshVisibleStats();
       return;
     }
@@ -416,7 +421,11 @@ class NotesSubPageState extends State<NotesSubPage> {
     for (final folder in selectedFolders) {
       final folderId = folder.id;
       if (folderId == null) continue;
-      await _folderController.deleteFolder(folderId);
+      if (folder.isProjectRoot) {
+        await _folderController.deleteFolderContents(folderId);
+      } else {
+        await _folderController.deleteFolder(folderId);
+      }
     }
 
     _clearSelection();

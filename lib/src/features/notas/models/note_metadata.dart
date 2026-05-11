@@ -73,11 +73,13 @@ class NoteLinkTarget {
 class NoteMetadata {
   final List<NoteTagGroup> tagGroups;
   final NoteLinkTarget linkTarget;
+  final String? projectRootTitle;
   final bool pinned;
 
   const NoteMetadata({
     required this.tagGroups,
     required this.linkTarget,
+    this.projectRootTitle,
     this.pinned = false,
   });
 
@@ -93,6 +95,8 @@ class NoteMetadata {
         .map((group) => group.toJson())
         .toList(growable: false),
     'linkTarget': linkTarget.toJson(),
+    if (projectRootTitle != null && projectRootTitle!.trim().isNotEmpty)
+      'projectRootTitle': projectRootTitle,
     if (pinned) 'pinned': true,
   };
 
@@ -127,11 +131,20 @@ class NoteMetadata {
           ? NoteLinkTarget.fromJson(Map<String, dynamic>.from(rawTarget))
           : const NoteLinkTarget();
 
+      final rawProjectRootTitle = map['projectRootTitle'];
+      final projectRootTitle = rawProjectRootTitle is String
+          ? rawProjectRootTitle.trim()
+          : null;
+
       final pinned = map['pinned'] == true;
 
       return NoteMetadata(
         tagGroups: tagGroups,
         linkTarget: linkTarget,
+        projectRootTitle:
+            projectRootTitle == null || projectRootTitle.isEmpty
+            ? null
+            : projectRootTitle,
         pinned: pinned,
       );
     } catch (_) {
@@ -142,12 +155,16 @@ class NoteMetadata {
   NoteMetadata copyWith({
     List<NoteTagGroup>? tagGroups,
     NoteLinkTarget? linkTarget,
+    String? projectRootTitle,
     bool? pinned,
   }) {
     return NoteMetadata(
       tagGroups: tagGroups ?? this.tagGroups,
       linkTarget: linkTarget ?? this.linkTarget,
+      projectRootTitle: projectRootTitle ?? this.projectRootTitle,
       pinned: pinned ?? this.pinned,
     );
   }
+
+  bool get isProjectRoot => projectRootTitle?.trim().isNotEmpty == true;
 }

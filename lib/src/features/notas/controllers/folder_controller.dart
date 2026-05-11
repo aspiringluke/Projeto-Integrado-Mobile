@@ -50,6 +50,7 @@ class FolderController extends ChangeNotifier {
     }
 
     _folders = result.$2 ?? const [];
+    _folders = await _syncProtectedProjectFolders(_folders);
     _syncFoldersToRegistry(_folders);
     notifyListeners();
     return (true, null);
@@ -152,6 +153,18 @@ class FolderController extends ChangeNotifier {
     return await loadFolders(parentFolderId: _currentParentFolderId);
   }
 
+  Future<(bool, String?)> deleteFolderContents(int id) async {
+    _setError(null);
+    final result = await repository.deleteFolderContents(id);
+
+    if (!result.$1) {
+      _setError(result.$2);
+      return (false, result.$2);
+    }
+
+    return await loadFolders(parentFolderId: _currentParentFolderId);
+  }
+
   Future<(bool, String?)> moveFolderToFolder(
     int folderId,
     int? newParentFolderId,
@@ -249,6 +262,54 @@ class FolderController extends ChangeNotifier {
 
   NoteMetadata _normalizeFolderMetadata(NoteMetadata metadata) {
     return metadata.copyWith(linkTarget: const NoteLinkTarget());
+  }
+
+  Future<List<Folder>> _syncProtectedProjectFolders(
+    List<Folder> folders,
+  ) async {
+    final normalizedProjectTitles = StoryRegistry.instance.projects
+        .map((project) => project.title.trim().toLowerCase())
+        .where((title) => title.isNotEmpty)
+        .toSet();
+    if (normalizedProjectTitles.isEmpty) {
+      return folders;
+    }
+
+    final updatedFolders = folders.toList(growable: false);
+    var didUpdate = false;
+
+    for (var index = 0; index < updatedFolders.length; index += 1) {
+      final folder = updatedFolders[index];
+      final folderId = folder.id;
+      if (folderId == null || folderId <= 0) continue;
+      if (folder.parentFolderId != null) continue;
+
+      final normalizedTitle = folder.title.trim().toLowerCase();
+      final isProjectRoot = normalizedProjectTitles.contains(normalizedTitle);
+      if (!isProjectRoot) continue;
+
+      final currentProjectRootTitle =
+          folder.metadata.projectRootTitle?.trim().toLowerCase();
+      if (currentProjectRootTitle == normalizedTitle) continue;
+
+      final updatedMetadata = folder.metadata.copyWith(
+        projectRootTitle: folder.title.trim(),
+      );
+      final updateResult = await repository.updateFolderMetadata(
+        folderId,
+        updatedMetadata.toJsonString(),
+      );
+      if (!updateResult.$1) continue;
+
+      updatedFolders[index] = folder.copyWith(metadata: updatedMetadata);
+      didUpdate = true;
+    }
+
+    if (!didUpdate) {
+      return folders;
+    }
+
+    return updatedFolders;
   }
 
   void _syncFoldersToRegistry(Iterable<Folder> folders) {

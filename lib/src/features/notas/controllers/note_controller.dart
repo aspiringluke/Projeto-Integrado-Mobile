@@ -248,9 +248,17 @@ class NoteController extends ChangeNotifier {
       current = result.$2!;
       final currentTitle = current.title.trim();
       final normalizedTitle = currentTitle.toLowerCase();
+      final projectRootTitle =
+          current.metadata.projectRootTitle?.trim().toLowerCase();
+      final isKnownProjectRoot =
+          (projectRootTitle != null &&
+              projectRootTitle.isNotEmpty &&
+              knownProjectTitles.contains(projectRootTitle)) ||
+          (current.parentFolderId == null &&
+              knownProjectTitles.contains(normalizedTitle));
       if (normalizedTitle.isNotEmpty &&
           normalizedTitle != 'sem vínculo' &&
-          knownProjectTitles.contains(normalizedTitle)) {
+          isKnownProjectRoot) {
         return currentTitle;
       }
       currentId = current.parentFolderId;

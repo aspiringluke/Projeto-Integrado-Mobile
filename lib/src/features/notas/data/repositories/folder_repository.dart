@@ -4,6 +4,8 @@ import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_fold
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/sqlite_folder_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/content_stats.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
+import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 
 class FolderRepository {
   final IFolderService service;
@@ -11,15 +13,12 @@ class FolderRepository {
   FolderRepository({IFolderService? service})
     : service = service ?? SqliteFolderService();
 
-  Future<(bool, int?, String?)> createNewFolder(
-    String title,
-    Color color,
-    int? parentFolderId,
-  ) {
+  Future<(bool, int?, String?)> createNewFolder(String title, Color color, int? parentFolderId, [NoteMetadata? metadata]) {
     return service.createNewFolder(
       title,
       color.toARGB32().toString(),
       parentFolderId,
+      metadata,
     );
   }
 
@@ -60,7 +59,11 @@ class FolderRepository {
   }
 
   Future<(bool, String)> deleteFolder(int id) {
-    return service.deleteFolder(id);
+    return _deleteFolderWithProtection(id);
+  }
+
+  Future<(bool, String)> deleteFolderContents(int id) {
+    return service.deleteFolderContents(id);
   }
 
   Future<(bool, String)> touchFolder(int id) {
@@ -87,7 +90,11 @@ class FolderRepository {
 
     final normalizedTitle = title.trim().toLowerCase();
     for (final folder in result.$2!) {
-      if (folder.title.trim().toLowerCase() == normalizedTitle) {
+      final folderTitle = folder.title.trim().toLowerCase();
+      final projectRootTitle =
+          folder.metadata.projectRootTitle?.trim().toLowerCase();
+      if (folderTitle == normalizedTitle ||
+          projectRootTitle == normalizedTitle) {
         return folder;
       }
     }
@@ -101,10 +108,29 @@ class FolderRepository {
   }) async {
     final existing = await findRootFolderByTitle(title);
     if (existing != null) {
+      if (existing.id != null &&
+          existing.metadata.projectRootTitle?.trim().toLowerCase() !=
+              title.trim().toLowerCase()) {
+        await updateFolderMetadata(
+          existing.id!,
+          existing.metadata
+              .copyWith(projectRootTitle: title.trim())
+              .toJsonString(),
+        );
+      }
       return existing;
     }
 
-    final created = await createNewFolder(title, color, null);
+    final created = await createNewFolder(
+      title,
+      color,
+      null,
+      NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: const NoteLinkTarget(),
+        projectRootTitle: title.trim(),
+      ),
+    );
     if (!created.$1 || created.$2 == null) {
       return null;
     }
@@ -131,4 +157,44 @@ class FolderRepository {
 
   Future<(bool, bool, String?)> hasChildFolders(int id) =>
       service.hasChildFolders(id);
+
+  Future<(bool, String)> _deleteFolderWithProtection(int id) async {
+    final current = await getFolder(id);
+    if (current.$1 == false) {
+      return (false, current.$3 ?? "Erro ao buscar pasta");
+    }
+
+    final folder = current.$2;
+    if (folder == null) {
+      return (false, "Pasta não encontrada");
+    }
+
+    if (_isProtectedProjectFolder(folder)) {
+      return (
+        false,
+        "Esta pasta de projeto não pode ser excluída. Apague o conteúdo da pasta em vez disso.",
+      );
+    }
+
+    return await service.deleteFolder(id);
+  }
+
+  bool _isProtectedProjectFolder(Folder folder) {
+    if (folder.metadata.isProjectRoot) {
+      return true;
+    }
+
+    if (folder.parentFolderId != null) {
+      return false;
+    }
+
+    final normalizedTitle = folder.title.trim().toLowerCase();
+    if (normalizedTitle.isEmpty) {
+      return false;
+    }
+
+    return StoryRegistry.instance.projects.any(
+      (project) => project.title.trim().toLowerCase() == normalizedTitle,
+    );
+  }
 }

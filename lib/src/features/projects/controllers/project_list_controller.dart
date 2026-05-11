@@ -157,6 +157,12 @@ class ProjectListController extends ChangeNotifier {
     }
 
     await folderRepository.updateFolder(folder.id!, normalizedNewTitle, null);
+    await folderRepository.updateFolderMetadata(
+      folder.id!,
+      folder.metadata
+          .copyWith(projectRootTitle: normalizedNewTitle)
+          .toJsonString(),
+    );
   }
 
   Future<void> _ensureAutoFolderForProject(

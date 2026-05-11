@@ -42,4 +42,28 @@ class Folder {
     required this.lastModified,
     required this.lastAccessed,
   });
+
+  Folder copyWith({
+    String? title,
+    int? id,
+    Color? color,
+    int? parentFolderId,
+    NoteMetadata? metadata,
+    DateTime? createdAt,
+    DateTime? lastModified,
+    DateTime? lastAccessed,
+  }) {
+    return Folder(
+      title: title ?? this.title,
+      id: id ?? this.id,
+      color: color ?? this.color,
+      parentFolderId: parentFolderId ?? this.parentFolderId,
+      metadata: metadata ?? this.metadata,
+      createdAt: createdAt ?? this.createdAt,
+      lastModified: lastModified ?? this.lastModified,
+      lastAccessed: lastAccessed ?? this.lastAccessed,
+    );
+  }
+
+  bool get isProjectRoot => metadata.isProjectRoot;
 }
