@@ -2,14 +2,30 @@ part of 'project_page.dart';
 
 class ProjectPage extends StatefulWidget {
   final String title;
+  final Color accentColor;
+  final ProjectSectionId initialSection;
 
-  const ProjectPage({super.key, required this.title});
+  const ProjectPage({
+    super.key,
+    required this.title,
+    this.accentColor = const Color(0xFFDF6EB8),
+    this.initialSection = ProjectSectionId.configProjeto,
+  });
 
   @override
   State<ProjectPage> createState() => _ProjectPageState();
 }
 
-enum _ProjectSectionId { home, insights, diagrams, characters, notes, world }
+enum ProjectSectionId {
+  configProjeto,
+  insights,
+  diagrams,
+  characters,
+  notes,
+  world,
+}
+
+enum CharacterDisplayMode { list, avatars }
 
 class _ProjectSectionMeta {
   final String label;
@@ -24,46 +40,69 @@ class _ProjectSectionMeta {
 }
 
 class _ProjectPageState extends State<ProjectPage> {
-  static const Map<_ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
-      <_ProjectSectionId, _ProjectSectionMeta>{
-        _ProjectSectionId.home: _ProjectSectionMeta(
-          label: 'Pagina inicial',
-          icon: Icons.home_outlined,
+  static const Map<ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
+      <ProjectSectionId, _ProjectSectionMeta>{
+        ProjectSectionId.configProjeto: _ProjectSectionMeta(
+          label: 'Página inicial',
+          icon: Icons.tune_rounded,
           isImplemented: false,
         ),
-        _ProjectSectionId.insights: _ProjectSectionMeta(
+        ProjectSectionId.insights: _ProjectSectionMeta(
           label: 'IA',
           icon: Icons.auto_awesome_outlined,
           isImplemented: false,
         ),
-        _ProjectSectionId.diagrams: _ProjectSectionMeta(
+        ProjectSectionId.diagrams: _ProjectSectionMeta(
           label: 'Mapa',
           icon: Icons.account_tree_outlined,
           isImplemented: false,
         ),
-        _ProjectSectionId.characters: _ProjectSectionMeta(
+        ProjectSectionId.characters: _ProjectSectionMeta(
           label: 'Personagens',
           icon: Icons.person_outline_rounded,
           isImplemented: true,
         ),
-        _ProjectSectionId.notes: _ProjectSectionMeta(
+        ProjectSectionId.notes: _ProjectSectionMeta(
           label: 'Enredo',
           icon: Icons.edit_note_outlined,
           isImplemented: false,
         ),
-        _ProjectSectionId.world: _ProjectSectionMeta(
+        ProjectSectionId.world: _ProjectSectionMeta(
           label: 'Mundo',
           icon: Icons.public_outlined,
           isImplemented: false,
         ),
       };
 
-  _ProjectSectionId _activeSection = _ProjectSectionId.characters;
+  static final Map<String, List<CharacterListItem>> _projectCharactersStorage =
+      {};
+  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode =
+      {};
+  static final Map<String, int> _projectCharactersGridColumns = {};
+
+  late ProjectSectionId _activeSection;
   bool _isCreateMenuOpen = false;
+  final CharactersPinController _charactersPinController =
+      const CharactersPinController();
+  late List<CharacterListItem> _characters;
+  late CharacterDisplayMode _characterDisplayMode;
+  late int _avatarGridColumns;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeSection = widget.initialSection;
+    _characters =
+        _projectCharactersStorage[widget.title]?.toList() ??
+        <CharacterListItem>[];
+    _characterDisplayMode =
+        _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
+    _avatarGridColumns = _projectCharactersGridColumns[widget.title] ?? 3;
+  }
 
   String get _activeSectionLabel => _sectionMeta[_activeSection]!.label;
 
-  void _setActiveSection(_ProjectSectionId section) {
+  void _setActiveSection(ProjectSectionId section) {
     setState(() {
       _activeSection = section;
       _isCreateMenuOpen = false;
@@ -90,15 +129,75 @@ class _ProjectPageState extends State<ProjectPage> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label em construcao.'),
+        content: Text('$label em construção.'),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  void _createCharacter() {
-    _setActiveSection(_ProjectSectionId.characters);
-    _showComingSoon('Novo personagem');
+  void _persistProjectCharacters() {
+    _projectCharactersStorage[widget.title] = _characters.toList();
+    _projectCharactersViewMode[widget.title] = _characterDisplayMode;
+    _projectCharactersGridColumns[widget.title] = _avatarGridColumns;
+  }
+
+  void _setAvatarGridColumns(int columnCount) {
+    if (columnCount < 2 || columnCount > 6) {
+      return;
+    }
+
+    setState(() {
+      _avatarGridColumns = columnCount;
+      _persistProjectCharacters();
+    });
+  }
+
+  void _createCharacter() async {
+    _setActiveSection(ProjectSectionId.characters);
+    final draft = await showCreateCharacterDialog(context);
+    if (!mounted || draft == null) {
+      return;
+    }
+
+    setState(() {
+      _characters.add(
+        CharacterListItem(
+          data: CharacterCardData(
+            name: draft.name,
+            alias: draft.alias.isEmpty ? 'Sem vulgo' : draft.alias,
+            motto: draft.motto,
+            formationsAndOccupations: draft.formationsAndOccupations,
+            titles: draft.titles,
+            genderTag: draft.genderTag,
+            sexualityTag: draft.sexualityTag,
+            ethnicityTag: draft.ethnicityTag,
+            functionTag: draft.functionTag,
+            relevanceTag: draft.relevanceTag,
+            visibleProfileFields: draft.visibleProfileFields,
+            accent: draft.accentColor,
+            avatarColor: draft.coverColor,
+            profileImage: draft.profileImage,
+            icon: Icons.person_rounded,
+            birthYear: 2000,
+            birthDay: draft.birthDay,
+            birthMonth: draft.birthMonth,
+            heightCm: draft.heightCm,
+            weightKg: draft.weightKg,
+            quote: draft.motto,
+            synopsis: draft.synopsis,
+            seed: DateTime.now().microsecondsSinceEpoch,
+          ),
+          unpinnedIndex: _characters.where((item) => !item.isPinned).length,
+        ),
+      );
+      StoryRegistry.instance.registerCharacter(
+        projectTitle: widget.title,
+        name: draft.name,
+        accentColor: draft.accentColor,
+      );
+      _isCreateMenuOpen = false;
+      _persistProjectCharacters();
+    });
   }
 
   void _createDiagram() {
@@ -108,12 +207,35 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Widget _buildSectionBody() {
     return switch (_activeSection) {
-      _ProjectSectionId.characters => const CharactersSection(),
+      ProjectSectionId.characters => CharactersSection(
+        characters: _characters,
+        showAvatarGrid: _characterDisplayMode == CharacterDisplayMode.avatars,
+        avatarGridColumns: _avatarGridColumns,
+        onToggleDisplayMode: _toggleCharacterDisplayMode,
+        onChangeAvatarGridColumns: _setAvatarGridColumns,
+        onTogglePinned: _togglePinnedCharacter,
+      ),
       _ => _UnderConstructionSection(
-          icon: _sectionMeta[_activeSection]!.icon,
-          title: _sectionMeta[_activeSection]!.label,
-        ),
+        icon: _sectionMeta[_activeSection]!.icon,
+        title: _sectionMeta[_activeSection]!.label,
+      ),
     };
+  }
+
+  void _togglePinnedCharacter(CharacterListItem character) {
+    setState(() {
+      _charactersPinController.togglePinned(_characters, character);
+      _persistProjectCharacters();
+    });
+  }
+
+  void _toggleCharacterDisplayMode() {
+    setState(() {
+      _characterDisplayMode = _characterDisplayMode == CharacterDisplayMode.list
+          ? CharacterDisplayMode.avatars
+          : CharacterDisplayMode.list;
+      _persistProjectCharacters();
+    });
   }
 
   @override
@@ -121,16 +243,14 @@ class _ProjectPageState extends State<ProjectPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
       bottomNavigationBar: _ProjectFooterNav(
+        accentColor: widget.accentColor,
         activeSection: _activeSection,
         onSelect: _setActiveSection,
       ),
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/FUNDO.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
           ),
           Column(
             children: [
@@ -149,9 +269,7 @@ class _ProjectPageState extends State<ProjectPage> {
                 surroundSubtitleWithDots: true,
               ),
               const FuncoesBusca(),
-              Expanded(
-                child: _buildSectionBody(),
-              ),
+              Expanded(child: _buildSectionBody()),
             ],
           ),
           if (_isCreateMenuOpen)
@@ -166,6 +284,7 @@ class _ProjectPageState extends State<ProjectPage> {
             right: 18,
             bottom: 88,
             child: _ProjectCreateFab(
+              accentColor: widget.accentColor,
               isOpen: _isCreateMenuOpen,
               onToggle: _toggleCreateMenu,
               onCreateCharacter: _createCharacter,
@@ -179,21 +298,27 @@ class _ProjectPageState extends State<ProjectPage> {
 }
 
 class _ProjectFooterNav extends StatelessWidget {
-  final _ProjectSectionId activeSection;
-  final ValueChanged<_ProjectSectionId> onSelect;
+  final Color accentColor;
+  final ProjectSectionId activeSection;
+  final ValueChanged<ProjectSectionId> onSelect;
 
   const _ProjectFooterNav({
+    required this.accentColor,
     required this.activeSection,
     required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
-    const items = <(_ProjectSectionId, String, IconData)>[
-      (_ProjectSectionId.home, 'Pagina inicial', Icons.home_rounded),
-      (_ProjectSectionId.characters, 'Personagens', Icons.person_outline_rounded),
-      (_ProjectSectionId.notes, 'Enredo', Icons.auto_stories_outlined),
-      (_ProjectSectionId.world, 'Mundo', Icons.public_outlined),
+    const items = <(ProjectSectionId, String, IconData)>[
+      (ProjectSectionId.configProjeto, 'Página inicial', Icons.tune_rounded),
+      (
+        ProjectSectionId.characters,
+        'Personagens',
+        Icons.person_outline_rounded,
+      ),
+      (ProjectSectionId.notes, 'Enredo', Icons.auto_stories_outlined),
+      (ProjectSectionId.world, 'Mundo', Icons.public_outlined),
     ];
 
     return SafeArea(
@@ -233,6 +358,7 @@ class _ProjectFooterNav extends StatelessWidget {
                   for (final item in items)
                     Expanded(
                       child: _ProjectFooterItem(
+                        accentColor: accentColor,
                         label: item.$2,
                         icon: item.$3,
                         isActive: activeSection == item.$1,
@@ -250,12 +376,14 @@ class _ProjectFooterNav extends StatelessWidget {
 }
 
 class _ProjectFooterItem extends StatelessWidget {
+  final Color accentColor;
   final String label;
   final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
 
   const _ProjectFooterItem({
+    required this.accentColor,
     required this.label,
     required this.icon,
     required this.isActive,
@@ -280,7 +408,9 @@ class _ProjectFooterItem extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 25,
-                    color: const Color(0xFF1B171C),
+                    color: isActive
+                        ? _darkenProjectAccent(accentColor, 0.34)
+                        : const Color(0xFF1B171C),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -290,7 +420,7 @@ class _ProjectFooterItem extends StatelessWidget {
                   width: isActive ? 16 : 0,
                   height: 2.5,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDF6EB8),
+                    color: accentColor,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -304,12 +434,14 @@ class _ProjectFooterItem extends StatelessWidget {
 }
 
 class _ProjectCreateFab extends StatelessWidget {
+  final Color accentColor;
   final bool? isOpen;
   final VoidCallback onToggle;
   final VoidCallback onCreateCharacter;
   final VoidCallback onCreateDiagram;
 
   const _ProjectCreateFab({
+    required this.accentColor,
     required this.isOpen,
     required this.onToggle,
     required this.onCreateCharacter,
@@ -339,14 +471,14 @@ class _ProjectCreateFab extends StatelessWidget {
                 children: [
                   _CreateActionButton(
                     icon: Icons.account_tree_outlined,
-                    tint: const Color(0xFFDBD8DE),
+                    tint: _lightenProjectAccent(accentColor, 0.3),
                     tooltip: 'Novo diagrama',
                     onTap: onCreateDiagram,
                   ),
                   const SizedBox(height: 10),
                   _CreateActionButton(
                     icon: Icons.person_add_alt_1_rounded,
-                    tint: const Color(0xFFF0C7DE),
+                    tint: _lightenProjectAccent(accentColor, 0.18),
                     tooltip: 'Novo personagem',
                     onTap: onCreateCharacter,
                   ),
@@ -364,21 +496,24 @@ class _ProjectCreateFab extends StatelessWidget {
             diameter: 52,
             onTap: onToggle,
             blurSigma: 10,
-            fillColor: const Color(0xFFF3D5E3).withValues(alpha: 0.58),
+            fillColor: accentColor.withValues(alpha: 0.58),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 Colors.white.withValues(alpha: 0.88),
-                const Color(0xFFF1D1E2).withValues(alpha: 0.92),
-                const Color(0xFFE8BAD3).withValues(alpha: 0.98),
+                _lightenProjectAccent(
+                  accentColor,
+                  0.18,
+                ).withValues(alpha: 0.92),
+                accentColor.withValues(alpha: 0.98),
               ],
               stops: const [0.0, 0.5, 1.0],
             ),
             borderColor: Colors.white.withValues(alpha: 0.9),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFDF6EB8).withValues(alpha: open ? 0.18 : 0.12),
+                color: accentColor.withValues(alpha: open ? 0.18 : 0.12),
                 blurRadius: open ? 18 : 14,
                 offset: const Offset(0, 6),
               ),
@@ -435,23 +570,26 @@ class _CreateActionButton extends StatelessWidget {
           offset: const Offset(0, 4),
         ),
       ],
-      child: Icon(
-        icon,
-        size: 21,
-        color: const Color(0xFF171419),
-      ),
+      child: Icon(icon, size: 21, color: const Color(0xFF171419)),
     );
   }
+}
+
+Color _lightenProjectAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
+}
+
+Color _darkenProjectAccent(Color color, double amount) {
+  final hsl = HSLColor.fromColor(color);
+  return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
 }
 
 class _UnderConstructionSection extends StatelessWidget {
   final IconData icon;
   final String title;
 
-  const _UnderConstructionSection({
-    required this.icon,
-    required this.title,
-  });
+  const _UnderConstructionSection({required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -487,7 +625,7 @@ class _UnderConstructionSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Esta secao ainda esta em construcao dentro do projeto.',
+                    'Esta seção ainda está em construção dentro do projeto.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.58),

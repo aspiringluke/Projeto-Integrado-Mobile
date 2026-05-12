@@ -36,6 +36,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_fonts: ^8.0.2
   flutter_markdown: any
+  markdown: any
+  sqlite3: ^3.3.1
+  file_picker: ^10.3.2
+  super_clipboard: ^0.9.1
+  path: ^1.9.1
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

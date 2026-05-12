@@ -281,7 +281,8 @@ ZodiacSignData zodiacSignFor(DateTime birthday) {
     return const ZodiacSignData(
       name: 'Áries',
       symbol: '\u2648',
-      description: '21/03 - 20/04\niniciativa, impulsividade, assertividade, competitividade, ação direta.',
+      description:
+          '21/03 - 20/04\niniciativa, impulsividade, assertividade, competitividade, ação direta.',
     );
   }
   if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) {
