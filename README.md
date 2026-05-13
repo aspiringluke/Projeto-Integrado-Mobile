@@ -40,7 +40,20 @@ Desenvolver uma aplicação mobile orientada à escrita criativa que funcione at
 
 ## 📱 Aplicação mobile — Flutter
 
-O framework de desenvolvimento web e mobile do Flutter, conhecido popularmente por sua capacidade de criar aplicações multiplataforma com uma única base de código, foi a principal base utilizada para o desenvolvimento do nosso aplicativo de escrita criativa...
+O framework Flutter foi escolhido para entregar uma experiência multiplataforma consistente em Android, iOS, Windows, macOS e Linux a partir de uma única base de código. O app foi pensado para atender tanto interfaces móveis quanto desktop, com atenção especial à responsividade em diferentes tamanhos de tela e à usabilidade por toque.
+
+A implementação prioriza:
+
+- navegação fluida entre projetos, personagens, notas e diagramas;
+- estrutura de gerenciamento de conteúdo com pastas e itens organizáveis por drag-and-drop;
+- editor de diagramas com nós, arestas e grupos para modelar relações narrativas de forma visual;
+- suporte a imagens, tags e campos customizáveis em fichas de personagens e ideias;
+- modo de desempenho que reduz animações e sombras para rodar melhor em dispositivos de entrada;
+- validação de limites de sinopse e persistência local para evitar perda de dados.
+
+Essa base Flutter permite que o aplicativo una edição de texto, organização de roteiro e ferramentas visuais em um único produto, mantendo o foco na criação e no suporte ao usuário criativo.
+
+É importante ressaltar que na versão MVP desse projeto, as implementações de editor de diagramas e gerenciamento de conteúdo com drag-and-drop não foram concretizados.
 
 ---
 
@@ -80,6 +93,17 @@ Alguns exemplos de casos de uso são:
 ---
 
 ## 🤖 Inteligência Artificial
+
+O projeto incorpora recursos de inteligência artificial pensados para apoiar o processo criativo e transformar o aplicativo em um assistente ativo. A partir das especificações do sistema, a IA é capaz de analisar o contexto atual — seja um projeto, um personagem, uma nota ou um diagrama — e gerar insights úteis para organização, perfis e sugestões narrativas.
+
+Esses recursos incluem:
+
+- assistente de insights contextuais que avalia o conteúdo da tela ativa e sugere melhorias;
+- chatbot de IA para conversas rápidas sobre enredo, personagens e brainstorming;
+- apoio na criação de perfis de personagem e no alinhamento da história com os objetivos do usuário;
+- integração com o fluxo de projeto para permitir que o autor solicite ajuda sem sair da edição.
+
+Com esse conjunto, o app vai além da simples gestão de ideias: ele se propõe a ser um suporte inteligente para quem está construindo mundos, tramas e personagens.
 
 ---
 
