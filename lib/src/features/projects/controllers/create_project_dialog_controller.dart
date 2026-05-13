@@ -1,29 +1,41 @@
 import 'package:flutter/material.dart';
 
+import 'package:projeto_integrado_mobile/src/features/tags/controllers/tag_controller.dart';
+
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
 
 enum CreateProjectDialogColorTarget { cover, accent }
 
 class CreateProjectDialogController extends ChangeNotifier {
-  List<ProjectTagData> _knownTags;
-  final Set<String> _selectedTagLabels = <String>{};
-  late Color _newTagColor;
+  late final TagController _tagController;
   HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
   CreateProjectDialogColorTarget _activeColorTarget =
       CreateProjectDialogColorTarget.accent;
 
   CreateProjectDialogController({required List<ProjectTagData> availableTags})
-    : _knownTags = List<ProjectTagData>.from(availableTags) {
-    _newTagColor = projectTagColorAt(_knownTags.length);
+    {
+    _tagController = TagController(knownTags: availableTags);
+    _tagController.addListener(_forwardTagChanges);
   }
 
-  List<ProjectTagData> get knownTags => _knownTags;
+  @override
+  void dispose() {
+    _tagController.removeListener(_forwardTagChanges);
+    _tagController.dispose();
+    super.dispose();
+  }
 
-  Set<String> get selectedTagLabels => _selectedTagLabels;
+  void _forwardTagChanges() {
+    notifyListeners();
+  }
 
-  Color get newTagColor => _newTagColor;
+  List<ProjectTagData> get knownTags => _tagController.knownTags;
+
+  Set<String> get selectedTagLabels => _tagController.selectedTagLabels;
+
+  Color get newTagColor => _tagController.draftTagColor;
 
   Color get coverColor => _coverColor.toColor();
 
@@ -37,49 +49,20 @@ class CreateProjectDialogController extends ChangeNotifier {
 
   CreateProjectDialogColorTarget get activeColorTarget => _activeColorTarget;
 
-  List<ProjectTagData> get selectedTags => _knownTags
-      .where((tag) => _selectedTagLabels.contains(tag.normalizedLabel))
-      .toList(growable: false);
+  List<ProjectTagData> get selectedTags => _tagController.selectedTags;
 
-  bool isSelectedTag(ProjectTagData tag) =>
-      _selectedTagLabels.contains(tag.normalizedLabel);
+  bool isSelectedTag(ProjectTagData tag) => _tagController.isSelected(tag);
 
   void toggleTag(ProjectTagData tag) {
-    final normalizedLabel = tag.normalizedLabel;
-    if (_selectedTagLabels.contains(normalizedLabel)) {
-      _selectedTagLabels.remove(normalizedLabel);
-    } else {
-      _selectedTagLabels.add(normalizedLabel);
-    }
-    notifyListeners();
+    _tagController.toggle(tag);
   }
 
   bool addTagFromInput(String input) {
-    final sanitizedLabel = sanitizeProjectTagLabel(input);
-    final normalizedLabel = normalizeProjectTagLabel(input);
-    if (normalizedLabel.isEmpty) return false;
-
-    final existingIndex = _knownTags.indexWhere(
-      (tag) => tag.normalizedLabel == normalizedLabel,
-    );
-
-    if (existingIndex != -1) {
-      _selectedTagLabels.add(normalizedLabel);
-    } else {
-      final newTag = ProjectTagData(label: sanitizedLabel, color: _newTagColor);
-      _knownTags = <ProjectTagData>[..._knownTags, newTag];
-      _selectedTagLabels.add(newTag.normalizedLabel);
-    }
-
-    _newTagColor = projectTagColorAt(_knownTags.length);
-    notifyListeners();
-    return true;
+    return _tagController.addTagFromInput(input);
   }
 
   void setNewTagColor(Color color) {
-    if (_newTagColor == color) return;
-    _newTagColor = color;
-    notifyListeners();
+    _tagController.setDraftTagColor(color);
   }
 
   void setActiveColorTarget(CreateProjectDialogColorTarget target) {

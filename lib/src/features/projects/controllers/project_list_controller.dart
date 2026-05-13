@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../notas/data/repositories/folder_repository.dart';
+import '../../tags/controllers/tag_controller.dart';
 import '../models/project_image_data.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
@@ -196,32 +197,15 @@ class ProjectListController extends ChangeNotifier {
   }
 
   List<ProjectTagData> _resolveTags(Iterable<ProjectTagData> tags) {
-    final resolvedTags = <ProjectTagData>[];
-    final seenLabels = <String>{};
+    final resolution = TagController.resolveProjectTagPool(
+      existingTags: _availableTags,
+      incomingTags: tags,
+    );
 
-    for (final tag in tags) {
-      final sanitizedLabel = sanitizeProjectTagLabel(tag.label);
-      final normalizedLabel = normalizeProjectTagLabel(tag.label);
-
-      if (normalizedLabel.isEmpty || !seenLabels.add(normalizedLabel)) {
-        continue;
-      }
-
-      final existingIndex = _availableTags.indexWhere(
-        (tag) => tag.normalizedLabel == normalizedLabel,
-      );
-
-      if (existingIndex != -1) {
-        resolvedTags.add(_availableTags[existingIndex]);
-        continue;
-      }
-
-      final newTag = ProjectTagData(label: sanitizedLabel, color: tag.color);
-      _availableTags.add(newTag);
-      resolvedTags.add(newTag);
-    }
-
-    return List<ProjectTagData>.unmodifiable(resolvedTags);
+    _availableTags
+      ..clear()
+      ..addAll(resolution.resolvedKnownTags);
+    return resolution.resolvedIncomingTags;
   }
 
   int _unpinnedIndexAt(int listIndex) {

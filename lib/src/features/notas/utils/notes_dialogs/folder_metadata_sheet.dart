@@ -13,6 +13,7 @@ class _FolderMetadataEditorSheet extends StatefulWidget {
 class _FolderMetadataEditorSheetState
     extends State<_FolderMetadataEditorSheet> {
   late NoteMetadata _metadata;
+  late final TagGroupController _tagGroupController;
   late final TextEditingController _groupTitleController;
   late Color _draftGroupColor;
   bool _composerExpanded = false;
@@ -21,14 +22,25 @@ class _FolderMetadataEditorSheetState
   void initState() {
     super.initState();
     _metadata = widget.initialMetadata;
+    _tagGroupController = TagGroupController(groups: _metadata.tagGroups);
+    _tagGroupController.addListener(_syncTagGroupsToMetadata);
     _groupTitleController = TextEditingController();
     _draftGroupColor = FolderColorPicker.colors.first;
   }
 
   @override
   void dispose() {
+    _tagGroupController.removeListener(_syncTagGroupsToMetadata);
+    _tagGroupController.dispose();
     _groupTitleController.dispose();
     super.dispose();
+  }
+
+  void _syncTagGroupsToMetadata() {
+    _metadata = _metadata.copyWith(tagGroups: _tagGroupController.groups);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _setProjectLink(String? projectTitle) {
@@ -69,71 +81,31 @@ class _FolderMetadataEditorSheetState
     final title = _groupTitleController.text.trim();
     if (title.isEmpty) return;
 
-    final groups = <NoteTagGroup>[
-      ..._metadata.tagGroups,
-      NoteTagGroup(
-        title: title,
-        color: _draftGroupColor,
-        tags: const <NoteTagItem>[],
-      ),
-    ];
-    _metadata = _metadata.copyWith(tagGroups: groups);
+    _tagGroupController.addGroup(title: title, color: _draftGroupColor);
     _groupTitleController.clear();
     setState(() => _composerExpanded = false);
   }
 
   void _removeGroup(int index) {
-    if (index < 0 || index >= _metadata.tagGroups.length) return;
-    final groups = _metadata.tagGroups.toList(growable: true)..removeAt(index);
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    setState(() {});
+    _tagGroupController.removeGroup(index);
   }
 
   void _addTagToGroup({required int groupIndex, required String label}) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-    final sanitized = label.trim();
-    if (sanitized.isEmpty) return;
-
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final group = groups[groupIndex];
-    if (group.tags.any(
-      (tag) => tag.label.toLowerCase() == sanitized.toLowerCase(),
-    )) {
-      return;
-    }
-
-    groups[groupIndex] = NoteTagGroup(
-      title: group.title,
-      color: group.color,
-      tags: <NoteTagItem>[
-        ...group.tags,
-        NoteTagItem(label: sanitized),
-      ],
-    );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    setState(() {});
+    _tagGroupController.addTagToGroup(groupIndex: groupIndex, tagLabel: label);
   }
 
   void _removeTagFromGroup({required int groupIndex, required int tagIndex}) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-    final group = _metadata.tagGroups[groupIndex];
-    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
-
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final tags = group.tags.toList(growable: true)..removeAt(tagIndex);
-    groups[groupIndex] = NoteTagGroup(
-      title: group.title,
-      color: group.color,
-      tags: tags,
+    _tagGroupController.removeTagFromGroup(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
     );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    setState(() {});
   }
 
   Future<void> _editGroup(int index) async {
-    if (index < 0 || index >= _metadata.tagGroups.length) return;
+    final groups = _tagGroupController.groups;
+    if (index < 0 || index >= groups.length) return;
 
-    final group = _metadata.tagGroups[index];
+    final group = groups[index];
     final result = await showDialog<_FolderTagGroupEditData>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.22),
@@ -144,22 +116,20 @@ class _FolderMetadataEditorSheetState
     );
     if (!mounted || result == null) return;
 
-    final groups = _metadata.tagGroups.toList(growable: true);
-    groups[index] = NoteTagGroup(
+    _tagGroupController.updateGroup(
+      groupIndex: index,
       title: result.title,
       color: result.color,
-      tags: group.tags,
     );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    setState(() {});
   }
 
   Future<void> _editTag({
     required int groupIndex,
     required int tagIndex,
   }) async {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-    final group = _metadata.tagGroups[groupIndex];
+    final groups = _tagGroupController.groups;
+    if (groupIndex < 0 || groupIndex >= groups.length) return;
+    final group = groups[groupIndex];
     if (tagIndex < 0 || tagIndex >= group.tags.length) return;
 
     final tag = group.tags[tagIndex];
@@ -170,16 +140,11 @@ class _FolderMetadataEditorSheetState
     );
     if (!mounted || result == null) return;
 
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final tags = group.tags.toList(growable: true);
-    tags[tagIndex] = NoteTagItem(label: result.trim());
-    groups[groupIndex] = NoteTagGroup(
-      title: group.title,
-      color: group.color,
-      tags: tags,
+    _tagGroupController.updateTag(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+      label: result.trim(),
     );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    setState(() {});
   }
 
   @override

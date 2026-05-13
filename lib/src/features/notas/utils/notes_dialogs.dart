@@ -6,6 +6,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_color_picker.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
+import 'package:projeto_integrado_mobile/src/features/tags/controllers/tag_group_controller.dart';
 
 part 'notes_dialogs/form_dialogs.dart';
 part 'notes_dialogs/confirmation_dialogs.dart';
