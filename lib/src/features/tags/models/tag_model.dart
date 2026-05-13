@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
 
 class TagModel {
+  final int? id;
   final String label;
   final Color color;
+  final int? groupId;
 
-  const TagModel({required this.label, required this.color});
+  const TagModel({
+    this.id,
+    required this.label,
+    required this.color,
+    this.groupId,
+  });
 
   String get normalizedLabel => normalizeTagLabel(label);
 
-  TagModel copyWith({String? label, Color? color}) {
-    return TagModel(label: label ?? this.label, color: color ?? this.color);
+  TagModel copyWith({
+    int? id,
+    String? label,
+    Color? color,
+    int? groupId,
+  }) {
+    return TagModel(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      color: color ?? this.color,
+      groupId: groupId ?? this.groupId,
+    );
   }
 }
 

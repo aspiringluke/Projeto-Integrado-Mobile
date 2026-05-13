@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../notas/data/repositories/folder_repository.dart';
+import '../../tags/data/repositories/tag_group_repository.dart';
+import '../../tags/data/repositories/tag_repository.dart';
 import '../../tags/controllers/tag_controller.dart';
 import '../models/project_image_data.dart';
 import '../models/project_style_defaults.dart';
@@ -39,8 +41,21 @@ class ProjectListItem {
 }
 
 class ProjectListController extends ChangeNotifier {
+  static const String _projectTagGroupTitle = 'Projetos';
+
+  final TagRepository _tagRepository;
+  final TagGroupRepository _tagGroupRepository;
+  int? _projectTagGroupId;
   final List<ProjectListItem> _projects = <ProjectListItem>[];
   final List<ProjectTagData> _availableTags = <ProjectTagData>[];
+
+  ProjectListController({
+    TagRepository? tagRepository,
+    TagGroupRepository? tagGroupRepository,
+  }) : _tagRepository = tagRepository ?? TagRepository(),
+       _tagGroupRepository = tagGroupRepository ?? TagGroupRepository() {
+    unawaited(_hydrateTagsFromStorage());
+  }
 
   bool get isEmpty => _projects.isEmpty;
   List<ProjectListItem> get projects => List.unmodifiable(_projects);
@@ -205,7 +220,52 @@ class ProjectListController extends ChangeNotifier {
     _availableTags
       ..clear()
       ..addAll(resolution.resolvedKnownTags);
+    unawaited(_persistResolvedTags(resolution.resolvedIncomingTags));
     return resolution.resolvedIncomingTags;
+  }
+
+  Future<void> _hydrateTagsFromStorage() async {
+    final groupId = await _ensureProjectTagGroupId();
+    final result = await _tagRepository.listTags(groupId: groupId);
+    if (!result.$1 || result.$2 == null || result.$2!.isEmpty) return;
+
+    final persisted = result.$2!
+        .map((tag) => ProjectTagData(label: tag.label, color: tag.color))
+        .toList(growable: false);
+
+    final resolution = TagController.resolveProjectTagPool(
+      existingTags: _availableTags,
+      incomingTags: persisted,
+    );
+    _availableTags
+      ..clear()
+      ..addAll(resolution.resolvedKnownTags);
+    notifyListeners();
+  }
+
+  Future<int?> _ensureProjectTagGroupId() async {
+    if (_projectTagGroupId != null) return _projectTagGroupId;
+
+    final ensured = await _tagGroupRepository.ensureGroup(
+      title: _projectTagGroupTitle,
+      color: defaultProjectAccentColor,
+    );
+    if (ensured.$1 && ensured.$2?.id != null) {
+      _projectTagGroupId = ensured.$2!.id;
+    }
+
+    return _projectTagGroupId;
+  }
+
+  Future<void> _persistResolvedTags(Iterable<ProjectTagData> tags) async {
+    final groupId = await _ensureProjectTagGroupId();
+    for (final tag in tags) {
+      await _tagRepository.upsertTag(
+        label: tag.label,
+        color: tag.color,
+        groupId: groupId,
+      );
+    }
   }
 
   int _unpinnedIndexAt(int listIndex) {

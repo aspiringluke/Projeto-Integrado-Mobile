@@ -165,6 +165,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         kind: TagController(
           knownTags: _seedCharacterTags(kind),
           draftTagColor: _tagCategoryColor(kind),
+          groupTitle: _tagGroupStorageTitle(kind),
         ),
     };
     _relevanceParameters = _defaultRelevanceParameters();

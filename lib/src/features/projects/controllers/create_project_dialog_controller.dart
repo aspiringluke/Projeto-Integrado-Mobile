@@ -16,7 +16,10 @@ class CreateProjectDialogController extends ChangeNotifier {
 
   CreateProjectDialogController({required List<ProjectTagData> availableTags})
     {
-    _tagController = TagController(knownTags: availableTags);
+    _tagController = TagController(
+      knownTags: availableTags,
+      groupTitle: 'Projetos',
+    );
     _tagController.addListener(_forwardTagChanges);
   }
 

@@ -1,14 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
+import 'package:projeto_integrado_mobile/src/features/tags/data/repositories/tag_group_repository.dart';
+import 'package:projeto_integrado_mobile/src/features/tags/data/repositories/tag_repository.dart';
 import 'package:projeto_integrado_mobile/src/features/tags/models/tag_group_model.dart';
 import 'package:projeto_integrado_mobile/src/features/tags/models/tag_model.dart';
 
 class TagGroupController extends ChangeNotifier {
+  final TagGroupRepository _groupRepository;
+  final TagRepository _tagRepository;
   List<NoteTagGroup> _groups;
 
-  TagGroupController({List<NoteTagGroup> groups = const <NoteTagGroup>[]})
-    : _groups = List<NoteTagGroup>.from(groups);
+  TagGroupController({
+    List<NoteTagGroup> groups = const <NoteTagGroup>[],
+    TagGroupRepository? groupRepository,
+    TagRepository? tagRepository,
+  }) : _groups = List<NoteTagGroup>.from(groups),
+       _groupRepository = groupRepository ?? TagGroupRepository(),
+       _tagRepository = tagRepository ?? TagRepository();
 
   List<NoteTagGroup> get groups => List<NoteTagGroup>.unmodifiable(_groups);
 
@@ -41,6 +52,7 @@ class TagGroupController extends ChangeNotifier {
         tags: const <NoteTagItem>[],
       ),
     ];
+    unawaited(_persistGroup(title: sanitizedTitle, color: color));
     notifyListeners();
   }
 
@@ -61,6 +73,13 @@ class TagGroupController extends ChangeNotifier {
       tags: group.tags,
     );
     _groups = groups;
+    unawaited(
+      _persistGroupWithTags(
+        title: sanitizedTitle,
+        color: color,
+        tags: group.tags,
+      ),
+    );
     notifyListeners();
   }
 
@@ -92,6 +111,13 @@ class TagGroupController extends ChangeNotifier {
       ],
     );
     _groups = groups;
+    unawaited(
+      _persistTag(
+        groupTitle: group.title,
+        groupColor: group.color,
+        tagLabel: sanitizedLabel,
+      ),
+    );
     notifyListeners();
   }
 
@@ -132,6 +158,61 @@ class TagGroupController extends ChangeNotifier {
       tags: tags,
     );
     _groups = groups;
+    unawaited(
+      _persistTag(
+        groupTitle: group.title,
+        groupColor: group.color,
+        tagLabel: sanitizedLabel,
+      ),
+    );
     notifyListeners();
+  }
+
+  Future<void> _persistGroup({
+    required String title,
+    required Color color,
+  }) async {
+    await _groupRepository.ensureGroup(title: title, color: color);
+  }
+
+  Future<void> _persistGroupWithTags({
+    required String title,
+    required Color color,
+    required List<NoteTagItem> tags,
+  }) async {
+    final groupResult = await _groupRepository.ensureGroup(
+      title: title,
+      color: color,
+    );
+    if (!groupResult.$1 || groupResult.$2?.id == null) return;
+
+    final groupId = groupResult.$2!.id;
+    for (final tag in tags) {
+      final sanitizedLabel = tag.label.trim();
+      if (sanitizedLabel.isEmpty) continue;
+      await _tagRepository.upsertTag(
+        label: sanitizedLabel,
+        color: color,
+        groupId: groupId,
+      );
+    }
+  }
+
+  Future<void> _persistTag({
+    required String groupTitle,
+    required Color groupColor,
+    required String tagLabel,
+  }) async {
+    final groupResult = await _groupRepository.ensureGroup(
+      title: groupTitle,
+      color: groupColor,
+    );
+    if (!groupResult.$1 || groupResult.$2?.id == null) return;
+
+    await _tagRepository.upsertTag(
+      label: tagLabel,
+      color: groupColor,
+      groupId: groupResult.$2!.id,
+    );
   }
 }
