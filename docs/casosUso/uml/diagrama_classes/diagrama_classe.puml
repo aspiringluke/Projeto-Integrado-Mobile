@@ -1,0 +1,82 @@
+@startuml Diagrama de classes do PI
+
+class Personagem {
+    idPersonagem: int
+    informações: map
+    versãoSelecionada: ?
+
+    editarInfo(key: string, value: string)
+    buscarInfo(pagina: string, versaoSelecionada: ?)
+}
+
+class Projeto {
+    idProjeto: int
+
+    criarProjeto(info: map)
+    criarPersonagem(info: map)
+    excluirPersonagem(id: int)
+}
+
+
+class Nota {
+    título: string
+    tags: tag[]
+    conteúdo: string
+    cor: string
+    idPastaPai: int?
+}
+
+class Pasta {
+    título: string
+    tags: tag[]
+    cor: string
+    idPastaPai: int?
+}
+
+class Diagrama {
+    idDiagrama: int
+    título: string
+    nós: nó[]
+    arestas: aresta[]
+
+    gerenciarNós()
+    gerenciarArestas()
+}
+
+class Nó {
+    título: string
+    descrição: string
+    objeto: Object?
+}
+
+class Aresta {
+    título: string
+    nó_origem: nó
+    nó_destino: nó
+    estilo:
+    \tponta_origem
+    \tponta_destino
+    \tforma
+    \tcor
+}
+
+interface Taggable {
+    adicionarTag(ref objeto, tag)
+    removerTag(ref objeto, tag)
+}
+
+Projeto --> Personagem: Possui
+
+Diagrama --* Nó: Possui
+Diagrama --* Aresta: Possui
+Aresta --* Nó: Conecta
+
+Taggable <.. Projeto
+Taggable <.. Diagrama
+Taggable <.. Personagem
+Taggable <.. Nota
+
+Pasta --> Pasta: Contém
+Pasta --> Nota: Contém
+
+@enduml

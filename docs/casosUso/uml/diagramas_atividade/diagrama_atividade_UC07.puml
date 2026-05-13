@@ -2,30 +2,18 @@
 
 |Usuário|
 start
-:Seleciona múltiplos nós no editor;
-:Aciona a função "Criar Grupo de Nós";
-:Define um nome e cor para o grupo;
+:Acessar listagem de itens;
+:Clicar em "Criar pasta";
+:Informar nome da pasta;
+:Confirmar criação;
 
-if (Usuário remover nó do grupo?) then (Sim)
-  |Usuário|
-  :Seleciona o nó a ser removido dentro do grupo;
-  :Aciona a função "Remover do Grupo";
-
-  |Sistema|
-  :Mantém o nó no diagrama de forma independente;
-else (Não)
-  if (Usuário excluir grupo?) then (Sim)
-    |Usuário|
-    :Seleciona o grupo a ser excluído;
-    :Aciona a função "Excluir Grupo";
-    
-    |Sistema|
-    :Remove o grupo do diagrama;
-    :Mantém os nós do grupo no diagrama de forma independente;
-  else (Não)
-    |Usuário|
-    :Mantém o grupo e os nós agrupados no diagrama;
-    endif
+|Sistema|
+if (Nome válido?) then (sim)
+  :Criar pasta na estrutura atual;
+  :Atualizar listagem;
+else (não)
+  :Exibir mensagem de nome inválido;
 endif
-    stop
+
+stop
 @enduml

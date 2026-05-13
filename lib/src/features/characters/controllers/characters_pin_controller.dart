@@ -6,15 +6,15 @@ class CharactersPinController {
   List<CharacterListItem> toListItems(List<CharacterCardData> characters) {
     return characters.indexed
         .map(
-          (entry) => CharacterListItem(
-            data: entry.$2,
-            unpinnedIndex: entry.$1,
-          ),
+          (entry) => CharacterListItem(data: entry.$2, unpinnedIndex: entry.$1),
         )
         .toList(growable: true);
   }
 
-  void togglePinned(List<CharacterListItem> characters, CharacterListItem character) {
+  void togglePinned(
+    List<CharacterListItem> characters,
+    CharacterListItem character,
+  ) {
     final currentIndex = characters.indexOf(character);
     if (currentIndex == -1) return;
 

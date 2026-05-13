@@ -2,34 +2,23 @@
 
 |Usuário|
 start
-:Acessar o menu de "Configurações Gerais";
+:Acessar seção "Diagramas";
+:Selecionar "Criar novo diagrama";
+
 |Sistema|
-:Apresentar as opções disponíveis (Idioma, Limites, etc.);
+:Inicializar plano de edição;
 
 |Usuário|
-if (Configuração escolhida?) then (Idioma)
-    :Selecionar o novo idioma;
-    |Sistema|
-    :Atualizar todos os rótulos e menus imediatamente;
-elseif (Configuração escolhida?) then (Limite de Sinopse)
-    |Usuário|
-    if (Deseja definir valor?) then (Sim)
-        :Inserir valor numérico no intervalo;
-        |Sistema|
-        :Atualizar regra de validação para campos de sinopse;
-    else (Não / Ilimitado)
-        |Sistema|
-        :Desativar travas de buffer para campos longos;
-    endif
-else (Outras Preferências)
-    |Usuário|
-    :Alterar a configuração desejada (ex: Modo Desempenho);
+:Inserir nós e conexões;
+:Clicar em "Salvar";
+
+|Sistema|
+if (Estrutura mínima atendida?) then (sim)
+  :Persistir diagrama;
+  :Exibir confirmação;
+else (não)
+  :Exibir alerta de estrutura inválida;
 endif
 
-|Sistema|
-:Validar a alteração e aplicar preferências globalmente;
-|Usuário|
-:Confirmar e retornar ao menu anterior;
 stop
-
 @enduml

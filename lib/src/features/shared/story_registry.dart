@@ -1,0 +1,611 @@
+import 'dart:ui';
+
+import 'package:flutter/foundation.dart';
+
+enum MentionTargetKind { project, character, note, folder }
+
+class RegisteredProjectRef {
+  final String title;
+  final Color accentColor;
+  final List<String> aliases;
+
+  const RegisteredProjectRef({
+    required this.title,
+    required this.accentColor,
+    this.aliases = const <String>[],
+  });
+
+  bool matchesTitle(String candidate) {
+    final normalizedCandidate = _normalizeStoryValue(candidate);
+    if (normalizedCandidate.isEmpty) return false;
+    return _normalizeStoryValue(title) == normalizedCandidate ||
+        aliases.any(
+          (alias) => _normalizeStoryValue(alias) == normalizedCandidate,
+        );
+  }
+}
+
+class RegisteredCharacterRef {
+  final String projectTitle;
+  final String name;
+  final Color accentColor;
+  final List<String> projectAliases;
+  final List<String> nameAliases;
+
+  const RegisteredCharacterRef({
+    required this.projectTitle,
+    required this.name,
+    required this.accentColor,
+    this.projectAliases = const <String>[],
+    this.nameAliases = const <String>[],
+  });
+
+  bool matchesIdentity({required String projectTitle, required String name}) {
+    final normalizedProjectTitle = _normalizeStoryValue(projectTitle);
+    final normalizedName = _normalizeStoryValue(name);
+    if (normalizedProjectTitle.isEmpty || normalizedName.isEmpty) {
+      return false;
+    }
+
+    final projectMatches = <String>[
+      this.projectTitle,
+      ...projectAliases,
+    ].any((value) => _normalizeStoryValue(value) == normalizedProjectTitle);
+
+    final nameMatches = <String>[
+      this.name,
+      ...nameAliases,
+    ].any((value) => _normalizeStoryValue(value) == normalizedName);
+
+    return projectMatches && nameMatches;
+  }
+}
+
+class RegisteredNoteRef {
+  final int id;
+  final String title;
+  final Color accentColor;
+  final List<String> aliases;
+
+  const RegisteredNoteRef({
+    required this.id,
+    required this.title,
+    required this.accentColor,
+    this.aliases = const <String>[],
+  });
+
+  bool matchesTitle(String candidate) {
+    final normalizedCandidate = _normalizeStoryValue(candidate);
+    if (normalizedCandidate.isEmpty) return false;
+    return <String>[
+      title,
+      ...aliases,
+    ].any((value) => _normalizeStoryValue(value) == normalizedCandidate);
+  }
+}
+
+class RegisteredFolderRef {
+  final int id;
+  final String title;
+  final Color accentColor;
+  final List<String> aliases;
+
+  const RegisteredFolderRef({
+    required this.id,
+    required this.title,
+    required this.accentColor,
+    this.aliases = const <String>[],
+  });
+
+  bool matchesTitle(String candidate) {
+    final normalizedCandidate = _normalizeStoryValue(candidate);
+    if (normalizedCandidate.isEmpty) return false;
+    return <String>[
+      title,
+      ...aliases,
+    ].any((value) => _normalizeStoryValue(value) == normalizedCandidate);
+  }
+}
+
+class MentionTargetRef {
+  final MentionTargetKind kind;
+  final String label;
+  final String uri;
+  final Color accentColor;
+  final String? projectTitle;
+  final String? characterName;
+  final int? noteId;
+  final List<String> searchTerms;
+
+  const MentionTargetRef({
+    required this.kind,
+    required this.label,
+    required this.uri,
+    required this.accentColor,
+    this.projectTitle,
+    this.characterName,
+    this.noteId,
+    this.searchTerms = const <String>[],
+  });
+}
+
+class StoryRegistry extends ChangeNotifier {
+  StoryRegistry._();
+
+  static final StoryRegistry instance = StoryRegistry._();
+
+  final List<RegisteredProjectRef> _projects = <RegisteredProjectRef>[];
+  final List<RegisteredCharacterRef> _characters = <RegisteredCharacterRef>[];
+  final List<RegisteredNoteRef> _notes = <RegisteredNoteRef>[];
+  final List<RegisteredFolderRef> _folders = <RegisteredFolderRef>[];
+  final List<MentionTargetRef> _mentionTargets = <MentionTargetRef>[];
+
+  List<RegisteredProjectRef> get projects => List.unmodifiable(_projects);
+  List<RegisteredCharacterRef> get characters => List.unmodifiable(_characters);
+  List<RegisteredNoteRef> get notes => List.unmodifiable(_notes);
+  List<RegisteredFolderRef> get folders => List.unmodifiable(_folders);
+  List<MentionTargetRef> get mentionTargets =>
+      List.unmodifiable(_mentionTargets);
+
+  void registerProject({required String title, required Color accentColor}) {
+    final normalizedTitle = title.trim();
+    if (normalizedTitle.isEmpty) return;
+
+    final existingIndex = _projects.indexWhere(
+      (project) => project.matchesTitle(normalizedTitle),
+    );
+    final previousAliases = existingIndex == -1
+        ? const <String>[]
+        : _projects[existingIndex].aliases;
+    final nextAliases = _mergeAliases(previousAliases, [
+      if (existingIndex != -1) _projects[existingIndex].title,
+      if (existingIndex != -1) ..._projects[existingIndex].aliases,
+    ]);
+    final updated = RegisteredProjectRef(
+      title: normalizedTitle,
+      accentColor: accentColor,
+      aliases: nextAliases,
+    );
+
+    if (existingIndex == -1) {
+      _projects.add(updated);
+    } else {
+      _projects[existingIndex] = updated;
+    }
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void renameProject(String oldTitle, String newTitle) {
+    final normalizedOldTitle = oldTitle.trim();
+    final normalizedNewTitle = newTitle.trim();
+    if (normalizedOldTitle.isEmpty || normalizedNewTitle.isEmpty) return;
+
+    final projectIndex = _projects.indexWhere(
+      (project) => project.matchesTitle(normalizedOldTitle),
+    );
+    if (projectIndex != -1) {
+      final currentProject = _projects[projectIndex];
+      _projects[projectIndex] = RegisteredProjectRef(
+        title: normalizedNewTitle,
+        accentColor: currentProject.accentColor,
+        aliases: _mergeAliases(currentProject.aliases, [
+          currentProject.title,
+          ...currentProject.aliases,
+        ]),
+      );
+    }
+
+    for (var index = 0; index < _characters.length; index += 1) {
+      final character = _characters[index];
+      if (_matchesAnyTitle(normalizedOldTitle, [
+        character.projectTitle,
+        ...character.projectAliases,
+      ])) {
+        _characters[index] = RegisteredCharacterRef(
+          projectTitle: normalizedNewTitle,
+          name: character.name,
+          accentColor: character.accentColor,
+          projectAliases: _mergeAliases(character.projectAliases, [
+            character.projectTitle,
+            ...character.projectAliases,
+          ]),
+          nameAliases: character.nameAliases,
+        );
+      }
+    }
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void registerCharacter({
+    required String projectTitle,
+    required String name,
+    required Color accentColor,
+  }) {
+    final normalizedProjectTitle = projectTitle.trim();
+    final normalizedName = name.trim();
+    if (normalizedProjectTitle.isEmpty || normalizedName.isEmpty) return;
+
+    final existingIndex = _characters.indexWhere(
+      (character) => character.matchesIdentity(
+        projectTitle: normalizedProjectTitle,
+        name: normalizedName,
+      ),
+    );
+    final updated = RegisteredCharacterRef(
+      projectTitle: normalizedProjectTitle,
+      name: normalizedName,
+      accentColor: accentColor,
+    );
+
+    if (existingIndex == -1) {
+      _characters.add(updated);
+    } else {
+      _characters[existingIndex] = updated;
+    }
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void registerNote({
+    required int id,
+    required String title,
+    required Color accentColor,
+  }) {
+    final normalizedTitle = title.trim();
+    if (id <= 0 || normalizedTitle.isEmpty) return;
+
+    final existingIndex = _notes.indexWhere((note) => note.id == id);
+    final previousAliases = existingIndex == -1
+        ? const <String>[]
+        : _notes[existingIndex].aliases;
+    final nextAliases = _mergeAliases(previousAliases, [
+      if (existingIndex != -1) _notes[existingIndex].title,
+      if (existingIndex != -1) ..._notes[existingIndex].aliases,
+    ]);
+    final updated = RegisteredNoteRef(
+      id: id,
+      title: normalizedTitle,
+      accentColor: accentColor,
+      aliases: nextAliases,
+    );
+
+    if (existingIndex == -1) {
+      _notes.add(updated);
+    } else {
+      _notes[existingIndex] = updated;
+    }
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void registerFolder({
+    required int id,
+    required String title,
+    required Color accentColor,
+  }) {
+    final normalizedTitle = title.trim();
+    if (id <= 0 || normalizedTitle.isEmpty) return;
+
+    final existingIndex = _folders.indexWhere((folder) => folder.id == id);
+    final previousAliases = existingIndex == -1
+        ? const <String>[]
+        : _folders[existingIndex].aliases;
+    final nextAliases = _mergeAliases(previousAliases, [
+      if (existingIndex != -1) _folders[existingIndex].title,
+      if (existingIndex != -1) ..._folders[existingIndex].aliases,
+    ]);
+    final updated = RegisteredFolderRef(
+      id: id,
+      title: normalizedTitle,
+      accentColor: accentColor,
+      aliases: nextAliases,
+    );
+
+    if (existingIndex == -1) {
+      _folders.add(updated);
+    } else {
+      _folders[existingIndex] = updated;
+    }
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void removeFolder(int id) {
+    final existingIndex = _folders.indexWhere((folder) => folder.id == id);
+    if (existingIndex == -1) return;
+
+    _folders.removeAt(existingIndex);
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void removeNote(int id) {
+    final existingIndex = _notes.indexWhere((note) => note.id == id);
+    if (existingIndex == -1) return;
+
+    _notes.removeAt(existingIndex);
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  List<MentionTargetRef> searchMentionTargets(String query, {int limit = 8}) {
+    final normalizedQuery = _normalizeStoryValue(query);
+    if (normalizedQuery.isEmpty) {
+      return _mentionTargets.take(limit).toList(growable: false);
+    }
+
+    final matches = _mentionTargets
+        .where((target) {
+          final haystack = <String>[
+            target.label,
+            ...target.searchTerms,
+            if (target.projectTitle != null) target.projectTitle!,
+            if (target.characterName != null) target.characterName!,
+          ].map(_normalizeStoryValue);
+
+          return haystack.any((value) => value.contains(normalizedQuery));
+        })
+        .toList(growable: false);
+
+    matches.sort((left, right) {
+      final leftExact = _normalizeStoryValue(
+        left.label,
+      ).startsWith(normalizedQuery);
+      final rightExact = _normalizeStoryValue(
+        right.label,
+      ).startsWith(normalizedQuery);
+      if (leftExact != rightExact) {
+        return rightExact ? 1 : -1;
+      }
+
+      return left.label.length.compareTo(right.label.length);
+    });
+
+    return matches.take(limit).toList(growable: false);
+  }
+
+  MentionTargetRef? findMentionTargetByUri(String uri) {
+    final parsed = Uri.tryParse(uri);
+    if (parsed == null || parsed.scheme != 'app' || parsed.host.isEmpty) {
+      return null;
+    }
+
+    final kind = parsed.host;
+    if (kind == 'project') {
+      if (parsed.pathSegments.isEmpty) return null;
+      final title = parsed.pathSegments.first;
+      return _findProjectMentionTarget(title);
+    }
+
+    if (kind == 'character') {
+      if (parsed.pathSegments.length < 2) return null;
+      final projectTitle = parsed.pathSegments[0];
+      final characterName = parsed.pathSegments[1];
+      return _findCharacterMentionTarget(
+        projectTitle: projectTitle,
+        name: characterName,
+      );
+    }
+
+    if (kind == 'note') {
+      if (parsed.pathSegments.isEmpty) return null;
+      final noteId = int.tryParse(parsed.pathSegments.first);
+      if (noteId == null) return null;
+      return _findNoteMentionTarget(noteId);
+    }
+
+    if (kind == 'folder') {
+      if (parsed.pathSegments.isEmpty) return null;
+      final folderId = int.tryParse(parsed.pathSegments.first);
+      if (folderId == null) return null;
+      return _findFolderMentionTarget(folderId);
+    }
+
+    return null;
+  }
+
+  void _rebuildMentionTargets() {
+    _mentionTargets
+      ..clear()
+      ..addAll(
+        _projects.map(
+          (project) => MentionTargetRef(
+            kind: MentionTargetKind.project,
+            label: project.title,
+            uri: _projectMentionUri(project.title),
+            accentColor: project.accentColor,
+            searchTerms: <String>[project.title, ...project.aliases],
+          ),
+        ),
+      )
+      ..addAll(
+        _characters.map(
+          (character) => MentionTargetRef(
+            kind: MentionTargetKind.character,
+            label: character.name,
+            uri: _characterMentionUri(
+              projectTitle: character.projectTitle,
+              name: character.name,
+            ),
+            accentColor: character.accentColor,
+            projectTitle: character.projectTitle,
+            characterName: character.name,
+            searchTerms: <String>[
+              character.name,
+              character.projectTitle,
+              '${character.projectTitle} ${character.name}',
+              ...character.projectAliases,
+              ...character.nameAliases,
+            ],
+          ),
+        ),
+      );
+    _mentionTargets.addAll(
+      _folders.map(
+        (folder) => MentionTargetRef(
+          kind: MentionTargetKind.folder,
+          label: folder.title,
+          uri: _folderMentionUri(folder.id),
+          accentColor: folder.accentColor,
+          searchTerms: <String>[folder.title, ...folder.aliases],
+        ),
+      ),
+    );
+    _mentionTargets.addAll(
+      _notes.map(
+        (note) => MentionTargetRef(
+          kind: MentionTargetKind.note,
+          label: note.title,
+          uri: _noteMentionUri(note.id),
+          accentColor: note.accentColor,
+          noteId: note.id,
+          searchTerms: <String>[note.title, ...note.aliases],
+        ),
+      ),
+    );
+  }
+
+  MentionTargetRef? _findProjectMentionTarget(String title) {
+    final normalizedTitle = _normalizeStoryValue(title);
+    if (normalizedTitle.isEmpty) return null;
+
+    for (final project in _projects) {
+      if (_matchesAnyTitle(normalizedTitle, [
+        project.title,
+        ...project.aliases,
+      ])) {
+        return MentionTargetRef(
+          kind: MentionTargetKind.project,
+          label: project.title,
+          uri: _projectMentionUri(project.title),
+          accentColor: project.accentColor,
+          searchTerms: <String>[project.title, ...project.aliases],
+        );
+      }
+    }
+
+    return null;
+  }
+
+  MentionTargetRef? _findCharacterMentionTarget({
+    required String projectTitle,
+    required String name,
+  }) {
+    final normalizedProjectTitle = _normalizeStoryValue(projectTitle);
+    final normalizedName = _normalizeStoryValue(name);
+    if (normalizedProjectTitle.isEmpty || normalizedName.isEmpty) {
+      return null;
+    }
+
+    for (final character in _characters) {
+      if (character.matchesIdentity(projectTitle: projectTitle, name: name)) {
+        return MentionTargetRef(
+          kind: MentionTargetKind.character,
+          label: character.name,
+          uri: _characterMentionUri(
+            projectTitle: character.projectTitle,
+            name: character.name,
+          ),
+          accentColor: character.accentColor,
+          projectTitle: character.projectTitle,
+          characterName: character.name,
+          searchTerms: <String>[
+            character.name,
+            character.projectTitle,
+            '${character.projectTitle} ${character.name}',
+            ...character.projectAliases,
+            ...character.nameAliases,
+          ],
+        );
+      }
+    }
+
+    return null;
+  }
+
+  MentionTargetRef? _findNoteMentionTarget(int noteId) {
+    for (final note in _notes) {
+      if (note.id == noteId) {
+        return MentionTargetRef(
+          kind: MentionTargetKind.note,
+          label: note.title,
+          uri: _noteMentionUri(note.id),
+          accentColor: note.accentColor,
+          noteId: note.id,
+          searchTerms: <String>[note.title, ...note.aliases],
+        );
+      }
+    }
+
+    return null;
+  }
+
+  MentionTargetRef? _findFolderMentionTarget(int folderId) {
+    for (final folder in _folders) {
+      if (folder.id == folderId) {
+        return MentionTargetRef(
+          kind: MentionTargetKind.folder,
+          label: folder.title,
+          uri: _folderMentionUri(folder.id),
+          accentColor: folder.accentColor,
+          searchTerms: <String>[folder.title, ...folder.aliases],
+        );
+      }
+    }
+
+    return null;
+  }
+}
+
+String _normalizeStoryValue(String value) {
+  return value.trim().toLowerCase();
+}
+
+bool _matchesAnyTitle(String candidate, Iterable<String> values) {
+  final normalizedCandidate = _normalizeStoryValue(candidate);
+  if (normalizedCandidate.isEmpty) return false;
+  return values.any(
+    (value) => _normalizeStoryValue(value) == normalizedCandidate,
+  );
+}
+
+List<String> _mergeAliases(Iterable<String> existing, Iterable<String> added) {
+  final seen = <String>{};
+  final aliases = <String>[];
+
+  for (final value in [...existing, ...added]) {
+    final normalized = _normalizeStoryValue(value);
+    if (normalized.isEmpty || !seen.add(normalized)) {
+      continue;
+    }
+    aliases.add(value.trim());
+  }
+
+  return List<String>.unmodifiable(aliases);
+}
+
+String _projectMentionUri(String title) {
+  return 'app://project/${Uri.encodeComponent(title.trim())}';
+}
+
+String _characterMentionUri({
+  required String projectTitle,
+  required String name,
+}) {
+  return 'app://character/${Uri.encodeComponent(projectTitle.trim())}/${Uri.encodeComponent(name.trim())}';
+}
+
+String _noteMentionUri(int noteId) {
+  return 'app://note/$noteId';
+}
+
+String _folderMentionUri(int folderId) {
+  return 'app://folder/$folderId';
+}

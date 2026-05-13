@@ -1,88 +1,189 @@
 import 'package:flutter/material.dart';
 
+import '../../projects/models/project_image_data.dart';
+import '../../projects/widgets/project_image_transform_view.dart';
+import '../../../shared/widgets/pin_badge.dart';
+
+const double characterProfileTileWidth = 108;
+const double characterProfileTileHeight = 76;
+
 class CharacterAvatarTile extends StatelessWidget {
   final Color accent;
   final Color avatarColor;
+  final ProjectImageData profileImage;
   final IconData icon;
+  final bool isExpanded;
+  final VoidCallback? onTap;
 
   const CharacterAvatarTile({
     super.key,
     required this.accent,
     required this.avatarColor,
+    required this.profileImage,
     required this.icon,
+    required this.isExpanded,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 78,
-      height: 60,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                bottomLeft: Radius.circular(16),
-                topRight: Radius.circular(14),
-                bottomRight: Radius.circular(14),
-              ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      accent.withValues(alpha: 0.76),
-                      avatarColor.withValues(alpha: 0.94),
-                      Colors.white.withValues(alpha: 0.2),
-                    ],
-                    stops: const [0.0, 0.58, 1.0],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          bottomLeft: isExpanded ? Radius.zero : const Radius.circular(16),
+          topRight: const Radius.circular(18),
+          bottomRight: const Radius.circular(18),
+        ),
+        child: SizedBox(
+          width: characterProfileTileWidth,
+          height: characterProfileTileHeight,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    bottomLeft: isExpanded
+                        ? Radius.zero
+                        : const Radius.circular(16),
+                    topRight: const Radius.circular(18),
+                    bottomRight: const Radius.circular(18),
                   ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.24),
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.08),
-                            ],
-                            stops: const [0.0, 0.38, 1.0],
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          accent.withValues(alpha: 0.76),
+                          avatarColor.withValues(alpha: 0.94),
+                          Colors.white.withValues(alpha: 0.2),
+                        ],
+                        stops: const [0.0, 0.58, 1.0],
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        if (profileImage.bytes != null)
+                          Positioned.fill(
+                            child: ProjectImageTransformView(
+                              imageBytes: profileImage.bytes!,
+                              imageWidth:
+                                  profileImage.width ??
+                                  characterProfileTileWidth,
+                              imageHeight:
+                                  profileImage.height ??
+                                  characterProfileTileHeight,
+                              scale: profileImage.scale,
+                              offsetX: profileImage.offsetX,
+                              offsetY: profileImage.offsetY,
+                            ),
+                          ),
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.24),
+                                  Colors.transparent,
+                                  Colors.black.withValues(
+                                    alpha: profileImage.bytes != null
+                                        ? 0.16
+                                        : 0.08,
+                                  ),
+                                ],
+                                stops: const [0.0, 0.38, 1.0],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        if (profileImage.bytes == null) ...[
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              width: 72,
+                              height: 26,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.26),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ),
+                          Center(
+                            child: Icon(
+                              icon,
+                              size: 38,
+                              color: const Color(0xFF171419),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        width: 58,
-                        height: 22,
-                        margin: const EdgeInsets.only(bottom: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.26),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Icon(
-                        icon,
-                        size: 33,
-                        color: const Color(0xFF171419),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              if (profileImage.bytes != null)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: IgnorePointer(
+                    child: _CharacterAvatarExpandHint(accent: accent),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterAvatarExpandHint extends StatelessWidget {
+  final Color accent;
+
+  const _CharacterAvatarExpandHint({required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.72),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
+      ),
+      child: SizedBox(
+        width: 18,
+        height: 18,
+        child: Center(
+          child: Icon(
+            Icons.open_in_full_rounded,
+            size: 10,
+            color: Colors.white.withValues(alpha: 0.96),
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.24),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -100,67 +201,6 @@ class CharacterPinBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4EEF3).withValues(alpha: isActive ? 0.9 : 0.78),
-            gradient: isActive
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFF6D3E5).withValues(alpha: 0.96),
-                      const Color(0xFFF0BEDB).withValues(alpha: 0.9),
-                    ],
-                  )
-                : LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.72),
-                      const Color(0xFFF0E7EE).withValues(alpha: 0.82),
-                    ],
-                  ),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: isActive ? 0.84 : 0.7),
-              width: 0.65,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isActive
-                    ? const Color(0xFFDF6EB8).withValues(alpha: 0.26)
-                    : Colors.black.withValues(alpha: 0.05),
-                blurRadius: isActive ? 10 : 5,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Center(
-            child: AnimatedScale(
-              scale: isActive ? 1.06 : 1,
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              child: Transform.rotate(
-                angle: -0.32,
-                child: Icon(
-                  isActive ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                  size: isActive ? 16 : 15,
-                  color: Color(0xFF8A828C).withValues(alpha: isActive ? 0.98 : 0.56),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return PinBadge(isActive: isActive, onTap: onTap);
   }
 }

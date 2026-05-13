@@ -1,774 +1,636 @@
-# Casos de Uso do Projeto
+# Casos de Uso
 
-## UC01 — Criar um novo projeto
+Documento consolidado dos casos de uso.
 
-### Ator Principal
+## Índice
 
-- Usuário
+### Prioridade principal
 
-### Objetivos
+- [UC01 - Criar novo projeto](#uc01)
+- [UC02 - Editar dados do projeto](#uc02)
+- [UC03 - Criar personagem](#uc03)
+- [UC04 - Editar dados do personagem](#uc04)
+- [UC05 - Upload de imagem](#uc05)
+- [UC06 - Criar nota de texto](#uc06)
+- [UC07 - Criar pasta](#uc07)
+- [UC08 - Organizar elementos via drag-and-drop](#uc08)
+- [UC09 - Exclusão de entidades e itens do projeto](#uc09)
+- [UC10 - Exclusão de pastas e conteúdo](#uc10)
+- [UC11 - Personalização e configurações de escrita](#uc11)
+- [UC12 - Interagir com chatbot de IA](#uc12)
 
-- Criar um novo projeto.
+### Baixa prioridade
 
-### Pré-condições
+- [UC13 - Busca global com filtros e tags](#uc13)
+- [UC14 - Criar diagrama de relacionamento de entidades](#uc14)
+- [UC15 - Configurar e usar modo desempenho](#uc15)
+- [UC16 - Gestão de grupos de nós em diagramas](#uc16)
+- [UC17 - Proteção de acesso ao aplicativo](#uc17)
+- [UC18 - Excluir nó e tratar arestas órfãs](#uc18)
+- [UC19 - Gestão de atributos detalhados no diagrama](#uc19)
+- [UC20 - Gerenciamento de segurança (senha)](#uc20)
 
-- Tela inicial aberta.
+## Prioridade principal
 
-### Pós condições
+<a id="uc01"></a>
 
-- Novo projeto criado.
+# UC01 - Criar novo projeto
 
-### Fluxo Principal
+- Ator principal: Usuário
+- Objetivo: Criar um novo projeto.
+- Pré-condições: Tela inicial aberta.
+- Pós-condições: Projeto criado.
 
-1. O aplicativo abre a tela inicial.
-2. O usuário clica no botão "Novo Projeto".
-3. Um novo projeto é criado.
+## Fluxo principal
 
-### RF Relacionadas
+1. Abrir a tela inicial.
+2. Clicar em "Novo Projeto".
+3. Informar nome do projeto.
+4. Sistema cria o projeto.
+
+## Fluxo alternativo
+
+- A1 - Nome não informado: sistema exibe validação de nome obrigatório e bloqueia a criação.
+
+## Requisitos relacionados
 
 - RF01
 
 ---
 
-## UC02 — Criar Diagrama de Relacionamento de Entidades
+<a id="uc02"></a>
 
-### Ator Principal
+# UC02 - Editar dados do projeto
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Atualizar informações e apresentação do projeto.
+- Pré-condições: Projeto existente aberto para edição.
+- Pós-condições: Dados do projeto atualizados e salvos.
 
-### Objetivos
+## Fluxo principal
 
-- Permitir que o autor visualize e conecte personagens ou ideias de forma lógica e espacial.
+1. Acessar a tela de edição do projeto.
+2. Alterar nome e/ou sinopse do projeto.
+3. Atualizar imagem do cartão do projeto, quando necessário.
+4. Ajustar cor de fundo e modo de mesclagem do cartão.
+5. Adicionar ou remover tags do projeto.
+6. Selecionar personagens que aparecem no cartão.
+7. Salvar alterações.
 
-### Pré-condições
+## Fluxos alternativos
 
-- O usuário deve estar dentro de um projeto ativo.
+- A1 - Dados inválidos: sistema informa erro de validação e bloqueia salvamento até correção.
+- A2 - Remover imagem do cartão: sistema remove a imagem e mantém as demais alterações.
 
-### Pós condições
+## Requisitos relacionados
 
-- Um novo diagrama é persistido no banco de dados local.
-
-### Fluxo Principal
-
-1. O usuário acessa a seção "Diagramas".
-2. O usuário seleciona "Criar Novo Diagrama".
-3. O sistema abre o plano de edição.
-4. O usuário insere dois nós e os conecta através de uma aresta.
-5. O usuário aciona o botão "Salvar".
-6. O sistema valida as regras de estrutura mínima e persiste os dados.
-
-### Fluxo Alternativo
-
-- **A1 — Tentativa de salvamento inválido:**
-
-    Se o usuário tentar salvar com menos de dois nós ou sem conexão, o sistema exibe alerta baseado na RN03 e bloqueia a persistência.
-
-### RF Relacionadas
-
+- RF02
+- RF03
+- RF04
 - RF05
-- RF08
-- RF09
+- RF06
+
+---
+
+<a id="uc03"></a>
+
+# UC03 - Criar personagem
+
+- Ator principal: Usuário
+- Objetivo: Cadastrar um novo personagem no projeto.
+- Pré-condições: Projeto ativo com acesso à área de personagens.
+- Pós-condições: Novo personagem criado e salvo.
+
+## Fluxo principal
+
+1. Acessar a lista de personagens do projeto.
+2. Acionar a opção "Criar personagem".
+3. Preencher os dados principais da ficha do personagem.
+4. Adicionar imagem ao perfil (includes UC05 - Upload de imagem), quando necessário.
+5. Confirmar criação.
+
+## Fluxos alternativos
+
+- A1 - Campos obrigatórios ausentes: sistema destaca os campos pendentes e bloqueia a criação.
+- A2 - Cancelar criação: sistema descarta os dados preenchidos e retorna à lista de personagens.
+
+## Requisitos relacionados
+
+- RF18
+- RF20
+- RNF05
+
+---
+
+<a id="uc04"></a>
+
+# UC04 - Editar dados do personagem
+
+- Ator principal: Usuário
+- Objetivo: Atualizar informações da ficha de um personagem existente.
+- Pré-condições: Personagem existente e tela de edição aberta.
+- Pós-condições: Dados do personagem atualizados e salvos.
+
+## Fluxo principal
+
+1. Acessar a lista de personagens.
+2. Selecionar o personagem desejado.
+3. Alterar os dados da ficha.
+4. Atualizar imagem do perfil (includes UC05 - Upload de imagem), quando necessário.
+5. Salvar alterações.
+
+## Fluxos alternativos
+
+- A1 - Dados inválidos: sistema informa inconsistências e bloqueia salvamento até correção.
+- A2 - Remover imagem do perfil: sistema remove a imagem e mantém as demais alterações.
+
+## Requisitos relacionados
+
+- RF19
+- RF20
+- RNF05
+
+---
+
+<a id="uc05"></a>
+
+# UC05 - Upload de imagem
+
+- Ator principal: Usuário
+- Objetivo: Adicionar uma imagem ao item em edição.
+- Pré-condições: Tela de edição aberta e permissão de galeria concedida.
+- Pós-condições: Imagem salva no item.
+
+## Fluxo principal
+
+1. Abrir área de imagem do item.
+2. Selecionar imagem (até 5 MB).
+3. Sistema valida o arquivo selecionado.
+4. Sistema salva a imagem no item.
+5. Usuário confirma salvamento.
+
+## Fluxo alternativo
+
+- A1 - Arquivo acima do limite: sistema bloqueia upload e exibe erro.
+- A2 - Permissão negada: sistema solicita permissão de acesso à mídia e não conclui o upload.
+- A3 - Formato inválido: sistema bloqueia o arquivo e solicita uma imagem em formato permitido.
+
+## Requisitos relacionados
+
+- RF11
+- RF20
+- RNF05
+
+---
+
+<a id="uc06"></a>
+
+# UC06 - Criar nota de texto
+
+- Ator principal: Usuário
+- Objetivo: Registrar notas com formatação e tags.
+- Pré-condições: Nenhuma.
+- Pós-condições: Nota salva com conteúdo e categorização.
+
+## Fluxo principal
+
+1. Acessar tela de listagem de notas.
+2. Criar nova nota e título.
+3. Escrever conteúdo em Markdown.
+4. Adicionar tags.
+5. Salvar.
+
+## Fluxo alternativo
+
+A1 - Adicionar imagem (includes UC05 - Upload de imagem):
+
+1. Usuário aciona a opção de adicionar imagem na nota.
+2. Sistema executa o UC05 para seleção e validação da imagem.
+3. Sistema associa a imagem à nota.
+
+- A2 - Nota vazia: ao salvar sem título e sem conteúdo, sistema exibe aviso e bloqueia persistência.
+
+## Requisitos relacionados
+
+- RF07
+- RF10
+- RF11
 - RF12
-
-### RN Relacionadas
-
-- RN03
-- RN04
-
-### RNF Relacionadas
-
-- RNF04
+- RF13
+- RN02
 - RNF06
 
 ---
 
-## UC04 — Organizar Elementos via Drag-and-Drop
+<a id="uc07"></a>
 
-### Ator Principal
+# UC07 - Criar pasta
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Criar uma pasta para organizar itens do projeto.
+- Pré-condições: Usuário em uma tela de listagem com suporte a pastas.
+- Pós-condições: Nova pasta criada na estrutura atual.
 
-### Objetivos
+## Fluxo principal
 
-- Facilitar a organização visual e hierárquica do projeto através de interação direta.
+1. Acessar a tela de listagem de itens.
+2. Acionar a opção "Criar pasta".
+3. Informar nome da pasta.
+4. Confirmar criação.
+5. Sistema exibe a pasta na listagem.
 
-### Pré-condições
+## Fluxos alternativos
 
-- Interface de listagem (projetos/ideias) ou editor de diagramas aberto.
+- A1 - Nome inválido: sistema exibe mensagem e solicita novo nome.
+- A2 - Cancelar criação: sistema encerra a ação sem criar pasta.
 
-### Pós condições
+## Requisitos relacionados
 
-- Nova posição espacial ou hierárquica salva.
+- RF14
+- RF09
+- RF32
 
-### Fluxo Principal
+---
 
-1. O usuário pressiona e segura um item (nó ou arquivo).
-2. O usuário arrasta o item para uma nova coordenada (diagrama) ou para cima de uma pasta.
-3. O sistema fornece feedback visual imediato durante o movimento.
-4. O usuário solta o item.
-5. O sistema valida a nova posição e confirma a alteração.
+<a id="uc08"></a>
 
-### Fluxo Alternativo
+# UC08 - Organizar elementos via drag-and-drop
 
-- **A1 — Cancelamento de movimento:**
+- Ator principal: Usuário
+- Objetivo: Reorganizar itens visualmente.
+- Pré-condições: Lista de itens ou editor de diagrama aberto.
+- Pós-condições: Nova posição salva.
 
-    O usuário arrasta o item para uma área inválida e o sistema retorna o item à posição original.
+## Fluxo principal
 
-### RF Relacionadas
+1. Pressionar e segurar item.
+2. Arrastar para nova posição.
+3. Soltar item.
+4. Sistema valida e confirma alteração.
 
-- RF13
-- RF34
+## Fluxo alternativo
 
-### RN Relacionadas
+- A1 - Área inválida: sistema retorna item para posição original.
 
-- RN06
+## Requisitos relacionados
 
-### RNF Relacionadas
-
+- RF39
+- RF16
+- RN07
 - RNF01
 - RNF04
 
 ---
 
-## UC05 — Busca Global com Filtros e Tags
+<a id="uc09"></a>
 
-### Ator Principal
+# UC09 - Exclusão de entidades e itens do projeto
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Remover registros de personagens, notas ou diagramas.
+- Pré-condições: Listagem de itens aberta.
+- Pós-condições: Item removido do banco e da interface.
 
-### Objetivos
+## Fluxo principal
 
-- Localizar rapidamente qualquer elemento do projeto em meio a grandes volumes de dados.
+1. Localizar item.
+2. Acionar "Excluir".
+3. Confirmar alerta irreversível.
+4. Sistema remove registro e atualiza lista.
 
-### Pré-condições
+## Fluxo alternativo
 
-- Existirem itens (ideias, personagens, diagramas) cadastrados.
+- A1 - Ordenação antes da exclusão: usuário ordena itens para facilitar limpeza.
+- A2 - Exclusão com impacto: sistema exibe aviso de impacto quando o item possui vínculos relevantes.
 
-### Pós condições
+## Requisitos relacionados
 
-- Listagem filtrada exibida na tela.
+- RF08
+- RF21
+- RF31
 
-### Fluxo Principal
+---
 
-1. O usuário acessa o campo de pesquisa global.
-2. O usuário digita uma palavra-chave ou seleciona uma tag específica.
-3. O sistema aplica a latência de *debounce*.
-4. O sistema consulta o cache/banco e retorna os itens correspondentes.
+<a id="uc10"></a>
 
-### Fluxo Alternativo
+# UC10 - Exclusão de pastas e conteúdo
 
-- **A1 — Nenhum resultado encontrado:**
+- Ator principal: Usuário
+- Objetivo: Editar ou remover diretórios do projeto.
+- Pré-condições: Existir ao menos uma pasta.
+- Pós-condições: Estrutura atualizada.
 
-    O sistema exibe uma mensagem amigável sugerindo a revisão dos termos da busca.
+## Fluxo principal
 
-### RF Relacionadas
+1. Acessar listagem de itens.
+2. Abrir configurações da pasta.
+3. Selecionar "Excluir pasta".
+4. Escolher excluir só a pasta ou pasta com conteúdo.
+5. Confirmar.
 
-- RF02
-- RF04
+## Fluxo alternativo
+
+- A1 - Excluir apenas pasta: sistema move conteúdo para raiz e remove diretório vazio.
+
+## Requisitos relacionados
+
+- RF15
+- RF16
+- RF17
+- RN03
+
+---
+
+<a id="uc11"></a>
+
+# UC11 - Personalização e configurações de escrita
+
+- Ator principal: Usuário
+- Objetivo: Ajustar preferências gerais do aplicativo.
+- Pré-condições: Tela de configurações aberta.
+- Pós-condições: Preferências atualizadas.
+
+## Fluxo principal
+
+1. Acessar "Configurações Gerais".
+2. Selecionar configuração desejada.
+3. Alterar preferência.
+4. Sistema valida e aplica globalmente.
+
+## Fluxos alternativos
+
+- A1 - Valor inválido: sistema bloqueia alteração e exibe mensagem de validação.
+
+## Requisitos relacionados
+
 - RF24
+- RF25
 
-### RNF Relacionadas
+---
 
+<a id="uc12"></a>
+
+# UC12 - Interagir com chatbot de IA
+
+- Ator principal: Usuário
+- Ator secundário: Serviço de IA
+- Objetivo: Permitir que o usuário converse com a IA para obter apoio no projeto.
+- Pré-condições: Projeto aberto e conexão com o serviço de IA disponível.
+- Pós-condições: Resposta da IA exibida no chat.
+
+## Fluxo principal
+
+1. Acessar o chat de IA.
+2. Digitar uma pergunta ou solicitação.
+3. Enviar mensagem.
+4. Sistema encaminha a solicitação para a IA.
+5. Sistema exibe a resposta no chat.
+
+## Fluxos alternativos
+
+- A1 - Falha de conexão: sistema informa indisponibilidade e orienta nova tentativa.
+- A2 - Mensagem vazia: sistema solicita que o usuário informe um texto válido.
+
+## Requisitos relacionados
+
+- RF26
+
+---
+
+## Baixa prioridade
+
+<a id="uc13"></a>
+
+# UC13 - Busca global com filtros e tags
+
+- Ator principal: Usuário
+- Objetivo: Localizar itens rapidamente.
+- Pré-condições: Itens já cadastrados.
+- Pós-condições: Lista filtrada exibida.
+
+## Fluxo principal
+
+1. Acessar campo de busca global.
+2. Informar palavra-chave ou tag.
+3. Sistema aplica debounce.
+4. Sistema retorna resultados.
+
+## Fluxo alternativo
+
+- A1 - Sem resultados: sistema exibe mensagem para revisar termos.
+- A2 - Consulta vazia: sistema exibe itens recentes.
+
+## Requisitos relacionados
+
+- RF27
+- RF28
+- RF29
 - RNF03
 
 ---
 
-## UC06 — Configurar e Utilizar Modo Desempenho
+<a id="uc14"></a>
 
-### Ator Principal
+# UC14 - Criar diagrama de relacionamento de entidades
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Criar e conectar entidades em um diagrama.
+- Pré-condições: Projeto ativo aberto.
+- Pós-condições: Diagrama salvo no banco local.
 
-### Objetivos
+## Fluxo principal
 
-- Otimizar a experiência em dispositivos com hardware limitado.
+1. Acessar a seção "Diagramas".
+2. Selecionar "Criar novo diagrama".
+3. Inserir ao menos dois nós e conectar com uma aresta.
+4. Clicar em "Salvar".
+5. Sistema valida e persiste.
 
-### Pós condições
+## Fluxo alternativo
 
-- Interface simplificada e consumo de recursos reduzido.
+- A1 - Salvamento inválido: se houver menos de dois nós ou sem conexão, sistema bloqueia e exibe alerta.
 
-### Fluxo Principal
+## Requisitos relacionados
 
-1. O usuário acessa as "Configurações Gerais".
-2. O usuário ativa o botão "Modo Desempenho".
-3. O sistema desabilita sombras dinâmicas, transparências e animações complexas.
-4. O sistema limita o uso da memória para o teto definido.
+- RF30
+- RF34
+- RF37
+- RN04
+- RNF04
+- RNF06
 
-### Fluxo Alternativo
+---
 
-- **A1 — Desativação do Modo:**
+<a id="uc15"></a>
 
-    O usuário desativa o modo e o sistema restaura imediatamente a fidelidade visual total.
+# UC15 - Configurar e usar modo desempenho
 
-### RF Relacionadas
+- Ator principal: Usuário
+- Objetivo: Reduzir consumo de recursos.
+- Pré-condições: Nenhuma.
+- Pós-condições: Interface simplificada ativada.
 
-- RF44
+## Fluxo principal
 
-### RNF Relacionadas
+1. Acessar "Configurações Gerais".
+2. Ativar "Modo Desempenho".
+3. Sistema reduz efeitos visuais e otimiza recursos.
 
+## Fluxo alternativo
+
+- A1 - Desativar modo: sistema restaura configurações visuais padrão.
+- A2 - Falha na aplicação: sistema mantém configuração anterior e informa o usuário.
+
+## Requisitos relacionados
+
+- RF25
 - RNF02
 
 ---
 
-## UC07 — Gestão de Grupos de Nós em Diagramas
+<a id="uc16"></a>
 
-### Ator Principal
+# UC16 - Gestão de grupos de nós em diagramas
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Agrupar nós para organização.
+- Pré-condições: Diagrama com múltiplos nós.
+- Pós-condições: Grupo criado, alterado ou removido.
 
-### Objetivos
+## Fluxo principal
 
-- Agrupar conceitos relacionados (ex: um núcleo de personagens) para organização em larga escala.
+1. Selecionar múltiplos nós.
+2. Acionar "Criar grupo de nós".
+3. Definir nome e cor.
 
-### Pré-condições
+## Fluxos alternativos
 
-- Diagrama com múltiplos nós existentes.
+- A1 - Remover nó do grupo: nó volta a ser independente.
+- A2 - Excluir grupo: grupo é removido e nós permanecem no diagrama.
 
-### Pós condições
+## Requisitos relacionados
 
-- Grupo criado.
-
-### Fluxo Principal
-
-1. O usuário seleciona múltiplos nós no editor.
-2. O usuário aciona a função "Criar Grupo de Nós".
-3. O usuário define um nome e cor para o grupo.
-
-### Fluxo Alternativo
-
-- **A1 — Remoção de nó do grupo:**
-
-    1. O usuário seleciona um nó dentro do grupo.
-    2. O usuário aciona "Remover do Grupo". 
-    3. O sistema mantém o nó no diagrama de forma independente.
-
-- **A2 — Exclusão de grupo:**
-
-    1. O usuário seleciona o grupo.
-    2. O usuário aciona "Excluir Grupo".
-    3. O sistema remove o grupo do diagrama.
-    4. O sistema mantém os nós do grupo no diagrama de forma independente.
-
-### RF Relacionadas
-
-- RF18
-- RF19
-- RF20
-- RF21
-- RF23
-
-### RN Relacionadas
-
-- RN06
-
-### RNF Relacionadas
-
+- RF44
+- RF45
+- RF46
+- RF47
+- RF49
+- RN07
 - RNF04
 
 ---
 
-## UC08 — Upload e Compressão de Imagens de Personagens
+<a id="uc17"></a>
 
-### Ator Principal
+# UC17 - Proteção de acesso ao aplicativo
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Proteger acesso ao app por senha.
+- Pré-condições: Nenhuma.
+- Pós-condições: Senha ativa.
 
-### Objetivos
+## Fluxo principal
 
-- Adicionar referências visuais aos personagens sem comprometer o armazenamento do celular.
+1. Acessar "Configurações Gerais".
+2. Selecionar "Definir senha de acesso".
+3. Informar e confirmar senha.
+4. No próximo acesso, sistema solicita senha.
 
-### Pré-condições
+## Fluxo alternativo
 
-- Ficha de personagem aberta em modo de edição.
-- Permissão para acessar imagens na galeria concedida.
+- A1 - Senha incorreta: sistema bloqueia entrada e permite nova tentativa.
+- A2 - Senha inválida no cadastro: sistema rejeita a senha e solicita correção.
+- A3 - Confirmação divergente: sistema bloqueia cadastro até que senha e confirmação coincidam.
 
-### Pós condições
+## Requisitos relacionados
 
-- Imagem comprimida e exibida no perfil do personagem.
-
-### Fluxo Principal
-
-1. O usuário clica na área de imagem do personagem.
-2. O usuário seleciona uma imagem da galeria (até 5MB).
-3. O sistema realiza a compressão *lossy* em segundo plano.
-4. O sistema salva a versão otimizada no banco/storage local.
-5. O usuário confirma a edição salvando o personagem.
-
-### Fluxo Alternativo
-
-- **A1 — Arquivo excedendo limite:**
-
-    O usuário tenta subir um arquivo de 10MB; o sistema bloqueia e exibe mensagem de erro baseada no RNF05.
-
-### RF Relacionadas
-
-- RF38
-
-### RNF Relacionadas
-
-- RNF05
+- RF22
 
 ---
 
-## UC09 — Criação e Categorização de Ideias (Markdown)
+<a id="uc18"></a>
 
-### Ator Principal
+# UC18 - Excluir nó e tratar arestas órfãs
 
-- Usuário
+- Ator principal: Usuário
+- Objetivo: Manter integridade lógica do diagrama ao excluir nós.
+- Pré-condições: Diagrama com nós conectados.
+- Pós-condições: Nó e arestas vinculadas removidos.
 
-### Objetivos
+## Fluxo principal
 
-- Registrar e estilizar fragmentos criativos rapidamente.
+1. Selecionar nó.
+2. Clicar em "Excluir".
+3. Sistema identifica arestas ligadas ao nó.
+4. Sistema remove nó e arestas relacionadas.
+5. Usuário confirma salvamento.
 
-### Pós condições
+## Fluxo alternativo
 
-- Ideia persistida com formatação e tags.
+- A1 - Exclusão de aresta individual: remove aresta e mantém nós.
+- A2 - Cancelamento da exclusão de nó: sistema mantém o estado atual do diagrama.
 
-### Fluxo Principal
-
-1. O usuário acessa "Gerenciamento de Ideias".
-2. O usuário cria uma nova ideia e insere um título.
-3. O usuário escreve o texto utilizando sintaxe Markdown.
-4. O usuário adiciona tags de categoria.
-5. O usuário clica em "Salvar".
-
-### Fluxo Alternativo
-
-- **A1 — Adição de Imagens:**
-
-    1. O usuário aciona "Adicionar imagem" entre ideias
-    2. O sistema exibe duas opções de upload: "Tirar foto" e "Acessar fotos da galeria"
-    3. O usuário escolhe a opção desejada
-    4. O sistema verifica se o tamanho da imagem respeita o limite de tamanho definido na RNF05
-    5. A imagem é adicionada entre ideias com sucesso
-
-### RF Relacionadas
-
-- RF25
-- RF28
-- RF29
-- RF30
-- RF31
-
-### RN Relacionadas
-
-- RN02
-
-### RNF Relacionadas
-
-- RNF06
-
----
-
-## UC10 — Proteção de Acesso ao Aplicativo
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Garantir a privacidade do conteúdo criativo do autor.
-
-### Pós condições
-
-- Senha de acesso configurada e ativa.
-
-### Fluxo Principal
-
-1. O usuário acessa "Configurações Gerais".
-2. O usuário seleciona "Definir Senha de Acesso".
-3. O usuário insere e confirma a senha.
-4. Ao reiniciar o app, o sistema solicita a senha antes de abrir a Tela Inicial.
-
-### Fluxo Alternativo
-
-- **A1 — Erro de Senha:**
-
-    O usuário insere a senha incorreta e o sistema bloqueia o acesso, permitindo nova tentativa.
-
-### RF Relacionadas
-
-- RF41
-
----
-
-## UC11 — Excluir Nó e Tratar Arestas Órfãs
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Manter a integridade lógica do diagrama durante a limpeza de elementos.
-
-### Pré-condições
-
-- Diagrama aberto com ao menos dois nós conectados a cada aresta existente.
-
-### Pós condições
-
-- Nó e arestas vinculadas removidos permanentemente.
-
-### Fluxo Principal
-
-1. O usuário seleciona um nó no editor de diagrama.
-2. O usuário clica em "Excluir".
-3. O sistema identifica todas as arestas vinculadas a esse nó (origem ou destino).
-4. O sistema remove o nó e todas as arestas órfãs simultaneamente.
-5. O sistema persiste a alteração após confirmação (Salvar).
-
-### Fluxo Alternativo
-
-- **A1 — Exclusão de Aresta Individual:**
-
-    O usuário seleciona apenas a aresta e a exclui, mantendo os nós intactos.
-
-### RF Relacionadas
-
-- RF14
-
-### RN Relacionadas
-
-- RN04
-- RN05
-
-### RNF Relacionadas
-
-- RNF06
-
----
-
-## UC12 — Exclusão de Pastas e Conteúdo
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Permitir a reorganização estrutural do projeto através da edição e exclusão de diretórios.
-
-### Pré-condições
-
-- Exisitir pelo menos uma pasta criada.
-
-### Pós condições
-
-- Estrutura de diretórios atualizada ou removida.
-
-### Fluxo Principal
-
-1. O usuário acessa a listagem de itens (Personagens, Ideias ou Diagramas).
-2. O usuário seleciona o ícone de configurações de uma pasta específica.
-3. O usuário altera o título da pasta.
-4. O usuário seleciona a opção "Excluir Pasta".
-5. O sistema solicita confirmação, perguntando se deseja excluir apenas a pasta ou a pasta e todo o seu conteúdo.
-6. O usuário confirma a exclusão.
-
-### Fluxo Alternativo
-
-- **A1 — Mover conteúdo antes da exclusão:**
-
-1. O usuário seleciona a opção de excluir apenas a pasta.
-2. O sistema move todos os itens contidos nela para o diretório raiz antes de deletar o diretório vazio.
-
-### RF Relacionadas
-
-- RF34
-- RF35
-
----
-
-## UC13 — Gestão de Atributos Detalhados no Diagrama
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Enriquecer a lógica narrativa inserindo descrições em nós e arestas dentro do editor gráfico.
-
-### Pré-condições
-
-- Editor de diagrama aberto com elementos (nós e arestas) presentes.
-
-### Pós condições
-
-- Metadados salvos nos elementos do diagrama.
-
-### Fluxo Principal
-
-1. O usuário clica duas vezes (ou pressiona longamente) sobre uma aresta de conexão.
-2. O sistema abre uma janela flutuante para inserção de texto.
-3. O usuário descreve a relação (ex: "Rivalidade de infância") e salva.
-4. O usuário clica sobre um nó e seleciona "Adicionar Descrição".
-5. O usuário insere notas rápidas que não pertencem à ficha principal do personagem.
-6. O sistema exibe um ícone indicativo de que aquele elemento possui notas adicionais.
-
-### Fluxo Alternativo
-
-- **A1 — Visualização rápida:**
-
-    O usuário apenas passa o mouse (ou toca levemente) e o sistema exibe um tooltip com a descrição salva sem abrir o editor.
-
-### RF Relacionadas
-
-- RF10
-- RF17
-
----
-
-## UC14 — Personalização e Configurações de Escrita
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Adaptar a interface e as restrições de texto às preferências e necessidades do autor.
-
-### Pré-condições
-
-- Aplicativo aberto na tela de configurações.
-
-### Pós condições
-
-- Preferências de sistema e limites de validação alterados conforme a escolha do usuário.
-
-### Fluxo Principal
-
-1. O usuário acessa o menu de "Configurações Gerais".
-2. O sistema apresenta as opções disponíveis (Idioma, Limites de Texto, Modo Desempenho, etc.).
-3. O usuário seleciona e altera a configuração desejada.
-4. O sistema valida a alteração e aplica as novas preferências globalmente.
-5. O usuário confirma ou retorna ao menu anterior.
-
-### Fluxo Alternativo
-
-- **A1 — Alterar Idioma (RF44):**
-    1. O usuário seleciona a opção de "Idioma".
-    2. O sistema exibe a lista de idiomas suportados.
-    3. O usuário seleciona o novo idioma e o sistema atualiza todos os rótulos e menus imediatamente.
-- **A2 — Configurar Limite de Sinopse:**
-    1. O usuário seleciona "Limite de Sinopse".
-    2. O usuário define um valor numérico dentro do intervalo permitido.
-    3. O sistema atualiza a regra de validação para campos de sinopse.
-- **A3 — Desativar Limite de Sinopse (RN02):**
-    1. O usuário ativa a opção "Ilimitado" no campo de limite global.
-    2. O sistema desativa as travas de buffer para campos de texto longo.
-
-### RF Relacionadas
-
-- RF42
-- RF43
-
-### RN Relacionadas
-
-- RN01
-- RN02
-
----
-
-## UC15 — Exclusão de Entidades e Itens do Projeto
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Remover definitivamente registros de personagens, ideias ou diagramas do banco de dados.
-
-### Pré-condições
-
-- Listagem de itens aberta.
-
-### Pós condições
-
-- Item removido e memória liberada.
-
-### Fluxo Principal
-
-1. O usuário localiza o item (Ideia, Personagem ou Diagrama) que deseja remover.
-2. O usuário aciona a opção "Excluir".
-3. O sistema exibe um alerta de confirmação irreversível.
-4. O usuário confirma a ação.
-5. O sistema remove o registro e atualiza a interface instantaneamente.
-
-### Fluxo Alternativo
-
-- **A1 — Ordenação antes da exclusão:**
-
-    1. O usuário utiliza a função de ordenação para encontrar itens antigos por data facilitando a remoção filtrada
-    2. O usuário executa a exclusão.
-
-### RF Relacionadas
-
-- RF03
-- RF06
-- RF26
-- RF40
-
----
-
-## UC16 — Gerenciamento de Segurança (Senha)
-
-### Ator Principal
-
-- Usuário
-
-### Objetivos
-
-- Configurar, alterar ou remover a camada de proteção por senha do aplicativo.
-
-### Pré-condições
-
-- Acesso às configurações gerais.
-- Proteção estar ativa.
-
-### Pós condições
-
-- Status de segurança do app atualizado.
-
-### Fluxo Principal
-
-1. O usuário acessa o menu de segurança.
-2. O usuário seleciona "Alterar Senha".
-3. O sistema solicita a senha antiga para validação.
-4. O usuário insere a nova combinação e confirma.
-5. O sistema criptografa e salva a nova credencial.
-
-### Fluxo Alternativo
-
-- **A1 — Remover Senha:**
-
-    O usuário seleciona "Desativar Proteção", confirma sua identidade e o sistema remove a obrigatoriedade de senha no login.
-
-### RF Relacionadas
-
-- RF41
-
----
-
-## UC17 — Gerar Insights Contextuais via IA
-
-### Ator Principal
-
-- Usuário
-- Serviço de IA
-
-### Objetivos
-
-- Fornecer análises e sugestões baseados no conteúdo da tela onde o usuário se encontra.
-- Gerar perfis automáticos de personagens para auxiliar na organização e construção de mundo.
-- Centralizar métricas e insights em uma tela de relatórios (Dashboards) por projeto.
-
-### Pré-condições
-
-- O usuário deve estar em uma página de conteúdo (Projeto, Personagem, Ideia ou Diagrama).
-- Conexão ativa com o serviço de IA.
-
-### Pós condições
-
-- Os insights são armazenados e exibidos na tela de relatórios do projeto.
-- Novos perfis de personagens podem ser criados a partir das sugestões.
-
-### Fluxo Principal
-
-1. O usuário clica no ícone de "IA" em qualquer parte do projeto
-2. O sistema coleta os dados da hierarquia atual e envia para o serviço de IA
-3. O serviço de IA processa o contexto e gera categorias de análise (Ex: Coerência, Criatividade, Organização, etc)
-4. O sistema redireciona o usuário para a tela de relatórios
-5. O sistema renderiza os Dashboards com gráficos e cards contendo os insights e sugestões de novos perfis
-
-### Fluxo Alternativo
-
-- **A1 — IA fora de contexto:**
-    1. O usuário aciona a IA em uma tela vazia ou sem dados suficientes
-    2. A IA retorna uma mensagem sugerindo que o usuário adicione mais informações para uma análise precisa
-- **A2 — Falha de conexão:**
-    1. O sistema detecta que o serviço de IA está offline
-    2. O sistema exibe mensagem de erro e informa que os insights não podem ser gerados no momento
-- **A3 — Consulta de relatórios anteriores:**
-    1. O usuário acessa diretamente a tela de relatórios sem acionar um novo processamento
-    2. O sistema carrega os últimos dashboards salvos localmente
-- **A4 — Falha na geração de perfil:**
-    1. A IA sugere um personagem, mas o usuário já atingiu o limite de armazenamento
-    2. O sistema alerta sobre a necessidade de limpeza antes de salvar o novo pérfil
-- **A5 — Aviso por falta de tokens:**
-    1. O sistema detecta o esgotamento de tokens do serviço de IA
-    2. O sistema alerta o usuário sobre o esgotamento dos tokens
-    3. O sistema solicita que o usuário agaurde a renovação dos tokens
-
-### RF Relacionadas
+## Requisitos relacionados
 
 - RF36
-- RF45
+- RF39
+- RN05
+- RN06
+- RNF06
 
 ---
 
-```md
-UC01 - NECESSITA REALOCAMENTO
-- **A1 — Modificar o atributo de ideias:**
-    1. O usuário clica no botão da guia de ideias.
-    2. O aplicativo abre a tela de ideias.
-    3. O usuário pode criar pastas e textos para as ideias. Além disso, pode também criar diagramas de ideias.
-- **A2 — Modificar o atributo de personagens:**
-    1. Na página inicial, o usuário clica em um dos ícones de personagem.
-    2. O aplicativo abre a tela de gerenciamento de personagens.
-    3. O usuário pode modificar os atributos de personagens, como nome, apelido, data de nascimento, etc. Além disso, pode também criar diagramas de personagens.
-```
+<a id="uc19"></a>
 
-```md
-SERÁ RECONSIDERADO
-## UC03 — Sincronizar Dados entre Entidade e Diagrama
+# UC19 - Gestão de atributos detalhados no diagrama
 
-### Ator Principal
+- Ator principal: Usuário
+- Objetivo: Adicionar descrições em nós e arestas.
+- Pré-condições: Editor com nós e arestas.
+- Pós-condições: Metadados salvos nos elementos.
 
-- Usuário
+## Fluxo principal
 
-### Objetivos
+1. Selecionar aresta e abrir edição.
+2. Inserir descrição da relação e salvar.
+3. Selecionar nó e adicionar descrição.
+4. Sistema indica visualmente elementos com nota.
 
-- Garantir que alterações em fichas de personagens ou ideias sejam refletidas visualmente nos diagramas existentes.
+## Fluxo alternativo
 
-### Pré-condições
+- A1 - Visualização rápida: sistema mostra descrição sem abrir editor completo.
 
-- Existir um diagrama onde um nó está vinculado a uma entidade persistente (Personagem/Ideia).
+## Requisitos relacionados
 
-### Pós condições
+- RF35
+- RF42
 
-- A representação visual do nó no diagrama é atualizada.
+---
 
-### Fluxo Principal
+<a id="uc20"></a>
 
-1. O usuário acessa a aba de "Gerenciamento de Personagens".
-2. O usuário altera o nome de um personagem específico.
-3. O usuário clica em "Salvar".
-4. O sistema identifica todos os diagramas que contêm o nó vinculado a este personagem.
-5. O sistema atualiza o rótulo textual (label) de todos os nós correspondentes automaticamente.
+# UC20 - Gerenciamento de segurança (senha)
 
-### Fluxo Alternativo
+- Ator principal: Usuário
+- Objetivo: Alterar ou remover senha do aplicativo.
+- Pré-condições: Acesso às configurações e proteção ativa.
+- Pós-condições: Status de segurança atualizado.
 
-- **A1 — Entidade Excluída:**
+## Fluxo principal
 
-    Se o personagem for excluído, o sistema remove o vínculo do nó no diagrama, mas mantém o nó como um elemento genérico.
+1. Acessar menu de segurança.
+2. Selecionar "Alterar senha".
+3. Informar senha atual.
+4. Informar e confirmar nova senha.
+5. Sistema criptografa e salva.
 
-### RF Relacionadas
+## Fluxo alternativo
 
-- RF09
-- RF15
-- RF37
+- A1 - Remover senha: usuário desativa proteção após confirmar identidade.
+- A2 - Senha atual incorreta: sistema bloqueia alteração e solicita nova tentativa.
+- A3 - Nova senha inválida: sistema rejeita a senha e solicita correção.
+- A4 - Identidade não confirmada na remoção: sistema cancela a desativação da proteção.
 
-### RN Relacionadas
+## Requisitos relacionados
 
-- RN07
-
-### RNF Relacionadas
-
-- RNF06
-
-```
+- RF22
