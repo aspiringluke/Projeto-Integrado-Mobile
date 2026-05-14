@@ -93,6 +93,10 @@ Documento consolidado dos casos de uso.
 - RF06
 - RN06
 - RN08
+- RN15
+- RN16
+- RN17
+- RN18
 
 ---
 
@@ -225,6 +229,11 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF12
 - RF13
 - RN02
+- RN10
+- RN14
+- RN15
+- RN17
+- RN19
 - RNF06
 
 ---
@@ -256,6 +265,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF14
 - RF09
 - RF32
+- RN09
 
 ---
 
@@ -283,7 +293,8 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 - RF39
 - RF16
-- RN12
+- RN13
+- RN23
 - RNF01
 - RNF04
 
@@ -345,6 +356,8 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF16
 - RF17
 - RN01
+- RN11
+- RN12
 
 ---
 
@@ -462,7 +475,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF30
 - RF34
 - RF37
-- RN09
+- RN20
 - RNF04
 - RNF06
 
@@ -522,7 +535,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF46
 - RF47
 - RF49
-- RN12
+- RN23
 - RNF04
 
 ---
@@ -581,8 +594,8 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 - RF36
 - RF39
-- RN10
-- RN11
+- RN21
+- RN22
 - RNF06
 
 ---
