@@ -5,15 +5,9 @@ skinparam PackageStyle rectangle
 actor "Usuário" as U
 
 rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
-    package "Diagramação" {
-        usecase "UC14: Criar diagrama de relacionamento de entidades" as UC14
-        usecase "UC16: Gestão de grupos de nós em diagramas" as UC16
-        usecase "UC18: Excluir nó e tratar arestas órfãs" as UC18
-        usecase "UC19: Gestão de atributos detalhados no diagrama" as UC19
-    }
-
     package "Conteúdo" {
         usecase "UC01: Criar novo projeto" as UC01
+        usecase "UC02: Editar dados do projeto" as UC02
         usecase "UC03: Criar personagem" as UC03
         usecase "UC04: Editar dados do personagem" as UC04
         usecase "UC05: Upload de imagem" as UC05
@@ -23,19 +17,14 @@ rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
 }
 
 U --> UC01
+U --> UC02
 U --> UC03
 U --> UC04
 U --> UC05
 U --> UC06
 U --> UC09
-U --> UC14
-U --> UC16
-U --> UC18
-U --> UC19
 
 UC03 .> UC05: <<include>>
 UC04 .> UC05: <<include>>
 UC06 .> UC05: <<include>>
-
-UC14 <.-. UC19: <<extends>>
 @enduml
