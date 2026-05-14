@@ -6,7 +6,7 @@ start
 :Criar nova nota;
 :Informar título (opcional);
 :Escrever conteúdo;
-:Adicionar tags;
+:Adicionar tags (opcional);
 if (Deseja adicionar imagem?) then (sim)
   :Acionar UC05 (Upload de imagem);
 endif
