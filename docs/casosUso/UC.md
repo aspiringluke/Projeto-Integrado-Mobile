@@ -139,7 +139,7 @@ Documento consolidado dos casos de uso.
 
 - Ator principal: Usuário
 - Objetivo: Atualizar informações da ficha de um personagem existente.
-- Pré-condições: Personagem existente e tela de edição aberta.
+- Pré-condições: Personagem existente.
 - Pós-condições: Dados do personagem atualizados e salvos.
 
 ## Fluxo principal
@@ -201,13 +201,13 @@ Documento consolidado dos casos de uso.
 - Ator principal: Usuário
 - Objetivo: Registrar notas com formatação e tags.
 - Pré-condições: Nenhuma.
-- Pós-condições: Nota salva com conteúdo e categorização.
+- Pós-condições: Nota salva com título (informado pelo usuário ou definido automaticamente), conteúdo e categorização.
 
 ## Fluxo principal
 
 1. Acessar tela de listagem de notas.
-2. Criar nova nota e título.
-3. Escrever conteúdo em Markdown.
+2. Criar nova nota e informar título (opcional).
+3. Escrever conteúdo.
 4. Adicionar tags.
 5. Salvar.
 
@@ -219,7 +219,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 2. Sistema executa o UC05 para seleção e validação da imagem.
 3. Sistema associa a imagem à nota.
 
-- A2 - Nota vazia: ao salvar sem título e sem conteúdo, sistema exibe aviso e bloqueia persistência.
+A2 - Nota sem título:
+1. Usuário salva nota sem título
+2. Sistema define automaticamente o título como "Sem título" e conclui o salvamento.
 
 ## Requisitos relacionados
 
