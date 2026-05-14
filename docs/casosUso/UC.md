@@ -206,7 +206,7 @@ Documento consolidado dos casos de uso.
 1. Acessar tela de listagem de notas.
 2. Criar nova nota e informar título (opcional).
 3. Escrever conteúdo.
-4. Adicionar tags.
+4. Adicionar tags (opcional).
 5. Salvar.
 
 ## Fluxo alternativo
