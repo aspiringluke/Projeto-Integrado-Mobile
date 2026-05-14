@@ -3,6 +3,7 @@ left to right direction
 skinparam PackageStyle rectangle
 
 actor "Usuário" as U
+actor "Serviço de IA" as IA <<system>>
 
 rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
     package "Conteúdo" {
@@ -14,8 +15,14 @@ rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
         usecase "UC06: Criar nota de texto" as UC06
         usecase "UC09: Exclusão de entidades e itens do projeto" as UC09
     }
+    
+    package "GenIA" {
+        usecase "UC12: Interagir com chatbot de IA" as UC12
+    }
 }
 
+U --> UC12
+UC12 --> IA
 U --> UC01
 U --> UC02
 U --> UC03
