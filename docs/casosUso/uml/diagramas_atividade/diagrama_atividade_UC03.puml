@@ -8,7 +8,15 @@ start
 if (Deseja imagem?) then (sim)
   :Acionar upload de imagem;
 endif
-:Clicar em "Confirmar";
+if (Deseja cancelar criação?) then (não)
+  |Usuário|
+  :Clicar em "Confirmar";
+else
+  |Sistema|
+  :Descartar dados preenchidos;
+  :Retornar à lista de personagens;
+  stop
+endif
 
 |Sistema|
 if (Campos obrigatórios preenchidos?) then (sim)
