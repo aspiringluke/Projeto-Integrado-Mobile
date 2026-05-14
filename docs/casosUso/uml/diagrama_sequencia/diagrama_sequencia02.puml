@@ -1,6 +1,6 @@
 @startuml Diagrama de Sequencia - Persistencia de Nota
 
-title Diagrama de Sequencia - Persistencia de Nota
+title Diagrama de Sequencia - Criacao e Salvamento de Nota
 
 skinparam backgroundColor white
 skinparam sequence {
@@ -15,49 +15,66 @@ skinparam sequence {
 
 actor "Usuario" as Usuario
 
-participant "IdeasContent / NotesSection\n<<View>>" as NotesView
-participant "NotaController\n<<Controller>>" as NotaCtrl
-participant "FolderController\n<<Controller>>" as FolderCtrl
-participant "Nota\n<<Model>>" as Nota
+participant "NotesSubPage\n<<View>>" as NotesView
+participant "NoteController\n<<ViewModel>>" as NoteVM
+participant "NoteEditorPage\n<<View>>" as EditorView
+participant "NoteEditorController\n<<ViewModel>>" as EditorVM
 participant "NoteRepository\n<<Repository>>" as NoteRepository
 participant "SqliteNoteService\n<<Service>>" as NoteService
 participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
 
 Usuario -> NotesView: Criar nova nota
-NotesView -> NotaCtrl: salvarNota(texto, idPasta)
+NotesView -> NoteVM: Solicitar criacao inicial da nota
+NoteVM -> NoteRepository: Solicitar persistencia da nova nota
+NoteRepository -> NoteService: Encaminhar criacao de registro
+NoteService -> SQLiteDB: Gravar nova nota no banco
+SQLiteDB --> NoteService: Retornar identificador gerado
+NoteService --> NoteRepository: Confirmar sucesso e identificador
+NoteRepository --> NoteVM: Retornar resultado da criacao
+NoteVM -> NoteRepository: Solicitar notas da pasta atual
+NoteRepository -> NoteService: Solicitar leitura de notas
+NoteService -> SQLiteDB: Consultar notas da pasta
+SQLiteDB --> NoteService: Retornar lista de notas
+NoteService --> NoteRepository: Entregar lista de notas
+NoteRepository --> NoteVM: Retornar lista atualizada
+NoteVM --> NotesView: estado atualizado
+NotesView -> EditorView: Abrir editor da nota (idNota)
 
-NotaCtrl -> NoteRepository: createNewNote(nota.text, idPasta)
-NoteRepository -> NoteService: createNewNote(texto, idPasta)
-NoteService -> SQLiteDB: getConnection()
-SQLiteDB --> NoteService: conexao aberta
-NoteService -> SQLiteDB: INSERT INTO Nota (descricao, pastas_idPasta)
+EditorView -> EditorVM: Solicitar carregamento da nota
+EditorVM -> NoteRepository: Solicitar dados da nota
+NoteRepository -> NoteService: Encaminhar busca de nota
+NoteService -> SQLiteDB: Consultar nota por identificador
+SQLiteDB --> NoteService: Retornar dados da nota
+NoteService --> NoteRepository: Entregar dados da nota
+NoteRepository --> EditorVM: Retornar dados da nota
+EditorVM --> EditorView: preencher formulario
 
-alt Persistencia realizada com sucesso
-    SQLiteDB --> NoteService: idNota gerado / operacao confirmada
-    NoteService --> NoteRepository: sucesso
-    NoteRepository --> NotaCtrl: confirmacao de persistencia
+Usuario -> EditorView: Editar titulo/conteudo e salvar
+EditorView -> EditorVM: Solicitar salvamento das alteracoes
+EditorVM -> NoteRepository: Solicitar atualizacao da nota
+NoteRepository -> NoteService: Encaminhar atualizacao de registro
+NoteService -> SQLiteDB: Atualizar nota no banco
 
-    NotaCtrl -> NoteRepository: listNotes()
-    NoteRepository -> NoteService: listNotes()
-    NoteService -> SQLiteDB: getConnection()
-    SQLiteDB --> NoteService: conexao aberta
-    NoteService -> SQLiteDB: SELECT * FROM Nota
-    SQLiteDB --> NoteService: linhas[]
-    loop linhas.length times
-        NoteService --> Nota: instanciarNota(linhas[n])
-        Nota --> NoteService: new Nota
-    end
-    NoteService --> NoteRepository: notas[]
-    NoteRepository --> NotaCtrl: notas[]
-    NotaCtrl --> NotesView: atualizar(notas)
-    NotesView -> NotesView: Atualizar estado
-    NotesView --> Usuario: Exibir novo estado
-else Falha ao persistir nota
-    SQLiteDB --> NoteService: erro de banco / integridade
-    NoteService --> NoteRepository: (false, mensagemErro)
-    NoteRepository --> NotaCtrl: falha na criacao
-    NotaCtrl --> NotesView: exibirErro(mensagemErro)
-    NotesView --> Usuario: Informar erro de persistencia
+alt Salvamento com sucesso
+    SQLiteDB --> NoteService: ok
+    NoteService --> NoteRepository: Confirmar salvamento
+    NoteRepository --> EditorVM: Retornar sucesso
+    EditorVM --> EditorView: sucesso
+    EditorView --> NotesView: Retornar changed=true
+    NotesView -> NoteVM: Solicitar recarga da listagem
+    NoteVM -> NoteRepository: Solicitar notas atualizadas
+    NoteRepository -> NoteService: Encaminhar leitura de notas
+    NoteService -> SQLiteDB: Consultar notas atualizadas
+    SQLiteDB --> NoteService: Retornar notas atualizadas
+    NoteService --> NoteRepository: Entregar notas atualizadas
+    NoteRepository --> NoteVM: Retornar notas atualizadas
+    NoteVM --> NotesView: atualizar lista
+else Falha ao salvar
+    SQLiteDB --> NoteService: erro
+    NoteService --> NoteRepository: Informar falha de persistencia
+    NoteRepository --> EditorVM: Retornar mensagem de falha
+    EditorVM --> EditorView: exibirErro(mensagemErro)
+    EditorView --> Usuario: Informar falha no salvamento
 end
 
 @enduml
