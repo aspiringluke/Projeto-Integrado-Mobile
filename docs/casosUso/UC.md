@@ -79,9 +79,8 @@ Documento consolidado dos casos de uso.
 6. Selecionar personagens que aparecem no cartão.
 7. Salvar alterações.
 
-## Fluxos alternativos
+## Fluxo alternativo
 
-- A1 - Dados inválidos: sistema informa erro de validação e bloqueia salvamento até correção.
 - A2 - Remover imagem do cartão: sistema remove a imagem e mantém as demais alterações.
 
 ## Requisitos relacionados
@@ -150,9 +149,8 @@ Documento consolidado dos casos de uso.
 4. Atualizar imagem do perfil (includes UC05 - Upload de imagem), quando necessário.
 5. Salvar alterações.
 
-## Fluxos alternativos
+## Fluxo alternativo
 
-- A1 - Dados inválidos: sistema informa inconsistências e bloqueia salvamento até correção.
 - A2 - Remover imagem do perfil: sistema remove a imagem e mantém as demais alterações.
 
 ## Requisitos relacionados
@@ -236,7 +234,7 @@ A2 - Nota sem título:
 - RN15
 - RN17
 - RN19
-- RNF06
+- RNF05
 
 ---
 
@@ -479,7 +477,7 @@ A2 - Nota sem título:
 - RF37
 - RN20
 - RNF04
-- RNF06
+- RNF05
 
 ---
 
@@ -598,7 +596,7 @@ A2 - Nota sem título:
 - RF39
 - RN21
 - RN22
-- RNF06
+- RNF05
 
 ---
 

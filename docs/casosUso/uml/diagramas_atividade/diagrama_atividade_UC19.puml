@@ -2,16 +2,25 @@
 
 |Usuário|
 start
-if (Elemento alvo?) then (Aresta)
-  :Abrir edição da aresta;
-  :Inserir descrição da relação;
-else (Nó)
-  :Abrir edição do nó;
-  :Inserir descrição do nó;
+if (Deseja visualização rápida?) then (sim)
+  |Sistema|
+  :Exibir descrição sem abrir editor completo;
+  stop
 endif
 
+|Usuário|
+:Selecionar aresta e abrir edição;
+:Inserir descrição da relação;
+
 |Sistema|
-:Salvar metadados do elemento;
+:Salvar metadados da aresta;
+
+|Usuário|
+:Selecionar nó e abrir edição;
+:Inserir descrição do nó;
+
+|Sistema|
+:Salvar metadados do nó;
 :Exibir indicador visual de descrição;
 
 stop

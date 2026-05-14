@@ -4,9 +4,6 @@
 start
 :Acessar listagem de itens;
 :Selecionar configurações da pasta;
-if (Deseja renomear?) then (sim)
-  :Informar novo nome;
-endif
 :Selecionar "Excluir pasta";
 
 |Sistema|
