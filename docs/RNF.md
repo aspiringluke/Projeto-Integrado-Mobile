@@ -64,26 +64,12 @@
 
 #### Relacionados às Regras de Negócio
 
-- RN04
-- RN05
-
-### RNF05 (Eficiência de Desempenho — Capacidade) - Limite de Upload
-
-  Os arquivos de imagem armazenados em ideias e perfis de personagens devem respeitar o limite máximo de 5 MB por arquivo para garantir a estabilidade do aplicativo.
-
-#### Critérios de Avaliação
-
-- C1: O sistema deve validar e impedir o upload de arquivos maiores que 5MB por imagem em ideias e perfis de personagens.
-- C2: O aplicativo deve realizar compressão automática (lossy compression) nas imagens enviadas para ideias e perfis de personagens para evitar sobrecarga de armazenamento interno.
-
-#### Relacionados aos Requisitos Funcionais
-
-- RF11
-- RF20
+- RN09
+- RN10
 
 ## Confiabilidade
 
-### RNF06 (Confiabilidade — Recuperabilidade) - Persistência Automática
+### RNF05 (Confiabilidade — Recuperabilidade) - Persistência Automática
 
   O editor deve garantir a integridade dos dados através de salvamento automático após o usuário finalizar alguma adição ou alteração de dados.
   
@@ -102,4 +88,4 @@
 
 #### Relacionados às Regras de Negócio
 
-- RN08
+- RN13
