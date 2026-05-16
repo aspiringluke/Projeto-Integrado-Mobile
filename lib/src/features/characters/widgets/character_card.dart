@@ -124,7 +124,7 @@ class _CharacterCardState extends State<CharacterCard>
   void _openCharacterPage() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => _CharacterPlaceholderPage(title: widget.data.name),
+        builder: (_) => _CharacterNotebookPage(data: widget.data),
       ),
     );
   }
@@ -1156,6 +1156,7 @@ Future<void> _showAnchoredInfoBubble({
   );
 }
 
+// ignore: unused_element
 class _CharacterPlaceholderPage extends StatelessWidget {
   final String title;
 
@@ -1200,6 +1201,866 @@ class _CharacterPlaceholderPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+enum _CharacterNotebookTab { geral, psique, historia, notas, design }
+
+class _CharacterNotebookPage extends StatefulWidget {
+  final CharacterCardData data;
+
+  const _CharacterNotebookPage({required this.data});
+
+  @override
+  State<_CharacterNotebookPage> createState() => _CharacterNotebookPageState();
+}
+
+class _CharacterNotebookPageState extends State<_CharacterNotebookPage> {
+  static const Map<_CharacterNotebookTab, _CharacterNotebookTabMeta> _tabs = {
+    _CharacterNotebookTab.geral: _CharacterNotebookTabMeta(
+      label: 'Geral',
+      icon: Icons.person_outline_rounded,
+    ),
+    _CharacterNotebookTab.psique: _CharacterNotebookTabMeta(
+      label: 'Psique',
+      icon: Icons.psychology_rounded,
+    ),
+    _CharacterNotebookTab.historia: _CharacterNotebookTabMeta(
+      label: 'História',
+      icon: Icons.history_edu_rounded,
+    ),
+    _CharacterNotebookTab.notas: _CharacterNotebookTabMeta(
+      label: 'Notas',
+      icon: Icons.sticky_note_2_rounded,
+    ),
+    _CharacterNotebookTab.design: _CharacterNotebookTabMeta(
+      label: 'Design',
+      icon: Icons.palette_outlined,
+    ),
+  };
+
+  _CharacterNotebookTab _activeTab = _CharacterNotebookTab.geral;
+
+  void _setTab(_CharacterNotebookTab tab) {
+    if (_activeTab == tab) return;
+    setState(() => _activeTab = tab);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.data;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDF2F8),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.72, -0.88),
+                    radius: 1.25,
+                    colors: [
+                      data.accent.withValues(alpha: 0.16),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _CharacterNotebookHeader(data: data),
+                  const SizedBox(height: 12),
+                  _CharacterStickyTabs(
+                    activeTab: _activeTab,
+                    accentColor: data.accent,
+                    onTabSelected: _setTab,
+                    tabs: _tabs,
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      layoutBuilder: (currentChild, previousChildren) {
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [...previousChildren, ?currentChild],
+                        );
+                      },
+                      transitionBuilder: (child, animation) {
+                        final offset = Tween<Offset>(
+                          begin: const Offset(0, 0.03),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: offset,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey(_activeTab),
+                        child: _buildTabContent(data),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabContent(CharacterCardData data) {
+    return switch (_activeTab) {
+      _CharacterNotebookTab.geral => _CharacterGeneralTab(data: data),
+      _CharacterNotebookTab.psique => _CharacterPlaceholderTab(
+        data: data,
+        title: 'Psique',
+        subtitle: 'Mapa emocional, impulsos e contradições.',
+        icon: Icons.psychology_rounded,
+      ),
+      _CharacterNotebookTab.historia => _CharacterPlaceholderTab(
+        data: data,
+        title: 'História',
+        subtitle: 'Linha do tempo, origem e viradas importantes.',
+        icon: Icons.history_edu_rounded,
+      ),
+      _CharacterNotebookTab.notas => _CharacterPlaceholderTab(
+        data: data,
+        title: 'Notas',
+        subtitle: 'Observações rápidas, rastros e pendências.',
+        icon: Icons.sticky_note_2_rounded,
+      ),
+      _CharacterNotebookTab.design => _CharacterPlaceholderTab(
+        data: data,
+        title: 'Design',
+        subtitle: 'Paleta, referências visuais e direção estética.',
+        icon: Icons.palette_outlined,
+      ),
+    };
+  }
+}
+
+class _CharacterNotebookTabMeta {
+  final String label;
+  final IconData icon;
+
+  const _CharacterNotebookTabMeta({required this.label, required this.icon});
+}
+
+class _CharacterNotebookHeader extends StatelessWidget {
+  final CharacterCardData data;
+
+  const _CharacterNotebookHeader({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.62),
+                data.accent.withValues(alpha: 0.08),
+                Colors.white.withValues(alpha: 0.32),
+              ],
+              stops: const [0.0, 0.52, 1.0],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.82),
+              width: 0.85,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CharacterAvatarTile(
+                accent: data.accent,
+                avatarColor: data.avatarColor,
+                profileImage: data.profileImage,
+                icon: data.icon,
+                isExpanded: true,
+                onTap: null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      data.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF2C262C),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      data.alias.isEmpty ? 'Sem vulgo' : data.alias,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.56),
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _NotebookInfoChip(
+                          icon: Icons.star_rounded,
+                          label: data.relevanceTag.isEmpty
+                              ? 'Relevância não definida'
+                              : data.relevanceTag,
+                          accentColor: data.accent,
+                        ),
+                        if (data.genderTag.isNotEmpty)
+                          _NotebookInfoChip(
+                            icon: Icons.wc_rounded,
+                            label: data.genderTag,
+                            accentColor: data.accent,
+                          ),
+                        if (data.functionTag.isNotEmpty)
+                          _NotebookInfoChip(
+                            icon: Icons.badge_outlined,
+                            label: data.functionTag,
+                            accentColor: data.accent,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+                color: const Color(0xFF2C262C),
+                tooltip: 'Fechar',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotebookInfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color accentColor;
+
+  const _NotebookInfoChip({
+    required this.icon,
+    required this.label,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.24),
+          width: 0.8,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: const Color(0xFF544959)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF2C262C),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterStickyTabs extends StatelessWidget {
+  final _CharacterNotebookTab activeTab;
+  final Color accentColor;
+  final ValueChanged<_CharacterNotebookTab> onTabSelected;
+  final Map<_CharacterNotebookTab, _CharacterNotebookTabMeta> tabs;
+
+  const _CharacterStickyTabs({
+    required this.activeTab,
+    required this.accentColor,
+    required this.onTabSelected,
+    required this.tabs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(26),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFFFF8F2).withValues(alpha: 0.92),
+                Colors.white.withValues(alpha: 0.62),
+                accentColor.withValues(alpha: 0.08),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.86),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.07),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              for (final entry in tabs.entries) ...[
+                Expanded(
+                  child: _CharacterStickyTabButton(
+                    label: entry.value.label,
+                    icon: entry.value.icon,
+                    isActive: activeTab == entry.key,
+                    accentColor: accentColor,
+                    onTap: () => onTabSelected(entry.key),
+                  ),
+                ),
+                if (entry.key != tabs.keys.last) const SizedBox(width: 8),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterStickyTabButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isActive;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  const _CharacterStickyTabButton({
+    required this.label,
+    required this.icon,
+    required this.isActive,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive
+                ? Colors.white.withValues(alpha: 0.62)
+                : Colors.white.withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isActive
+                  ? accentColor.withValues(alpha: 0.34)
+                  : Colors.white.withValues(alpha: 0.58),
+              width: 0.8,
+            ),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: isActive
+                    ? const Color(0xFF2C262C)
+                    : const Color(0xFF544959).withValues(alpha: 0.78),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isActive
+                      ? const Color(0xFF2C262C)
+                      : const Color(0xFF544959).withValues(alpha: 0.82),
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotebookSectionCard extends StatelessWidget {
+  final Color accentColor;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Widget child;
+
+  const _NotebookSectionCard({
+    required this.accentColor,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.54),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.78),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, color: const Color(0xFF2C262C), size: 19),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: Color(0xFF2C262C),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.54),
+                            fontSize: 11.5,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterGeneralTab extends StatelessWidget {
+  final CharacterCardData data;
+
+  const _CharacterGeneralTab({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _NotebookSectionCard(
+            accentColor: data.accent,
+            title: 'Resumo geral',
+            subtitle: 'Ponto de entrada da ficha do personagem.',
+            icon: Icons.dashboard_customize_rounded,
+            child: Column(
+              children: [
+                _DetailRow(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Nome',
+                  value: data.name,
+                ),
+                _DetailRow(
+                  icon: Icons.alternate_email_rounded,
+                  label: 'Vulgo',
+                  value: data.alias.isEmpty ? 'Sem vulgo' : data.alias,
+                ),
+                _DetailRow(
+                  icon: Icons.star_rounded,
+                  label: 'Relevância',
+                  value: data.relevanceTag.isEmpty
+                      ? 'Não definida'
+                      : data.relevanceTag,
+                ),
+                _DetailRow(
+                  icon: Icons.badge_outlined,
+                  label: 'Função',
+                  value: data.functionTag.isEmpty
+                      ? 'Não definida'
+                      : data.functionTag,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _NotebookSectionCard(
+            accentColor: data.accent,
+            title: 'Marca visual',
+            subtitle: 'A imagem atual e a base cromática do personagem.',
+            icon: Icons.auto_awesome_rounded,
+            child: Row(
+              children: [
+                CharacterAvatarTile(
+                  accent: data.accent,
+                  avatarColor: data.avatarColor,
+                  profileImage: data.profileImage,
+                  icon: data.icon,
+                  isExpanded: true,
+                  onTap: null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cor acento',
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.52),
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _ColorSampleRow(
+                        accentColor: data.accent,
+                        avatarColor: data.avatarColor,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        data.profileImage.bytes == null
+                            ? 'Sem imagem de perfil adicionada.'
+                            : 'Imagem de perfil disponível para visualização.',
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.58),
+                          fontSize: 12.5,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _NotebookSectionCard(
+            accentColor: data.accent,
+            title: 'Campo livre',
+            subtitle: 'Espaço para frase, sinopse curta ou observação central.',
+            icon: Icons.chat_bubble_outline_rounded,
+            child: Text(
+              data.motto.isEmpty
+                  ? 'Nenhuma frase de destaque definida ainda.'
+                  : data.motto,
+              style: TextStyle(
+                color: Colors.black.withValues(alpha: 0.62),
+                fontSize: 13,
+                height: 1.45,
+                fontStyle: data.motto.isEmpty
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CharacterPlaceholderTab extends StatelessWidget {
+  final CharacterCardData data;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _CharacterPlaceholderTab({
+    required this.data,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _NotebookSectionCard(
+            accentColor: data.accent,
+            title: title,
+            subtitle: subtitle,
+            icon: icon,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Estrutura inicial pronta.',
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.66),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Essa aba já existe na navegação e pode receber os campos específicos depois, sem quebrar a identidade visual da ficha.',
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.56),
+                    fontSize: 12.5,
+                    height: 1.42,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.62),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 16, color: const Color(0xFF544959)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.black.withValues(alpha: 0.5),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF2C262C),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ColorSampleRow extends StatelessWidget {
+  final Color accentColor;
+  final Color avatarColor;
+
+  const _ColorSampleRow({required this.accentColor, required this.avatarColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _ColorSample(color: accentColor, label: 'Acento'),
+        const SizedBox(width: 8),
+        _ColorSample(color: avatarColor, label: 'Avatar'),
+      ],
+    );
+  }
+}
+
+class _ColorSample extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _ColorSample({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.34), width: 0.8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.28),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF2C262C),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
