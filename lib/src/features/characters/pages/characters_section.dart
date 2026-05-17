@@ -7,6 +7,8 @@ import '../widgets/character_card_visuals.dart';
 class CharactersSection extends StatelessWidget {
   final List<CharacterListItem> characters;
   final ValueChanged<CharacterListItem> onTogglePinned;
+  final void Function(CharacterListItem character, CharacterCardData updatedData)
+  onCharacterEdited;
   final bool showAvatarGrid;
   final int avatarGridColumns;
   final VoidCallback onToggleDisplayMode;
@@ -16,6 +18,7 @@ class CharactersSection extends StatelessWidget {
     super.key,
     required this.characters,
     required this.onTogglePinned,
+    required this.onCharacterEdited,
     required this.showAvatarGrid,
     required this.avatarGridColumns,
     required this.onToggleDisplayMode,
@@ -121,6 +124,7 @@ class CharactersSection extends StatelessWidget {
           data: character.data,
           isPinned: character.isPinned,
           onTogglePinned: () => onTogglePinned(character),
+          onEdited: (updatedData) => onCharacterEdited(character, updatedData),
         );
       },
     );
@@ -160,7 +164,6 @@ class CharactersSection extends StatelessWidget {
                       accent: character.data.accent,
                       avatarColor: character.data.avatarColor,
                       profileImage: character.data.profileImage,
-                      icon: character.data.icon,
                       isExpanded: false,
                       onTap: null,
                     ),

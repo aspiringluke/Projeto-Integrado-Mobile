@@ -65,6 +65,60 @@ class CharacterCardData {
     required this.synopsis,
     required this.seed,
   });
+
+  CharacterCardData copyWith({
+    String? name,
+    String? alias,
+    String? motto,
+    String? formationsAndOccupations,
+    String? titles,
+    String? genderTag,
+    String? sexualityTag,
+    String? ethnicityTag,
+    String? functionTag,
+    String? relevanceTag,
+    Set<CharacterProfileFieldId>? visibleProfileFields,
+    Color? accent,
+    Color? avatarColor,
+    ProjectImageData? profileImage,
+    IconData? icon,
+    int? birthYear,
+    int? birthDay,
+    int? birthMonth,
+    double? heightCm,
+    double? weightKg,
+    String? quote,
+    String? synopsis,
+    int? seed,
+  }) {
+    return CharacterCardData(
+      name: name ?? this.name,
+      alias: alias ?? this.alias,
+      motto: motto ?? this.motto,
+      formationsAndOccupations:
+          formationsAndOccupations ?? this.formationsAndOccupations,
+      titles: titles ?? this.titles,
+      genderTag: genderTag ?? this.genderTag,
+      sexualityTag: sexualityTag ?? this.sexualityTag,
+      ethnicityTag: ethnicityTag ?? this.ethnicityTag,
+      functionTag: functionTag ?? this.functionTag,
+      relevanceTag: relevanceTag ?? this.relevanceTag,
+      visibleProfileFields:
+          visibleProfileFields ?? this.visibleProfileFields,
+      accent: accent ?? this.accent,
+      avatarColor: avatarColor ?? this.avatarColor,
+      profileImage: profileImage ?? this.profileImage,
+      icon: icon ?? this.icon,
+      birthYear: birthYear ?? this.birthYear,
+      birthDay: birthDay ?? this.birthDay,
+      birthMonth: birthMonth ?? this.birthMonth,
+      heightCm: heightCm ?? this.heightCm,
+      weightKg: weightKg ?? this.weightKg,
+      quote: quote ?? this.quote,
+      synopsis: synopsis ?? this.synopsis,
+      seed: seed ?? this.seed,
+    );
+  }
 }
 
 enum CharacterDateType { lastModified, lastAccessed, createdAt }
@@ -148,7 +202,7 @@ class ZodiacSignData {
 }
 
 class CharacterListItem {
-  final CharacterCardData data;
+  CharacterCardData data;
   bool isPinned = false;
   int unpinnedIndex;
 

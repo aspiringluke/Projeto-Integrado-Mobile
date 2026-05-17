@@ -509,7 +509,7 @@ class _CharacterIdentityTagGrid extends StatelessWidget {
         value: genderLabel,
         accentColor: accentColor,
         selectedColor: genderColor,
-        isRequired: true,
+        isRequired: false,
         showError: showRequiredErrors && genderLabel.trim().isEmpty,
         onTap: onPickGenderTag,
       ),

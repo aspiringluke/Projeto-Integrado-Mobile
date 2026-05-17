@@ -235,9 +235,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
   void _submit() {
     final formIsValid = _formKey.currentState?.validate() ?? false;
-    final requiredTagsAreValid =
-        _selectedGenderTag.trim().isNotEmpty &&
-        _selectedRelevanceTag.trim().isNotEmpty;
+    final requiredTagsAreValid = _selectedRelevanceTag.trim().isNotEmpty;
 
     setState(() {
       _showRequiredTagErrors = !requiredTagsAreValid;
@@ -417,7 +415,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                               _selectedFunctionTag ?? '',
                             ),
                             accentColor: _dialogController.accentColor,
-                            showRequiredErrors: _showRequiredTagErrors == true,
+                            showRequiredErrors: false,
                             onPickGenderTag: () =>
                                 _openTagSelector(_CharacterTagKind.gender),
                             onPickSexualityTag: () =>
@@ -892,7 +890,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
             final accent = _dialogController.accentColor;
 
             return ProjectBottomSheetFrame(
-              title: '${_tagKindTitle(kind)}${isRequired ? ' *' : ''}',
+              title: _tagKindTitle(kind),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1538,7 +1536,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   bool _isRequiredTagKind(_CharacterTagKind kind) {
-    return kind == _CharacterTagKind.gender;
+    return false;
   }
 
   String? _addTagFor(_CharacterTagKind kind, String input) {

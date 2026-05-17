@@ -8,6 +8,7 @@ import '../../../shared/widgets/buttons/botao_voltar.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
+import 'character_notebook_page.dart';
 import 'character_card_expanded_body.dart';
 import 'character_profile_viewer_dialog.dart';
 import 'character_card_visuals.dart';
@@ -16,12 +17,14 @@ class CharacterCard extends StatefulWidget {
   final CharacterCardData data;
   final bool isPinned;
   final VoidCallback onTogglePinned;
+  final ValueChanged<CharacterCardData>? onEdited;
 
   const CharacterCard({
     super.key,
     required this.data,
     required this.isPinned,
     required this.onTogglePinned,
+    this.onEdited,
   });
 
   @override
@@ -124,7 +127,10 @@ class _CharacterCardState extends State<CharacterCard>
   void _openCharacterPage() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => _CharacterNotebookPage(data: widget.data),
+        builder: (_) => CharacterNotebookPage(
+          data: widget.data,
+          onChanged: widget.onEdited,
+        ),
       ),
     );
   }
@@ -813,7 +819,6 @@ class _CharacterHeader extends StatelessWidget {
                 accent: data.accent,
                 avatarColor: data.avatarColor,
                 profileImage: data.profileImage,
-                icon: data.icon,
                 isExpanded: isExpanded,
                 onTap: data.profileImage.bytes == null
                     ? null
@@ -1410,7 +1415,6 @@ class _CharacterNotebookHeader extends StatelessWidget {
                 accent: data.accent,
                 avatarColor: data.avatarColor,
                 profileImage: data.profileImage,
-                icon: data.icon,
                 isExpanded: true,
                 onTap: null,
               ),
@@ -1820,7 +1824,6 @@ class _CharacterGeneralTab extends StatelessWidget {
                   accent: data.accent,
                   avatarColor: data.avatarColor,
                   profileImage: data.profileImage,
-                  icon: data.icon,
                   isExpanded: true,
                   onTap: null,
                 ),

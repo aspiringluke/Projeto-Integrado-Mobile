@@ -141,6 +141,36 @@ class _ProjectPageState extends State<ProjectPage> {
     _projectCharactersGridColumns[widget.title] = _avatarGridColumns;
   }
 
+  void _updateCharacter(
+    CharacterListItem character,
+    CharacterCardData updatedData,
+  ) {
+    final previousName = character.data.name;
+    final previousAccent = character.data.accent;
+
+    setState(() {
+      character.data = updatedData;
+      _persistProjectCharacters();
+    });
+
+    if (previousName != updatedData.name ||
+        previousAccent != updatedData.accent) {
+      StoryRegistry.instance.updateCharacter(
+        projectTitle: widget.title,
+        oldName: previousName,
+        newName: updatedData.name,
+        accentColor: updatedData.accent,
+      );
+      return;
+    }
+
+    StoryRegistry.instance.registerCharacter(
+      projectTitle: widget.title,
+      name: updatedData.name,
+      accentColor: updatedData.accent,
+    );
+  }
+
   void _setAvatarGridColumns(int columnCount) {
     if (columnCount < 2 || columnCount > 6) {
       return;
@@ -214,6 +244,7 @@ class _ProjectPageState extends State<ProjectPage> {
         onToggleDisplayMode: _toggleCharacterDisplayMode,
         onChangeAvatarGridColumns: _setAvatarGridColumns,
         onTogglePinned: _togglePinnedCharacter,
+        onCharacterEdited: _updateCharacter,
       ),
       _ => _UnderConstructionSection(
         icon: _sectionMeta[_activeSection]!.icon,
