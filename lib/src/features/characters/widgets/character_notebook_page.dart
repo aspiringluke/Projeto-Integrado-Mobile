@@ -10,6 +10,7 @@ import '../../projects/widgets/project_color_editor.dart';
 import '../../projects/utils/project_image_picker.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../../projects/widgets/project_image_transform_view.dart';
+import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../../../shared/widgets/main_header.dart';
 import '../../tags/controllers/tag_controller.dart';
 import '../models/characters_models.dart';
@@ -32,6 +33,15 @@ enum _TagKind { gender, sexuality, ethnicity, function }
 enum _NotebookTab { geral, psique, historia, notas, design }
 
 enum _NotebookSection { identidade, tags, medidas, narrativa, imagem }
+
+const String _namePlaceholderText = 'O nome de nascimento do personagem.';
+const String _aliasPlaceholderText = 'Apelido ou nome popular do personagem.';
+const String _mottoPlaceholderText =
+    'Frase de efeito é um "motto", ou lema. Uma frase curta que encapsula os ideais, propósitos e/ou crenças de uma pessoa de forma a caracterizá-las.';
+const String _formationsPlaceholderText =
+    'Em que o personagem é formalmente formado e com o que o personagem formalmente trabalha.';
+const String _titlesPlaceholderText =
+    'Títulos formais e informais que designam o personagem.';
 
 enum _CharacterColorTarget { cover, accent }
 
@@ -57,44 +67,35 @@ class _PageStickyTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-        child: Container(
-          height: 46,
-          padding: const EdgeInsets.fromLTRB(14, 5, 14, 5),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                const Color(0xFFFFFFFF).withValues(alpha: 0.72),
-                const Color(0xFFF3F0F3).withValues(alpha: 0.62),
-              ],
-            ),
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.52)),
-              bottom: BorderSide(color: Colors.black.withValues(alpha: 0.045)),
-            ),
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final entry in tabs.entries) ...[
-                  _PageStickyTabChip(
-                    label: entry.value.label,
-                    icon: entry.value.icon,
-                    accentColor: accentColor,
-                    selected: entry.key == activeTab,
-                    onTap: () => onTabSelected(entry.key),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
-          ),
+    return Container(
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFFFFFFFF).withValues(alpha: 0.9),
+            const Color(0xFFF3F0F3).withValues(alpha: 0.84),
+          ],
         ),
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.52)),
+          bottom: BorderSide(color: Colors.black.withValues(alpha: 0.045)),
+        ),
+      ),
+      child: Row(
+        children: [
+          for (final entry in tabs.entries)
+            Expanded(
+              child: _PageStickyTabChip(
+                label: entry.value.label,
+                icon: entry.value.icon,
+                accentColor: accentColor,
+                selected: entry.key == activeTab,
+                onTap: () => onTabSelected(entry.key),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -121,60 +122,70 @@ class _PageStickyTabChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: selected
-                    ? accentColor.withValues(alpha: 0.18)
-                    : Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: selected
-                      ? accentColor.withValues(alpha: 0.34)
-                      : Colors.white.withValues(alpha: 0.82),
-                  width: 0.9,
+        child: Container(
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: selected
+                ? accentColor.withValues(alpha: 0.16)
+                : Colors.white.withValues(alpha: 0.2),
+            border: Border(
+              right: BorderSide(
+                color: Colors.white.withValues(alpha: 0.34),
+              ),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: selected ? 0.46 : 0.34),
+                selected
+                    ? accentColor.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.08),
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              if (selected)
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  bottom: 0,
+                  child: Container(
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
                 ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: selected ? 0.42 : 0.52),
-                    selected
-                        ? accentColor.withValues(alpha: 0.14)
-                        : Colors.white.withValues(alpha: 0.18),
-                    Colors.white.withValues(alpha: 0.08),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 14,
+                      color: selected
+                          ? _darkenCharacterDialogColor(accentColor, 0.22)
+                          : const Color(0xFF544959),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: selected
+                            ? _darkenCharacterDialogColor(accentColor, 0.22)
+                            : const Color(0xFF2C262C),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 13,
-                    color: selected
-                        ? _darkenCharacterDialogColor(accentColor, 0.22)
-                        : const Color(0xFF544959),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: selected
-                          ? _darkenCharacterDialogColor(accentColor, 0.22)
-                          : const Color(0xFF2C262C),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -262,6 +273,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
           label: 'Geral',
           icon: Icons.person_outline_rounded,
         ),
+        _NotebookTab.notas: _NotebookTabMeta(
+          label: 'Notas',
+          icon: Icons.sticky_note_2_rounded,
+        ),
         _NotebookTab.psique: _NotebookTabMeta(
           label: 'Psique',
           icon: Icons.psychology_rounded,
@@ -269,10 +284,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         _NotebookTab.historia: _NotebookTabMeta(
           label: 'História',
           icon: Icons.history_edu_rounded,
-        ),
-        _NotebookTab.notas: _NotebookTabMeta(
-          label: 'Notas',
-          icon: Icons.sticky_note_2_rounded,
         ),
         _NotebookTab.design: _NotebookTabMeta(
           label: 'Design',
@@ -289,10 +300,13 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   late TextEditingController _titlesController;
   late TextEditingController _heightController;
   late TextEditingController _weightController;
+  late ScrollController _synopsisScrollController;
   late Map<_TagKind, TagController> _tagControllers;
   late Map<_NotebookSection, GlobalKey> _sectionKeys;
   _NotebookTab _activeTab = _NotebookTab.geral;
   _CharacterColorTarget _activeColorTarget = _CharacterColorTarget.cover;
+  bool _hasPendingParentSync = false;
+  bool _didFlushParentSync = false;
 
   DateTime? _birthdayValue;
   double? _heightCmValue;
@@ -320,6 +334,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _nameController = TextEditingController(text: _draft.name);
     _aliasController = TextEditingController(text: _draft.alias);
     _synopsisController = TextEditingController(text: _draft.synopsis);
+    _synopsisController.addListener(_syncSynopsisDraft);
     _mottoController = TextEditingController(text: _draft.motto);
     _formationsController = TextEditingController(
       text: _draft.formationsAndOccupations,
@@ -331,6 +346,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _weightController = TextEditingController(
       text: formatWeightEditorValue(_draft.weightKg, _weightUnit),
     );
+    _synopsisScrollController = ScrollController();
     _tagControllers = <_TagKind, TagController>{
       for (final kind in _TagKind.values)
         kind: TagController(
@@ -358,12 +374,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   void dispose() {
     _nameController.dispose();
     _aliasController.dispose();
+    _synopsisController.removeListener(_syncSynopsisDraft);
     _synopsisController.dispose();
     _mottoController.dispose();
     _formationsController.dispose();
     _titlesController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _synopsisScrollController.dispose();
     for (final controller in _tagControllers.values) {
       controller.dispose();
     }
@@ -378,11 +396,37 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     });
   }
 
-  void _updateDraft(CharacterCardData next) {
-    setState(() {
+  void _updateDraft(CharacterCardData next, {bool rebuild = true}) {
+    if (identical(next, _draft)) return;
+
+    if (rebuild) {
+      setState(() {
+        _draft = next;
+      });
+    } else {
       _draft = next;
-    });
+    }
+    _hasPendingParentSync = true;
+  }
+
+  void _flushDraftToParent() {
+    if (_didFlushParentSync || !_hasPendingParentSync) {
+      return;
+    }
+
+    _didFlushParentSync = true;
     widget.onChanged?.call(_draft);
+  }
+
+  void _closePage() {
+    _flushDraftToParent();
+    Navigator.of(context).pop();
+  }
+
+  void _syncSynopsisDraft() {
+    final text = _synopsisController.text;
+    if (text == _draft.synopsis) return;
+    _updateDraft(_draft.copyWith(synopsis: text), rebuild: false);
   }
 
   DateTime get _birthday => _birthdayValue ??= DateTime(
@@ -397,97 +441,108 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFDF2F8),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(-0.72, -0.88),
-                    radius: 1.25,
-                    colors: [
-                      _draft.accent.withValues(alpha: 0.16),
-                      Colors.transparent,
-                    ],
+    return PopScope<void>(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _flushDraftToParent();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFDF2F8),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: RepaintBoundary(
+                child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
+              ),
+            ),
+            Positioned.fill(
+              child: RepaintBoundary(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.72, -0.88),
+                        radius: 1.25,
+                        colors: [
+                          _draft.accent.withValues(alpha: 0.16),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _NotebookHeader(
-                data: _draft,
-                onClose: () => Navigator.of(context).pop(),
-              ),
-              Expanded(
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _PageStickyTabs(
-                        accentColor: _draft.accent,
-                        activeTab: _activeTab,
-                        tabs: _tabs,
-                        onTabSelected: _setActiveTab,
-                      ),
-                      Container(
-                        height: 1,
-                        width: double.infinity,
-                        color: Colors.white.withValues(alpha: 0.84),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            switchInCurve: Curves.easeOutCubic,
-                            switchOutCurve: Curves.easeInCubic,
-                            layoutBuilder: (currentChild, previousChildren) {
-                              return Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  ...previousChildren,
-                                  if (currentChild != null) currentChild,
-                                ],
-                              );
-                            },
-                            transitionBuilder: (child, animation) {
-                              final offset = Tween<Offset>(
-                                begin: const Offset(0, 0.03),
-                                end: Offset.zero,
-                              ).animate(animation);
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: offset,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: KeyedSubtree(
-                              key: ValueKey(_activeTab),
-                              child: _buildTabContent(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                RepaintBoundary(
+                  child: _NotebookHeader(data: _draft, onClose: _closePage),
+                ),
+                Expanded(
+                  child: SafeArea(
+                    top: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _PageStickyTabs(
+                          accentColor: _draft.accent,
+                          activeTab: _activeTab,
+                          tabs: _tabs,
+                          onTabSelected: _setActiveTab,
+                        ),
+                        Container(
+                          height: 1,
+                          width: double.infinity,
+                          color: Colors.white.withValues(alpha: 0.84),
+                        ),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              layoutBuilder: (currentChild, previousChildren) {
+                                return Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    ...previousChildren,
+                                    if (currentChild != null) currentChild,
+                                  ],
+                                );
+                              },
+                              transitionBuilder: (child, animation) {
+                                final offset = Tween<Offset>(
+                                  begin: const Offset(0, 0.03),
+                                  end: Offset.zero,
+                                ).animate(animation);
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: offset,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: KeyedSubtree(
+                                key: ValueKey(_activeTab),
+                                child: _buildTabContent(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -528,8 +583,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             key: _sectionKeys[_NotebookSection.identidade],
             child: _CollapsibleSection(
               accentColor: _draft.accent,
+              leadingIconColor: _draft.avatarColor,
               title: 'Identidade',
-              subtitle: 'Nome, síntese, frase central e relevância narrativa.',
+              subtitle: '',
+              fields: const ['Nome', 'Vulgo', 'Relevância', 'Síntese', 'Frase de efeito', 'Formações', 'Títulos'],
               icon: Icons.person_outline_rounded,
               child: Column(
                 children: [
@@ -537,6 +594,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     accentColor: _draft.accent,
                     icon: Icons.badge_outlined,
                     label: 'Nome',
+                    placeholderText: _namePlaceholderText,
                     controller: _nameController,
                     onChanged: (value) =>
                         _updateDraft(_draft.copyWith(name: value)),
@@ -546,6 +604,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     accentColor: _draft.accent,
                     icon: Icons.alternate_email_rounded,
                     label: 'Vulgo',
+                    placeholderText: _aliasPlaceholderText,
                     controller: _aliasController,
                     onChanged: (value) =>
                         _updateDraft(_draft.copyWith(alias: value)),
@@ -563,37 +622,49 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     onTap: _openRelevanceSelector,
                   ),
                   const SizedBox(height: 12),
-                  _NotebookTextFieldCard(
-                    accentColor: _draft.accent,
-                    icon: Icons.short_text_rounded,
-                    label: 'Síntese',
-                    controller: _synopsisController,
-                    minLines: 3,
-                    maxLines: null,
-                    onChanged: (value) =>
-                        _updateDraft(_draft.copyWith(synopsis: value)),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 2, bottom: 8),
+                      child: Text(
+                        'Síntese',
+                        style: TextStyle(
+                          color: const Color(
+                            0xFF3A3339,
+                          ).withValues(alpha: 0.92),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   ),
+                  _buildIdentitySynopsisPanel(),
                   const SizedBox(height: 12),
                   _NotebookTextFieldCard(
                     accentColor: _draft.accent,
                     icon: Icons.format_quote_rounded,
                     label: 'Frase de efeito',
+                    placeholderText: _mottoPlaceholderText,
                     controller: _mottoController,
-                    minLines: 2,
-                    maxLines: 2,
-                    onChanged: (value) =>
-                        _updateDraft(_draft.copyWith(motto: value)),
+                    minLines: 1,
+                    maxLines: null,
+                    onChanged: (value) => _updateDraft(
+                      _draft.copyWith(motto: value),
+                      rebuild: false,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _NotebookTextFieldCard(
                     accentColor: _draft.accent,
                     icon: Icons.work_outline_rounded,
                     label: 'Formações e ocupações',
+                    placeholderText: _formationsPlaceholderText,
                     controller: _formationsController,
-                    minLines: 3,
+                    minLines: 1,
                     maxLines: null,
                     onChanged: (value) => _updateDraft(
                       _draft.copyWith(formationsAndOccupations: value),
+                      rebuild: false,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -601,11 +672,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     accentColor: _draft.accent,
                     icon: Icons.military_tech_outlined,
                     label: 'Títulos',
+                    placeholderText: _titlesPlaceholderText,
                     controller: _titlesController,
-                    minLines: 2,
+                    minLines: 1,
                     maxLines: null,
-                    onChanged: (value) =>
-                        _updateDraft(_draft.copyWith(titles: value)),
+                    onChanged: (value) => _updateDraft(
+                      _draft.copyWith(titles: value),
+                      rebuild: false,
+                    ),
                   ),
                 ],
               ),
@@ -616,8 +690,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             key: _sectionKeys[_NotebookSection.tags],
             child: _CollapsibleSection(
               accentColor: _draft.accent,
+              leadingIconColor: _draft.avatarColor,
               title: 'Tags',
-              subtitle: 'Use uma opção existente ou crie uma nova.',
+              subtitle: '',
+              fields: const ['Gênero', 'Sexualidade', 'Etnia', 'Função'],
               icon: Icons.sell_outlined,
               child: _CharacterIdentityTagGrid(
                 genderLabel: _selectedGenderTag,
@@ -651,8 +727,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             key: _sectionKeys[_NotebookSection.medidas],
             child: _CollapsibleSection(
               accentColor: _draft.accent,
+              leadingIconColor: _draft.avatarColor,
               title: 'Medidas',
-              subtitle: 'Aniversário, altura e peso como no criador.',
+              subtitle: '',
+              fields: const ['Aniversário', 'Altura', 'Peso'],
               icon: Icons.straighten_rounded,
               child: Column(
                 children: [
@@ -711,8 +789,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             key: _sectionKeys[_NotebookSection.imagem],
             child: _CollapsibleSection(
               accentColor: _draft.accent,
+              leadingIconColor: _draft.avatarColor,
               title: 'Imagem e cor',
-              subtitle: 'Foto, cor de capa e cor de realce.',
+              subtitle: '',
+              fields: const ['Foto', 'Cor de capa', 'Cor de realce'],
               icon: Icons.auto_awesome_rounded,
               child: Column(
                 children: [
@@ -837,6 +917,107 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         subtitle: subtitle,
         icon: icon,
       ),
+    );
+  }
+
+  Widget _buildIdentitySynopsisPanel() {
+    const textStyle = TextStyle(
+      color: Color(0xFF8F8990),
+      fontSize: 11,
+      height: 1.35,
+    );
+    const placeholderStyle = TextStyle(
+      color: Color(0xFF8F8990),
+      fontSize: 11,
+      height: 1.35,
+      fontStyle: FontStyle.italic,
+    );
+    const scrollPadding = EdgeInsets.only(right: 10);
+    final panelPadding = const EdgeInsets.all(12);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _synopsisController,
+          builder: (context, value, child) {
+            return EditableSynopsisPanel(
+              controller: _synopsisController,
+              scrollController: _synopsisScrollController,
+              isEditing: true,
+              height: _calculateSynopsisEditorHeight(
+                context: context,
+                maxWidth: constraints.maxWidth,
+                textStyle: textStyle,
+                panelPadding: panelPadding,
+                scrollPadding: scrollPadding,
+              ),
+              focusedBorderColor: _draft.accent,
+              placeholderText: synopsisPlaceholderText,
+              textStyle: textStyle,
+              fillColor: Colors.white.withValues(alpha: 0.72),
+              blurSigma: 4,
+              backgroundGradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.8),
+                  const Color(0xFFFFF8FC).withValues(alpha: 0.68),
+                  const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+                ],
+                stops: const [0.0, 0.55, 1.0],
+              ),
+              panelPadding: panelPadding,
+              scrollPadding: scrollPadding,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.78),
+                width: 0.7,
+              ),
+              placeholderStyle: placeholderStyle,
+              viewerBuilder: (context, text, style) {
+                return CharacterMarkdownText(data: text, style: style);
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  double _calculateSynopsisEditorHeight({
+    required BuildContext context,
+    required double maxWidth,
+    required TextStyle textStyle,
+    required EdgeInsetsGeometry panelPadding,
+    required EdgeInsetsGeometry scrollPadding,
+  }) {
+    final text = _synopsisController.text.trim().isEmpty
+        ? synopsisPlaceholderText
+        : _synopsisController.text;
+    final resolvedPanelPadding = panelPadding.resolve(
+      Directionality.of(context),
+    );
+    final resolvedScrollPadding = scrollPadding.resolve(
+      Directionality.of(context),
+    );
+    final availableWidth = max(
+      0.0,
+      maxWidth -
+          resolvedPanelPadding.horizontal -
+          resolvedScrollPadding.horizontal,
+    );
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: textStyle),
+      textDirection: Directionality.of(context),
+      maxLines: null,
+    )..layout(maxWidth: availableWidth);
+    final lineHeight = (textStyle.fontSize ?? 11) * (textStyle.height ?? 1.0);
+    final estimatedHeight =
+        textPainter.size.height + resolvedPanelPadding.vertical;
+
+    return estimatedHeight.clamp(
+      lineHeight + resolvedPanelPadding.vertical,
+      220.0,
     );
   }
 
@@ -1976,8 +2157,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     );
   }
 
-  List<ProjectTagData> _optionsFor(_TagKind kind) => _knownTagsFor(kind);
-
   List<ProjectTagData> _knownTagsFor(_TagKind kind) {
     return _tagControllers[kind]?.knownTags ?? const <ProjectTagData>[];
   }
@@ -2225,7 +2404,7 @@ class _NotebookHeaderInfoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glowColor = data.accent.withValues(alpha: 0.26);
+    final glowColor = data.accent.withValues(alpha: 0.34);
     final dropShadow = Colors.black.withValues(alpha: 0.22);
 
     return ConstrainedBox(
@@ -2241,7 +2420,8 @@ class _NotebookHeaderInfoPanel extends StatelessWidget {
           fontStyle: FontStyle.italic,
           letterSpacing: 0.1,
           shadows: [
-            Shadow(color: glowColor, blurRadius: 14),
+            Shadow(color: glowColor, blurRadius: 18),
+            Shadow(color: glowColor, blurRadius: 8),
             Shadow(
               color: dropShadow,
               blurRadius: 8,
@@ -2274,25 +2454,26 @@ class _NotebookHeaderTitleBlock extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.46),
           ),
           const SizedBox(height: 4),
-          Text(
-            data.alias.isEmpty ? 'Sem vulgo' : data.alias,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: const Color(0xFFF1ECF0).withValues(alpha: 0.74),
-              fontSize: 12.5,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w600,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withValues(alpha: 0.14),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          if (data.alias.trim().isNotEmpty)
+            Text(
+              data.alias,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: const Color(0xFFF1ECF0).withValues(alpha: 0.74),
+                fontSize: 12.5,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.14),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -2352,69 +2533,14 @@ class _NotebookHeaderCoverBackground extends StatelessWidget {
         if (data.profileImage.bytes != null) ...[
           _NotebookHeaderCoverImageLayer(
             profileImage: data.profileImage,
-            sigma: 0.8,
+            sigma: 0,
             opacity: 0.9,
-            maskColors: const [
-              Colors.black,
-              Colors.black,
-              Color(0xAA000000),
-              Color(0x44000000),
-              Colors.transparent,
-            ],
-            maskStops: const [0.0, 0.42, 0.78, 0.92, 1.0],
-          ),
-          _NotebookHeaderCoverImageLayer(
-            profileImage: data.profileImage,
-            sigma: 10,
-            opacity: 0.3,
-            maskColors: const [
-              Colors.transparent,
-              Color(0x66000000),
-              Color(0x99000000),
-              Color(0x33000000),
-              Colors.transparent,
-            ],
-            maskStops: const [0.0, 0.48, 0.76, 0.92, 1.0],
-          ),
-          _NotebookHeaderCoverImageLayer(
-            profileImage: data.profileImage,
-            sigma: 20,
-            opacity: 0.15,
-            maskColors: const [
-              Colors.transparent,
-              Colors.transparent,
-              Color(0x22000000),
-              Color(0x33000000),
-              Colors.transparent,
-            ],
-            maskStops: const [0.0, 0.56, 0.82, 0.94, 1.0],
           ),
         ] else ...[
           _NotebookHeaderCoverIconLayer(
             accentColor: data.accent,
-            sigma: 3,
+            sigma: 0,
             opacity: 0.36,
-            maskColors: const [
-              Colors.black,
-              Colors.black,
-              Color(0x88000000),
-              Color(0x33000000),
-              Colors.transparent,
-            ],
-            maskStops: const [0.0, 0.42, 0.78, 0.92, 1.0],
-          ),
-          _NotebookHeaderCoverIconLayer(
-            accentColor: data.accent,
-            sigma: 16,
-            opacity: 0.18,
-            maskColors: const [
-              Colors.transparent,
-              Color(0x44000000),
-              Color(0x77000000),
-              Color(0x22000000),
-              Colors.transparent,
-            ],
-            maskStops: const [0.0, 0.5, 0.78, 0.94, 1.0],
           ),
         ],
         Positioned.fill(
@@ -2459,45 +2585,34 @@ class _NotebookHeaderCoverImageLayer extends StatelessWidget {
   final ProjectImageData profileImage;
   final double sigma;
   final double opacity;
-  final List<Color> maskColors;
-  final List<double> maskStops;
 
   const _NotebookHeaderCoverImageLayer({
     required this.profileImage,
     required this.sigma,
     required this.opacity,
-    required this.maskColors,
-    required this.maskStops,
   });
 
   @override
   Widget build(BuildContext context) {
+    final image = SizedBox.expand(
+      child: ProjectImageTransformView(
+        imageBytes: profileImage.bytes!,
+        imageWidth: profileImage.width ?? 1,
+        imageHeight: profileImage.height ?? 1,
+        scale: profileImage.scale,
+        offsetX: profileImage.offsetX,
+        offsetY: profileImage.offsetY,
+      ),
+    );
+
     return Opacity(
       opacity: opacity,
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) {
-          return LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: maskColors,
-            stops: maskStops,
-          ).createShader(bounds);
-        },
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: SizedBox.expand(
-            child: ProjectImageTransformView(
-              imageBytes: profileImage.bytes!,
-              imageWidth: profileImage.width ?? 1,
-              imageHeight: profileImage.height ?? 1,
-              scale: profileImage.scale,
-              offsetX: profileImage.offsetX,
-              offsetY: profileImage.offsetY,
+      child: sigma <= 0
+          ? image
+          : ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+              child: image,
             ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -2506,46 +2621,35 @@ class _NotebookHeaderCoverIconLayer extends StatelessWidget {
   final Color accentColor;
   final double sigma;
   final double opacity;
-  final List<Color> maskColors;
-  final List<double> maskStops;
 
   const _NotebookHeaderCoverIconLayer({
     required this.accentColor,
     required this.sigma,
     required this.opacity,
-    required this.maskColors,
-    required this.maskStops,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opacity,
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) {
-          return LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: maskColors,
-            stops: maskStops,
-          ).createShader(bounds);
-        },
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Transform.translate(
-              offset: const Offset(-14, 0),
-              child: Icon(
-                Icons.person_rounded,
-                size: 220,
-                color: accentColor.withValues(alpha: 0.96),
-              ),
-            ),
-          ),
+    final icon = Align(
+      alignment: Alignment.centerLeft,
+      child: Transform.translate(
+        offset: const Offset(-14, 0),
+        child: Icon(
+          Icons.person_rounded,
+          size: 220,
+          color: accentColor.withValues(alpha: 0.96),
         ),
       ),
+    );
+
+    return Opacity(
+      opacity: opacity,
+      child: sigma <= 0
+          ? icon
+          : ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+              child: icon,
+            ),
     );
   }
 }
@@ -2565,54 +2669,48 @@ class _MiniChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground = Colors.white.withValues(alpha: 0.98);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.34),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.52),
-              width: 0.9,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.2),
-                color.withValues(alpha: 0.5),
-                color.withValues(alpha: 0.3),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.22),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.52),
+          width: 0.9,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.2),
+            color.withValues(alpha: 0.5),
+            color.withValues(alpha: 0.3),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.22),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: foreground),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                height: 1.0,
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 12, color: foreground),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: foreground,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    height: 1.0,
-                  ),
-                ),
-              ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -2837,17 +2935,21 @@ class _SectionChip extends StatelessWidget {
 
 class _CollapsibleSection extends StatefulWidget {
   final Color accentColor;
+  final Color leadingIconColor;
   final String title;
   final String subtitle;
+  final List<String>? fields;
   final IconData icon;
   final Widget child;
 
   const _CollapsibleSection({
     required this.accentColor,
+    required this.leadingIconColor,
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.child,
+    this.fields,
   });
 
   @override
@@ -2859,17 +2961,13 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
+    return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.54),
+            color: Colors.white.withValues(alpha: 0.78),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.78),
+              color: Colors.white.withValues(alpha: 0.88),
               width: 0.8,
             ),
             boxShadow: [
@@ -2888,26 +2986,40 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
                 onTap: () => setState(() => _expanded = !_expanded),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: widget.accentColor.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          widget.icon,
-                          size: 17,
-                          color: const Color(0xFF544959),
-                        ),
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) {
+                      return LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.black,
+                          Colors.black,
+                          Colors.black.withValues(alpha: 0.0),
+                        ],
+                        stops: const [0.0, 0.75, 1.0],
+                      ).createShader(bounds);
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: widget.accentColor.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                      child: Icon(
+                        widget.icon,
+                        size: 17,
+                        color: widget.leadingIconColor,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                             Text(
                               widget.title,
                               style: const TextStyle(
@@ -2916,15 +3028,29 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.subtitle,
-                              style: TextStyle(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
+                            const SizedBox(height: 4),
+                            if (widget.fields != null && widget.fields!.isNotEmpty)
+                              Text(
+                                widget.fields!.map((f) => '• $f').join('  '),
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.48),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            else
+                              Text(
+                                widget.subtitle,
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.45),
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -2935,6 +3061,7 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
                         color: Colors.black.withValues(alpha: 0.58),
                       ),
                     ],
+                  ),
                   ),
                 ),
               ),
@@ -2950,8 +3077,6 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }
@@ -2960,7 +3085,8 @@ class _NotebookTextFieldCard extends StatelessWidget {
   final Color accentColor;
   final IconData icon;
   final String label;
-  final TextEditingController? controller;
+  final String placeholderText;
+  final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final int minLines;
   final int? maxLines;
@@ -2969,7 +3095,8 @@ class _NotebookTextFieldCard extends StatelessWidget {
     required this.accentColor,
     required this.icon,
     required this.label,
-    this.controller,
+    required this.placeholderText,
+    required this.controller,
     required this.onChanged,
     this.minLines = 1,
     this.maxLines = 1,
@@ -2977,6 +3104,18 @@ class _NotebookTextFieldCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const textStyle = TextStyle(
+      color: Color(0xFF544959),
+      fontSize: 12.5,
+      height: 1.35,
+    );
+    const placeholderStyle = TextStyle(
+      color: Color(0xFF8F8990),
+      fontSize: 11,
+      height: 1.35,
+      fontStyle: FontStyle.italic,
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -3014,51 +3153,162 @@ class _NotebookTextFieldCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          TextField(
+          _NotebookDynamicTextFieldPanel(
+            accentColor: accentColor,
+            placeholderText: placeholderText,
             controller: controller,
             onChanged: onChanged,
             minLines: minLines,
             maxLines: maxLines,
-            keyboardType: maxLines == 1
-                ? TextInputType.text
-                : TextInputType.multiline,
-            textInputAction: maxLines == 1
-                ? TextInputAction.next
-                : TextInputAction.newline,
-            decoration: InputDecoration(
-              isDense: true,
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.7),
-              hintText: label,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.82),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.82),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: accentColor.withValues(alpha: 0.7),
-                  width: 1.05,
-                ),
-              ),
-            ),
-            style: const TextStyle(
-              color: Color(0xFF2C262C),
-              fontSize: 13,
-              height: 1.35,
-            ),
+            textStyle: textStyle,
+            placeholderStyle: placeholderStyle,
           ),
         ],
       ),
     );
+  }
+}
+
+class _NotebookDynamicTextFieldPanel extends StatefulWidget {
+  final Color accentColor;
+  final String placeholderText;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final int minLines;
+  final int? maxLines;
+  final TextStyle textStyle;
+  final TextStyle placeholderStyle;
+
+  const _NotebookDynamicTextFieldPanel({
+    required this.accentColor,
+    required this.placeholderText,
+    required this.controller,
+    required this.onChanged,
+    required this.minLines,
+    required this.maxLines,
+    required this.textStyle,
+    required this.placeholderStyle,
+  });
+
+  @override
+  State<_NotebookDynamicTextFieldPanel> createState() =>
+      _NotebookDynamicTextFieldPanelState();
+}
+
+class _NotebookDynamicTextFieldPanelState
+    extends State<_NotebookDynamicTextFieldPanel> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const panelPadding = EdgeInsets.all(12);
+    const scrollPadding = EdgeInsets.only(right: 8);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: widget.controller,
+          builder: (context, value, child) {
+            return EditableSynopsisPanel(
+              controller: widget.controller,
+              scrollController: _scrollController,
+              isEditing: true,
+              onChanged: widget.onChanged,
+              height: _calculateHeight(
+                context: context,
+                maxWidth: constraints.maxWidth,
+                panelPadding: panelPadding,
+                scrollPadding: scrollPadding,
+              ),
+              placeholderText: widget.placeholderText,
+              textStyle: widget.textStyle,
+              placeholderStyle: widget.placeholderStyle,
+              focusedBorderColor: widget.accentColor,
+              minLines: widget.minLines,
+              maxLines: widget.maxLines,
+              keyboardType: widget.maxLines == 1
+                  ? TextInputType.text
+                  : TextInputType.multiline,
+              textInputAction: widget.maxLines == 1
+                  ? TextInputAction.next
+                  : TextInputAction.newline,
+              panelPadding: panelPadding,
+              scrollPadding: scrollPadding,
+              fillColor: Colors.white.withValues(alpha: 0.72),
+              blurSigma: 4,
+              backgroundGradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.8),
+                  const Color(0xFFFFF8FC).withValues(alpha: 0.68),
+                  const Color(0xFFF1E6EE).withValues(alpha: 0.42),
+                ],
+                stops: const [0.0, 0.55, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.78),
+                width: 0.7,
+              ),
+              viewerBuilder: (context, text, style) => Text(text, style: style),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  double _calculateHeight({
+    required BuildContext context,
+    required double maxWidth,
+    required EdgeInsetsGeometry panelPadding,
+    required EdgeInsetsGeometry scrollPadding,
+  }) {
+    final text = widget.controller.text.trim().isEmpty
+        ? widget.placeholderText
+        : widget.controller.text;
+    final resolvedPanelPadding = panelPadding.resolve(
+      Directionality.of(context),
+    );
+    final resolvedScrollPadding = scrollPadding.resolve(
+      Directionality.of(context),
+    );
+    final availableWidth = max(
+      0.0,
+      maxWidth -
+          resolvedPanelPadding.horizontal -
+          resolvedScrollPadding.horizontal,
+    );
+    final measurementStyle = widget.controller.text.trim().isEmpty
+        ? widget.placeholderStyle
+        : widget.textStyle;
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: measurementStyle),
+      textDirection: Directionality.of(context),
+      maxLines: widget.maxLines,
+    )..layout(maxWidth: availableWidth);
+    final lineStyle = measurementStyle;
+    final lineHeight = (lineStyle.fontSize ?? 11) * (lineStyle.height ?? 1.0);
+    final minimumHeight =
+        (lineHeight * widget.minLines) + resolvedPanelPadding.vertical;
+    final maxHeight = widget.maxLines == 1 ? minimumHeight : 220.0;
+    final estimatedHeight =
+        textPainter.size.height + resolvedPanelPadding.vertical;
+
+    return estimatedHeight.clamp(minimumHeight, maxHeight);
   }
 }
 
@@ -3321,18 +3571,6 @@ class _ImageTile extends StatelessWidget {
       ),
     );
   }
-}
-
-String _iconLabelFor(IconData icon) {
-  if (icon == Icons.person_rounded) return 'Personagem';
-  if (icon == Icons.auto_awesome_rounded) return 'Auto';
-  if (icon == Icons.psychology_rounded) return 'Psique';
-  if (icon == Icons.book_rounded) return 'Livro';
-  if (icon == Icons.palette_rounded) return 'Paleta';
-  if (icon == Icons.bolt_rounded) return 'Energia';
-  if (icon == Icons.sports_martial_arts_rounded) return 'Combate';
-  if (icon == Icons.theater_comedy_rounded) return 'Palco';
-  return 'Personalizado';
 }
 
 class _CharacterIdentityTagGrid extends StatelessWidget {

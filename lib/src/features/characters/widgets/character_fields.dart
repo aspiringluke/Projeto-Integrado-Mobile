@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
@@ -243,17 +241,7 @@ class _CharacterPillSurface extends StatelessWidget {
       child: child,
     );
 
-    if (blurSigma <= 0) {
-      return content;
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-        child: content,
-      ),
-    );
+    return content;
   }
 }
 

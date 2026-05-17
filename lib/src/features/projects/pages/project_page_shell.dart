@@ -194,7 +194,7 @@ class _ProjectPageState extends State<ProjectPage> {
         CharacterListItem(
           data: CharacterCardData(
             name: draft.name,
-            alias: draft.alias.isEmpty ? 'Sem vulgo' : draft.alias,
+            alias: draft.alias,
             motto: draft.motto,
             formationsAndOccupations: draft.formationsAndOccupations,
             titles: draft.titles,

@@ -30,21 +30,23 @@ class ProjectBottomSheetFrame extends StatelessWidget {
                 width: 0.8,
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF2C262C),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2C262C),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                child,
-              ],
+                  const SizedBox(height: 14),
+                  child,
+                ],
+              ),
             ),
           ),
         ),

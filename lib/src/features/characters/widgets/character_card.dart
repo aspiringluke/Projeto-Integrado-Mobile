@@ -112,6 +112,44 @@ class _CharacterCardState extends State<CharacterCard>
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant CharacterCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.data.synopsis != widget.data.synopsis) {
+      _syncControllerText(_synopsisController, widget.data.synopsis);
+    }
+    if (oldWidget.data.quote != widget.data.quote) {
+      _syncControllerText(_quoteController, widget.data.quote);
+    }
+    if (oldWidget.data.heightCm != widget.data.heightCm) {
+      _heightCmValue = widget.data.heightCm;
+      _syncControllerText(
+        _heightController,
+        formatHeightEditorValue(widget.data.heightCm, _heightUnit),
+      );
+    }
+    if (oldWidget.data.weightKg != widget.data.weightKg) {
+      _weightKgValue = widget.data.weightKg;
+      _syncControllerText(
+        _weightController,
+        formatWeightEditorValue(widget.data.weightKg, _weightUnit),
+      );
+    }
+    if (oldWidget.data.birthDay != widget.data.birthDay ||
+        oldWidget.data.birthMonth != widget.data.birthMonth ||
+        oldWidget.data.birthYear != widget.data.birthYear) {
+      _birthdayValue = DateTime(
+        widget.data.birthYear,
+        widget.data.birthMonth,
+        widget.data.birthDay,
+      );
+    }
+    if (oldWidget.data.seed != widget.data.seed) {
+      _dateEntries = CharacterDateEntries.fromSeed(widget.data.seed);
+    }
+  }
+
   void _toggleExpanded() {
     setState(() {
       _isExpanded = !_isExpanded;
@@ -122,6 +160,17 @@ class _CharacterCardState extends State<CharacterCard>
     } else {
       _controller.reverse();
     }
+  }
+
+  void _syncControllerText(TextEditingController? controller, String nextText) {
+    if (controller == null || controller.text == nextText) {
+      return;
+    }
+
+    controller.value = TextEditingValue(
+      text: nextText,
+      selection: TextSelection.collapsed(offset: nextText.length),
+    );
   }
 
   void _openCharacterPage() {
@@ -1436,16 +1485,17 @@ class _CharacterNotebookHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      data.alias.isEmpty ? 'Sem vulgo' : data.alias,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.56),
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
+                    if (data.alias.trim().isNotEmpty)
+                      Text(
+                        data.alias,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.56),
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 8,
@@ -1793,7 +1843,7 @@ class _CharacterGeneralTab extends StatelessWidget {
                 _DetailRow(
                   icon: Icons.alternate_email_rounded,
                   label: 'Vulgo',
-                  value: data.alias.isEmpty ? 'Sem vulgo' : data.alias,
+                  value: data.alias,
                 ),
                 _DetailRow(
                   icon: Icons.star_rounded,

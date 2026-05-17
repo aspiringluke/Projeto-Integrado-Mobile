@@ -15,6 +15,62 @@ enum CharacterProfileFieldId {
   relevance,
 }
 
+enum CharacterComplexityDomain { geral, notas, psique, historia, design }
+
+enum CharacterComplexityTier { contorno, periferico, orbital, nucleo }
+
+class CharacterComplexityFieldDefinition {
+  final String key;
+  final CharacterComplexityDomain domain;
+  final int unlockLevel;
+  final String label;
+  final String placeholder;
+
+  const CharacterComplexityFieldDefinition({
+    required this.key,
+    required this.domain,
+    required this.unlockLevel,
+    required this.label,
+    required this.placeholder,
+  });
+}
+
+extension CharacterComplexityTierLevel on CharacterComplexityTier {
+  int get level => switch (this) {
+    CharacterComplexityTier.contorno => 1,
+    CharacterComplexityTier.periferico => 2,
+    CharacterComplexityTier.orbital => 3,
+    CharacterComplexityTier.nucleo => 4,
+  };
+}
+
+CharacterComplexityTier characterComplexityTierFromRelevanceTag(
+  String relevanceTag,
+) {
+  switch (relevanceTag.trim().toLowerCase()) {
+    case 'nucleo':
+      return CharacterComplexityTier.nucleo;
+    case 'orbital':
+      return CharacterComplexityTier.orbital;
+    case 'periferico':
+      return CharacterComplexityTier.periferico;
+    case 'contorno':
+    default:
+      return CharacterComplexityTier.contorno;
+  }
+}
+
+List<CharacterComplexityFieldDefinition> resolveCharacterComplexityFields({
+  required CharacterComplexityDomain domain,
+  required CharacterComplexityTier tier,
+  required Iterable<CharacterComplexityFieldDefinition> catalog,
+}) {
+  final level = tier.level;
+  return catalog
+      .where((field) => field.domain == domain && field.unlockLevel <= level)
+      .toList(growable: false);
+}
+
 class CharacterCardData {
   final String name;
   final String alias;
@@ -38,6 +94,7 @@ class CharacterCardData {
   final double weightKg;
   final String quote;
   final String synopsis;
+  final Map<String, String> notebookComplexityValues;
   final int seed;
 
   const CharacterCardData({
@@ -63,6 +120,7 @@ class CharacterCardData {
     required this.weightKg,
     required this.quote,
     required this.synopsis,
+    this.notebookComplexityValues = const <String, String>{},
     required this.seed,
   });
 
@@ -89,6 +147,7 @@ class CharacterCardData {
     double? weightKg,
     String? quote,
     String? synopsis,
+    Map<String, String>? notebookComplexityValues,
     int? seed,
   }) {
     return CharacterCardData(
@@ -103,8 +162,7 @@ class CharacterCardData {
       ethnicityTag: ethnicityTag ?? this.ethnicityTag,
       functionTag: functionTag ?? this.functionTag,
       relevanceTag: relevanceTag ?? this.relevanceTag,
-      visibleProfileFields:
-          visibleProfileFields ?? this.visibleProfileFields,
+      visibleProfileFields: visibleProfileFields ?? this.visibleProfileFields,
       accent: accent ?? this.accent,
       avatarColor: avatarColor ?? this.avatarColor,
       profileImage: profileImage ?? this.profileImage,
@@ -116,6 +174,8 @@ class CharacterCardData {
       weightKg: weightKg ?? this.weightKg,
       quote: quote ?? this.quote,
       synopsis: synopsis ?? this.synopsis,
+      notebookComplexityValues:
+          notebookComplexityValues ?? this.notebookComplexityValues ?? const <String, String>{},
       seed: seed ?? this.seed,
     );
   }
