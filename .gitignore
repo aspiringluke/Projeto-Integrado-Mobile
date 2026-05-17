@@ -46,3 +46,7 @@ app.*.map.json
 
 # banco de dados
 wireframe.db
+
+# secrets
+.env
+.config.json
