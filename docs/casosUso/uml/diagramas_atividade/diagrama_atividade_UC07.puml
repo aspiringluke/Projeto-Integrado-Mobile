@@ -5,6 +5,9 @@ start
 :Acessar listagem de itens;
 :Clicar em "Criar pasta";
 :Informar nome da pasta;
+if (Deseja definir classificações e tags?) then (sim)
+  :Criar classificações e adicionar tags;
+endif
 if (Deseja cancelar criação?) then (sim)
   :Encerrar ação sem criar pasta;
   stop

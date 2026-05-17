@@ -5,6 +5,17 @@ start
 :Acessar lista de personagens;
 :Clicar em "Criar personagem";
 :Preencher dados da ficha;
+:Definir relevância do personagem;
+if (Deseja cadastrar nova opção de tag?) then (sim)
+  :Informar nova opção no seletor;
+  |Sistema|
+  if (Tag já cadastrada?) then (sim)
+    :Reaproveitar opção existente;
+  else (não)
+    :Cadastrar nova opção de tag;
+  endif
+  |Usuário|
+endif
 if (Deseja imagem?) then (sim)
   :Acionar upload de imagem;
 endif

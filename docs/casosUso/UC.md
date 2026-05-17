@@ -46,11 +46,13 @@ Documento consolidado dos casos de uso.
 1. Abrir a tela inicial.
 2. Clicar em "Novo Projeto".
 3. Informar nome do projeto.
-4. Sistema cria o projeto.
+4. Adicionar tags ao projeto (opcional).
+5. Sistema cria o projeto.
 
 ## Fluxo alternativo
 
 - A1 - Nome não informado: sistema exibe validação de nome obrigatório e bloqueia a criação.
+- A2 - Tag já cadastrada informada na criação: sistema reaproveita a tag existente e a associa ao projeto.
 
 ## Requisitos relacionados
 
@@ -120,6 +122,7 @@ Documento consolidado dos casos de uso.
 
 - A1 - Campos obrigatórios ausentes: sistema destaca os campos pendentes e bloqueia a criação.
 - A2 - Cancelar criação: sistema descarta os dados preenchidos e retorna à lista de personagens.
+- A3 - Tag já cadastrada informada no seletor: sistema reaproveita a opção existente.
 
 ## Requisitos relacionados
 
@@ -252,8 +255,9 @@ A2 - Nota sem título:
 1. Acessar a tela de listagem de itens.
 2. Acionar a opção "Criar pasta".
 3. Informar nome da pasta.
-4. Confirmar criação.
-5. Sistema exibe a pasta na listagem.
+4. Definir classificações e tags da pasta (opcional).
+5. Confirmar criação.
+6. Sistema exibe a pasta na listagem.
 
 ## Fluxos alternativos
 
