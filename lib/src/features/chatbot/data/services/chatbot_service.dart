@@ -1,16 +1,40 @@
-/// Service responsável por aplicar técnicas de Inteligência Artificial
-/// no gerenciamento de personagens.
-class ChatbotService {
-  
-  /// Metodologia: Processamento de Linguagem Natural (NLP)
-  /// Objetivo: Gerar uma sinopse criativa baseada no nome e alcunha do personagem.
-  Future<String> gerarSinopseComIA(String nome, String alias) async {
-    
-    // Simulação de chamada de API de IA (como Google Gemini ou OpenAI)
-    // Na implementação real, enviaríamos um prompt para o modelo.
-    await Future.delayed(const Duration(seconds: 1)); 
+import 'package:mistralai_dart/mistralai_dart.dart';
+import 'package:projeto_integrado_mobile/src/features/chatbot/data/services/i_chatbot_service.dart';
 
-    return "A IA analisou o perfil e determinou: $nome, também conhecido como '$alias', "
-           "é um herói cuja história é marcada por desafios épicos e uma determinação inabalável.";
+class ChatbotService implements IChatbotService
+{
+  @override
+  Future<(bool, String)> enviarMensagem(List<String> context, String msg) async {
+    final client = MistralClient.fromEnvironment();
+
+    // preparar o contexto
+    List<ChatMessage> mensagens = [];
+    bool isUserMessage = true;
+    for(String i in context)
+    {
+        mensagens.add(
+            isUserMessage
+            ? ChatMessage.user(i)
+            : ChatMessage.assistant(i)
+        );
+
+        isUserMessage = !isUserMessage;
+    }
+    mensagens.add(ChatMessage.user(msg));
+
+    try{
+        final response = await client.chat.create(
+            request: ChatCompletionRequest(
+                model: "mistral-small-latest",
+                messages: mensagens,
+            )
+        );
+        return (true, response.text.toString());
+    } catch(e) {
+        final cleanError = e.toString().replaceFirst("Exception: ", "");
+        return (false, cleanError);
+    } finally {
+        client.close();
+    }
   }
 }
