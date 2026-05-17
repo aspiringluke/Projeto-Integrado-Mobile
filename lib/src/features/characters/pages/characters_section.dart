@@ -7,7 +7,10 @@ import '../widgets/character_card_visuals.dart';
 class CharactersSection extends StatelessWidget {
   final List<CharacterListItem> characters;
   final ValueChanged<CharacterListItem> onTogglePinned;
-  final void Function(CharacterListItem character, CharacterCardData updatedData)
+  final void Function(
+    CharacterListItem character,
+    CharacterCardData updatedData,
+  )
   onCharacterEdited;
   final bool showAvatarGrid;
   final int avatarGridColumns;
@@ -51,15 +54,19 @@ class CharactersSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           child: Row(
             children: [
-              const Text(
-                'Visualização',
-                style: TextStyle(
-                  color: Color(0xFF544959),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              const Expanded(
+                child: Text(
+                  'Visualização',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFF544959),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 10),
               if (showAvatarGrid) ...[
                 PopupMenuButton<int>(
                   tooltip: 'Configuração da grade',
@@ -79,11 +86,16 @@ class CharactersSection extends StatelessWidget {
                         size: 20,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        '$avatarGridColumns colunas',
-                        style: const TextStyle(
-                          color: Color(0xFF544959),
-                          fontSize: 14,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 82),
+                        child: Text(
+                          '$avatarGridColumns colunas',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF544959),
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],

@@ -506,8 +506,10 @@ class _CharacterCardState extends State<CharacterCard>
       },
     );
 
-    monthController.dispose();
-    dayController.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      monthController.dispose();
+      dayController.dispose();
+    });
 
     if (!mounted || selectedDate == null) {
       return;
@@ -1596,33 +1598,50 @@ class _NotebookInfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.58),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.24),
-          width: 0.8,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: const Color(0xFF544959)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF2C262C),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fallbackWidth = MediaQuery.sizeOf(context).width - 56;
+        final maxWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : fallbackWidth.clamp(120.0, 320.0).toDouble();
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.58),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.24),
+                width: 0.8,
               ),
             ),
-          ],
-        ),
-      ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 14, color: const Color(0xFF544959)),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: const TextStyle(
+                        color: Color(0xFF2C262C),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

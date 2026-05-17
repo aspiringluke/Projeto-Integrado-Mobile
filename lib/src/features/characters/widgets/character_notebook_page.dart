@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_local_variable
+
 import 'dart:math';
 import 'dart:ui';
 
@@ -129,9 +131,7 @@ class _PageStickyTabChip extends StatelessWidget {
                 ? accentColor.withValues(alpha: 0.16)
                 : Colors.white.withValues(alpha: 0.2),
             border: Border(
-              right: BorderSide(
-                color: Colors.white.withValues(alpha: 0.34),
-              ),
+              right: BorderSide(color: Colors.white.withValues(alpha: 0.34)),
             ),
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -174,6 +174,8 @@ class _PageStickyTabChip extends StatelessWidget {
                     Text(
                       label,
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: selected
                             ? _darkenCharacterDialogColor(accentColor, 0.22)
@@ -462,7 +464,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
           children: [
             Positioned.fill(
               child: RepaintBoundary(
-                child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
+                child: Image.asset(
+                  'assets/images/FUNDO.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             Positioned.fill(
@@ -519,7 +524,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                                   fit: StackFit.expand,
                                   children: [
                                     ...previousChildren,
-                                    if (currentChild != null) currentChild,
+                                    ?currentChild,
                                   ],
                                 );
                               },
@@ -594,7 +599,15 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
               leadingIconColor: _draft.avatarColor,
               title: 'Identidade',
               subtitle: '',
-              fields: const ['Nome', 'Vulgo', 'Relevância', 'Síntese', 'Frase de efeito', 'Formações', 'Títulos'],
+              fields: const [
+                'Nome',
+                'Vulgo',
+                'Relevância',
+                'Síntese',
+                'Frase de efeito',
+                'Formações',
+                'Títulos',
+              ],
               icon: Icons.person_outline_rounded,
               child: Column(
                 children: [
@@ -1378,8 +1391,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
-    monthController.dispose();
-    dayController.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      monthController.dispose();
+      dayController.dispose();
+    });
 
     if (!mounted || selectedDate == null) return;
     _birthdayValue = selectedDate;
@@ -1776,7 +1791,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
-    inputController.dispose();
+    Future<void>.delayed(
+      const Duration(milliseconds: 300),
+      inputController.dispose,
+    );
     if (!mounted || result == null) return;
     _setSelectedTag(kind, result);
     _updateDraft(
@@ -1790,7 +1808,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _openTagSelectorLegacy(_TagKind kind) async {
-    final inputController = TextEditingController();
     final selectedLabel = _selectedTagFor(kind);
     final isRequired = kind == _TagKind.gender;
     final currentValue = selectedLabel;
@@ -1919,11 +1936,12 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             final score = temp.score;
             final category = temp.categoryForScore(score);
             final screenHeight = MediaQuery.sizeOf(context).height;
+            final sheetHeight = min(max(screenHeight - 180, 280.0), 640.0);
 
             return ProjectBottomSheetFrame(
               title: 'Relevância narrativa',
               child: SizedBox(
-                height: min(screenHeight * 0.82, 640),
+                height: sheetHeight,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -2213,7 +2231,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       select: true,
     );
     if (resolved == null) return null;
-    setState(() {});
     return resolved;
   }
 
@@ -2978,121 +2995,122 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.88),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.88),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: ShaderMask(
-                    blendMode: BlendMode.srcIn,
-                    shaderCallback: (bounds) {
-                      return LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.black,
-                          Colors.black,
-                          Colors.black.withValues(alpha: 0.0),
-                        ],
-                        stops: const [0.0, 0.75, 1.0],
-                      ).createShader(bounds);
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: widget.accentColor.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) {
+                  return LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.black,
+                      Colors.black,
+                      Colors.black.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.0, 0.75, 1.0],
+                  ).createShader(bounds);
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: widget.accentColor.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Icon(
                         widget.icon,
                         size: 17,
                         color: widget.leadingIconColor,
                       ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                            Text(
-                              widget.title,
-                              style: const TextStyle(
-                                color: Color(0xFF2C262C),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
+                              color: Color(0xFF2C262C),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
                             ),
-                            const SizedBox(height: 4),
-                            if (widget.fields != null && widget.fields!.isNotEmpty)
-                              Text(
-                                widget.fields!.map((f) => '• $f').join('  '),
-                                style: TextStyle(
-                                  color: Colors.black.withValues(alpha: 0.48),
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            else
-                              Text(
-                                widget.subtitle,
-                                style: TextStyle(
-                                  color: Colors.black.withValues(alpha: 0.45),
-                                  fontSize: 11,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          if (widget.fields != null &&
+                              widget.fields!.isNotEmpty)
+                            Text(
+                              widget.fields!.map((f) => '• $f').join('  '),
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.48),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w500,
                               ),
-                          ],
-                        ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            )
+                          else
+                            Text(
+                              widget.subtitle,
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.45),
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
                       ),
-                      Icon(
-                        _expanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        color: Colors.black.withValues(alpha: 0.58),
-                      ),
-                    ],
-                  ),
-                  ),
+                    ),
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: Colors.black.withValues(alpha: 0.58),
+                    ),
+                  ],
                 ),
               ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                child: _expanded
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: widget.child,
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
+            ),
           ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: widget.child,
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
     );
   }
 }

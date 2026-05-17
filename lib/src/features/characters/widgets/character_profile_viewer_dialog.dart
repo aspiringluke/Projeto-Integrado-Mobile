@@ -162,8 +162,12 @@ class _CharacterProfileViewerDialogState
                                     ),
                                   )
                                 : const Icon(Icons.download_rounded, size: 18),
-                            label: Text(
-                              _isDownloading ? 'Baixando...' : 'Download',
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                _isDownloading ? 'Baixando...' : 'Download',
+                                maxLines: 1,
+                              ),
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
@@ -194,7 +198,13 @@ class _CharacterProfileViewerDialogState
                                     Icons.content_copy_rounded,
                                     size: 18,
                                   ),
-                            label: Text(_isCopying ? 'Copiando...' : 'Copiar'),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                _isCopying ? 'Copiando...' : 'Copiar',
+                                maxLines: 1,
+                              ),
+                            ),
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFFDF6EB8),
                               foregroundColor: Colors.white,

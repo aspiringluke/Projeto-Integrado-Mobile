@@ -163,6 +163,8 @@ class _HeaderContent extends StatelessWidget {
           Text(
             effectiveSubtitle,
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: const Color(0xFFF7EEF4).withValues(alpha: 0.9),
               fontSize: 13,

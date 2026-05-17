@@ -674,8 +674,10 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
-    monthController.dispose();
-    dayController.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      monthController.dispose();
+      dayController.dispose();
+    });
 
     if (!mounted || selectedDate == null) {
       return;
@@ -883,6 +885,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     final result = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -1064,7 +1067,10 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
-    inputController.dispose();
+    Future<void>.delayed(
+      const Duration(milliseconds: 300),
+      inputController.dispose,
+    );
 
     if (!mounted || result == null) {
       return;
@@ -1091,6 +1097,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
           builder: (context, setModalState) {
             final accent = _dialogController.accentColor;
             final screenSize = MediaQuery.sizeOf(context);
+            final menuHeight = min(max(screenSize.height - 150, 260.0), 620.0);
             final score = _calculateRelevanceScore(
               values: tempValues,
               weights: tempWeights,
@@ -1111,7 +1118,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                   child: _CharacterCenteredMenuFrame(
                     title: 'Relevância narrativa',
                     child: SizedBox(
-                      height: min(screenSize.height * 0.78, 620),
+                      height: menuHeight,
                       child: Column(
                         mainAxisSize: MainAxisSize.max,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1550,7 +1557,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       newTagColor: _tagCategoryColor(kind),
     );
     if (resolved == null) return null;
-    setState(() {});
     return resolved;
   }
 }

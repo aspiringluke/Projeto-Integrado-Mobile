@@ -271,46 +271,53 @@ class _CharacterSignBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: 11),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.22),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.84)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.62),
-            _lightenCharacterDialogColor(
-              accentColor,
-              0.16,
-            ).withValues(alpha: 0.24),
-            accentColor.withValues(alpha: 0.28),
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 128),
+      child: Container(
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 11),
+        decoration: BoxDecoration(
+          color: accentColor.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.84)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.62),
+              _lightenCharacterDialogColor(
+                accentColor,
+                0.16,
+              ).withValues(alpha: 0.24),
+              accentColor.withValues(alpha: 0.28),
+            ],
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              signData.symbol,
+              style: TextStyle(
+                color: _darkenCharacterDialogColor(accentColor, 0.24),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                signData.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.54),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
           ],
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            signData.symbol,
-            style: TextStyle(
-              color: _darkenCharacterDialogColor(accentColor, 0.24),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            signData.name,
-            style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.54),
-              fontSize: 11,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
       ),
     );
 
@@ -447,13 +454,17 @@ class _ZodiacRandomOption extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 5),
-              Text(
-                signData.name,
-                style: TextStyle(
-                  color: foregroundColor,
-                  fontSize: 11.5,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w700,
+              Flexible(
+                child: Text(
+                  signData.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontSize: 11.5,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               if (isSelected) ...[

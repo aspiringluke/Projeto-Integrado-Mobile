@@ -49,17 +49,23 @@ class IdeasToggleButton extends StatelessWidget {
               ),
             ],
           ),
-          child: Center(
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              style: TextStyle(
-                color: isActive ? Colors.white : const Color(0xFF4A4348),
-                fontSize: 20,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                fontStyle: FontStyle.italic,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Center(
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                style: TextStyle(
+                  color: isActive ? Colors.white : const Color(0xFF4A4348),
+                  fontSize: 20,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(label, maxLines: 1),
+                ),
               ),
-              child: Text(label),
             ),
           ),
         ),

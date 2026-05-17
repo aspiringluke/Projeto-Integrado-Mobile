@@ -175,7 +175,7 @@ class CharacterCardData {
       quote: quote ?? this.quote,
       synopsis: synopsis ?? this.synopsis,
       notebookComplexityValues:
-          notebookComplexityValues ?? this.notebookComplexityValues ?? const <String, String>{},
+          notebookComplexityValues ?? this.notebookComplexityValues,
       seed: seed ?? this.seed,
     );
   }
