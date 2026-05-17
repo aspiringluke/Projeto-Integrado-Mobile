@@ -72,6 +72,8 @@ class _CharacterCardState extends State<CharacterCard>
     );
     _quoteController = TextEditingController(text: widget.data.quote);
     _synopsisController = TextEditingController(text: widget.data.synopsis);
+    _quoteController?.addListener(_syncQuoteDraft);
+    _synopsisController?.addListener(_syncSynopsisDraft);
     _isEditing = false;
     _controller = AnimationController(
       vsync: this,
@@ -105,6 +107,8 @@ class _CharacterCardState extends State<CharacterCard>
     _synopsisScrollController.dispose();
     _heightController?.dispose();
     _weightController?.dispose();
+    _quoteController?.removeListener(_syncQuoteDraft);
+    _synopsisController?.removeListener(_syncSynopsisDraft);
     _quoteController?.dispose();
     _synopsisController?.dispose();
     _controller.dispose();
@@ -173,11 +177,48 @@ class _CharacterCardState extends State<CharacterCard>
     );
   }
 
+  CharacterCardData _buildCurrentEditedData() {
+    final quoteText =
+        _quoteController?.text ??
+        (widget.data.quote.isNotEmpty ? widget.data.quote : widget.data.motto);
+    final synopsisText = _synopsisController?.text ?? widget.data.synopsis;
+    final birthday = _birthday;
+
+    return widget.data.copyWith(
+      birthYear: birthday.year,
+      birthMonth: birthday.month,
+      birthDay: birthday.day,
+      heightCm: _heightCm,
+      weightKg: _weightKg,
+      quote: quoteText,
+      motto: quoteText,
+      synopsis: synopsisText,
+    );
+  }
+
+  void _syncQuoteDraft() {
+    final next = _buildCurrentEditedData();
+    if (next.quote == widget.data.quote && next.motto == widget.data.motto) {
+      return;
+    }
+
+    widget.onEdited?.call(next);
+  }
+
+  void _syncSynopsisDraft() {
+    final next = _buildCurrentEditedData();
+    if (next.synopsis == widget.data.synopsis) {
+      return;
+    }
+
+    widget.onEdited?.call(next);
+  }
+
   void _openCharacterPage() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CharacterNotebookPage(
-          data: widget.data,
+          data: _buildCurrentEditedData(),
           onChanged: widget.onEdited,
         ),
       ),
@@ -475,6 +516,7 @@ class _CharacterCardState extends State<CharacterCard>
     setState(() {
       _birthdayValue = selectedDate;
     });
+    widget.onEdited?.call(_buildCurrentEditedData());
   }
 
   void _commitHeightText({bool restoreText = true}) {
@@ -485,6 +527,7 @@ class _CharacterCardState extends State<CharacterCard>
 
     if (parsedHeight != null) {
       _heightCmValue = parsedHeight;
+      widget.onEdited?.call(_buildCurrentEditedData());
     }
 
     if (restoreText) {
@@ -503,6 +546,7 @@ class _CharacterCardState extends State<CharacterCard>
 
     if (parsedWeight != null) {
       _weightKgValue = parsedWeight;
+      widget.onEdited?.call(_buildCurrentEditedData());
     }
 
     if (restoreText) {

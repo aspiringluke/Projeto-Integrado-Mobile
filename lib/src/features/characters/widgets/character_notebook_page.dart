@@ -336,6 +336,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _synopsisController = TextEditingController(text: _draft.synopsis);
     _synopsisController.addListener(_syncSynopsisDraft);
     _mottoController = TextEditingController(text: _draft.motto);
+    _mottoController.addListener(_syncMottoDraft);
     _formationsController = TextEditingController(
       text: _draft.formationsAndOccupations,
     );
@@ -376,6 +377,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _aliasController.dispose();
     _synopsisController.removeListener(_syncSynopsisDraft);
     _synopsisController.dispose();
+    _mottoController.removeListener(_syncMottoDraft);
     _mottoController.dispose();
     _formationsController.dispose();
     _titlesController.dispose();
@@ -427,6 +429,12 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     final text = _synopsisController.text;
     if (text == _draft.synopsis) return;
     _updateDraft(_draft.copyWith(synopsis: text), rebuild: false);
+  }
+
+  void _syncMottoDraft() {
+    final text = _mottoController.text;
+    if (text == _draft.motto && text == _draft.quote) return;
+    _updateDraft(_draft.copyWith(motto: text, quote: text), rebuild: false);
   }
 
   DateTime get _birthday => _birthdayValue ??= DateTime(
@@ -640,18 +648,26 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                   ),
                   _buildIdentitySynopsisPanel(),
                   const SizedBox(height: 12),
-                  _NotebookTextFieldCard(
-                    accentColor: _draft.accent,
-                    icon: Icons.format_quote_rounded,
-                    label: 'Frase de efeito',
-                    placeholderText: _mottoPlaceholderText,
-                    controller: _mottoController,
-                    minLines: 1,
-                    maxLines: null,
-                    onChanged: (value) => _updateDraft(
-                      _draft.copyWith(motto: value),
-                      rebuild: false,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 2, bottom: 8),
+                      child: Text(
+                        'Frase de efeito',
+                        style: TextStyle(
+                          color: const Color(
+                            0xFF3A3339,
+                          ).withValues(alpha: 0.92),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
+                  ),
+                  CharacterQuoteStrip(
+                    accentColor: _draft.accent,
+                    controller: _mottoController,
+                    isEditing: true,
                   ),
                   const SizedBox(height: 12),
                   _NotebookTextFieldCard(
