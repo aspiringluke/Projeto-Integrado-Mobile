@@ -10,7 +10,7 @@
 
 ### RN02 — Limite de Upload de Imagens
 
-  Os arquivos de imagem armazenados em ideias e perfis de personagens devem respeitar o limite máximo de 5 MB por arquivo para garantir a estabilidade do aplicativo.
+  Os arquivos de imagem armazenados em ideias e perfis de personagens devem respeitar o limite máximo de 30 MB por arquivo para garantir a estabilidade do aplicativo.
 
   Requisitos relacionados: RF11, RF20
 
@@ -118,35 +118,41 @@
 
 ---
 
+### RN20 — Restrição de nulidade 
+
+  As mensagens enviadas para o chatbot não podem ser vazias.
+
+  Requisitos relacionados: RF26
+
 # BAIXA PRIORIDADE
 
 ## Lógica e Estrutura de Diagramação
 
-### RN20 — Estrutura Mínima para Salvamento de Diagrama
+### RN21 — Estrutura Mínima para Salvamento de Diagrama
 
   O sistema só deve permitir o salvamento de diagramas que contenham, no mínimo, dois nós conectados por ao menos uma aresta.
 
   Requisitos relacionados: RF30, RF34, RF37
 
-### RN21 — Vínculo de Arestas
+### RN22 — Vínculo de Arestas
 
   Uma aresta não pode existir de forma independente no plano de edição; ela deve obrigatoriamente possuir um nó de origem e um nó de destino vinculados.
 
   Requisito relacionado: RF34
 
-### RN22 — Exclusão em Cascata de Arestas
+### RN23 — Exclusão em Cascata de Arestas
 
   Quando um nó for excluído, todas as suas arestas correspondentes devem ser excluídas também, conforme a regra RN21.
   
   Requisitos relacionados: RF36, RF39
 
-### RN23 — Hierarquia de Nós e Grupos
+### RN24 — Hierarquia de Nós e Grupos
 
   Cada nó individual pode ser independente (não pertencer a nenhum grupo) ou pertencer a múltiplos grupos.
 
   Requisitos relacionados: RF43, RF45, RF46, RF47
 
-### RN24 — Sincronização de Entidades Vinculadas
+### RN25 — Sincronização de Entidades Vinculadas
 
   Sempre que a entidade persistente vinculada a um nó do diagrama for alterada, as propriedades refletidas nesse nó (como nome e status) devem ser atualizadas automaticamente.
 
