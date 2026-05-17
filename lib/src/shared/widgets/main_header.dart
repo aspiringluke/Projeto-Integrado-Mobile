@@ -17,6 +17,9 @@ class MainHeader extends StatelessWidget {
   final double titleHorizontalPadding;
   final bool titleShadow;
   final bool surroundSubtitleWithDots;
+  final Widget? centerChild;
+  final Widget? backgroundChild;
+  final Widget? bottomChild;
 
   const MainHeader({
     super.key,
@@ -32,6 +35,9 @@ class MainHeader extends StatelessWidget {
     this.titleHorizontalPadding = 0,
     this.titleShadow = false,
     this.surroundSubtitleWithDots = false,
+    this.centerChild,
+    this.backgroundChild,
+    this.bottomChild,
   });
 
   @override
@@ -50,6 +56,9 @@ class MainHeader extends StatelessWidget {
           titleHorizontalPadding: titleHorizontalPadding,
           titleShadow: titleShadow,
           surroundSubtitleWithDots: surroundSubtitleWithDots,
+          centerChild: centerChild,
+          backgroundChild: backgroundChild,
+          bottomChild: bottomChild,
         ),
       );
     }
@@ -74,6 +83,9 @@ class MainHeader extends StatelessWidget {
           titleHorizontalPadding: titleHorizontalPadding,
           titleShadow: titleShadow,
           surroundSubtitleWithDots: surroundSubtitleWithDots,
+          centerChild: centerChild,
+          backgroundChild: backgroundChild,
+          bottomChild: bottomChild,
         ),
       ),
     );
@@ -91,6 +103,9 @@ class _HeaderContent extends StatelessWidget {
   final double titleHorizontalPadding;
   final bool titleShadow;
   final bool surroundSubtitleWithDots;
+  final Widget? centerChild;
+  final Widget? backgroundChild;
+  final Widget? bottomChild;
 
   const _HeaderContent({
     required this.title,
@@ -103,6 +118,9 @@ class _HeaderContent extends StatelessWidget {
     required this.titleHorizontalPadding,
     required this.titleShadow,
     required this.surroundSubtitleWithDots,
+    required this.centerChild,
+    required this.backgroundChild,
+    required this.bottomChild,
   });
 
   @override
@@ -127,19 +145,56 @@ class _HeaderContent extends StatelessWidget {
             ]
           : null,
     );
-
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Color(0xFF726876), Color(0xFFB083AA), Color(0xFFDF6EB8)],
-          stops: [0, 0.56, 1],
+    final defaultCenterChild = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.fade,
+            softWrap: false,
+            style: titleStyle,
+          ),
         ),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
+        if (hasSubtitle) ...[
+          const SizedBox(height: 6),
+          Text(
+            effectiveSubtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: const Color(0xFFF7EEF4).withValues(alpha: 0.9),
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ],
+    );
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (backgroundChild != null)
+          Positioned.fill(child: ClipRect(child: backgroundChild!))
+        else
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color(0xFF726876),
+                  Color(0xFFB083AA),
+                  Color(0xFFDF6EB8),
+                ],
+                stops: [0, 0.56, 1],
+              ),
+            ),
+          ),
+        if (backgroundChild == null) ...[
           Positioned(
             left: -56,
             top: -34,
@@ -160,64 +215,37 @@ class _HeaderContent extends StatelessWidget {
               ),
             ),
           ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: contentPadding,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: BotaoVoltar(onPressed: onBackPressed),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: BotaoConfig(onPressed: onConfigPressed),
-                  ),
-                  Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: titleHorizontalPadding,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              title.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
-                              style: titleStyle,
-                            ),
-                          ),
-                          if (hasSubtitle) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              effectiveSubtitle,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: const Color(
-                                  0xFFF7EEF4,
-                                ).withValues(alpha: 0.9),
-                                fontSize: 13,
-                                fontStyle: FontStyle.italic,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+        ],
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: contentPadding,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: BotaoVoltar(onPressed: onBackPressed),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: BotaoConfig(onPressed: onConfigPressed),
+                ),
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: titleHorizontalPadding,
                     ),
+                    child: centerChild ?? defaultCenterChild,
                   ),
-                ],
-              ),
+                ),
+                if (bottomChild != null)
+                  Align(alignment: Alignment.bottomCenter, child: bottomChild!),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

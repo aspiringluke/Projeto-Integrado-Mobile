@@ -9,6 +9,8 @@ import '../../projects/models/project_tag_data.dart';
 import '../../projects/widgets/project_color_editor.dart';
 import '../../projects/utils/project_image_picker.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
+import '../../projects/widgets/project_image_transform_view.dart';
+import '../../../shared/widgets/main_header.dart';
 import '../../tags/controllers/tag_controller.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
@@ -19,11 +21,7 @@ class CharacterNotebookPage extends StatefulWidget {
   final CharacterCardData data;
   final ValueChanged<CharacterCardData>? onChanged;
 
-  const CharacterNotebookPage({
-    super.key,
-    required this.data,
-    this.onChanged,
-  });
+  const CharacterNotebookPage({super.key, required this.data, this.onChanged});
 
   @override
   State<CharacterNotebookPage> createState() => _CharacterNotebookPageState();
@@ -41,10 +39,7 @@ class _NotebookTabMeta {
   final String label;
   final IconData icon;
 
-  const _NotebookTabMeta({
-    required this.label,
-    required this.icon,
-  });
+  const _NotebookTabMeta({required this.label, required this.icon});
 }
 
 class _PageStickyTabs extends StatelessWidget {
@@ -62,64 +57,42 @@ class _PageStickyTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+    return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          height: 46,
+          padding: const EdgeInsets.fromLTRB(14, 5, 14, 5),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.56),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: accentColor.withValues(alpha: 0.14),
-              width: 0.8,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFFFFFFFF).withValues(alpha: 0.72),
+                const Color(0xFFF3F0F3).withValues(alpha: 0.62),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.52)),
+              bottom: BorderSide(color: Colors.black.withValues(alpha: 0.045)),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.sticky_note_2_rounded,
-                    size: 16,
-                    color: _darkenCharacterDialogColor(accentColor, 0.16),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final entry in tabs.entries) ...[
+                  _PageStickyTabChip(
+                    label: entry.value.label,
+                    icon: entry.value.icon,
+                    accentColor: accentColor,
+                    selected: entry.key == activeTab,
+                    onTap: () => onTabSelected(entry.key),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Páginas',
-                    style: TextStyle(
-                      color: Color(0xFF2C262C),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final entry in tabs.entries)
-                    _PageStickyTabChip(
-                      label: entry.value.label,
-                      icon: entry.value.icon,
-                      accentColor: accentColor,
-                      selected: entry.key == activeTab,
-                      onTap: () => onTabSelected(entry.key),
-                    ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -144,49 +117,64 @@ class _PageStickyTabChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = selected
-        ? accentColor.withValues(alpha: 0.18)
-        : Colors.white.withValues(alpha: 0.56);
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: selected
-                  ? accentColor.withValues(alpha: 0.28)
-                  : accentColor.withValues(alpha: 0.14),
-              width: 0.8,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 14,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
                 color: selected
-                    ? _darkenCharacterDialogColor(accentColor, 0.22)
-                    : const Color(0xFF544959),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
+                    ? accentColor.withValues(alpha: 0.18)
+                    : Colors.white.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
                   color: selected
-                      ? _darkenCharacterDialogColor(accentColor, 0.22)
-                      : const Color(0xFF2C262C),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                      ? accentColor.withValues(alpha: 0.34)
+                      : Colors.white.withValues(alpha: 0.82),
+                  width: 0.9,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: selected ? 0.42 : 0.52),
+                    selected
+                        ? accentColor.withValues(alpha: 0.14)
+                        : Colors.white.withValues(alpha: 0.18),
+                    Colors.white.withValues(alpha: 0.08),
+                  ],
                 ),
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 13,
+                    color: selected
+                        ? _darkenCharacterDialogColor(accentColor, 0.22)
+                        : const Color(0xFF544959),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: selected
+                          ? _darkenCharacterDialogColor(accentColor, 0.22)
+                          : const Color(0xFF2C262C),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -293,16 +281,16 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       };
 
   late CharacterCardData _draft;
-  late final TextEditingController _nameController;
-  late final TextEditingController _aliasController;
-  late final TextEditingController _mottoController;
-  late final TextEditingController _formationsController;
-  late final TextEditingController _titlesController;
-  late final TextEditingController _heightController;
-  late final TextEditingController _weightController;
-  late final ScrollController _pageScrollController;
-  late final Map<_TagKind, TagController> _tagControllers;
-  late final Map<_NotebookSection, GlobalKey> _sectionKeys;
+  late TextEditingController _nameController;
+  late TextEditingController _aliasController;
+  late TextEditingController _synopsisController;
+  late TextEditingController _mottoController;
+  late TextEditingController _formationsController;
+  late TextEditingController _titlesController;
+  late TextEditingController _heightController;
+  late TextEditingController _weightController;
+  late Map<_TagKind, TagController> _tagControllers;
+  late Map<_NotebookSection, GlobalKey> _sectionKeys;
   _NotebookTab _activeTab = _NotebookTab.geral;
   _CharacterColorTarget _activeColorTarget = _CharacterColorTarget.cover;
 
@@ -331,6 +319,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _weightKgValue = _draft.weightKg;
     _nameController = TextEditingController(text: _draft.name);
     _aliasController = TextEditingController(text: _draft.alias);
+    _synopsisController = TextEditingController(text: _draft.synopsis);
     _mottoController = TextEditingController(text: _draft.motto);
     _formationsController = TextEditingController(
       text: _draft.formationsAndOccupations,
@@ -342,7 +331,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _weightController = TextEditingController(
       text: formatWeightEditorValue(_draft.weightKg, _weightUnit),
     );
-    _pageScrollController = ScrollController();
     _tagControllers = <_TagKind, TagController>{
       for (final kind in _TagKind.values)
         kind: TagController(
@@ -360,25 +348,34 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _selectedFunctionTag = _draft.functionTag;
     _selectedRelevanceTag = _draft.relevanceTag;
     if (_selectedRelevanceTag.isEmpty) {
-      _selectedRelevanceTag = _relevance.categoryForScore(_relevance.score).name;
+      _selectedRelevanceTag = _relevance
+          .categoryForScore(_relevance.score)
+          .name;
     }
-
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _aliasController.dispose();
+    _synopsisController.dispose();
     _mottoController.dispose();
     _formationsController.dispose();
     _titlesController.dispose();
     _heightController.dispose();
     _weightController.dispose();
-    _pageScrollController.dispose();
     for (final controller in _tagControllers.values) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  void _setActiveTab(_NotebookTab tab) {
+    if (_activeTab == tab) return;
+
+    setState(() {
+      _activeTab = tab;
+    });
   }
 
   void _updateDraft(CharacterCardData next) {
@@ -388,8 +385,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     widget.onChanged?.call(_draft);
   }
 
-  DateTime get _birthday =>
-      _birthdayValue ??= DateTime(_draft.birthYear, _draft.birthMonth, _draft.birthDay);
+  DateTime get _birthday => _birthdayValue ??= DateTime(
+    _draft.birthYear,
+    _draft.birthMonth,
+    _draft.birthDay,
+  );
 
   double get _heightCm => _heightCmValue ??= _draft.heightCm;
   double get _weightKg => _weightKgValue ??= _draft.weightKg;
@@ -420,54 +420,72 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _NotebookHeader(
-                    data: _draft,
-                    onClose: () => Navigator.of(context).pop(),
-                  ),
-                  const SizedBox(height: 12),
-                  _PageStickyTabs(
-                    accentColor: _draft.accent,
-                    activeTab: _activeTab,
-                    tabs: _tabs,
-                    onTabSelected: (tab) => setState(() => _activeTab = tab),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      layoutBuilder: (currentChild, previousChildren) {
-                        return Stack(
-                          fit: StackFit.expand,
-                          children: [...previousChildren, if (currentChild != null) currentChild],
-                        );
-                      },
-                      transitionBuilder: (child, animation) {
-                        final offset = Tween<Offset>(
-                          begin: const Offset(0, 0.03),
-                          end: Offset.zero,
-                        ).animate(animation);
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(position: offset, child: child),
-                        );
-                      },
-                      child: KeyedSubtree(
-                        key: ValueKey(_activeTab),
-                        child: _buildTabContent(),
-                      ),
-                    ),
-                  ),
-                ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _NotebookHeader(
+                data: _draft,
+                onClose: () => Navigator.of(context).pop(),
               ),
-            ),
+              Expanded(
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _PageStickyTabs(
+                        accentColor: _draft.accent,
+                        activeTab: _activeTab,
+                        tabs: _tabs,
+                        onTabSelected: _setActiveTab,
+                      ),
+                      Container(
+                        height: 1,
+                        width: double.infinity,
+                        color: Colors.white.withValues(alpha: 0.84),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            layoutBuilder: (currentChild, previousChildren) {
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  ...previousChildren,
+                                  if (currentChild != null) currentChild,
+                                ],
+                              );
+                            },
+                            transitionBuilder: (child, animation) {
+                              final offset = Tween<Offset>(
+                                begin: const Offset(0, 0.03),
+                                end: Offset.zero,
+                              ).animate(animation);
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: offset,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: KeyedSubtree(
+                              key: ValueKey(_activeTab),
+                              child: _buildTabContent(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -502,7 +520,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   Widget _buildGeneralTab() {
     return SingleChildScrollView(
-      controller: _pageScrollController,
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -512,7 +529,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             child: _CollapsibleSection(
               accentColor: _draft.accent,
               title: 'Identidade',
-              subtitle: 'Nome, vulgo e relevância narrativa.',
+              subtitle: 'Nome, síntese, frase central e relevância narrativa.',
               icon: Icons.person_outline_rounded,
               child: Column(
                 children: [
@@ -536,13 +553,59 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                   const SizedBox(height: 10),
                   _CharacterRelevanceSelectorField(
                     value: _selectedRelevanceTag,
-                    selectedColor:
-                        _relevance.categoryForScore(_relevance.score).color,
+                    selectedColor: _relevance
+                        .categoryForScore(_relevance.score)
+                        .color,
                     accentColor: _draft.accent,
                     categories: _relevance.categories,
                     showError: false,
                     score: _relevance.score,
                     onTap: _openRelevanceSelector,
+                  ),
+                  const SizedBox(height: 12),
+                  _NotebookTextFieldCard(
+                    accentColor: _draft.accent,
+                    icon: Icons.short_text_rounded,
+                    label: 'Síntese',
+                    controller: _synopsisController,
+                    minLines: 3,
+                    maxLines: null,
+                    onChanged: (value) =>
+                        _updateDraft(_draft.copyWith(synopsis: value)),
+                  ),
+                  const SizedBox(height: 12),
+                  _NotebookTextFieldCard(
+                    accentColor: _draft.accent,
+                    icon: Icons.format_quote_rounded,
+                    label: 'Frase de efeito',
+                    controller: _mottoController,
+                    minLines: 2,
+                    maxLines: 2,
+                    onChanged: (value) =>
+                        _updateDraft(_draft.copyWith(motto: value)),
+                  ),
+                  const SizedBox(height: 12),
+                  _NotebookTextFieldCard(
+                    accentColor: _draft.accent,
+                    icon: Icons.work_outline_rounded,
+                    label: 'Formações e ocupações',
+                    controller: _formationsController,
+                    minLines: 3,
+                    maxLines: null,
+                    onChanged: (value) => _updateDraft(
+                      _draft.copyWith(formationsAndOccupations: value),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _NotebookTextFieldCard(
+                    accentColor: _draft.accent,
+                    icon: Icons.military_tech_outlined,
+                    label: 'Títulos',
+                    controller: _titlesController,
+                    minLines: 2,
+                    maxLines: null,
+                    onChanged: (value) =>
+                        _updateDraft(_draft.copyWith(titles: value)),
                   ),
                 ],
               ),
@@ -560,13 +623,20 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 genderLabel: _selectedGenderTag,
                 genderColor: _tagColorFor(_TagKind.gender, _selectedGenderTag),
                 sexualityLabel: _selectedSexualityTag,
-                sexualityColor:
-                    _tagColorFor(_TagKind.sexuality, _selectedSexualityTag),
+                sexualityColor: _tagColorFor(
+                  _TagKind.sexuality,
+                  _selectedSexualityTag,
+                ),
                 ethnicityLabel: _selectedEthnicityTag,
-                ethnicityColor:
-                    _tagColorFor(_TagKind.ethnicity, _selectedEthnicityTag),
+                ethnicityColor: _tagColorFor(
+                  _TagKind.ethnicity,
+                  _selectedEthnicityTag,
+                ),
                 functionLabel: _selectedFunctionTag,
-                functionColor: _tagColorFor(_TagKind.function, _selectedFunctionTag),
+                functionColor: _tagColorFor(
+                  _TagKind.function,
+                  _selectedFunctionTag,
+                ),
                 accentColor: _draft.accent,
                 showRequiredErrors: false,
                 onPickGenderTag: () => _openTagSelector(_TagKind.gender),
@@ -638,54 +708,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
           ),
           const SizedBox(height: 12),
           KeyedSubtree(
-            key: _sectionKeys[_NotebookSection.narrativa],
-            child: _CollapsibleSection(
-              accentColor: _draft.accent,
-              title: 'Narrativa',
-              subtitle:
-                  'Frase de efeito, formações e títulos do personagem.',
-              icon: Icons.chat_bubble_outline_rounded,
-              child: Column(
-                children: [
-                  _NotebookTextFieldCard(
-                    accentColor: _draft.accent,
-                    icon: Icons.format_quote_rounded,
-                    label: 'Frase de efeito',
-                    controller: _mottoController,
-                    minLines: 2,
-                    maxLines: 2,
-                    onChanged: (value) =>
-                        _updateDraft(_draft.copyWith(motto: value)),
-                  ),
-                  const SizedBox(height: 12),
-                  _NotebookTextFieldCard(
-                    accentColor: _draft.accent,
-                    icon: Icons.work_outline_rounded,
-                    label: 'Formações e ocupações',
-                    controller: _formationsController,
-                    minLines: 3,
-                    maxLines: null,
-                    onChanged: (value) => _updateDraft(
-                      _draft.copyWith(formationsAndOccupations: value),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _NotebookTextFieldCard(
-                    accentColor: _draft.accent,
-                    icon: Icons.military_tech_outlined,
-                    label: 'Títulos',
-                    controller: _titlesController,
-                    minLines: 2,
-                    maxLines: null,
-                    onChanged: (value) =>
-                        _updateDraft(_draft.copyWith(titles: value)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          KeyedSubtree(
             key: _sectionKeys[_NotebookSection.imagem],
             child: _CollapsibleSection(
               accentColor: _draft.accent,
@@ -715,7 +737,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                           label: 'Realce',
                           color: _draft.accent,
                           isSelected:
-                              _activeColorTarget == _CharacterColorTarget.accent,
+                              _activeColorTarget ==
+                              _CharacterColorTarget.accent,
                           onTap: () => setState(() {
                             _activeColorTarget = _CharacterColorTarget.accent;
                           }),
@@ -728,8 +751,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     title: _activeColorTarget == _CharacterColorTarget.cover
                         ? 'Cor da capa'
                         : 'Cor de realce',
-                    description: _activeColorTarget ==
-                            _CharacterColorTarget.cover
+                    description:
+                        _activeColorTarget == _CharacterColorTarget.cover
                         ? 'Ajuste a cor base da capa do personagem em HSL.'
                         : 'Ajuste a cor principal de destaque em HSL.',
                     color: _activeColorTarget == _CharacterColorTarget.cover
@@ -744,33 +767,33 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     useSolidCoverPreview:
                         _activeColorTarget == _CharacterColorTarget.cover,
                     onHueChanged: (value) {
-                      final sourceColor = _activeColorTarget ==
-                              _CharacterColorTarget.cover
+                      final sourceColor =
+                          _activeColorTarget == _CharacterColorTarget.cover
                           ? _draft.avatarColor
                           : _draft.accent;
-                      final next = HSLColor.fromColor(sourceColor)
-                          .withHue(value)
-                          .toColor();
+                      final next = HSLColor.fromColor(
+                        sourceColor,
+                      ).withHue(value).toColor();
                       _updateActiveColor(next);
                     },
                     onSaturationChanged: (value) {
-                      final sourceColor = _activeColorTarget ==
-                              _CharacterColorTarget.cover
+                      final sourceColor =
+                          _activeColorTarget == _CharacterColorTarget.cover
                           ? _draft.avatarColor
                           : _draft.accent;
-                      final next = HSLColor.fromColor(sourceColor)
-                          .withSaturation(value)
-                          .toColor();
+                      final next = HSLColor.fromColor(
+                        sourceColor,
+                      ).withSaturation(value).toColor();
                       _updateActiveColor(next);
                     },
                     onLightnessChanged: (value) {
-                      final sourceColor = _activeColorTarget ==
-                              _CharacterColorTarget.cover
+                      final sourceColor =
+                          _activeColorTarget == _CharacterColorTarget.cover
                           ? _draft.avatarColor
                           : _draft.accent;
-                      final next = HSLColor.fromColor(sourceColor)
-                          .withLightness(value)
-                          .toColor();
+                      final next = HSLColor.fromColor(
+                        sourceColor,
+                      ).withLightness(value).toColor();
                       _updateActiveColor(next);
                     },
                   ),
@@ -911,23 +934,23 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     useSolidCoverPreview: useSolidCoverPreview,
                     onHueChanged: (value) {
                       setModalState(() {
-                        workingColor = HSLColor.fromColor(workingColor)
-                            .withHue(value)
-                            .toColor();
+                        workingColor = HSLColor.fromColor(
+                          workingColor,
+                        ).withHue(value).toColor();
                       });
                     },
                     onSaturationChanged: (value) {
                       setModalState(() {
-                        workingColor = HSLColor.fromColor(workingColor)
-                            .withSaturation(value)
-                            .toColor();
+                        workingColor = HSLColor.fromColor(
+                          workingColor,
+                        ).withSaturation(value).toColor();
                       });
                     },
                     onLightnessChanged: (value) {
                       setModalState(() {
-                        workingColor = HSLColor.fromColor(workingColor)
-                            .withLightness(value)
-                            .toColor();
+                        workingColor = HSLColor.fromColor(
+                          workingColor,
+                        ).withLightness(value).toColor();
                       });
                     },
                   ),
@@ -977,7 +1000,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       isScrollControlled: true,
       builder: (context) {
         final accent = _draft.accent;
-        final signs = _allZodiacSigns();
         final currentSign = zodiacSignFor(DateTime(2000, tempMonth, tempDay));
         final signDescriptionLines = currentSign.description.split('\n');
         final signDateRange = signDescriptionLines.isNotEmpty
@@ -1014,7 +1036,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                               });
                             },
                             children: [
-                              for (var index = 0; index < monthLabels.length; index += 1)
+                              for (
+                                var index = 0;
+                                index < monthLabels.length;
+                                index += 1
+                              )
                                 Center(
                                   child: Text(
                                     monthLabels[index],
@@ -1037,7 +1063,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                               tempDay = index + 1;
                             },
                             children: [
-                              for (var day = 1; day <= daysInMonth(tempMonth); day += 1)
+                              for (
+                                var day = 1;
+                                day <= daysInMonth(tempMonth);
+                                day += 1
+                              )
                                 Center(
                                   child: Text(
                                     day.toString().padLeft(2, '0'),
@@ -1061,7 +1091,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.58),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1129,92 +1161,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.42),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.casino_rounded,
-                              size: 16,
-                              color: _darkenCharacterDialogColor(accent, 0.16),
-                            ),
-                            const SizedBox(width: 7),
-                            const Expanded(
-                              child: Text(
-                                'Sortear aniversário por signo',
-                                style: TextStyle(
-                                  color: Color(0xFF3A3339),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Toque em um signo para gerar uma data aleatória dentro do período.',
-                          style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.52),
-                            fontSize: 11,
-                            height: 1.25,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            const spacing = 8.0;
-                            final columnCount = constraints.maxWidth < 340 ? 2 : 3;
-                            final optionWidth =
-                                (constraints.maxWidth - (spacing * (columnCount - 1))) /
-                                columnCount;
-
-                            return Wrap(
-                              alignment: WrapAlignment.center,
-                              runAlignment: WrapAlignment.center,
-                              spacing: spacing,
-                              runSpacing: spacing,
-                              children: [
-                                for (final sign in signs)
-                                  SizedBox(
-                                    width: optionWidth,
-                                    child: _ZodiacRandomOption(
-                                      signData: sign,
-                                      accentColor: accent,
-                                      isSelected: sign.symbol == currentSign.symbol,
-                                      onTap: () {
-                                        Navigator.of(context).pop(
-                                          _randomBirthdayForSign(sign),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(
-                          DateTime(_birthday.year, tempMonth, tempDay),
-                        );
+                        Navigator.of(
+                          context,
+                        ).pop(DateTime(_birthday.year, tempMonth, tempDay));
                       },
                       child: const Text('Aplicar'),
                     ),
@@ -1268,7 +1222,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.58),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1309,7 +1265,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: _darkenCharacterDialogColor(accent, 0.22),
+                                color: _darkenCharacterDialogColor(
+                                  accent,
+                                  0.22,
+                                ),
                                 fontSize: 11.8,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1340,7 +1299,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.42),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1381,7 +1342,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                         const spacing = 8.0;
                         final columnCount = constraints.maxWidth < 340 ? 2 : 3;
                         final optionWidth =
-                            (constraints.maxWidth - (spacing * (columnCount - 1))) /
+                            (constraints.maxWidth -
+                                (spacing * (columnCount - 1))) /
                             columnCount;
 
                         return Wrap(
@@ -1398,9 +1360,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                                   accentColor: accent,
                                   isSelected: sign.symbol == currentSign.symbol,
                                   onTap: () {
-                                    Navigator.of(context).pop(
-                                      _randomBirthdayForSign(sign),
-                                    );
+                                    Navigator.of(
+                                      context,
+                                    ).pop(_randomBirthdayForSign(sign));
                                   },
                                 ),
                               ),
@@ -1496,8 +1458,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                         : LayoutBuilder(
                             builder: (context, constraints) {
                               const spacing = 8.0;
-                              final columnCount =
-                                  constraints.maxWidth < 340 ? 2 : 3;
+                              final columnCount = constraints.maxWidth < 340
+                                  ? 2
+                                  : 3;
                               final optionWidth =
                                   (constraints.maxWidth -
                                       (spacing * (columnCount - 1))) /
@@ -1515,8 +1478,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                                       child: _NotebookTagOptionButton(
                                         tag: tag,
                                         isSelected: tag.label == selectedLabel,
-                                        onTap: () =>
-                                            Navigator.of(context).pop(tag.label),
+                                        onTap: () => Navigator.of(
+                                          context,
+                                        ).pop(tag.label),
                                       ),
                                     ),
                                 ],
@@ -1580,8 +1544,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                               disabledBackgroundColor: Colors.white.withValues(
                                 alpha: 0.42,
                               ),
-                              disabledForegroundColor:
-                                  Colors.black.withValues(alpha: 0.26),
+                              disabledForegroundColor: Colors.black.withValues(
+                                alpha: 0.26,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
@@ -1650,7 +1615,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.58),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1658,7 +1625,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     Icon(
                       _tagKindIcon(kind),
                       size: 16,
-                      color: _darkenCharacterDialogColor(_tagColorFor(kind, currentValue) ?? _draft.accent, 0.16),
+                      color: _darkenCharacterDialogColor(
+                        _tagColorFor(kind, currentValue) ?? _draft.accent,
+                        0.16,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -1682,7 +1652,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.42),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.72),
+                  ),
                 ),
                 child: Wrap(
                   alignment: WrapAlignment.center,
@@ -1776,14 +1748,12 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                           return _RelevanceParameterControl(
                             parameter: parameter,
                             value: temp.values[parameter.id] ?? 0,
-                            weight: temp.weights[parameter.id] ?? parameter.weight,
+                            weight:
+                                temp.weights[parameter.id] ?? parameter.weight,
                             onValueChanged: (value) {
                               setModalState(() {
                                 temp = temp.copyWith(
-                                  values: {
-                                    ...temp.values,
-                                    parameter.id: value,
-                                  },
+                                  values: {...temp.values, parameter.id: value},
                                 );
                               });
                             },
@@ -1813,16 +1783,16 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () => Navigator.of(context).pop(temp),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFDF6EB8),
-                            foregroundColor: Colors.white,
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => Navigator.of(context).pop(temp),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFFDF6EB8),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Aplicar'),
                           ),
-                          child: const Text('Aplicar'),
                         ),
-                      ),
                       ],
                     ),
                   ],
@@ -1948,10 +1918,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 ),
               ),
               Positioned(
-                left: (anchorRect.center.dx - 116)
-                    .clamp(12.0, MediaQuery.sizeOf(context).width - 244),
-                top: (anchorRect.bottom + 8)
-                    .clamp(12.0, MediaQuery.sizeOf(context).height - 160),
+                left: (anchorRect.center.dx - 116).clamp(
+                  12.0,
+                  MediaQuery.sizeOf(context).width - 244,
+                ),
+                top: (anchorRect.bottom + 8).clamp(
+                  12.0,
+                  MediaQuery.sizeOf(context).height - 160,
+                ),
                 width: 232,
                 child: _AnchoredBubble(
                   child: Column(
@@ -1983,7 +1957,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                           spacing: 6,
                           runSpacing: 6,
                           children: [
-                            for (final trait in traits) _TraitPill(label: trait),
+                            for (final trait in traits)
+                              _TraitPill(label: trait),
                           ],
                         ),
                       ],
@@ -2063,12 +2038,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         'Pansexual',
       ],
       _TagKind.ethnicity => const ['Branco', 'Negro', 'Pardo'],
-      _TagKind.function => const [
-        'Vilao',
-        'Heroi',
-        'Anti-heroi',
-        'Anti-vilao',
-      ],
+      _TagKind.function => const ['Vilao', 'Heroi', 'Anti-heroi', 'Anti-vilao'],
     };
 
     return [
@@ -2104,107 +2074,475 @@ class _NotebookHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+    final tags = _buildNotebookHeaderTags(data);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MainHeader(
+          asSliver: false,
+          title: data.name,
+          onBackPressed: onClose,
+          onConfigPressed: () {},
+          headerHeight: 154,
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          titleHorizontalPadding: 60,
+          titleShadow: true,
+          centerChild: _NotebookHeaderTitleBlock(data: data),
+          bottomChild: tags.isEmpty
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 4),
+                  child: _NotebookHeaderTagWrap(tags: tags),
+                ),
+          backgroundChild: Stack(
+            fit: StackFit.expand,
+            children: [
+              IgnorePointer(child: _NotebookHeaderCoverBackground(data: data)),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        data.accent.withValues(alpha: 0.035),
+                        Colors.black.withValues(alpha: 0.12),
+                        Colors.white.withValues(alpha: 0.03),
+                        Colors.black.withValues(alpha: 0.12),
+                        data.accent.withValues(alpha: 0.035),
+                      ],
+                      stops: const [0.0, 0.18, 0.5, 0.82, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotebookHeaderTagWrap extends StatelessWidget {
+  final List<_NotebookHeaderTagItem> tags;
+
+  const _NotebookHeaderTagWrap({required this.tags});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 28,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < tags.length; index += 1) ...[
+              if (index > 0) const SizedBox(width: 6),
+              _MiniChip(
+                icon: tags[index].icon,
+                label: tags[index].label,
+                color: tags[index].color,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotebookHeaderTagItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _NotebookHeaderTagItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+}
+
+List<_NotebookHeaderTagItem> _buildNotebookHeaderTags(CharacterCardData data) {
+  final tags = <_NotebookHeaderTagItem>[
+    _NotebookHeaderTagItem(
+      icon: Icons.star_rounded,
+      label: data.relevanceTag.isEmpty ? 'N/A' : data.relevanceTag,
+      color: _notebookHeaderRelevanceColor(data.relevanceTag),
+    ),
+  ];
+
+  void addTag({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    if (label.trim().isEmpty) return;
+    tags.add(_NotebookHeaderTagItem(icon: icon, label: label, color: color));
+  }
+
+  addTag(
+    icon: Icons.wc_rounded,
+    label: data.genderTag,
+    color: projectTagColorAt(0),
+  );
+  addTag(
+    icon: Icons.favorite_border_rounded,
+    label: data.sexualityTag,
+    color: projectTagColorAt(1),
+  );
+  addTag(
+    icon: Icons.groups_2_outlined,
+    label: data.ethnicityTag,
+    color: projectTagColorAt(2),
+  );
+  addTag(
+    icon: Icons.badge_outlined,
+    label: data.functionTag,
+    color: projectTagColorAt(3),
+  );
+
+  return tags;
+}
+
+Color _notebookHeaderRelevanceColor(String label) {
+  return switch (label.trim().toLowerCase()) {
+    'contorno' => const Color(0xFF8E838B),
+    'periferico' => const Color(0xFF8EAFF1),
+    'orbital' => const Color(0xFFDF9C53),
+    'nucleo' => const Color(0xFFDF6EB8),
+    _ => const Color(0xFF8E838B),
+  };
+}
+
+class _NotebookHeaderInfoPanel extends StatelessWidget {
+  final CharacterCardData data;
+
+  const _NotebookHeaderInfoPanel({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final glowColor = data.accent.withValues(alpha: 0.26);
+    final dropShadow = Colors.black.withValues(alpha: 0.22);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 460),
+      child: Text(
+        data.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: const Color(0xFFF9F5F8),
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          fontStyle: FontStyle.italic,
+          letterSpacing: 0.1,
+          shadows: [
+            Shadow(color: glowColor, blurRadius: 14),
+            Shadow(
+              color: dropShadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotebookHeaderTitleBlock extends StatelessWidget {
+  final CharacterCardData data;
+
+  const _NotebookHeaderTitleBlock({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _NotebookHeaderInfoPanel(data: data),
+          const SizedBox(height: 4),
+          Container(
+            width: 82,
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.46),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.alias.isEmpty ? 'Sem vulgo' : data.alias,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: const Color(0xFFF1ECF0).withValues(alpha: 0.74),
+              fontSize: 12.5,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w600,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.14),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotebookHeaderCoverBackground extends StatelessWidget {
+  final CharacterCardData data;
+
+  const _NotebookHeaderCoverBackground({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withValues(alpha: 0.62),
-                data.accent.withValues(alpha: 0.08),
-                Colors.white.withValues(alpha: 0.32),
-              ],
-              stops: const [0.0, 0.52, 1.0],
-            ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.82),
-              width: 0.85,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              CharacterAvatarTile(
-                accent: data.accent,
-                avatarColor: data.avatarColor,
-                profileImage: data.profileImage,
-                isExpanded: true,
-                onTap: null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      data.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF2C262C),
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      data.alias.isEmpty ? 'Sem vulgo' : data.alias,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.56),
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _MiniChip(
-                          icon: Icons.star_rounded,
-                          label: 'Relevância: ${data.relevanceTag.isEmpty ? 'N/A' : data.relevanceTag}',
-                          accentColor: data.accent,
-                        ),
-                        if (data.genderTag.isNotEmpty)
-                          _MiniChip(
-                            icon: Icons.wc_rounded,
-                            label: data.genderTag,
-                            accentColor: data.accent,
-                          ),
-                        if (data.functionTag.isNotEmpty)
-                          _MiniChip(
-                            icon: Icons.badge_outlined,
-                            label: data.functionTag,
-                            accentColor: data.accent,
-                          ),
-                      ],
-                    ),
-                  ],
+                Color.alphaBlend(
+                  data.accent.withValues(alpha: 0.11),
+                  data.avatarColor.withValues(alpha: 0.94),
                 ),
+                Color.alphaBlend(
+                  data.avatarColor.withValues(alpha: 0.93),
+                  Colors.black.withValues(alpha: 0.06),
+                ),
+                Color.alphaBlend(
+                  data.accent.withValues(alpha: 0.075),
+                  Colors.white.withValues(alpha: 0.1),
+                ),
+              ],
+              stops: const [0.0, 0.56, 1.0],
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  data.accent.withValues(alpha: 0.055),
+                  Colors.transparent,
+                  Colors.transparent,
+                  data.accent.withValues(alpha: 0.055),
+                ],
+                stops: const [0.0, 0.22, 0.78, 1.0],
               ),
-              IconButton(
-                onPressed: onClose,
-                icon: const Icon(Icons.close_rounded),
-                color: const Color(0xFF2C262C),
-                tooltip: 'Fechar',
-              ),
+            ),
+          ),
+        ),
+        if (data.profileImage.bytes != null) ...[
+          _NotebookHeaderCoverImageLayer(
+            profileImage: data.profileImage,
+            sigma: 0.8,
+            opacity: 0.9,
+            maskColors: const [
+              Colors.black,
+              Colors.black,
+              Color(0xAA000000),
+              Color(0x44000000),
+              Colors.transparent,
             ],
+            maskStops: const [0.0, 0.42, 0.78, 0.92, 1.0],
+          ),
+          _NotebookHeaderCoverImageLayer(
+            profileImage: data.profileImage,
+            sigma: 10,
+            opacity: 0.3,
+            maskColors: const [
+              Colors.transparent,
+              Color(0x66000000),
+              Color(0x99000000),
+              Color(0x33000000),
+              Colors.transparent,
+            ],
+            maskStops: const [0.0, 0.48, 0.76, 0.92, 1.0],
+          ),
+          _NotebookHeaderCoverImageLayer(
+            profileImage: data.profileImage,
+            sigma: 20,
+            opacity: 0.15,
+            maskColors: const [
+              Colors.transparent,
+              Colors.transparent,
+              Color(0x22000000),
+              Color(0x33000000),
+              Colors.transparent,
+            ],
+            maskStops: const [0.0, 0.56, 0.82, 0.94, 1.0],
+          ),
+        ] else ...[
+          _NotebookHeaderCoverIconLayer(
+            accentColor: data.accent,
+            sigma: 3,
+            opacity: 0.36,
+            maskColors: const [
+              Colors.black,
+              Colors.black,
+              Color(0x88000000),
+              Color(0x33000000),
+              Colors.transparent,
+            ],
+            maskStops: const [0.0, 0.42, 0.78, 0.92, 1.0],
+          ),
+          _NotebookHeaderCoverIconLayer(
+            accentColor: data.accent,
+            sigma: 16,
+            opacity: 0.18,
+            maskColors: const [
+              Colors.transparent,
+              Color(0x44000000),
+              Color(0x77000000),
+              Color(0x22000000),
+              Colors.transparent,
+            ],
+            maskStops: const [0.0, 0.5, 0.78, 0.94, 1.0],
+          ),
+        ],
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.18),
+                  Colors.transparent,
+                  Colors.white.withValues(alpha: 0.05),
+                  Colors.white.withValues(alpha: 0.16),
+                ],
+                stops: const [0.0, 0.34, 0.76, 1.0],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.16),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.06),
+                ],
+                stops: const [0.0, 0.52, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotebookHeaderCoverImageLayer extends StatelessWidget {
+  final ProjectImageData profileImage;
+  final double sigma;
+  final double opacity;
+  final List<Color> maskColors;
+  final List<double> maskStops;
+
+  const _NotebookHeaderCoverImageLayer({
+    required this.profileImage,
+    required this.sigma,
+    required this.opacity,
+    required this.maskColors,
+    required this.maskStops,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) {
+          return LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: maskColors,
+            stops: maskStops,
+          ).createShader(bounds);
+        },
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+          child: SizedBox.expand(
+            child: ProjectImageTransformView(
+              imageBytes: profileImage.bytes!,
+              imageWidth: profileImage.width ?? 1,
+              imageHeight: profileImage.height ?? 1,
+              scale: profileImage.scale,
+              offsetX: profileImage.offsetX,
+              offsetY: profileImage.offsetY,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotebookHeaderCoverIconLayer extends StatelessWidget {
+  final Color accentColor;
+  final double sigma;
+  final double opacity;
+  final List<Color> maskColors;
+  final List<double> maskStops;
+
+  const _NotebookHeaderCoverIconLayer({
+    required this.accentColor,
+    required this.sigma,
+    required this.opacity,
+    required this.maskColors,
+    required this.maskStops,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) {
+          return LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: maskColors,
+            stops: maskStops,
+          ).createShader(bounds);
+        },
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Transform.translate(
+              offset: const Offset(-14, 0),
+              child: Icon(
+                Icons.person_rounded,
+                size: 220,
+                color: accentColor.withValues(alpha: 0.96),
+              ),
+            ),
           ),
         ),
       ),
@@ -2215,41 +2553,66 @@ class _NotebookHeader extends StatelessWidget {
 class _MiniChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color accentColor;
+  final Color color;
 
   const _MiniChip({
     required this.icon,
     required this.label,
-    required this.accentColor,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.58),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.24),
-          width: 0.8,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: const Color(0xFF544959)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF2C262C),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
+    final foreground = Colors.white.withValues(alpha: 0.98);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.34),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.52),
+              width: 0.9,
             ),
-          ],
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.2),
+                color.withValues(alpha: 0.5),
+                color.withValues(alpha: 0.3),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.22),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 12, color: foreground),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -2330,10 +2693,7 @@ class _SectionStickyNote extends StatelessWidget {
   final Color accentColor;
   final ValueChanged<_NotebookSection> onJumpTo;
 
-  const _SectionStickyNote({
-    required this.accentColor,
-    required this.onJumpTo,
-  });
+  const _SectionStickyNote({required this.accentColor, required this.onJumpTo});
 
   @override
   Widget build(BuildContext context) {
@@ -3143,22 +3503,21 @@ class _CharacterTagSelectorField extends StatelessWidget {
                       hasValue
                           ? value
                           : showError
-                              ? 'Campo obrigatório'
-                              : 'Selecionar opção',
+                          ? 'Campo obrigatório'
+                          : 'Selecionar opção',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: showError
                             ? const Color(0xFFC96775)
                             : hasValue
-                                ? _darkenCharacterDialogColor(
-                                    effectiveColor,
-                                    0.2,
-                                  )
-                                : const Color(0xFF8E838B),
+                            ? _darkenCharacterDialogColor(effectiveColor, 0.2)
+                            : const Color(0xFF8E838B),
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
-                        fontWeight: hasValue ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: hasValue
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         height: 1.2,
                       ),
                     ),
@@ -3216,8 +3575,8 @@ class _CharacterRelevanceSelectorField extends StatelessWidget {
     final labelColor = showError
         ? const Color(0xFFC96775)
         : hasValue
-            ? _darkenCharacterDialogColor(categoryColor, 0.2)
-            : const Color(0xFF8E838B);
+        ? _darkenCharacterDialogColor(categoryColor, 0.2)
+        : const Color(0xFF8E838B);
 
     return Material(
       color: Colors.transparent,
@@ -3286,15 +3645,17 @@ class _CharacterRelevanceSelectorField extends StatelessWidget {
                       hasValue
                           ? value
                           : showError
-                              ? 'Campo obrigatório'
-                              : 'Selecionar relevância narrativa',
+                          ? 'Campo obrigatório'
+                          : 'Selecionar relevância narrativa',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: labelColor,
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
-                        fontWeight: hasValue ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: hasValue
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         height: 1.2,
                       ),
                     ),
@@ -3772,17 +4133,23 @@ class _OptionChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.56),
+            color: isSelected
+                ? color.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.56),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: isSelected ? color.withValues(alpha: 0.42) : Colors.white.withValues(alpha: 0.82),
+              color: isSelected
+                  ? color.withValues(alpha: 0.42)
+                  : Colors.white.withValues(alpha: 0.82),
               width: 0.8,
             ),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? _darkenCharacterDialogColor(color, 0.2) : const Color(0xFF2C262C),
+              color: isSelected
+                  ? _darkenCharacterDialogColor(color, 0.2)
+                  : const Color(0xFF2C262C),
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -3910,7 +4277,9 @@ class _SwatchButton extends StatelessWidget {
             color: color,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isSelected ? const Color(0xFF2C262C) : Colors.white.withValues(alpha: 0.7),
+              color: isSelected
+                  ? const Color(0xFF2C262C)
+                  : Colors.white.withValues(alpha: 0.7),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -3994,7 +4363,9 @@ class _UnitOption extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? const Color(0xFF2C262C) : const Color(0xFF544959),
+              color: isSelected
+                  ? const Color(0xFF2C262C)
+                  : const Color(0xFF544959),
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -4208,7 +4579,9 @@ class _RelevanceParameterBundle {
     return _RelevanceParameterBundle(
       parameters: parameters,
       values: {for (final parameter in parameters) parameter.id: 0},
-      weights: {for (final parameter in parameters) parameter.id: parameter.weight},
+      weights: {
+        for (final parameter in parameters) parameter.id: parameter.weight,
+      },
     );
   }
 
@@ -4338,7 +4711,10 @@ Map<String, double> _redistributeRelevanceWeights({
   }
 
   final remaining = (1.0 - clamped).clamp(0.0, 1.0).toDouble();
-  final otherIds = parameters.map((p) => p.id).where((id) => id != changedId).toList();
+  final otherIds = parameters
+      .map((p) => p.id)
+      .where((id) => id != changedId)
+      .toList();
   final otherTotal = otherIds.fold<double>(
     0,
     (sum, id) => sum + (weights[id] ?? 0),
@@ -4348,7 +4724,7 @@ Map<String, double> _redistributeRelevanceWeights({
     final equal = remaining / otherIds.length;
     return {
       for (final parameter in parameters)
-      parameter.id: parameter.id == changedId ? clamped : equal.toDouble(),
+        parameter.id: parameter.id == changedId ? clamped : equal.toDouble(),
     };
   }
 
@@ -4419,9 +4795,7 @@ IconData _tagKindIcon(_TagKind kind) {
 
 Color _darkenCharacterDialogColor(Color color, double amount) {
   final hsl = HSLColor.fromColor(color);
-  return hsl
-      .withLightness((hsl.lightness - amount).clamp(0, 1))
-      .toColor();
+  return hsl.withLightness((hsl.lightness - amount).clamp(0, 1)).toColor();
 }
 
 BoxDecoration _buildCharacterDialogSurfaceDecoration({

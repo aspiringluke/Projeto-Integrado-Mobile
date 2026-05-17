@@ -501,54 +501,59 @@ class CharacterHeightField extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 12, right: 74),
                 fillColor: Colors.white.withValues(alpha: 0.42),
                 borderColor: Colors.white.withValues(alpha: 0.62),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.straighten_rounded,
-                      size: 18,
-                      color: Color(0xFF171419),
-                    ),
-                    Container(
-                      width: 1.3,
-                      height: 18,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: accentColor.withValues(alpha: 0.84),
-                    ),
-                    Expanded(
-                      child: isEditing
-                          ? TextField(
-                              controller: controller,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => onCommitHeight(),
-                              onTapOutside: (_) {
-                                FocusScope.of(context).unfocus();
-                                onCommitHeight();
-                              },
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                border: InputBorder.none,
-                                hintText: 'Altura',
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.straighten_rounded,
+                        size: 18,
+                        color: Color(0xFF171419),
+                      ),
+                      Container(
+                        width: 1.3,
+                        height: 18,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: accentColor.withValues(alpha: 0.84),
+                      ),
+                      SizedBox(
+                        width: 50,
+                        child: isEditing
+                            ? TextField(
+                                controller: controller,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => onCommitHeight(),
+                                onTapOutside: (_) {
+                                  FocusScope.of(context).unfocus();
+                                  onCommitHeight();
+                                },
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  border: InputBorder.none,
+                                  hintText: 'Altura',
+                                ),
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.68),
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              )
+                            : Text(
+                                heightLabel,
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.68),
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
-                              style: TextStyle(
-                                color: Colors.black.withValues(alpha: 0.68),
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            )
-                          : Text(
-                              heightLabel,
-                              style: TextStyle(
-                                color: Colors.black.withValues(alpha: 0.68),
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -603,54 +608,59 @@ class CharacterWeightField extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 12, right: 54),
                 fillColor: Colors.white.withValues(alpha: 0.42),
                 borderColor: Colors.white.withValues(alpha: 0.62),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.balance_outlined,
-                      size: 18,
-                      color: Color(0xFF171419),
-                    ),
-                    Container(
-                      width: 1.3,
-                      height: 18,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      color: accentColor.withValues(alpha: 0.84),
-                    ),
-                    Expanded(
-                      child: isEditing
-                          ? TextField(
-                              controller: controller,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => onCommitWeight(),
-                              onTapOutside: (_) {
-                                FocusScope.of(context).unfocus();
-                                onCommitWeight();
-                              },
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                border: InputBorder.none,
-                                hintText: 'Peso',
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.balance_outlined,
+                        size: 18,
+                        color: Color(0xFF171419),
+                      ),
+                      Container(
+                        width: 1.3,
+                        height: 18,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: accentColor.withValues(alpha: 0.84),
+                      ),
+                      SizedBox(
+                        width: 50,
+                        child: isEditing
+                            ? TextField(
+                                controller: controller,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => onCommitWeight(),
+                                onTapOutside: (_) {
+                                  FocusScope.of(context).unfocus();
+                                  onCommitWeight();
+                                },
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  border: InputBorder.none,
+                                  hintText: 'Peso',
+                                ),
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.68),
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              )
+                            : Text(
+                                weightLabel,
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.68),
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
-                              style: TextStyle(
-                                color: Colors.black.withValues(alpha: 0.68),
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            )
-                          : Text(
-                              weightLabel,
-                              style: TextStyle(
-                                color: Colors.black.withValues(alpha: 0.68),
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
