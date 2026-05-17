@@ -11,7 +11,7 @@ class Wireframe extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Wireframe",
-      initialRoute: "/chatbot",
+      initialRoute: "/projects",
       debugShowCheckedModeBanner: false,
       routes: {
         "/": (_) => const ShellPage(initialTab: NavTab.projects),

@@ -1,8 +1,6 @@
-import 'dart:convert';
-
 /// Service responsável por aplicar técnicas de Inteligência Artificial
 /// no gerenciamento de personagens.
-class CharacterAIService {
+class ChatbotService {
   
   /// Metodologia: Processamento de Linguagem Natural (NLP)
   /// Objetivo: Gerar uma sinopse criativa baseada no nome e alcunha do personagem.
