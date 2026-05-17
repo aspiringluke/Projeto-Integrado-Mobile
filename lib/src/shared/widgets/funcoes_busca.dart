@@ -186,7 +186,7 @@ class _ActionIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkResponse(
       radius: 20,
-      onTap: () {},
+      onTap: () => Navigator.of(context).pushNamed("/chatbot"),
       child: SizedBox(
         width: 30,
         height: 30,
