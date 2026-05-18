@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 class ProjectImageData {
@@ -16,4 +17,42 @@ class ProjectImageData {
     this.offsetX = 0,
     this.offsetY = 0,
   });
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'bytes': bytes == null ? null : base64Encode(bytes!),
+      'width': width,
+      'height': height,
+      'scale': scale,
+      'offsetX': offsetX,
+      'offsetY': offsetY,
+    };
+  }
+
+  factory ProjectImageData.fromJson(Map<String, Object?> map) {
+    final rawBytes = map['bytes'];
+
+    return ProjectImageData(
+      bytes: rawBytes is String && rawBytes.isNotEmpty
+          ? Uint8List.fromList(base64Decode(rawBytes))
+          : null,
+      width: _readDouble(map['width']),
+      height: _readDouble(map['height']),
+      scale: _readDouble(map['scale']) ?? 1,
+      offsetX: _readDouble(map['offsetX']) ?? 0,
+      offsetY: _readDouble(map['offsetY']) ?? 0,
+    );
+  }
+}
+
+double? _readDouble(Object? value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+
+  if (value is String) {
+    return double.tryParse(value);
+  }
+
+  return null;
 }

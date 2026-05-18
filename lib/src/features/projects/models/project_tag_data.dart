@@ -7,6 +7,20 @@ class ProjectTagData {
   const ProjectTagData({required this.label, required this.color});
 
   String get normalizedLabel => normalizeProjectTagLabel(label);
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'label': label,
+      'color': color.toARGB32(),
+    };
+  }
+
+  factory ProjectTagData.fromJson(Map<String, Object?> map) {
+    return ProjectTagData(
+      label: map['label'] as String? ?? '',
+      color: Color(_readColorValue(map['color']) ?? 0xFFDF6EB8),
+    );
+  }
 }
 
 const List<Color> projectTagPalette = <Color>[
@@ -30,4 +44,16 @@ String sanitizeProjectTagLabel(String label) {
 
 Color projectTagColorAt(int index) {
   return projectTagPalette[index % projectTagPalette.length];
+}
+
+int? _readColorValue(Object? value) {
+  if (value is int) {
+    return value;
+  }
+
+  if (value is String) {
+    return int.tryParse(value);
+  }
+
+  return null;
 }

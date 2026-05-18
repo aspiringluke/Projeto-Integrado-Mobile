@@ -15,15 +15,23 @@ import 'character_card_visuals.dart';
 
 class CharacterCard extends StatefulWidget {
   final CharacterCardData data;
+  final DateTime createdAt;
+  final DateTime lastModified;
+  final DateTime lastAccessed;
   final bool isPinned;
   final VoidCallback onTogglePinned;
+  final VoidCallback? onViewed;
   final ValueChanged<CharacterCardData>? onEdited;
 
   const CharacterCard({
     super.key,
     required this.data,
+    required this.createdAt,
+    required this.lastModified,
+    required this.lastAccessed,
     required this.isPinned,
     required this.onTogglePinned,
+    this.onViewed,
     this.onEdited,
   });
 
@@ -56,7 +64,11 @@ class _CharacterCardState extends State<CharacterCard>
   @override
   void initState() {
     super.initState();
-    _dateEntries = CharacterDateEntries.fromSeed(widget.data.seed);
+    _dateEntries = CharacterDateEntries.fromValues(
+      createdAt: widget.createdAt,
+      lastModified: widget.lastModified,
+      lastAccessed: widget.lastAccessed,
+    );
     _birthdayValue = DateTime(
       widget.data.birthYear,
       widget.data.birthMonth,
@@ -149,8 +161,14 @@ class _CharacterCardState extends State<CharacterCard>
         widget.data.birthDay,
       );
     }
-    if (oldWidget.data.seed != widget.data.seed) {
-      _dateEntries = CharacterDateEntries.fromSeed(widget.data.seed);
+    if (oldWidget.createdAt != widget.createdAt ||
+        oldWidget.lastModified != widget.lastModified ||
+        oldWidget.lastAccessed != widget.lastAccessed) {
+      _dateEntries = CharacterDateEntries.fromValues(
+        createdAt: widget.createdAt,
+        lastModified: widget.lastModified,
+        lastAccessed: widget.lastAccessed,
+      );
     }
   }
 
@@ -214,8 +232,9 @@ class _CharacterCardState extends State<CharacterCard>
     widget.onEdited?.call(next);
   }
 
-  void _openCharacterPage() {
-    Navigator.of(context).push(
+  Future<void> _openCharacterPage() async {
+    widget.onViewed?.call();
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CharacterNotebookPage(
           data: _buildCurrentEditedData(),
@@ -223,6 +242,7 @@ class _CharacterCardState extends State<CharacterCard>
         ),
       ),
     );
+    widget.onViewed?.call();
   }
 
   Future<void> _openCharacterProfileViewer() async {
@@ -230,11 +250,13 @@ class _CharacterCardState extends State<CharacterCard>
       return;
     }
 
+    widget.onViewed?.call();
     await showCharacterProfileViewerDialog(
       context,
       characterName: widget.data.name,
       profileImage: widget.data.profileImage,
     );
+    widget.onViewed?.call();
   }
 
   void _cycleDateType() {
@@ -414,7 +436,7 @@ class _CharacterCardState extends State<CharacterCard>
         return StatefulBuilder(
           builder: (context, setModalState) {
             return ProjectBottomSheetFrame(
-              title: 'Aniversario',
+              title: 'Aniversário',
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -424,7 +446,7 @@ class _CharacterCardState extends State<CharacterCard>
                       children: [
                         Expanded(
                           child: _CharacterBirthdayWheel(
-                            label: 'Mes',
+                            label: 'Mês',
                             controller: monthController,
                             onSelectedItemChanged: (index) {
                               setModalState(() {
@@ -619,7 +641,11 @@ class _CharacterCardState extends State<CharacterCard>
   ZodiacSignData get _signData => zodiacSignFor(_birthday);
 
   CharacterDateEntries get _effectiveDateEntries {
-    return _dateEntries ??= CharacterDateEntries.fromSeed(widget.data.seed);
+    return _dateEntries ??= CharacterDateEntries.fromValues(
+      createdAt: widget.createdAt,
+      lastModified: widget.lastModified,
+      lastAccessed: widget.lastAccessed,
+    );
   }
 
   CharacterDateEntry get _currentDateEntry =>

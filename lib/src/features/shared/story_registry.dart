@@ -251,6 +251,39 @@ class StoryRegistry extends ChangeNotifier {
     notifyListeners();
   }
 
+  void syncProjects(Iterable<RegisteredProjectRef> projects) {
+    _projects
+      ..clear()
+      ..addAll(projects);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void syncCharacters(Iterable<RegisteredCharacterRef> characters) {
+    _characters
+      ..clear()
+      ..addAll(characters);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void syncProjectsAndCharacters({
+    required Iterable<RegisteredProjectRef> projects,
+    required Iterable<RegisteredCharacterRef> characters,
+  }) {
+    _projects
+      ..clear()
+      ..addAll(projects);
+    _characters
+      ..clear()
+      ..addAll(characters);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
   void updateCharacter({
     required String projectTitle,
     required String oldName,

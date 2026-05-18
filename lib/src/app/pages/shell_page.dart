@@ -61,7 +61,7 @@ class _ShellPageState extends State<ShellPage> {
       );
       if (!mounted || draft == null) return;
 
-      _projectListController.addProject(
+      await _projectListController.addProject(
         title: draft.title,
         synopsis: draft.synopsis,
         tags: draft.tags,

@@ -7,6 +7,7 @@ import '../widgets/character_card_visuals.dart';
 class CharactersSection extends StatelessWidget {
   final List<CharacterListItem> characters;
   final ValueChanged<CharacterListItem> onTogglePinned;
+  final ValueChanged<CharacterListItem> onCharacterViewed;
   final void Function(
     CharacterListItem character,
     CharacterCardData updatedData,
@@ -21,6 +22,7 @@ class CharactersSection extends StatelessWidget {
     super.key,
     required this.characters,
     required this.onTogglePinned,
+    required this.onCharacterViewed,
     required this.onCharacterEdited,
     required this.showAvatarGrid,
     required this.avatarGridColumns,
@@ -132,10 +134,14 @@ class CharactersSection extends StatelessWidget {
       itemBuilder: (context, index) {
         final character = characters[index];
         return CharacterCard(
-          key: ValueKey(character.data.seed),
+          key: ValueKey(character.id ?? character.data.seed),
           data: character.data,
+          createdAt: character.createdAt,
+          lastModified: character.lastModified,
+          lastAccessed: character.lastAccessed,
           isPinned: character.isPinned,
           onTogglePinned: () => onTogglePinned(character),
+          onViewed: () => onCharacterViewed(character),
           onEdited: (updatedData) => onCharacterEdited(character, updatedData),
         );
       },

@@ -113,9 +113,86 @@ void initializeSchema(CommonDatabase conn) {
     columnName: 'metadata',
     definition: 'TEXT',
   );
+  _ensureColumn(conn, tableName: 'Projeto', columnName: 'titulo', definition: 'TEXT');
+  _ensureColumn(conn, tableName: 'Projeto', columnName: 'corCapa', definition: 'TEXT');
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'corDestaque',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'imagemCapa',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'imagemDestaque',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'tagsJson',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'fixado',
+    definition: 'INTEGER DEFAULT 0',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'ordemNaoFixada',
+    definition: 'INTEGER DEFAULT 0',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'modoVisualizacaoPersonagens',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'colunasGradePersonagens',
+    definition: 'INTEGER DEFAULT 3',
+  );
+  _ensureColumn(conn, tableName: 'Personagem', columnName: 'nome', definition: 'TEXT');
+  _ensureColumn(
+    conn,
+    tableName: 'Personagem',
+    columnName: 'corDestaque',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Personagem',
+    columnName: 'payload',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Personagem',
+    columnName: 'fixado',
+    definition: 'INTEGER DEFAULT 0',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Personagem',
+    columnName: 'ordemNaoFixada',
+    definition: 'INTEGER DEFAULT 0',
+  );
 
   _ensureTimestampColumns(conn, 'Nota');
   _ensureTimestampColumns(conn, 'Pastas');
+  _ensureTimestampColumns(conn, 'Projeto');
+  _ensureTimestampColumns(conn, 'Personagem');
 }
 
 void _ensureColumn(

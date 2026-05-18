@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +31,10 @@ class ProjectListPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        if (controller.isLoading && controller.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         if (controller.isEmpty) {
           return const Center(
             child: Padding(
@@ -50,6 +56,7 @@ class ProjectListPage extends StatelessWidget {
           final project = controller.projects[index];
           final card = RepaintBoundary(
             child: ProjectCard(
+              projectId: project.id,
               title: project.title,
               synopsis: project.synopsis,
               tags: project.tags,
@@ -62,13 +69,18 @@ class ProjectListPage extends StatelessWidget {
               createdAt: project.createdAt,
               lastModified: project.lastModified,
               lastAccessed: project.lastAccessed,
-              onOpenProject: () => controller.markProjectOpened(project),
-              onProjectEdited: (title, synopsis) =>
+              characterDisplayMode: project.characterDisplayMode,
+              characterGridColumns: project.characterGridColumns,
+              onOpenProject: () => unawaited(controller.markProjectOpened(project)),
+              onProjectEdited: (title, synopsis) => unawaited(
                   controller.updateProjectContent(
                     project,
                     title: title,
                     synopsis: synopsis,
                   ),
+                ),
+              onProjectReloadRequested: () =>
+                  unawaited(controller.refreshAfterProjectPage()),
             ),
           );
 
