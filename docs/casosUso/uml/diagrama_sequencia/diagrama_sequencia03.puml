@@ -1,0 +1,73 @@
+@startuml Diagrama de Sequencia - Criacao de Tag e Grupo
+
+title Diagrama de Sequencia - Criacao de Tag e Grupo de Tags
+
+skinparam backgroundColor white
+skinparam sequence {
+    ArrowColor #5B4B54
+    LifeLineBorderColor #8B7380
+    LifeLineBackgroundColor #F8F2F5
+    ParticipantBorderColor #8B7380
+    ParticipantBackgroundColor #FDF7FA
+    ActorBorderColor #6C5562
+    ActorBackgroundColor #F4E8EE
+}
+
+actor "Usuario" as Usuario
+
+participant "Tela de Tags\n<<View>>" as TagsView
+participant "TagController\n<<ViewModel>>" as TagVM
+participant "TagGroupController\n<<ViewModel>>" as TagGroupVM
+participant "TagModel\n<<Model>>" as TagModel
+participant "TagGroupModel\n<<Model>>" as TagGroupModel
+participant "TagRepository\n<<Repository>>" as TagRepository
+participant "TagGroupRepository\n<<Repository>>" as TagGroupRepository
+participant "TagService\n<<Service>>" as TagService
+participant "TagGroupService\n<<Service>>" as TagGroupService
+participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
+
+Usuario -> TagsView: Abrir cadastro global de tags
+Usuario -> TagsView: Informar nome do grupo e nome da tag
+TagsView -> TagsView: Validar campos obrigatorios
+
+alt Campos obrigatorios ausentes
+    TagsView --> Usuario: Exibir validacao e solicitar correcao
+else Dados validos
+    TagsView -> TagGroupVM: Solicitar grupo por nome (com criacao automatica)
+    TagGroupVM -> TagGroupRepository: Obter ou criar grupo
+    TagGroupRepository -> TagGroupService: Encaminhar operacao de grupo
+    TagGroupService -> SQLiteDB: Consultar grupo por nome
+
+    alt Grupo encontrado
+        SQLiteDB --> TagGroupService: Retornar grupo existente
+    else Grupo ausente
+        SQLiteDB --> TagGroupService: Sem resultado
+        TagGroupVM -> TagGroupModel: Construir entidade de grupo
+        TagGroupService -> SQLiteDB: Inserir novo grupo
+        SQLiteDB --> TagGroupService: Confirmar criacao do grupo
+    end
+
+    TagGroupService --> TagGroupRepository: Entregar grupo resolvido
+    TagGroupRepository --> TagGroupVM: Retornar grupo resolvido
+    TagGroupVM --> TagVM: Entregar grupo resolvido
+
+    TagVM -> TagRepository: Obter ou criar tag no grupo
+    TagRepository -> TagService: Encaminhar operacao de tag
+    TagService -> SQLiteDB: Consultar tag por nome no grupo
+
+    alt Tag encontrada
+        SQLiteDB --> TagService: Retornar tag existente
+    else Tag ausente
+        SQLiteDB --> TagService: Sem resultado
+        TagVM -> TagModel: Construir entidade de tag
+        TagService -> SQLiteDB: Inserir nova tag no grupo
+        SQLiteDB --> TagService: Confirmar criacao da tag
+    end
+
+    TagService --> TagRepository: Entregar tag resolvida
+    TagRepository --> TagVM: Retornar tag resolvida
+    TagVM --> TagsView: Atualizar catalogo de tags e grupos
+    TagsView --> Usuario: Exibir novo estado
+end
+
+@enduml

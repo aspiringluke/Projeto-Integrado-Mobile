@@ -46,15 +46,19 @@ Documento consolidado dos casos de uso.
 1. Abrir a tela inicial.
 2. Clicar em "Novo Projeto".
 3. Informar nome do projeto.
-4. Sistema cria o projeto.
+4. Adicionar tags ao projeto (opcional).
+5. Sistema cria o projeto.
 
 ## Fluxo alternativo
 
 - A1 - Nome não informado: sistema exibe validação de nome obrigatório e bloqueia a criação.
+- A2 - Tag já cadastrada informada na criação: sistema reaproveita a tag existente e a associa ao projeto.
 
 ## Requisitos relacionados
 
 - RF01
+- RN06
+- RN07
 
 ---
 
@@ -77,9 +81,8 @@ Documento consolidado dos casos de uso.
 6. Selecionar personagens que aparecem no cartão.
 7. Salvar alterações.
 
-## Fluxos alternativos
+## Fluxo alternativo
 
-- A1 - Dados inválidos: sistema informa erro de validação e bloqueia salvamento até correção.
 - A2 - Remover imagem do cartão: sistema remove a imagem e mantém as demais alterações.
 
 ## Requisitos relacionados
@@ -89,6 +92,12 @@ Documento consolidado dos casos de uso.
 - RF04
 - RF05
 - RF06
+- RN06
+- RN08
+- RN15
+- RN16
+- RN17
+- RN18
 
 ---
 
@@ -113,11 +122,15 @@ Documento consolidado dos casos de uso.
 
 - A1 - Campos obrigatórios ausentes: sistema destaca os campos pendentes e bloqueia a criação.
 - A2 - Cancelar criação: sistema descarta os dados preenchidos e retorna à lista de personagens.
+- A3 - Tag já cadastrada informada no seletor: sistema reaproveita a opção existente.
 
 ## Requisitos relacionados
 
 - RF18
 - RF20
+- RN03
+- RN04
+- RN05
 - RNF05
 
 ---
@@ -128,7 +141,7 @@ Documento consolidado dos casos de uso.
 
 - Ator principal: Usuário
 - Objetivo: Atualizar informações da ficha de um personagem existente.
-- Pré-condições: Personagem existente e tela de edição aberta.
+- Pré-condições: Personagem existente.
 - Pós-condições: Dados do personagem atualizados e salvos.
 
 ## Fluxo principal
@@ -139,9 +152,8 @@ Documento consolidado dos casos de uso.
 4. Atualizar imagem do perfil (includes UC05 - Upload de imagem), quando necessário.
 5. Salvar alterações.
 
-## Fluxos alternativos
+## Fluxo alternativo
 
-- A1 - Dados inválidos: sistema informa inconsistências e bloqueia salvamento até correção.
 - A2 - Remover imagem do perfil: sistema remove a imagem e mantém as demais alterações.
 
 ## Requisitos relacionados
@@ -190,14 +202,14 @@ Documento consolidado dos casos de uso.
 - Ator principal: Usuário
 - Objetivo: Registrar notas com formatação e tags.
 - Pré-condições: Nenhuma.
-- Pós-condições: Nota salva com conteúdo e categorização.
+- Pós-condições: Nota salva com título (informado pelo usuário ou definido automaticamente), conteúdo e categorização.
 
 ## Fluxo principal
 
 1. Acessar tela de listagem de notas.
-2. Criar nova nota e título.
-3. Escrever conteúdo em Markdown.
-4. Adicionar tags.
+2. Criar nova nota e informar título (opcional).
+3. Escrever conteúdo.
+4. Adicionar tags (opcional).
 5. Salvar.
 
 ## Fluxo alternativo
@@ -208,7 +220,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 2. Sistema executa o UC05 para seleção e validação da imagem.
 3. Sistema associa a imagem à nota.
 
-- A2 - Nota vazia: ao salvar sem título e sem conteúdo, sistema exibe aviso e bloqueia persistência.
+A2 - Nota sem título:
+1. Usuário salva nota sem título
+2. Sistema define automaticamente o título como "Sem título" e conclui o salvamento.
 
 ## Requisitos relacionados
 
@@ -218,7 +232,12 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF12
 - RF13
 - RN02
-- RNF06
+- RN10
+- RN14
+- RN15
+- RN17
+- RN19
+- RNF05
 
 ---
 
@@ -236,8 +255,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 1. Acessar a tela de listagem de itens.
 2. Acionar a opção "Criar pasta".
 3. Informar nome da pasta.
-4. Confirmar criação.
-5. Sistema exibe a pasta na listagem.
+4. Definir classificações e tags da pasta (opcional).
+5. Confirmar criação.
+6. Sistema exibe a pasta na listagem.
 
 ## Fluxos alternativos
 
@@ -249,6 +269,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF14
 - RF09
 - RF32
+- RN09
 
 ---
 
@@ -276,7 +297,8 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 - RF39
 - RF16
-- RN07
+- RN13
+- RN23
 - RNF01
 - RNF04
 
@@ -337,7 +359,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF15
 - RF16
 - RF17
-- RN03
+- RN01
+- RN11
+- RN12
 
 ---
 
@@ -455,9 +479,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF30
 - RF34
 - RF37
-- RN04
+- RN20
 - RNF04
-- RNF06
+- RNF05
 
 ---
 
@@ -515,7 +539,7 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 - RF46
 - RF47
 - RF49
-- RN07
+- RN23
 - RNF04
 
 ---
@@ -574,9 +598,9 @@ A1 - Adicionar imagem (includes UC05 - Upload de imagem):
 
 - RF36
 - RF39
-- RN05
-- RN06
-- RNF06
+- RN21
+- RN22
+- RNF05
 
 ---
 
