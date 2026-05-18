@@ -3,12 +3,16 @@ part of 'project_page.dart';
 class ProjectPage extends StatefulWidget {
   final String title;
   final Color accentColor;
+  final Color? coverColor;
+  final ProjectImageData coverImage;
   final ProjectSectionId initialSection;
 
   const ProjectPage({
     super.key,
     required this.title,
     this.accentColor = const Color(0xFFDF6EB8),
+    this.coverColor,
+    this.coverImage = const ProjectImageData(),
     this.initialSection = ProjectSectionId.configProjeto,
   });
 
@@ -271,6 +275,141 @@ class _ProjectPageState extends State<ProjectPage> {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedCoverColor = widget.coverColor ?? widget.accentColor;
+    final headerBackground = Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  widget.accentColor.withValues(alpha: 0.08),
+                  resolvedCoverColor.withValues(alpha: 0.92),
+                ),
+                Color.alphaBlend(
+                  resolvedCoverColor.withValues(alpha: 0.88),
+                  Colors.black.withValues(alpha: 0.06),
+                ),
+                Color.alphaBlend(
+                  widget.accentColor.withValues(alpha: 0.05),
+                  Colors.white.withValues(alpha: 0.1),
+                ),
+              ],
+              stops: const [0.0, 0.56, 1.0],
+            ),
+          ),
+        ),
+        if (widget.coverImage.bytes != null)
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.78,
+              child: ProjectImageTransformView(
+                imageBytes: widget.coverImage.bytes!,
+                imageWidth: widget.coverImage.width ?? 1,
+                imageHeight: widget.coverImage.height ?? 1,
+                scale: widget.coverImage.scale,
+                offsetX: widget.coverImage.offsetX,
+                offsetY: widget.coverImage.offsetY,
+              ),
+            ),
+          ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.18),
+                  Colors.transparent,
+                  Colors.white.withValues(alpha: 0.05),
+                  Colors.white.withValues(alpha: 0.16),
+                ],
+                stops: const [0.0, 0.34, 0.76, 1.0],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.14),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.06),
+                ],
+                stops: const [0.0, 0.52, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+    final headerCenter = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            widget.title.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.fade,
+            softWrap: false,
+            style: TextStyle(
+              color: const Color(0xFFF8EFF5),
+              fontSize: 31,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 2.8,
+              height: 1,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 18,
+                  offset: const Offset(0, 2),
+                ),
+                Shadow(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  blurRadius: 12,
+                  offset: Offset.zero,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '...$_activeSectionLabel...',
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: const Color(0xFFF7EEF4).withValues(alpha: 0.92),
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            letterSpacing: 0.3,
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.34),
+                blurRadius: 12,
+                offset: const Offset(0, 1),
+              ),
+              Shadow(
+                color: Colors.white.withValues(alpha: 0.16),
+                blurRadius: 10,
+                offset: Offset.zero,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
       bottomNavigationBar: _ProjectFooterNav(
@@ -297,6 +436,8 @@ class _ProjectPageState extends State<ProjectPage> {
                 titleHorizontalPadding: 60,
                 titleShadow: true,
                 surroundSubtitleWithDots: true,
+                centerChild: headerCenter,
+                backgroundChild: headerBackground,
               ),
               const FuncoesBusca(),
               Expanded(child: _buildSectionBody()),

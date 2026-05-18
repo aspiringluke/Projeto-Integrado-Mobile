@@ -153,8 +153,12 @@ class _ProjectCardState extends State<ProjectCard>
     widget.onOpenProject?.call();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            ProjectPage(title: widget.title, accentColor: widget.accentColor),
+        builder: (_) => ProjectPage(
+          title: widget.title,
+          accentColor: widget.accentColor,
+          coverColor: widget.coverColor,
+          coverImage: widget.coverImage,
+        ),
       ),
     );
   }
@@ -329,6 +333,7 @@ class _ProjectCardState extends State<ProjectCard>
                                       dateEntry: _currentDateEntry,
                                       tags: widget.tags,
                                       accentColor: widget.accentColor,
+                                      coverImage: widget.coverImage,
                                       accentImage: widget.accentImage,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,

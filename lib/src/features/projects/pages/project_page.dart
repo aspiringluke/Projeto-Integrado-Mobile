@@ -10,5 +10,7 @@ import '../../../features/shared/story_registry.dart';
 import '../../../shared/widgets/funcoes_busca.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/main_header.dart';
+import '../models/project_image_data.dart';
+import '../widgets/project_image_transform_view.dart';
 
 part 'project_page_shell.dart';

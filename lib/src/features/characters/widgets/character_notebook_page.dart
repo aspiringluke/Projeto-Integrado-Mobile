@@ -1,10 +1,12 @@
 // ignore_for_file: unused_element, unused_local_variable
 
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../projects/models/project_image_data.dart';
 import '../../projects/models/project_tag_data.dart';
@@ -46,6 +48,8 @@ const String _titlesPlaceholderText =
     'Títulos formais e informais que designam o personagem.';
 
 enum _CharacterColorTarget { cover, accent }
+
+enum _PsychViewMode { bigFive, facet }
 
 class _NotebookTabMeta {
   final String label;
@@ -268,6 +272,1017 @@ class _PlaceholderPageCard extends StatelessWidget {
   }
 }
 
+class _PsychRadarNodeDefinition {
+  final String id;
+  final String label;
+  final String chartLabel;
+  final String description;
+  final Color color;
+
+  const _PsychRadarNodeDefinition({
+    required this.id,
+    required this.label,
+    required this.chartLabel,
+    required this.description,
+    required this.color,
+  });
+}
+
+const List<_PsychTraitDefinition> _psychBigFiveTraits = <_PsychTraitDefinition>[
+  _PsychTraitDefinition(
+    id: 'consciencia',
+    label: 'Consciência',
+    chartLabel: 'Consciência',
+    description:
+        'Diz respeito à forma como controlamos, conduzimos e direcionamos nossos impulsos.',
+    color: Color(0xFF2F7D73),
+    facets: <_PsychFacetDefinition>[
+      _PsychFacetDefinition(
+        id: 'competencia',
+        label: 'Competência',
+        description:
+            'Faceta em ajuste para detalhar como a capacidade percebida aparece no personagem.',
+      ),
+      _PsychFacetDefinition(
+        id: 'ordem',
+        label: 'Ordem',
+        description:
+            'Faceta em ajuste para detalhar organização, arranjo e previsibilidade.',
+      ),
+      _PsychFacetDefinition(
+        id: 'senso_de_dever',
+        label: 'Senso de dever',
+        description:
+            'Faceta em ajuste para detalhar responsabilidade, compromisso e consistência.',
+      ),
+      _PsychFacetDefinition(
+        id: 'busca_de_realizacao',
+        label: 'Busca de realização',
+        description:
+            'Faceta em ajuste para detalhar ambição, foco em metas e entrega.',
+      ),
+      _PsychFacetDefinition(
+        id: 'autodisciplina',
+        label: 'Autodisciplina',
+        description:
+            'Faceta em ajuste para detalhar persistência, autocontrole e execução.',
+      ),
+      _PsychFacetDefinition(
+        id: 'deliberacao',
+        label: 'Deliberação',
+        description:
+            'Faceta em ajuste para detalhar cautela, ponderação e escolha consciente.',
+      ),
+    ],
+  ),
+  _PsychTraitDefinition(
+    id: 'neuroticismo',
+    label: 'Neuroticismo',
+    chartLabel: 'Neuroticismo',
+    description: 'Tendência a sentir emoções negativas.',
+    color: Color(0xFFC65B6A),
+    facets: <_PsychFacetDefinition>[
+      _PsychFacetDefinition(
+        id: 'ansiedade',
+        label: 'Ansiedade',
+        description:
+            'Faceta em ajuste para detalhar tensão antecipatória e preocupação.',
+      ),
+      _PsychFacetDefinition(
+        id: 'raiva',
+        label: 'Raiva / hostilidade',
+        description:
+            'Faceta em ajuste para detalhar irritação, dureza e reatividade.',
+      ),
+      _PsychFacetDefinition(
+        id: 'depressao',
+        label: 'Depressão',
+        description:
+            'Faceta em ajuste para detalhar abatimento, pessimismo e recesso emocional.',
+      ),
+      _PsychFacetDefinition(
+        id: 'autoconsciencia',
+        label: 'Autoconsciência',
+        description:
+            'Faceta em ajuste para detalhar vergonha, exposição e autocensura.',
+      ),
+      _PsychFacetDefinition(
+        id: 'impulsividade',
+        label: 'Impulsividade',
+        description:
+            'Faceta em ajuste para detalhar dificuldade de inibir reações imediatas.',
+      ),
+      _PsychFacetDefinition(
+        id: 'vulnerabilidade',
+        label: 'Vulnerabilidade',
+        description:
+            'Faceta em ajuste para detalhar sensibilidade a pressão, ameaça ou sobrecarga.',
+      ),
+    ],
+  ),
+  _PsychTraitDefinition(
+    id: 'afabilidade',
+    label: 'Afabilidade',
+    chartLabel: 'Afabilidade',
+    description:
+        'Pessoas agradáveis aos outros, simpáticas. Se preocupam com a cooperação e a harmonia social e facilmente se dão bem com outras pessoas.',
+    color: Color(0xFF4E87B7),
+    facets: <_PsychFacetDefinition>[
+      _PsychFacetDefinition(
+        id: 'confianca',
+        label: 'Confiança',
+        description:
+            'Faceta em ajuste para detalhar abertura inicial e presunção de boa-fé.',
+      ),
+      _PsychFacetDefinition(
+        id: 'sinceridade',
+        label: 'Sinceridade',
+        description:
+            'Faceta em ajuste para detalhar franqueza, transparência e intenção clara.',
+      ),
+      _PsychFacetDefinition(
+        id: 'altruismo',
+        label: 'Altruísmo',
+        description:
+            'Faceta em ajuste para detalhar ajuda, cuidado e orientação ao outro.',
+      ),
+      _PsychFacetDefinition(
+        id: 'complacencia',
+        label: 'Complacência',
+        description:
+            'Faceta em ajuste para detalhar flexibilidade, concessão e baixa confrontação.',
+      ),
+      _PsychFacetDefinition(
+        id: 'modestia',
+        label: 'Modéstia',
+        description:
+            'Faceta em ajuste para detalhar humildade, discrição e pouca autopromoção.',
+      ),
+      _PsychFacetDefinition(
+        id: 'ternura',
+        label: 'Ternura',
+        description:
+            'Faceta em ajuste para detalhar empatia, acolhimento e delicadeza.',
+      ),
+    ],
+  ),
+  _PsychTraitDefinition(
+    id: 'abertura',
+    label: 'Abertura à experiência',
+    chartLabel: 'Abertura\nà experiência',
+    description:
+        'Pessoas criativas, apreciadoras da arte e da beleza e que gostam do novo.',
+    color: Color(0xFFB47B38),
+    facets: <_PsychFacetDefinition>[
+      _PsychFacetDefinition(
+        id: 'fantasia',
+        label: 'Fantasia',
+        description:
+            'Faceta em ajuste para detalhar imaginação, invenção e pensamento simbólico.',
+      ),
+      _PsychFacetDefinition(
+        id: 'estetica',
+        label: 'Estética',
+        description:
+            'Faceta em ajuste para detalhar sensibilidade à forma, beleza e composição.',
+      ),
+      _PsychFacetDefinition(
+        id: 'sentimentos',
+        label: 'Sentimentos',
+        description:
+            'Faceta em ajuste para detalhar abertura à vida interna e ao sentir.',
+      ),
+      _PsychFacetDefinition(
+        id: 'acoes',
+        label: 'Ações',
+        description:
+            'Faceta em ajuste para detalhar vontade de experimentar, variar e testar.',
+      ),
+      _PsychFacetDefinition(
+        id: 'ideias',
+        label: 'Ideias',
+        description:
+            'Faceta em ajuste para detalhar curiosidade intelectual e interesse conceitual.',
+      ),
+      _PsychFacetDefinition(
+        id: 'valores',
+        label: 'Valores',
+        description:
+            'Faceta em ajuste para detalhar flexibilidade ideológica e revisão de crenças.',
+      ),
+    ],
+  ),
+  _PsychTraitDefinition(
+    id: 'extroversao',
+    label: 'Extroversão',
+    chartLabel: 'Extroversão',
+    description:
+        'A extroversão é marcada pela sociabilidade, engajamento com o mundo externo.',
+    color: Color(0xFF5C9B6C),
+    facets: <_PsychFacetDefinition>[
+      _PsychFacetDefinition(
+        id: 'cordialidade',
+        label: 'Cordialidade',
+        description:
+            'Faceta em ajuste para detalhar calor social, abertura e prontidão relacional.',
+      ),
+      _PsychFacetDefinition(
+        id: 'gregariedade',
+        label: 'Gregariedade',
+        description:
+            'Faceta em ajuste para detalhar gosto por grupo, convivência e circulação social.',
+      ),
+      _PsychFacetDefinition(
+        id: 'assertividade',
+        label: 'Assertividade',
+        description:
+            'Faceta em ajuste para detalhar iniciativa, fala ativa e ocupação de espaço.',
+      ),
+      _PsychFacetDefinition(
+        id: 'atividade',
+        label: 'Atividade',
+        description:
+            'Faceta em ajuste para detalhar ritmo, energia e dinamismo cotidiano.',
+      ),
+      _PsychFacetDefinition(
+        id: 'excitação',
+        label: 'Busca de excitação',
+        description:
+            'Faceta em ajuste para detalhar busca de estímulo, intensidade e novidade.',
+      ),
+      _PsychFacetDefinition(
+        id: 'emocao_positiva',
+        label: 'Emoções positivas',
+        description:
+            'Faceta em ajuste para detalhar entusiasmo, alegria e disposição afetiva.',
+      ),
+    ],
+  ),
+];
+
+class _PsychRadarCard extends StatelessWidget {
+  final Color accentColor;
+  final String title;
+  final String? subtitle;
+  final List<_PsychRadarNodeDefinition> nodes;
+  final Map<String, double> values;
+  final String? selectedNodeId;
+  final double selectedNodeScale;
+  final ValueChanged<String> onNodeSelected;
+  final String? interactiveNodeId;
+  final ValueChanged<double>? onInteractiveNodeValueChanged;
+
+  const _PsychRadarCard({
+    required this.accentColor,
+    required this.title,
+    this.subtitle,
+    required this.nodes,
+    required this.values,
+    required this.selectedNodeId,
+    required this.selectedNodeScale,
+    required this.onNodeSelected,
+    this.interactiveNodeId,
+    this.onInteractiveNodeValueChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.62),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.12),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.radar_rounded,
+                size: 17,
+                color: _darkenCharacterDialogColor(accentColor, 0.16),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xFF2B262C),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.52),
+                          fontSize: 11,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final chartSide = constraints.maxWidth.isFinite
+                  ? min(constraints.maxWidth, 262.0)
+                  : 248.0;
+              final chartSize = Size.square(chartSide);
+              final geometry = _PsychRadarGeometry(
+                nodes: nodes,
+                values: values,
+              );
+              return Center(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) {
+                    final selected = geometry.hitTest(
+                      size: chartSize,
+                      localPosition: details.localPosition,
+                    );
+                    if (selected != null) {
+                      onNodeSelected(selected);
+                    }
+                    _updateInteractiveValue(
+                      geometry: geometry,
+                      size: chartSize,
+                      localPosition: details.localPosition,
+                    );
+                  },
+                  onPanStart: (details) {
+                    _updateInteractiveValue(
+                      geometry: geometry,
+                      size: chartSize,
+                      localPosition: details.localPosition,
+                    );
+                  },
+                  onPanUpdate: (details) {
+                    _updateInteractiveValue(
+                      geometry: geometry,
+                      size: chartSize,
+                      localPosition: details.localPosition,
+                    );
+                  },
+                  child: SizedBox.square(
+                    dimension: chartSide,
+                    child: TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOutCubic,
+                      tween: Tween<double>(begin: 1.0, end: selectedNodeScale),
+                      builder: (context, scale, child) {
+                        final chartZoom = 1.0 + ((scale - 1.0) * 0.22);
+                        return Transform.scale(
+                          scale: chartZoom,
+                          child: CustomPaint(
+                            painter: _PsychRadarPainter(
+                              accentColor: accentColor,
+                              nodes: nodes,
+                              values: values,
+                              selectedNodeId: selectedNodeId,
+                              selectedNodeScale: scale,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateInteractiveValue({
+    required _PsychRadarGeometry geometry,
+    required Size size,
+    required Offset localPosition,
+  }) {
+    final nodeId = interactiveNodeId;
+    final callback = onInteractiveNodeValueChanged;
+    if (nodeId == null || callback == null) return;
+    callback(
+      geometry.valueFromPosition(size: size, localPosition: localPosition),
+    );
+  }
+}
+
+class _PsychFacetRadarCard extends StatelessWidget {
+  final Color accentColor;
+  final _PsychTraitDefinition trait;
+  final List<_PsychRadarNodeDefinition> nodes;
+  final Map<String, double> values;
+  final String? selectedFacetId;
+  final ValueChanged<String> onFacetSelected;
+  final VoidCallback onBack;
+  final void Function(String traitId, String facetId, double value)
+      onFacetChanged;
+  final void Function(_PsychTraitDefinition trait, _PsychFacetDefinition facet)
+      onFacetEdit;
+
+  const _PsychFacetRadarCard({
+    required this.accentColor,
+    required this.trait,
+    required this.nodes,
+    required this.values,
+    required this.selectedFacetId,
+    required this.onFacetSelected,
+    required this.onBack,
+    required this.onFacetChanged,
+    required this.onFacetEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.62),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.12),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: onBack,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                iconSize: 18,
+                color: _darkenCharacterDialogColor(accentColor, 0.18),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trait.label,
+                      style: const TextStyle(
+                        color: Color(0xFF2B262C),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'a média das 6 facetas forma o Big Five',
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.52),
+                        fontSize: 11,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            trait.description,
+            style: TextStyle(
+              color: Colors.black.withValues(alpha: 0.56),
+              fontSize: 11,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _PsychRadarCard(
+            accentColor: accentColor,
+            title: 'Facetas',
+            subtitle: 'toque no ponto ou arraste para definir o valor',
+            nodes: nodes,
+            values: values,
+            selectedNodeId: selectedFacetId,
+            selectedNodeScale: selectedFacetId == null ? 1.0 : 1.6,
+            onNodeSelected: onFacetSelected,
+            interactiveNodeId: selectedFacetId,
+            onInteractiveNodeValueChanged: (value) {
+              final facetId = selectedFacetId ?? nodes.first.id;
+              onFacetChanged(trait.id, facetId, value);
+            },
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                '6 facetas',
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.72),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'lápis = valor preciso',
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  fontSize: 10.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 2.7,
+                children: [
+                  for (final facet in trait.facets)
+                    _PsychFacetTile(
+                      accentColor: accentColor,
+                      label: facet.label,
+                      value: values[facet.id] ?? 5,
+                      selected: facet.id == selectedFacetId,
+                      onTap: () => onFacetSelected(facet.id),
+                      onEdit: () => onFacetEdit(trait, facet),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PsychTraitOverviewTile extends StatelessWidget {
+  final Color accentColor;
+  final _PsychTraitDefinition trait;
+  final double value;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PsychTraitOverviewTile({
+    required this.accentColor,
+    required this.trait,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+          decoration: BoxDecoration(
+            color: selected
+                ? accentColor.withValues(alpha: 0.14)
+                : Colors.white.withValues(alpha: 0.52),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected
+                  ? accentColor.withValues(alpha: 0.24)
+                  : accentColor.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: trait.color,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      trait.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF2E2830),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: _darkenCharacterDialogColor(accentColor, 0.18),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 15,
+                    color: Colors.black.withValues(alpha: 0.34),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                trait.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  fontSize: 10.5,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: (value / 10).clamp(0, 1),
+                  minHeight: 4,
+                  backgroundColor: Colors.black.withValues(alpha: 0.04),
+                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PsychFacetTile extends StatelessWidget {
+  final Color accentColor;
+  final String label;
+  final double value;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+
+  const _PsychFacetTile({
+    required this.accentColor,
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? accentColor.withValues(alpha: 0.14)
+                : Colors.white.withValues(alpha: 0.48),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected
+                  ? accentColor.withValues(alpha: 0.24)
+                  : accentColor.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF2E2830),
+                        fontSize: 11.3,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: _darkenCharacterDialogColor(accentColor, 0.18),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkResponse(
+                    onTap: onEdit,
+                    radius: 14,
+                    child: Icon(
+                      Icons.tune_rounded,
+                      size: 14,
+                      color: _darkenCharacterDialogColor(accentColor, 0.18),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: (value / 10).clamp(0, 1),
+                  minHeight: 4,
+                  backgroundColor: Colors.black.withValues(alpha: 0.04),
+                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PsychRadarPainter extends CustomPainter {
+  final Color accentColor;
+  final List<_PsychRadarNodeDefinition> nodes;
+  final Map<String, double> values;
+  final String? selectedNodeId;
+  final double selectedNodeScale;
+
+  const _PsychRadarPainter({
+    required this.accentColor,
+    required this.nodes,
+    required this.values,
+    required this.selectedNodeId,
+    required this.selectedNodeScale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (nodes.isEmpty) return;
+
+    final geometry = _PsychRadarGeometry(nodes: nodes, values: values);
+    final center = Offset(size.width / 2, size.height / 2);
+    final outerRadius = geometry.outerRadius(size);
+    final points = geometry.pointsFor(size);
+    final labels = geometry.labelPointsFor(size);
+
+    final gridPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = Colors.black.withValues(alpha: 0.07);
+    final axisPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = Colors.black.withValues(alpha: 0.06);
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = accentColor.withValues(alpha: 0.16);
+    final outlinePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = accentColor.withValues(alpha: 0.72);
+
+    for (var level = 1; level <= 5; level += 1) {
+      final radius = outerRadius * (level / 5);
+      final polygon = _polygonPoints(center, radius, nodes.length);
+      canvas.drawPath(_polygonPath(polygon), gridPaint);
+    }
+
+    for (final node in nodes) {
+      final index = nodes.indexOf(node);
+      final angle = _psychAngleForIndex(index, nodes.length);
+      canvas.drawLine(
+        center,
+        center + Offset(cos(angle), sin(angle)) * outerRadius,
+        axisPaint,
+      );
+    }
+
+    canvas.drawPath(_polygonPath(points), fillPaint);
+    canvas.drawPath(_polygonPath(points), outlinePaint);
+
+    for (var index = 0; index < points.length; index += 1) {
+      final node = nodes[index];
+      final point = points[index];
+      final isSelected = node.id == selectedNodeId;
+      final pointRadius = isSelected ? 6.5 * selectedNodeScale : 4.5;
+      final pointPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = isSelected ? node.color : node.color.withValues(alpha: 0.82);
+      canvas.drawCircle(
+        point,
+        pointRadius + 4,
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = node.color.withValues(alpha: isSelected ? 0.16 : 0.10)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      );
+      canvas.drawCircle(point, pointRadius, pointPaint);
+
+      final labelPainter = TextPainter(
+        text: TextSpan(
+          text: node.chartLabel,
+          style: TextStyle(
+            color: isSelected
+                ? _darkenCharacterDialogColor(node.color, 0.22)
+                : const Color(0xFF3B333B),
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            height: 1.05,
+            shadows: [
+              Shadow(
+                color: Colors.white.withValues(alpha: 0.68),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        ),
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+        maxLines: 2,
+      )..layout(maxWidth: 84);
+
+      final labelOffset =
+          labels[index] -
+          Offset(labelPainter.width / 2, labelPainter.height / 2);
+      labelPainter.paint(canvas, labelOffset);
+    }
+  }
+
+  List<Offset> _polygonPoints(Offset center, double radius, int count) {
+    return List<Offset>.generate(count, (index) {
+      final angle = _psychAngleForIndex(index, count);
+      return center + Offset(cos(angle), sin(angle)) * radius;
+    });
+  }
+
+  Path _polygonPath(List<Offset> points) {
+    final path = Path();
+    if (points.isEmpty) return path;
+    path.moveTo(points.first.dx, points.first.dy);
+    for (var i = 1; i < points.length; i += 1) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _PsychRadarPainter oldDelegate) {
+    return oldDelegate.accentColor != accentColor ||
+        oldDelegate.selectedNodeId != selectedNodeId ||
+        oldDelegate.selectedNodeScale != selectedNodeScale ||
+        oldDelegate.values != values ||
+        oldDelegate.nodes != nodes;
+  }
+}
+
+class _PsychRadarGeometry {
+  final List<_PsychRadarNodeDefinition> nodes;
+  final Map<String, double> values;
+
+  const _PsychRadarGeometry({required this.nodes, required this.values});
+
+  double outerRadius(Size size) => min(size.width, size.height) * 0.34;
+
+  List<Offset> pointsFor(Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = outerRadius(size);
+    return List<Offset>.generate(nodes.length, (index) {
+      final node = nodes[index];
+      final value = (values[node.id] ?? 5).clamp(0.0, 10.0).toDouble();
+      final angle = _psychAngleForIndex(index, nodes.length);
+      return center + Offset(cos(angle), sin(angle)) * (radius * value / 10);
+    });
+  }
+
+  List<Offset> labelPointsFor(Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = outerRadius(size) + 22;
+    return List<Offset>.generate(nodes.length, (index) {
+      final angle = _psychAngleForIndex(index, nodes.length);
+      return center + Offset(cos(angle), sin(angle)) * radius;
+    });
+  }
+
+  String? hitTest({required Size size, required Offset localPosition}) {
+    final points = pointsFor(size);
+    var bestIndex = -1;
+    var bestDistance = double.infinity;
+    for (var index = 0; index < points.length; index += 1) {
+      final distance = (points[index] - localPosition).distance;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+
+    final hitRadius = max(28.0, outerRadius(size) * 0.18);
+    if (bestIndex < 0 || bestDistance > hitRadius) {
+      return null;
+    }
+    return nodes[bestIndex].id;
+  }
+
+  double valueFromPosition({
+    required Size size,
+    required Offset localPosition,
+  }) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = outerRadius(size);
+    if (radius <= 0) return 0;
+    final distance = (localPosition - center).distance;
+    return ((distance / radius) * 10).clamp(0.0, 10.0).toDouble();
+  }
+}
+
+double _psychAngleForIndex(int index, int count) {
+  return -pi / 2 + (2 * pi * index / count);
+}
+
+class _PsychTraitDefinition {
+  final String id;
+  final String label;
+  final String chartLabel;
+  final String description;
+  final Color color;
+  final List<_PsychFacetDefinition> facets;
+
+  const _PsychTraitDefinition({
+    required this.id,
+    required this.label,
+    required this.chartLabel,
+    required this.description,
+    required this.color,
+    required this.facets,
+  });
+}
+
+class _PsychFacetDefinition {
+  final String id;
+  final String label;
+  final String description;
+
+  const _PsychFacetDefinition({
+    required this.id,
+    required this.label,
+    required this.description,
+  });
+}
+
 class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   static const Map<_NotebookTab, _NotebookTabMeta> _tabs =
       <_NotebookTab, _NotebookTabMeta>{
@@ -321,6 +1336,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   String _selectedEthnicityTag = '';
   String _selectedFunctionTag = '';
   String _selectedRelevanceTag = '';
+  String? _selectedPsychTraitId;
+  String? _selectedPsychFacetId;
+  _PsychViewMode _psychViewMode = _PsychViewMode.bigFive;
+  String? _psychTransitionTraitId;
+  Timer? _psychTransitionTimer;
 
   @override
   void initState() {
@@ -371,10 +1391,25 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
           .categoryForScore(_relevance.score)
           .name;
     }
+    final seededPsychValues = Map<String, String>.from(
+      _draft.notebookComplexityValues,
+    );
+    for (final trait in _psychBigFiveTraits) {
+      for (final facet in trait.facets) {
+        seededPsychValues.putIfAbsent(
+          _psychFacetStorageKey(trait.id, facet.id),
+          () => '5.0',
+        );
+      }
+    }
+    if (seededPsychValues.length != _draft.notebookComplexityValues.length) {
+      _draft = _draft.copyWith(notebookComplexityValues: seededPsychValues);
+    }
   }
 
   @override
   void dispose() {
+    _psychTransitionTimer?.cancel();
     _nameController.dispose();
     _aliasController.dispose();
     _synopsisController.removeListener(_syncSynopsisDraft);
@@ -563,11 +1598,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   Widget _buildTabContent() {
     return switch (_activeTab) {
       _NotebookTab.geral => _buildGeneralTab(),
-      _NotebookTab.psique => _buildPlaceholderTab(
-        title: 'Psique',
-        subtitle: 'Mapa emocional, impulsos e contradições.',
-        icon: Icons.psychology_rounded,
-      ),
+      _NotebookTab.psique => _buildPsychologyTab(),
       _NotebookTab.historia => _buildPlaceholderTab(
         title: 'História',
         subtitle: 'Linha do tempo, origem e viradas importantes.',
@@ -588,7 +1619,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   Widget _buildGeneralTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -947,6 +1978,387 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         icon: icon,
       ),
     );
+  }
+
+  Widget _buildPsychologyTab() {
+    final selectedTrait = _psychTraitDefinitionFor(_selectedPsychTraitId);
+    final selectedFacet = _selectedPsychFacetId == null
+        ? null
+        : _psychFacetDefinitionFor(selectedTrait, _selectedPsychFacetId!);
+    final modeKey = _psychViewMode == _PsychViewMode.bigFive
+        ? 'bigFive'
+        : 'facet:${selectedTrait.id}:${selectedFacet?.id ?? ""}';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 160),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final scale = Tween<double>(begin: 0.98, end: 1).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          );
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(scale: scale, child: child),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(modeKey),
+          child: _psychViewMode == _PsychViewMode.bigFive
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _PsychRadarCard(
+                      accentColor: _draft.accent,
+                      title: 'Big Five',
+                      subtitle: 'toque num vértice para abrir',
+                      nodes: _psychBigFiveRadarNodes,
+                      values: _psychTraitValues,
+                      selectedNodeId: _psychTransitionTraitId,
+                      selectedNodeScale: _psychTransitionTraitId == null
+                          ? 1.0
+                          : 1.7,
+                      onNodeSelected: _selectPsychTrait,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Resumo dos traços',
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.74),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    for (final trait in _psychBigFiveTraits)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _PsychTraitOverviewTile(
+                          accentColor: _draft.accent,
+                          trait: trait,
+                          value: _psychTraitValue(trait.id),
+                          selected: _selectedPsychTraitId == trait.id,
+                          onTap: () => _selectPsychTrait(trait.id),
+                        ),
+                      ),
+                  ],
+                )
+              : _PsychFacetRadarCard(
+                  accentColor: _draft.accent,
+                  trait: selectedTrait,
+                  nodes: _psychFacetRadarNodesFor(selectedTrait),
+                  values: _psychFacetValuesFor(selectedTrait.id),
+                  selectedFacetId: selectedFacet?.id,
+                  onFacetSelected: _selectPsychFacet,
+                  onBack: _returnToBigFive,
+                  onFacetChanged: _setPsychFacetValue,
+                  onFacetEdit: _editPsychFacetValue,
+                ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editPsychFacetValue(
+    _PsychTraitDefinition trait,
+    _PsychFacetDefinition facet,
+  ) async {
+    final initialValue = _psychFacetValue(trait.id, facet.id);
+    final controller = TextEditingController(
+      text: initialValue.toStringAsFixed(1),
+    );
+    double workingValue = initialValue;
+
+    void syncController(double value) {
+      final text = value.toStringAsFixed(1);
+      controller.value = controller.value.copyWith(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+        composing: TextRange.empty,
+      );
+    }
+
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              void updateValue(double value) {
+                final nextValue = value.clamp(0.0, 10.0).toDouble();
+                setModalState(() {
+                  workingValue = nextValue;
+                  syncController(nextValue);
+                });
+                _setPsychFacetValue(trait.id, facet.id, nextValue);
+              }
+
+              return ProjectBottomSheetFrame(
+                title: 'Ajustar ${facet.label}',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trait.label,
+                      style: const TextStyle(
+                        color: Color(0xFF2C262C),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      facet.description,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.56),
+                        fontSize: 11.5,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Text(
+                          '0',
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.42),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Expanded(
+                          child: SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              activeTrackColor: _draft.accent,
+                              inactiveTrackColor:
+                                  _draft.accent.withValues(alpha: 0.14),
+                              thumbColor: _draft.accent,
+                              overlayColor:
+                                  _draft.accent.withValues(alpha: 0.12),
+                              trackHeight: 4,
+                            ),
+                            child: Slider(
+                              min: 0,
+                              max: 10,
+                              divisions: 100,
+                              value: workingValue.clamp(0, 10),
+                              onChanged: updateValue,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '10',
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.42),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9,\.]'),
+                              ),
+                            ],
+                            decoration: InputDecoration(
+                              labelText: 'Valor preciso',
+                              helperText: '0 a 10, com uma casa decimal',
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onSubmitted: (text) {
+                              final parsed = double.tryParse(
+                                text.replaceAll(',', '.'),
+                              );
+                              if (parsed != null) {
+                                updateValue(parsed);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          children: [
+                            IconButton(
+                              onPressed: () => updateValue(workingValue - 0.5),
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(Icons.remove_rounded),
+                            ),
+                            IconButton(
+                              onPressed: () => updateValue(workingValue + 0.5),
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(Icons.add_rounded),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Concluir'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  List<_PsychRadarNodeDefinition> get _psychBigFiveRadarNodes {
+    return [
+      for (final trait in _psychBigFiveTraits)
+        _PsychRadarNodeDefinition(
+          id: trait.id,
+          label: trait.label,
+          chartLabel: trait.chartLabel,
+          description: trait.description,
+          color: trait.color,
+        ),
+    ];
+  }
+
+  List<_PsychRadarNodeDefinition> _psychFacetRadarNodesFor(
+    _PsychTraitDefinition trait,
+  ) {
+    return [
+      for (final facet in trait.facets)
+        _PsychRadarNodeDefinition(
+          id: facet.id,
+          label: facet.label,
+          chartLabel: facet.label,
+          description: facet.description,
+          color: trait.color,
+        ),
+    ];
+  }
+
+  Map<String, double> get _psychTraitValues {
+    return {
+      for (final trait in _psychBigFiveTraits)
+        trait.id: _psychTraitValue(trait.id),
+    };
+  }
+
+  double _psychTraitValue(String traitId) {
+    final trait = _psychTraitDefinitionFor(traitId);
+    if (trait.facets.isEmpty) return 0;
+    final total = trait.facets.fold<double>(
+      0,
+      (sum, facet) => sum + _psychFacetValue(trait.id, facet.id),
+    );
+    return (total / trait.facets.length).clamp(0.0, 10.0).toDouble();
+  }
+
+  Map<String, double> _psychFacetValuesFor(String? traitId) {
+    final trait = _psychTraitDefinitionFor(traitId);
+    return {
+      for (final facet in trait.facets)
+        facet.id: _psychFacetValue(trait.id, facet.id),
+    };
+  }
+
+  double _psychFacetValue(String traitId, String facetId) {
+    final storedValue = _draft
+        .notebookComplexityValues[_psychFacetStorageKey(traitId, facetId)];
+    final parsedValue = double.tryParse(storedValue ?? '');
+    return (parsedValue ?? 5.0).clamp(0.0, 10.0).toDouble();
+  }
+
+  void _setPsychFacetValue(String traitId, String facetId, double value) {
+    final nextValues = Map<String, String>.from(
+      _draft.notebookComplexityValues,
+    );
+    nextValues[_psychFacetStorageKey(traitId, facetId)] = value
+        .clamp(0.0, 10.0)
+        .toStringAsFixed(1);
+    _updateDraft(_draft.copyWith(notebookComplexityValues: nextValues));
+  }
+
+  void _selectPsychTrait(String traitId) {
+    _psychTransitionTimer?.cancel();
+    setState(() {
+      _psychTransitionTraitId = traitId;
+      _psychViewMode = _PsychViewMode.bigFive;
+      _selectedPsychFacetId = null;
+    });
+    _psychTransitionTimer = Timer(const Duration(milliseconds: 180), () {
+      if (!mounted) return;
+      setState(() {
+        _selectedPsychTraitId = traitId;
+        final trait = _psychTraitDefinitionFor(traitId);
+        _selectedPsychFacetId = trait.facets.isEmpty
+            ? null
+            : trait.facets.first.id;
+        _psychViewMode = _PsychViewMode.facet;
+        _psychTransitionTraitId = null;
+      });
+    });
+  }
+
+  _PsychTraitDefinition _psychTraitDefinitionFor(String? traitId) {
+    if (traitId == null) {
+      return _psychBigFiveTraits.first;
+    }
+    return _psychBigFiveTraits.firstWhere(
+      (trait) => trait.id == traitId,
+      orElse: () => _psychBigFiveTraits.first,
+    );
+  }
+
+  _PsychFacetDefinition _psychFacetDefinitionFor(
+    _PsychTraitDefinition trait,
+    String facetId,
+  ) {
+    return trait.facets.firstWhere(
+      (facet) => facet.id == facetId,
+      orElse: () => trait.facets.first,
+    );
+  }
+
+  void _returnToBigFive() {
+    _psychTransitionTimer?.cancel();
+    setState(() {
+      _selectedPsychTraitId = null;
+      _selectedPsychFacetId = null;
+      _psychTransitionTraitId = null;
+      _psychViewMode = _PsychViewMode.bigFive;
+    });
+  }
+
+  void _selectPsychFacet(String facetId) {
+    setState(() {
+      _selectedPsychFacetId = facetId;
+    });
+  }
+
+  String _psychFacetStorageKey(String traitId, String facetId) {
+    return '$traitId::$facetId';
   }
 
   Widget _buildIdentitySynopsisPanel() {
