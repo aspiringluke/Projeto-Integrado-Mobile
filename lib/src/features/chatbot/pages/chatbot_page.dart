@@ -31,8 +31,8 @@ void initState() {
   });
 }
 
-void enviarMensagem() {
-  viewModel.enviarMensagem(
+Future<void> enviarMensagem() async {
+  await viewModel.enviarMensagem(
     controller.text,
   );
 

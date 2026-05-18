@@ -5,7 +5,8 @@ class ChatbotService implements IChatbotService
 {
   @override
   Future<(bool, String)> enviarMensagem(List<String> context, String msg) async {
-    final client = MistralClient.fromEnvironment();
+    const apiKey = String.fromEnvironment("MISTRAL_API_KEY");
+    final client = MistralClient.withApiKey(apiKey);
 
     // preparar o contexto
     List<ChatMessage> mensagens = [];
