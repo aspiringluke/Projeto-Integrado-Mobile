@@ -1,6 +1,6 @@
 @startuml Diagrama de Sequencia - Criacao de Personagem
 
-title Diagrama de Sequencia - Criacao de Personagem (com Data Layer)
+title Diagrama de Sequencia - Criacao de Personagem (MVVM atual)
 
 skinparam backgroundColor white
 skinparam sequence {
@@ -15,51 +15,46 @@ skinparam sequence {
 
 actor "Usuario" as Usuario
 
-participant "CharactersPage / CharacterForm\n<<View>>" as CharacterView
-participant "CharacterController\n<<Controller>>" as CharacterCtrl
-participant "Personagem\n<<Model>>" as Personagem
-participant "Projeto\n<<Model>>" as Projeto
+participant "ProjectPageShell / Dialogo\n<<View>>" as CharacterView
+participant "ProjectPageShell\n<<ViewModel>>" as CharacterVM
+participant "CharacterCardData + CharacterListItem\n<<Model>>" as CharacterModel
+participant "StoryRegistry\n<<Model>>" as StoryRegistry
 participant "CharacterRepository\n<<Repository>>" as CharacterRepository
-participant "ProjectRepository\n<<Repository>>" as ProjectRepository
+participant "CharacterService\n<<Service>>" as CharacterService
 participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
 
-Usuario -> CharacterView: Abrir projeto e tocar no botao "+"
-CharacterView -> CharacterView: Exibir formulario de personagem
-Usuario -> CharacterView: Preencher dados e confirmar
+Usuario -> CharacterView: Tocar no botao "+" na secao de personagens
+CharacterView -> CharacterView: Exibir formulario de criacao
+Usuario -> CharacterView: Preencher formulario e confirmar
+CharacterView -> CharacterView: Validar formulario e campos obrigatorios
 
-CharacterView -> CharacterCtrl: submitNovoPersonagem(idProjeto, draft)
-CharacterCtrl -> CharacterCtrl: validarCamposObrigatorios(draft)
-
-alt Dados obrigatorios invalidos
-    CharacterCtrl --> CharacterView: exibirErrosFormulario(campos)
-    CharacterView --> Usuario: Solicitar correcao dos dados
+alt Dados obrigatorios ausentes
+    CharacterView --> Usuario: Destacar campos pendentes\n(e manter dialogo aberto)
 else Dados obrigatorios validos
-    opt Imagem informada
-        CharacterCtrl -> CharacterCtrl: validarRegrasDeUpload(imagem)
-    end
+    CharacterView --> CharacterVM: Enviar dados validados do formulario
+    CharacterVM -> CharacterModel: Construir entidade de personagem
+    CharacterVM -> CharacterVM: Adicionar personagem na lista em memoria
+    CharacterVM -> StoryRegistry: Registrar referencia de personagem
+    CharacterVM -> CharacterVM: Persistir estado local do projeto
 
-    CharacterCtrl -> Personagem: criarComDados(draft)
-    Personagem --> CharacterCtrl: entidadePronta
+    group Planejamento de persistencia (Repository/Service)
+        CharacterVM -> CharacterRepository: Solicitar gravacao do personagem
+        CharacterRepository -> CharacterService: Encaminhar dados para persistencia
+        CharacterService -> SQLiteDB: Inserir personagem e vinculo ao projeto
 
-    CharacterCtrl -> CharacterRepository: create(idProjeto, entidadePronta)
-    CharacterRepository -> SQLiteDB: INSERT INTO Personagem(...)
-
-    alt Persistencia do personagem com sucesso
-        SQLiteDB --> CharacterRepository: sucesso
-        CharacterRepository --> CharacterCtrl: sucesso
-
-        CharacterCtrl --> CharacterView: atualizar()
-        CharacterView --> Usuario: Exibir novo estado
-    else Falha na persistencia
-        SQLiteDB --> CharacterRepository: erroBanco
-        CharacterRepository --> CharacterCtrl: falhaPersistencia(mensagem)
-        CharacterCtrl --> CharacterView: exibirErroPersistencia(mensagem)
-        CharacterView --> Usuario: Informar falha na criacao
+        alt Persistencia concluida
+            SQLiteDB --> CharacterService: Confirmacao de gravacao
+            CharacterService --> CharacterRepository: Retornar sucesso
+            CharacterRepository --> CharacterVM: Confirmar persistencia
+            CharacterVM --> CharacterView: Notificar atualizacao de estado
+            CharacterView --> Usuario: Exibir novo personagem na lista
+        else Falha na persistencia
+            SQLiteDB --> CharacterService: Erro de persistencia
+            CharacterService --> CharacterRepository: Retornar falha e motivo
+            CharacterRepository --> CharacterVM: Informar falha de gravacao
+            CharacterVM --> CharacterView: Exibir aviso de falha de persistencia
+        end
     end
 end
-
-note over CharacterCtrl,SQLiteDB
-Fluxo alinhado aos UCs de criacao/edicao de personagem
-end note
 
 @enduml

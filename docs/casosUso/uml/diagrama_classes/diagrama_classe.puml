@@ -1,63 +1,58 @@
 @startuml Diagrama de classes do PI
 
+'left to right direction
+
 class Personagem {
     idPersonagem: int
-    informações: map
-    versãoSelecionada: ?
+    informacoesGerais: map
+    aparencia: map
+    psique: map
+    historia: map
+    tags: Tag[]
+    gruposTag: TagGroup[]
 
-    editarInfo(key: string, value: string)
-    buscarInfo(pagina: string, versaoSelecionada: ?)
+    editarInfo(info: string, value: string)
+    buscarInfo(pagina: string)
 }
 
 class Projeto {
     idProjeto: int
-
-    criarProjeto(info: map)
-    criarPersonagem(info: map)
-    excluirPersonagem(id: int)
+    titulo: string
+    sintese: string
+    estilo: any
+    tags: Tag[]
+    gruposTag: TagGroup[]
 }
 
 
 class Nota {
+    idNota: int
     título: string
-    tags: tag[]
     conteúdo: string
     cor: string
     idPastaPai: int?
+    tags: Tag[]
+    gruposTag: TagGroup[]
 }
 
 class Pasta {
+    idPasta: int
     título: string
-    tags: tag[]
     cor: string
     idPastaPai: int?
 }
 
-class Diagrama {
-    idDiagrama: int
-    título: string
-    nós: nó[]
-    arestas: aresta[]
-
-    gerenciarNós()
-    gerenciarArestas()
+class Tag {
+    idTag: int
+    descricao: string
+    cor: string
+    idGrupoTag: int?
 }
 
-class Nó {
-    título: string
-    descrição: string
-    objeto: Object?
-}
-
-class Aresta {
-    título: string
-    nó_origem: nó
-    nó_destino: nó
-    estilo:
-    \tponta_origem
-    \tponta_destino
-    \tforma
-    \tcor
+class TagGroup {
+    idGrupoTag: int
+    descricao: string
+    cor: string
 }
 
 interface Taggable {
@@ -66,15 +61,19 @@ interface Taggable {
 }
 
 Projeto --> Personagem: Possui
-
-Diagrama --* Nó: Possui
-Diagrama --* Aresta: Possui
-Aresta --* Nó: Conecta
+Projeto --> Pasta: Possui pasta raiz
 
 Taggable <.. Projeto
-Taggable <.. Diagrama
 Taggable <.. Personagem
 Taggable <.. Nota
+
+TagGroup -> Tag: Agrupa
+
+Projeto --> TagGroup: Possui grupos
+
+Personagem -> TagGroup: Possui grupos
+
+Nota -> TagGroup: Possui grupos
 
 Pasta --> Pasta: Contém
 Pasta --> Nota: Contém

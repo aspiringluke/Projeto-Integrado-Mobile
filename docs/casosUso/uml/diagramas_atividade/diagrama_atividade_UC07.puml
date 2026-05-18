@@ -5,14 +5,21 @@ start
 :Acessar listagem de itens;
 :Clicar em "Criar pasta";
 :Informar nome da pasta;
+if (Deseja definir classificações e tags?) then (sim)
+  :Criar classificações e adicionar tags;
+endif
+if (Deseja cancelar criação?) then (sim)
+  :Encerrar ação sem criar pasta;
+  stop
+endif
 :Confirmar criação;
 
 |Sistema|
-if (Nome válido?) then (sim)
+if (Possui nome?) then (sim)
   :Criar pasta na estrutura atual;
   :Atualizar listagem;
 else (não)
-  :Exibir mensagem de nome inválido;
+  :Exibir mensagem de nome vazio;
 endif
 
 stop
