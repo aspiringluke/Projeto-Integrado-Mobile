@@ -291,7 +291,6 @@ class _ProjectPageState extends State<ProjectPage> {
                 subtitle: _activeSectionLabel,
                 onBackPressed: () => Navigator.of(context).pop(),
                 onConfigPressed: () {},
-                headerHeight: 118,
                 titleFontSize: 31,
                 titleLetterSpacing: 2.8,
                 contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),

@@ -2296,7 +2296,7 @@ class _NotebookHeader extends StatelessWidget {
           title: data.name,
           onBackPressed: onClose,
           onConfigPressed: () {},
-          headerHeight: 154,
+          headerHeight: 200,
           contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           titleHorizontalPadding: 60,
           titleShadow: true,

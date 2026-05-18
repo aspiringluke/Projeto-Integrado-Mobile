@@ -28,7 +28,7 @@ class MainHeader extends StatelessWidget {
     this.subtitle,
     this.onBackPressed,
     this.onConfigPressed,
-    this.headerHeight = 106,
+    this.headerHeight = 150,
     this.titleFontSize = 33,
     this.titleLetterSpacing = 3.6,
     this.contentPadding = const EdgeInsets.fromLTRB(14, 16, 14, 18),
