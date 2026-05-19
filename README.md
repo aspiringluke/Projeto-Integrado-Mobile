@@ -169,6 +169,8 @@ De pouco serve um software funcional se sua qualidade é inexistente. A qualidad
 
 Com base nas normas IEEE/IEC 29119 e ISO/IEC 25010, aplicamos diferentes tipos de testes para assegurar que as principais funcionalidades da aplicação estivessem em conformidade com os requisitos funcionais levantados. Além disso, todo o processo foi devidamente documentado em uma série de artefatos que abrangem os conceitos de qualidade, o planejamento e a execução dos testes, bem como o registro dos resultados obtidos.
 
+Como exemplo prático, há o caso automatizado `TC02 Criação de pasta com título vazio`, implementado no arquivo `test/documento_c_test.dart`. Nesse teste, o sistema tenta criar uma pasta sem preencher o título e valida que a operação deve falhar, retornando uma mensagem informando que o nome não pode ser vazio. Esse cenário é importante porque comprova, de forma automatizada, o respeito a uma regra básica de consistência dos dados e evita que conteúdos incompletos sejam persistidos no aplicativo.
+
 ---
 
 ## ⚙️ Engenharia de Software
