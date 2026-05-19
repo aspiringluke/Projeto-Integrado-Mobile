@@ -69,13 +69,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
           ),
           Column(
             children: [
-              const MainHeader(
+              MainHeader(
                 asSliver: false,
                 title: 'Assistente Criativo',
                 subtitle: 'Converse com seu copiloto de ideias',
                 surroundSubtitleWithDots: true,
                 titleFontSize: 22,
                 titleLetterSpacing: 1.2,
+                onBackPressed: () => Navigator.of(context).pop(),
               ),
               Expanded(
                 child: Container(
