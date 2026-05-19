@@ -357,78 +357,41 @@ class CreateProjectDialogImageSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final coverImage = imageController.coverImage;
     final coverImageName = imageController.coverImageName;
-    final accentImage = imageController.accentImage;
-    final accentImageName = imageController.accentImageName;
-
-    if (controller.activeColorTarget == CreateProjectDialogColorTarget.cover) {
-      return CreateProjectDialogCoverImagePickerCard(
-        title: 'Imagem da capa',
-        description:
-            'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a área real da capa; o resto indica o que ficará de fora.',
-        imageBytes: coverImage.bytes,
-        imageWidth: coverImage.width,
-        imageHeight: coverImage.height,
-        imageName: coverImageName,
-        scale: coverImage.scale,
-        offsetX: coverImage.offsetX,
-        offsetY: coverImage.offsetY,
-        backgroundGradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Color(0xFFF4EDF2), Color(0xFFEAE2E8), Color(0xFFFFFFFF)],
-        ),
-        viewportPreset: createProjectDialogCoverViewportPreset,
-        emptyStateText: 'Nenhuma imagem selecionada',
-        onScaleChanged: (value) => imageController.setImageScale(
-          CreateProjectDialogColorTarget.cover,
-          value,
-        ),
-        onOffsetChanged: (offsetX, offsetY) => imageController.setImageOffset(
-          CreateProjectDialogColorTarget.cover,
-          offsetX,
-          offsetY,
-        ),
-        onPick: () =>
-            imageController.pickImage(CreateProjectDialogColorTarget.cover),
-        onRemove: coverImage.bytes == null
-            ? null
-            : () => imageController.removeImage(
-                CreateProjectDialogColorTarget.cover,
-              ),
-      );
-    }
 
     return CreateProjectDialogCoverImagePickerCard(
-      title: 'Imagem do realce',
+      title: 'Imagem da capa',
       description:
-          'Escolha uma imagem para o fundo do cartão expandido. A cor de realce continua controlando a colorização, a suavização e os gradientes por cima dela.',
-      imageBytes: accentImage.bytes,
-      imageWidth: accentImage.width,
-      imageHeight: accentImage.height,
-      imageName: accentImageName,
-      scale: accentImage.scale,
-      offsetX: accentImage.offsetX,
-      offsetY: accentImage.offsetY,
-      backgroundGradient: buildCreateProjectDialogAccentPreviewGradient(
-        controller.accentColor,
+          'Escolha uma imagem e ajuste o enquadramento. A moldura mostra a area real da capa; o resto indica o que ficara de fora.',
+      imageBytes: coverImage.bytes,
+      imageWidth: coverImage.width,
+      imageHeight: coverImage.height,
+      imageName: coverImageName,
+      scale: coverImage.scale,
+      offsetX: coverImage.offsetX,
+      offsetY: coverImage.offsetY,
+      backgroundGradient: const LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [Color(0xFFF4EDF2), Color(0xFFEAE2E8), Color(0xFFFFFFFF)],
       ),
-      viewportPreset: createProjectDialogAccentViewportPreset,
+      viewportPreset: createProjectDialogCoverViewportPreset,
       emptyStateText: 'Nenhuma imagem selecionada',
+      footerNote: 'Formatos suportados: JPEG, PNG, GIF e WEBP.',
       onScaleChanged: (value) => imageController.setImageScale(
-        CreateProjectDialogColorTarget.accent,
+        CreateProjectDialogColorTarget.cover,
         value,
       ),
       onOffsetChanged: (offsetX, offsetY) => imageController.setImageOffset(
-        CreateProjectDialogColorTarget.accent,
+        CreateProjectDialogColorTarget.cover,
         offsetX,
         offsetY,
       ),
       onPick: () =>
-          imageController.pickImage(CreateProjectDialogColorTarget.accent),
-      onRemove: accentImage.bytes == null
+          imageController.pickImage(CreateProjectDialogColorTarget.cover),
+      onRemove: coverImage.bytes == null
           ? null
           : () => imageController.removeImage(
-              CreateProjectDialogColorTarget.accent,
+              CreateProjectDialogColorTarget.cover,
             ),
     );
   }

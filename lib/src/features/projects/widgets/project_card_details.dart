@@ -53,7 +53,6 @@ class _ProjectDetails extends StatelessWidget {
   final List<ProjectTagData> tags;
   final Color accentColor;
   final ProjectImageData coverImage;
-  final ProjectImageData accentImage;
   final bool isEditing;
   final TextEditingController synopsisController;
   final String synopsisText;
@@ -67,7 +66,6 @@ class _ProjectDetails extends StatelessWidget {
     required this.tags,
     required this.accentColor,
     required this.coverImage,
-    required this.accentImage,
     required this.isEditing,
     required this.synopsisController,
     required this.synopsisText,
@@ -118,12 +116,12 @@ class _ProjectDetails extends StatelessWidget {
               Positioned.fill(
                 child: ProjectAccentFill(
                   accentColor: accentColor,
-                  imageBytes: accentImage.bytes,
-                  imageWidth: accentImage.width,
-                  imageHeight: accentImage.height,
-                  imageScale: accentImage.scale,
-                  imageOffsetX: accentImage.offsetX,
-                  imageOffsetY: accentImage.offsetY,
+                  imageBytes: coverImage.bytes,
+                  imageWidth: coverImage.width,
+                  imageHeight: coverImage.height,
+                  imageScale: coverImage.scale,
+                  imageOffsetX: coverImage.offsetX,
+                  imageOffsetY: coverImage.offsetY,
                 ),
               ),
               Positioned.fill(

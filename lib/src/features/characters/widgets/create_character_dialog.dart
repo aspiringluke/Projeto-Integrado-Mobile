@@ -18,6 +18,7 @@ import '../../tags/controllers/tag_controller.dart';
 import '../utils/characters_utils.dart';
 import 'character_card_visuals.dart';
 import 'character_fields.dart';
+import 'character_placeholder_texts.dart';
 
 part 'create_character_dialog_parts/configuration.dart';
 part 'create_character_dialog_parts/metadata_fields.dart';
@@ -82,7 +83,7 @@ const double _characterDialogPrefixWidth = 124;
 const double _characterDialogCompactPrefixWidth = 108;
 const double _characterDialogSingleLineFieldHeight = 58;
 const double _characterDialogNameFieldHeight = 70;
-const double _characterDialogMeasureControlHeight = 50;
+const double _characterDialogMeasureControlHeight = 58;
 const double _characterDialogMeasureUnitWidth = 44;
 const double _characterDialogMeasureLayoutBreakpoint = 414;
 
@@ -491,23 +492,20 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
   Future<void> _selectHeightUnit() async {
     _clearMenuFocus();
-    final selectedUnit = await showModalBottomSheet<HeightUnit>(
+    final selectedUnit = await showProjectDismissibleSheet<HeightUnit>(
       context: context,
-      backgroundColor: Colors.transparent,
+      title: 'Unidade de medida',
       builder: (context) {
-        return ProjectBottomSheetFrame(
-          title: 'Unidade de medida',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final unit in HeightUnit.values)
-                _DialogSelectOption(
-                  label: heightUnitMenuLabel(unit),
-                  isSelected: unit == _heightUnit,
-                  onTap: () => Navigator.of(context).pop(unit),
-                ),
-            ],
-          ),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final unit in HeightUnit.values)
+              _DialogSelectOption(
+                label: heightUnitMenuLabel(unit),
+                isSelected: unit == _heightUnit,
+                onTap: () => Navigator.of(context).pop(unit),
+              ),
+          ],
         );
       },
     );
@@ -534,23 +532,20 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
   Future<void> _selectWeightUnit() async {
     _clearMenuFocus();
-    final selectedUnit = await showModalBottomSheet<WeightUnit>(
+    final selectedUnit = await showProjectDismissibleSheet<WeightUnit>(
       context: context,
-      backgroundColor: Colors.transparent,
+      title: 'Unidade de peso',
       builder: (context) {
-        return ProjectBottomSheetFrame(
-          title: 'Unidade de peso',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final unit in WeightUnit.values)
-                _DialogSelectOption(
-                  label: weightUnitMenuLabel(unit),
-                  isSelected: unit == _weightUnit,
-                  onTap: () => Navigator.of(context).pop(unit),
-                ),
-            ],
-          ),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final unit in WeightUnit.values)
+              _DialogSelectOption(
+                label: weightUnitMenuLabel(unit),
+                isSelected: unit == _weightUnit,
+                onTap: () => Navigator.of(context).pop(unit),
+              ),
+          ],
         );
       },
     );
@@ -584,98 +579,95 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     );
     final dayController = FixedExtentScrollController(initialItem: tempDay - 1);
 
-    final selectedDate = await showModalBottomSheet<DateTime>(
+    final selectedDate = await showProjectDismissibleSheet<DateTime>(
       context: context,
-      backgroundColor: Colors.transparent,
+      title: 'Aniversario',
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return ProjectBottomSheetFrame(
-              title: 'Aniversario',
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    height: 188,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _CharacterBirthdayWheel(
-                            label: 'Mes',
-                            controller: monthController,
-                            onSelectedItemChanged: (index) {
-                              setModalState(() {
-                                tempMonth = index + 1;
-                                final maxDay = daysInMonth(tempMonth);
-                                if (tempDay > maxDay) {
-                                  tempDay = maxDay;
-                                  dayController.jumpToItem(tempDay - 1);
-                                }
-                              });
-                            },
-                            children: [
-                              for (
-                                var index = 0;
-                                index < monthLabels.length;
-                                index += 1
-                              )
-                                Center(
-                                  child: Text(
-                                    monthLabels[index],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontStyle: FontStyle.italic,
-                                      color: Color(0xFF2C262C),
-                                    ),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 188,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _CharacterBirthdayWheel(
+                          label: 'Mes',
+                          controller: monthController,
+                          onSelectedItemChanged: (index) {
+                            setModalState(() {
+                              tempMonth = index + 1;
+                              final maxDay = daysInMonth(tempMonth);
+                              if (tempDay > maxDay) {
+                                tempDay = maxDay;
+                                dayController.jumpToItem(tempDay - 1);
+                              }
+                            });
+                          },
+                          children: [
+                            for (
+                              var index = 0;
+                              index < monthLabels.length;
+                              index += 1
+                            )
+                              Center(
+                                child: Text(
+                                  monthLabels[index],
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                    color: Color(0xFF2C262C),
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _CharacterBirthdayWheel(
-                            label: 'Dia',
-                            controller: dayController,
-                            onSelectedItemChanged: (index) {
-                              tempDay = index + 1;
-                            },
-                            children: [
-                              for (
-                                var day = 1;
-                                day <= daysInMonth(tempMonth);
-                                day += 1
-                              )
-                                Center(
-                                  child: Text(
-                                    day.toString().padLeft(2, '0'),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontStyle: FontStyle.italic,
-                                      color: Color(0xFF2C262C),
-                                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _CharacterBirthdayWheel(
+                          label: 'Dia',
+                          controller: dayController,
+                          onSelectedItemChanged: (index) {
+                            tempDay = index + 1;
+                          },
+                          children: [
+                            for (
+                              var day = 1;
+                              day <= daysInMonth(tempMonth);
+                              day += 1
+                            )
+                              Center(
+                                child: Text(
+                                  day.toString().padLeft(2, '0'),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                    color: Color(0xFF2C262C),
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).pop(DateTime(2000, tempMonth, tempDay));
-                      },
-                      child: const Text('Aplicar'),
-                    ),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(
+                        context,
+                      ).pop(DateTime(2000, tempMonth, tempDay));
+                    },
+                    child: const Text('Aplicar'),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         );
@@ -699,9 +691,9 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
   Future<void> _openBirthdaySignSheet(ZodiacSignData currentSign) async {
     _clearMenuFocus();
-    final selectedDate = await showModalBottomSheet<DateTime>(
+    final selectedDate = await showProjectDismissibleSheet<DateTime>(
       context: context,
-      backgroundColor: Colors.transparent,
+      title: '${currentSign.symbol} ${currentSign.name}',
       builder: (context) {
         final accent = _dialogController.accentColor;
         final signs = _allZodiacSigns();
@@ -709,171 +701,161 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         final signDateRange = signDescriptionLines.first.trim();
         final signTraits = signDescriptionLines.skip(1).join('\n').trim();
 
-        return ProjectBottomSheetFrame(
-          title: '${currentSign.symbol} ${currentSign.name}',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.58),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.72),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.date_range_rounded,
-                          size: 16,
-                          color: _darkenCharacterDialogColor(accent, 0.16),
-                        ),
-                        const SizedBox(width: 7),
-                        const Text(
-                          'Período',
-                          style: TextStyle(
-                            color: Color(0xFF3A3339),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: accent.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: accent.withValues(alpha: 0.22),
-                              ),
-                            ),
-                            child: Text(
-                              signDateRange,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _darkenCharacterDialogColor(
-                                  accent,
-                                  0.22,
-                                ),
-                                fontSize: 11.8,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (signTraits.isNotEmpty) ...[
-                      const SizedBox(height: 9),
-                      Text(
-                        signTraits,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.58),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.date_range_rounded,
+                        size: 16,
+                        color: _darkenCharacterDialogColor(accent, 0.16),
+                      ),
+                      const SizedBox(width: 7),
+                      const Text(
+                        'Período',
                         style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.64),
-                          fontSize: 12,
-                          height: 1.35,
-                          fontStyle: FontStyle.italic,
+                          color: Color(0xFF3A3339),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.42),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.72),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.casino_rounded,
-                          size: 16,
-                          color: _darkenCharacterDialogColor(accent, 0.16),
-                        ),
-                        const SizedBox(width: 7),
-                        const Expanded(
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.22),
+                            ),
+                          ),
                           child: Text(
-                            'Sortear aniversario por signo',
+                            signDateRange,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF3A3339),
-                              fontSize: 11.5,
+                              color: _darkenCharacterDialogColor(accent, 0.22),
+                              fontSize: 11.8,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                      ),
+                    ],
+                  ),
+                  if (signTraits.isNotEmpty) ...[
+                    const SizedBox(height: 9),
                     Text(
-                      'Toque em um signo para gerar uma data aleatória dentro do período.',
+                      signTraits,
                       style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.52),
-                        fontSize: 11,
-                        height: 1.25,
+                        color: Colors.black.withValues(alpha: 0.64),
+                        fontSize: 12,
+                        height: 1.35,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        const spacing = 8.0;
-                        final columnCount = constraints.maxWidth < 340 ? 2 : 3;
-                        final optionWidth =
-                            (constraints.maxWidth -
-                                (spacing * (columnCount - 1))) /
-                            columnCount;
-
-                        return Wrap(
-                          alignment: WrapAlignment.center,
-                          runAlignment: WrapAlignment.center,
-                          spacing: spacing,
-                          runSpacing: spacing,
-                          children: [
-                            for (final sign in signs)
-                              SizedBox(
-                                width: optionWidth,
-                                child: _ZodiacRandomOption(
-                                  signData: sign,
-                                  accentColor: accent,
-                                  isSelected: sign.symbol == currentSign.symbol,
-                                  onTap: () {
-                                    Navigator.of(
-                                      context,
-                                    ).pop(_randomBirthdayForSign(sign));
-                                  },
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.42),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.casino_rounded,
+                        size: 16,
+                        color: _darkenCharacterDialogColor(accent, 0.16),
+                      ),
+                      const SizedBox(width: 7),
+                      const Expanded(
+                        child: Text(
+                          'Sortear aniversario por signo',
+                          style: TextStyle(
+                            color: Color(0xFF3A3339),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Toque em um signo para gerar uma data aleatória dentro do período.',
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.52),
+                      fontSize: 11,
+                      height: 1.25,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const spacing = 8.0;
+                      final columnCount = constraints.maxWidth < 340 ? 2 : 3;
+                      final optionWidth =
+                          (constraints.maxWidth -
+                              (spacing * (columnCount - 1))) /
+                          columnCount;
+
+                      return Wrap(
+                        alignment: WrapAlignment.center,
+                        runAlignment: WrapAlignment.center,
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: [
+                          for (final sign in signs)
+                            SizedBox(
+                              width: optionWidth,
+                              child: _ZodiacRandomOption(
+                                signData: sign,
+                                accentColor: accent,
+                                isSelected: sign.symbol == currentSign.symbol,
+                                onTap: () {
+                                  Navigator.of(
+                                    context,
+                                  ).pop(_randomBirthdayForSign(sign));
+                                },
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
@@ -894,185 +876,180 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     final selectedLabel = _selectedTagFor(kind);
     final isRequired = _isRequiredTagKind(kind);
 
-    final result = await showModalBottomSheet<String>(
+    final result = await showProjectDismissibleSheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
+      title: _tagKindTitle(kind),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final tags = _knownTagsFor(kind);
             final accent = _dialogController.accentColor;
 
-            return ProjectBottomSheetFrame(
-              title: _tagKindTitle(kind),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.58),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.72),
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          _tagKindIcon(kind),
-                          size: 16,
-                          color: _darkenCharacterDialogColor(accent, 0.16),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _tagKindDescription(kind),
-                            style: TextStyle(
-                              color: Colors.black.withValues(alpha: 0.58),
-                              fontSize: 12,
-                              height: 1.35,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                      ],
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.58),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.72),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.42),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.72),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        _tagKindIcon(kind),
+                        size: 16,
+                        color: _darkenCharacterDialogColor(accent, 0.16),
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _tagKindDescription(kind),
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.58),
+                            fontSize: 12,
+                            height: 1.35,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.42),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.72),
                     ),
-                    child: tags.isEmpty
-                        ? _CharacterTagEmptyState(accentColor: accent)
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              const spacing = 8.0;
-                              final columnCount = constraints.maxWidth < 320
-                                  ? 2
-                                  : 3;
-                              final optionWidth =
-                                  (constraints.maxWidth -
-                                      (spacing * (columnCount - 1))) /
-                                  columnCount;
+                  ),
+                  child: tags.isEmpty
+                      ? _CharacterTagEmptyState(accentColor: accent)
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            const spacing = 8.0;
+                            final columnCount = constraints.maxWidth < 320
+                                ? 2
+                                : 3;
+                            final optionWidth =
+                                (constraints.maxWidth -
+                                    (spacing * (columnCount - 1))) /
+                                columnCount;
 
-                              return Wrap(
-                                alignment: WrapAlignment.spaceBetween,
-                                runAlignment: WrapAlignment.spaceBetween,
-                                spacing: spacing,
-                                runSpacing: spacing,
-                                children: [
-                                  for (final tag in tags)
-                                    SizedBox(
-                                      width: optionWidth,
-                                      child: _CharacterTagOptionButton(
-                                        tag: tag,
-                                        isSelected: tag.label == selectedLabel,
-                                        onTap: () => Navigator.of(
-                                          context,
-                                        ).pop(tag.label),
-                                      ),
+                            return Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              runAlignment: WrapAlignment.spaceBetween,
+                              spacing: spacing,
+                              runSpacing: spacing,
+                              children: [
+                                for (final tag in tags)
+                                  SizedBox(
+                                    width: optionWidth,
+                                    child: _CharacterTagOptionButton(
+                                      tag: tag,
+                                      isSelected: tag.label == selectedLabel,
+                                      onTap: () =>
+                                          Navigator.of(context).pop(tag.label),
                                     ),
-                                ],
-                              );
-                            },
-                          ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.42),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.72),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 46,
-                            child: TextField(
-                              controller: inputController,
-                              textInputAction: TextInputAction.done,
-                              textAlignVertical: TextAlignVertical.center,
-                              decoration: _buildInputDecoration(
-                                hintText: 'Adicionar nova opção',
-                                focusedColor: accent,
-                              ),
-                              onSubmitted: (value) {
-                                final added = _addTagFor(kind, value);
-                                if (added != null) {
-                                  Navigator.of(context).pop(added);
-                                }
-                              },
-                              onChanged: (_) => setModalState(() {}),
-                            ),
-                          ),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 46,
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.42),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.72),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
                           height: 46,
-                          child: FilledButton(
-                            onPressed: inputController.text.trim().isEmpty
-                                ? null
-                                : () {
-                                    final added = _addTagFor(
-                                      kind,
-                                      inputController.text,
-                                    );
-                                    if (added != null) {
-                                      Navigator.of(context).pop(added);
-                                    }
-                                  },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: accent,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.white.withValues(
-                                alpha: 0.42,
-                              ),
-                              disabledForegroundColor: Colors.black.withValues(
-                                alpha: 0.26,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              padding: EdgeInsets.zero,
+                          child: TextField(
+                            controller: inputController,
+                            textInputAction: TextInputAction.done,
+                            textAlignVertical: TextAlignVertical.center,
+                            decoration: _buildInputDecoration(
+                              hintText: 'Adicionar nova opção',
+                              focusedColor: accent,
                             ),
-                            child: const Icon(Icons.add_rounded, size: 20),
+                            onSubmitted: (value) {
+                              final added = _addTagFor(kind, value);
+                              if (added != null) {
+                                Navigator.of(context).pop(added);
+                              }
+                            },
+                            onChanged: (_) => setModalState(() {}),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  if (selectedLabel.isNotEmpty && !isRequired) ...[
-                    const SizedBox(height: 10),
-                    TextButton.icon(
-                      onPressed: () => Navigator.of(context).pop(''),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF7D7179),
-                        padding: EdgeInsets.zero,
                       ),
-                      icon: const Icon(Icons.close_rounded, size: 16),
-                      label: const Text('Limpar seleção'),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 46,
+                        height: 46,
+                        child: FilledButton(
+                          onPressed: inputController.text.trim().isEmpty
+                              ? null
+                              : () {
+                                  final added = _addTagFor(
+                                    kind,
+                                    inputController.text,
+                                  );
+                                  if (added != null) {
+                                    Navigator.of(context).pop(added);
+                                  }
+                                },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: accent,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.white.withValues(
+                              alpha: 0.42,
+                            ),
+                            disabledForegroundColor: Colors.black.withValues(
+                              alpha: 0.26,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Icon(Icons.add_rounded, size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (selectedLabel.isNotEmpty && !isRequired) ...[
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).pop(''),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF7D7179),
+                      padding: EdgeInsets.zero,
                     ),
-                  ],
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    label: const Text('Limpar seleção'),
+                  ),
                 ],
-              ),
+              ],
             );
           },
         );

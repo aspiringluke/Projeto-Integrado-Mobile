@@ -325,22 +325,6 @@ class _CharacterCardState extends State<CharacterCard>
     );
   }
 
-  Future<void> _showCharacterAge(Rect anchorRect) async {
-    await _showAnchoredInfoBubble(
-      context: context,
-      anchorRect: anchorRect,
-      width: 150,
-      child: Text(
-        'Idade: ${calculateAge(_birthday)} anos',
-        style: TextStyle(
-          color: Colors.black.withValues(alpha: 0.68),
-          fontSize: 12,
-          fontStyle: FontStyle.italic,
-        ),
-      ),
-    );
-  }
-
   Future<void> _selectHeightUnit() async {
     final selectedUnit = await showModalBottomSheet<HeightUnit>(
       context: context,
@@ -831,7 +815,6 @@ class _CharacterCardState extends State<CharacterCard>
                                                   _weightTextController,
                                               onCycleDateType: _cycleDateType,
                                               onTapSign: _showSignDescription,
-                                              onTapAge: _showCharacterAge,
                                               onTapBirthday: _selectBirthday,
                                               onTapHeightUnit:
                                                   _selectHeightUnit,

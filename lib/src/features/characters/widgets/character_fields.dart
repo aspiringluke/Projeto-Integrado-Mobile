@@ -5,7 +5,6 @@ import '../../../shared/utils/rect_from_context.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
-import 'character_overlays.dart';
 
 class CharacterTimeField extends StatelessWidget {
   final Color accentColor;
@@ -249,12 +248,14 @@ class CharacterQuoteStrip extends StatelessWidget {
   final Color accentColor;
   final TextEditingController controller;
   final bool isEditing;
+  final String hintText;
 
   const CharacterQuoteStrip({
     super.key,
     required this.accentColor,
     required this.controller,
     required this.isEditing,
+    this.hintText = 'Frase de efeito do personagem',
   });
 
   @override
@@ -305,7 +306,7 @@ class CharacterQuoteStrip extends StatelessWidget {
                     decoration: InputDecoration(
                       isDense: true,
                       border: InputBorder.none,
-                      hintText: 'Frase de efeito do personagem',
+                      hintText: hintText,
                       prefixText: '"',
                       suffixText: '"',
                       prefixStyle: TextStyle(
@@ -345,7 +346,6 @@ class CharacterBirthdayField extends StatelessWidget {
   final String birthdayLabel;
   final ZodiacSignData signData;
   final bool isEditing;
-  final ValueChanged<Rect> onTapAge;
   final VoidCallback onTapBirthday;
   final ValueChanged<Rect> onTapSign;
 
@@ -355,7 +355,6 @@ class CharacterBirthdayField extends StatelessWidget {
     required this.birthdayLabel,
     required this.signData,
     required this.isEditing,
-    required this.onTapAge,
     required this.onTapBirthday,
     required this.onTapSign,
   });
@@ -393,44 +392,13 @@ class CharacterBirthdayField extends StatelessWidget {
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Builder(
-                          builder: (textContext) {
-                            return GestureDetector(
-                              behavior: HitTestBehavior.translucent,
-                              onTap: isEditing
-                                  ? null
-                                  : () =>
-                                        onTapAge(rectFromContext(textContext)),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    birthdayLabel,
-                                    style: TextStyle(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.68,
-                                      ),
-                                      fontSize: 11,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  SizedBox(
-                                    width: 34,
-                                    height: 2,
-                                    child: CustomPaint(
-                                      painter: DashedUnderlinePainter(
-                                        color: const Color(
-                                          0xFF8A828C,
-                                        ).withValues(alpha: 0.58),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                        child: Text(
+                          birthdayLabel,
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.68),
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     ),

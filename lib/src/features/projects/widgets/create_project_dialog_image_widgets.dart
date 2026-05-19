@@ -18,6 +18,7 @@ class CreateProjectDialogCoverImagePickerCard extends StatelessWidget {
   final Gradient backgroundGradient;
   final CreateProjectDialogImageEditorViewportPreset viewportPreset;
   final String emptyStateText;
+  final String? footerNote;
   final ValueChanged<double> onScaleChanged;
   final void Function(double offsetX, double offsetY) onOffsetChanged;
   final VoidCallback onPick;
@@ -37,6 +38,7 @@ class CreateProjectDialogCoverImagePickerCard extends StatelessWidget {
     required this.backgroundGradient,
     required this.viewportPreset,
     required this.emptyStateText,
+    this.footerNote,
     required this.onScaleChanged,
     required this.onOffsetChanged,
     required this.onPick,
@@ -198,6 +200,13 @@ class CreateProjectDialogCoverImagePickerCard extends StatelessWidget {
               );
             },
           ),
+          if (footerNote != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              footerNote!,
+              style: const TextStyle(color: Color(0xFF6A6167), fontSize: 11),
+            ),
+          ],
         ],
       ),
     );

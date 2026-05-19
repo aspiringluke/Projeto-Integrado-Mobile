@@ -202,20 +202,17 @@ class _CharacterMetadataSection extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 10),
-                    _CharacterToggleField(
-                      label: 'Frase de efeito',
-                      controller: mottoController,
-                      hintText: 'Lema curto ou frase marcante.',
+                    CharacterQuoteStrip(
                       accentColor: accentColor,
-                      icon: Icons.format_quote_rounded,
-                      maxLines: 2,
-                      fieldHeight: 82,
+                      controller: mottoController,
+                      isEditing: true,
+                      hintText: characterMottoPlaceholderText,
                     ),
                     const SizedBox(height: 10),
                     _CharacterCompactField(
                       label: 'Formações e ocupações',
                       controller: formationsController,
-                      hintText: 'Estudo, ofício, cargo ou função social.',
+                      hintText: characterFormationsPlaceholderText,
                       focusedColor: accentColor,
                       icon: Icons.work_outline_rounded,
                       maxLines: 3,
@@ -225,7 +222,7 @@ class _CharacterMetadataSection extends StatelessWidget {
                     _CharacterCompactField(
                       label: 'Títulos',
                       controller: titlesController,
-                      hintText: 'Honrarias, patentes ou nomes cerimoniais.',
+                      hintText: characterTitlesPlaceholderText,
                       focusedColor: accentColor,
                       icon: Icons.military_tech_outlined,
                       maxLines: 3,
@@ -266,6 +263,7 @@ class _CharacterCompactField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMultiline = maxLines > 1;
+    final fillsCustomHeight = fieldHeight != null;
     final resolvedFieldHeight =
         fieldHeight ??
         (isMultiline ? 84 : _characterDialogSingleLineFieldHeight);
@@ -280,9 +278,9 @@ class _CharacterCompactField extends StatelessWidget {
             textInputAction: isMultiline
                 ? TextInputAction.newline
                 : TextInputAction.next,
-            minLines: isMultiline ? null : 1,
-            maxLines: isMultiline ? null : 1,
-            expands: isMultiline,
+            minLines: (isMultiline || fillsCustomHeight) ? null : 1,
+            maxLines: (isMultiline || fillsCustomHeight) ? null : 1,
+            expands: isMultiline || fillsCustomHeight,
             validator: validator,
             textAlignVertical: TextAlignVertical.center,
             style: const TextStyle(
@@ -303,73 +301,6 @@ class _CharacterCompactField extends StatelessWidget {
               constraints: BoxConstraints.tightFor(height: resolvedFieldHeight),
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CharacterToggleField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final String hintText;
-  final Color accentColor;
-  final IconData icon;
-  final int maxLines;
-  final double? fieldHeight;
-
-  const _CharacterToggleField({
-    required this.label,
-    required this.controller,
-    required this.hintText,
-    required this.accentColor,
-    required this.icon,
-    this.maxLines = 1,
-    this.fieldHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isMultiline = maxLines > 1;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height:
-                    fieldHeight ??
-                    (isMultiline ? 84 : _characterDialogSingleLineFieldHeight),
-                child: TextFormField(
-                  controller: controller,
-                  textInputAction: isMultiline
-                      ? TextInputAction.newline
-                      : TextInputAction.next,
-                  minLines: isMultiline ? null : 1,
-                  maxLines: isMultiline ? null : 1,
-                  expands: isMultiline,
-                  textAlignVertical: TextAlignVertical.center,
-                  style: const TextStyle(
-                    color: Color(0xFF3A3339),
-                    fontSize: 12.5,
-                    height: 1.3,
-                  ),
-                  decoration: _buildCharacterDialogFieldDecoration(
-                    hintText: hintText,
-                    focusedColor: accentColor,
-                    prefixIcon: _CharacterFieldPrefix(
-                      icon: icon,
-                      label: label,
-                      accentColor: accentColor,
-                    ),
-                    contentPadding: const EdgeInsets.fromLTRB(8, 0, 14, 0),
-                  ),
-                ),
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -400,11 +331,13 @@ class _CharacterMeasureField extends StatelessWidget {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textInputAction: TextInputAction.next,
         textAlignVertical: TextAlignVertical.center,
-        minLines: 1,
-        maxLines: 1,
+        minLines: null,
+        maxLines: null,
+        expands: true,
         style: TextStyle(
           color: Colors.black.withValues(alpha: 0.68),
-          fontSize: 11.8,
+          fontSize: 12.5,
+          height: 1.3,
           fontStyle: FontStyle.italic,
         ),
         decoration: _buildCharacterDialogFieldDecoration(
@@ -415,7 +348,7 @@ class _CharacterMeasureField extends StatelessWidget {
             label: label,
             accentColor: focusedColor,
           ),
-          contentPadding: const EdgeInsets.fromLTRB(6, 0, 8, 0),
+          contentPadding: const EdgeInsets.fromLTRB(8, 0, 10, 0),
           constraints: const BoxConstraints.tightFor(
             height: _characterDialogMeasureControlHeight,
           ),

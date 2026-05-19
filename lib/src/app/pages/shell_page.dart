@@ -68,7 +68,6 @@ class _ShellPageState extends State<ShellPage> {
         coverColor: draft.coverColor,
         accentColor: draft.accentColor,
         coverImage: draft.coverImage,
-        accentImage: draft.accentImage,
       );
       return;
     }

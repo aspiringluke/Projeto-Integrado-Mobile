@@ -346,7 +346,6 @@ class _ProjectCardState extends State<ProjectCard>
                                       tags: widget.tags,
                                       accentColor: widget.accentColor,
                                       coverImage: widget.coverImage,
-                                      accentImage: widget.accentImage,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,
                                       synopsisText: _synopsisController.text,

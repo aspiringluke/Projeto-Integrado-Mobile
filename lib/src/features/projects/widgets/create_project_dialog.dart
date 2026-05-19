@@ -25,7 +25,6 @@ class CreateProjectTextDraft {
   final Color coverColor;
   final Color accentColor;
   final ProjectImageData coverImage;
-  final ProjectImageData accentImage;
 
   const CreateProjectTextDraft({
     required this.title,
@@ -34,7 +33,6 @@ class CreateProjectTextDraft {
     required this.coverColor,
     required this.accentColor,
     this.coverImage = const ProjectImageData(),
-    this.accentImage = const ProjectImageData(),
   });
 }
 
@@ -156,7 +154,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
         coverColor: _dialogController.coverColor,
         accentColor: _dialogController.accentColor,
         coverImage: _imageController.coverImage,
-        accentImage: _imageController.accentImage,
       ),
     );
   }
