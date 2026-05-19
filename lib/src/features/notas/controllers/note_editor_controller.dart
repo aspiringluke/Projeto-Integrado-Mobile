@@ -7,17 +7,21 @@ import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/no
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
+import 'package:projeto_integrado_mobile/src/features/tags/controllers/tag_group_controller.dart';
 
 class NoteEditorController extends ChangeNotifier {
   final NoteRepository repository;
   final FolderRepository folderRepository;
   final int noteId;
+  final TagGroupController _tagGroupController = TagGroupController();
 
   NoteEditorController({
     required this.repository,
     FolderRepository? folderRepository,
     required this.noteId,
-  }) : folderRepository = folderRepository ?? FolderRepository();
+  }) : folderRepository = folderRepository ?? FolderRepository() {
+    _tagGroupController.addListener(_syncMetadataTagGroups);
+  }
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -36,12 +40,24 @@ class NoteEditorController extends ChangeNotifier {
   String get description => _description;
   Color get color => _color;
   NoteMetadata get metadata => _metadata;
-  List<NoteTagGroup> get tagGroups => _metadata.tagGroups;
+  List<NoteTagGroup> get tagGroups => _tagGroupController.groups;
   NoteLinkTarget get linkTarget => _metadata.linkTarget;
+
+  @override
+  void dispose() {
+    _tagGroupController.removeListener(_syncMetadataTagGroups);
+    _tagGroupController.dispose();
+    super.dispose();
+  }
 
   void _setError(String? value) {
     if (_errorMessage == value) return;
     _errorMessage = value;
+    notifyListeners();
+  }
+
+  void _syncMetadataTagGroups() {
+    _metadata = _metadata.copyWith(tagGroups: _tagGroupController.groups);
     notifyListeners();
   }
 
@@ -71,6 +87,7 @@ class NoteEditorController extends ChangeNotifier {
     _color = note.color;
     _folderId = note.idPasta;
     _metadata = note.metadata;
+    _tagGroupController.setGroups(_metadata.tagGroups);
     if (_metadata.linkTarget.projectTitle == null ||
         _metadata.linkTarget.projectTitle!.trim().isEmpty) {
       final projectTitle = await _resolveProjectTitleFromFolder(_folderId);
@@ -108,24 +125,11 @@ class NoteEditorController extends ChangeNotifier {
 
   void replaceMetadata(NoteMetadata metadata) {
     _metadata = metadata;
-    notifyListeners();
+    _tagGroupController.setGroups(metadata.tagGroups);
   }
 
   void addTagGroup({required String title, required Color color}) {
-    final sanitizedTitle = title.trim();
-    if (sanitizedTitle.isEmpty) return;
-
-    _metadata = _metadata.copyWith(
-      tagGroups: <NoteTagGroup>[
-        ..._metadata.tagGroups,
-        NoteTagGroup(
-          title: sanitizedTitle,
-          color: color,
-          tags: const <NoteTagItem>[],
-        ),
-      ],
-    );
-    notifyListeners();
+    _tagGroupController.addGroup(title: title, color: color);
   }
 
   void updateTagGroup({
@@ -133,69 +137,29 @@ class NoteEditorController extends ChangeNotifier {
     required String title,
     required Color color,
   }) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-
-    final sanitizedTitle = title.trim();
-    if (sanitizedTitle.isEmpty) return;
-
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final group = groups[groupIndex];
-    groups[groupIndex] = NoteTagGroup(
-      title: sanitizedTitle,
+    _tagGroupController.updateGroup(
+      groupIndex: groupIndex,
+      title: title,
       color: color,
-      tags: group.tags,
     );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    notifyListeners();
   }
 
   void addTagToGroup({required int groupIndex, required String tagLabel}) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-
-    final sanitizedLabel = tagLabel.trim();
-    if (sanitizedLabel.isEmpty) return;
-
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final group = groups[groupIndex];
-    final hasTag = group.tags.any(
-      (tag) => tag.label.toLowerCase() == sanitizedLabel.toLowerCase(),
+    _tagGroupController.addTagToGroup(
+      groupIndex: groupIndex,
+      tagLabel: tagLabel,
     );
-    if (hasTag) return;
-
-    groups[groupIndex] = NoteTagGroup(
-      title: group.title,
-      color: group.color,
-      tags: <NoteTagItem>[
-        ...group.tags,
-        NoteTagItem(label: sanitizedLabel),
-      ],
-    );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    notifyListeners();
   }
 
   void removeTagGroup(int groupIndex) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-    final groups = _metadata.tagGroups.toList(growable: true)
-      ..removeAt(groupIndex);
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    notifyListeners();
+    _tagGroupController.removeGroup(groupIndex);
   }
 
   void removeTagFromGroup({required int groupIndex, required int tagIndex}) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-    final group = _metadata.tagGroups[groupIndex];
-    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
-
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final tags = group.tags.toList(growable: true)..removeAt(tagIndex);
-    groups[groupIndex] = NoteTagGroup(
-      title: group.title,
-      color: group.color,
-      tags: tags,
+    _tagGroupController.removeTagFromGroup(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
     );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    notifyListeners();
   }
 
   void updateTag({
@@ -203,23 +167,11 @@ class NoteEditorController extends ChangeNotifier {
     required int tagIndex,
     required String label,
   }) {
-    if (groupIndex < 0 || groupIndex >= _metadata.tagGroups.length) return;
-    final group = _metadata.tagGroups[groupIndex];
-    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
-
-    final sanitizedLabel = label.trim();
-    if (sanitizedLabel.isEmpty) return;
-
-    final groups = _metadata.tagGroups.toList(growable: true);
-    final tags = group.tags.toList(growable: true);
-    tags[tagIndex] = NoteTagItem(label: sanitizedLabel);
-    groups[groupIndex] = NoteTagGroup(
-      title: group.title,
-      color: group.color,
-      tags: tags,
+    _tagGroupController.updateTag(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+      label: label,
     );
-    _metadata = _metadata.copyWith(tagGroups: groups);
-    notifyListeners();
   }
 
   void setProjectLink(String? projectTitle) {

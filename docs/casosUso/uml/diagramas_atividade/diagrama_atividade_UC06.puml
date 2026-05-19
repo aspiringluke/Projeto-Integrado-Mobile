@@ -3,26 +3,23 @@
 |Usuário|
 start
 :Acessar tela de listagem de notas;
-:Criar nova nota e inserir título;
-fork
-  :Escrever texto em Markdown;
-fork again
-  :Adicionar tags;
-
-  if (Deseja adicionar imagem?) then (sim)
-    :Acionar UC05 (Upload de imagem);
-  endif
-end fork
-
+:Criar nova nota;
+:Informar título (opcional);
+:Escrever conteúdo;
+:Adicionar tags (opcional);
+if (Deseja adicionar imagem?) then (sim)
+  :Acionar UC05 (Upload de imagem);
+endif
 :Clicar em "Salvar";
 
 |Sistema|
-if (Título ou conteúdo informado?) then (sim)
+if (Título informado?) then (sim)
   :Persistir nota com conteúdo e tags;
-  :Atualizar listagem de notas;
 else (não)
-  :Exibir aviso de nota vazia;
+  :Definir título como "Sem título";
+  :Persistir nota com conteúdo e tags;
 endif
+:Atualizar listagem de notas;
 
 stop
 @enduml

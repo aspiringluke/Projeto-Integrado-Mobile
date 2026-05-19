@@ -21,6 +21,7 @@ part 'project_card_details.dart';
 part 'project_card_info_bubble.dart';
 
 class ProjectCard extends StatefulWidget {
+  final int? projectId;
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
@@ -33,11 +34,15 @@ class ProjectCard extends StatefulWidget {
   final DateTime createdAt;
   final DateTime lastModified;
   final DateTime lastAccessed;
+  final String characterDisplayMode;
+  final int characterGridColumns;
   final VoidCallback? onOpenProject;
+  final VoidCallback? onProjectReloadRequested;
   final void Function(String title, String synopsis)? onProjectEdited;
 
   const ProjectCard({
     super.key,
+    this.projectId,
     this.title = 'Projeto 1',
     this.synopsis = '',
     this.tags = const <ProjectTagData>[],
@@ -50,7 +55,10 @@ class ProjectCard extends StatefulWidget {
     required this.createdAt,
     required this.lastModified,
     required this.lastAccessed,
+    this.characterDisplayMode = 'list',
+    this.characterGridColumns = 3,
     this.onOpenProject,
+    this.onProjectReloadRequested,
     this.onProjectEdited,
   });
 
@@ -149,14 +157,22 @@ class _ProjectCardState extends State<ProjectCard>
     }
   }
 
-  void _openProject() {
+  Future<void> _openProject() async {
     widget.onOpenProject?.call();
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            ProjectPage(title: widget.title, accentColor: widget.accentColor),
+        builder: (_) => ProjectPage(
+          projectId: widget.projectId,
+          title: widget.title,
+          accentColor: widget.accentColor,
+          coverColor: widget.coverColor,
+          coverImage: widget.coverImage,
+          initialCharacterDisplayMode: widget.characterDisplayMode,
+          initialAvatarGridColumns: widget.characterGridColumns,
+        ),
       ),
     );
+    widget.onProjectReloadRequested?.call();
   }
 
   void _cycleDateType() {
@@ -329,6 +345,7 @@ class _ProjectCardState extends State<ProjectCard>
                                       dateEntry: _currentDateEntry,
                                       tags: widget.tags,
                                       accentColor: widget.accentColor,
+                                      coverImage: widget.coverImage,
                                       accentImage: widget.accentImage,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,

@@ -1,15 +1,25 @@
 part of 'project_page.dart';
 
 class ProjectPage extends StatefulWidget {
+  final int? projectId;
   final String title;
   final Color accentColor;
+  final Color? coverColor;
+  final ProjectImageData coverImage;
   final ProjectSectionId initialSection;
+  final String initialCharacterDisplayMode;
+  final int initialAvatarGridColumns;
 
   const ProjectPage({
     super.key,
+    this.projectId,
     required this.title,
     this.accentColor = const Color(0xFFDF6EB8),
+    this.coverColor,
+    this.coverImage = const ProjectImageData(),
     this.initialSection = ProjectSectionId.configProjeto,
+    this.initialCharacterDisplayMode = 'list',
+    this.initialAvatarGridColumns = 3,
   });
 
   @override
@@ -74,30 +84,30 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
       };
 
-  static final Map<String, List<CharacterListItem>> _projectCharactersStorage =
-      {};
-  static final Map<String, CharacterDisplayMode> _projectCharactersViewMode =
-      {};
-  static final Map<String, int> _projectCharactersGridColumns = {};
-
   late ProjectSectionId _activeSection;
   bool _isCreateMenuOpen = false;
   final CharactersPinController _charactersPinController =
       const CharactersPinController();
+  final CharacterRepository _characterRepository = CharacterRepository();
+  final ProjectRepository _projectRepository = ProjectRepository();
   late List<CharacterListItem> _characters;
   late CharacterDisplayMode _characterDisplayMode;
   late int _avatarGridColumns;
+  bool _isLoadingCharacters = false;
+  String? _characterErrorMessage;
 
   @override
   void initState() {
     super.initState();
     _activeSection = widget.initialSection;
-    _characters =
-        _projectCharactersStorage[widget.title]?.toList() ??
-        <CharacterListItem>[];
-    _characterDisplayMode =
-        _projectCharactersViewMode[widget.title] ?? CharacterDisplayMode.list;
-    _avatarGridColumns = _projectCharactersGridColumns[widget.title] ?? 3;
+    _characters = <CharacterListItem>[];
+    _characterDisplayMode = _characterDisplayModeFromStorage(
+      widget.initialCharacterDisplayMode,
+    );
+    _avatarGridColumns = widget.initialAvatarGridColumns.clamp(2, 6);
+    if (widget.projectId != null) {
+      unawaited(_loadCharacters());
+    }
   }
 
   String get _activeSectionLabel => _sectionMeta[_activeSection]!.label;
@@ -135,10 +145,129 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  void _persistProjectCharacters() {
-    _projectCharactersStorage[widget.title] = _characters.toList();
-    _projectCharactersViewMode[widget.title] = _characterDisplayMode;
-    _projectCharactersGridColumns[widget.title] = _avatarGridColumns;
+  Future<void> _loadCharacters() async {
+    final projectId = widget.projectId;
+    if (projectId == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingCharacters = true;
+      _characterErrorMessage = null;
+    });
+
+    final result = await _characterRepository.listCharactersForProject(projectId);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingCharacters = false;
+      if (!result.$1) {
+        _characterErrorMessage = result.$3 ?? 'Falha ao carregar personagens';
+        _characters = <CharacterListItem>[];
+        return;
+      }
+
+      _characters = result.$2 ?? <CharacterListItem>[];
+    });
+  }
+
+  Future<void> _persistProjectViewSettings() async {
+    final projectId = widget.projectId;
+    if (projectId == null) {
+      return;
+    }
+
+    final result = await _projectRepository.updateProject(
+      projectId,
+      characterDisplayMode: _characterDisplayMode.name,
+      characterGridColumns: _avatarGridColumns,
+    );
+    if (!result.$1 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.$2), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _persistCharacterOrdering() async {
+    for (final character in _characters) {
+      final characterId = character.id;
+      if (characterId == null) {
+        continue;
+      }
+
+      await _characterRepository.updateCharacter(
+        characterId,
+        projectTitle: widget.title,
+        isPinned: character.isPinned,
+        unpinnedIndex: character.unpinnedIndex,
+        lastAccessed: character.lastAccessed,
+      );
+    }
+  }
+
+  Future<void> _touchCharacter(CharacterListItem character) async {
+    final characterId = character.id;
+    if (characterId == null) {
+      return;
+    }
+
+    character.lastAccessed = DateTime.now();
+    if (mounted) {
+      setState(() {});
+    }
+    await _characterRepository.touchCharacter(characterId);
+  }
+
+  Future<void> _updateCharacter(
+    CharacterListItem character,
+    CharacterCardData updatedData,
+  ) async {
+    final previousName = character.data.name;
+    final previousAccent = character.data.accent;
+
+    setState(() {
+      character.data = updatedData;
+      character.lastModified = DateTime.now();
+      character.lastAccessed = DateTime.now();
+    });
+
+    final characterId = character.id;
+    if (characterId != null) {
+      final result = await _characterRepository.updateCharacter(
+        characterId,
+        projectTitle: widget.title,
+        data: updatedData,
+        lastAccessed: character.lastAccessed,
+      );
+      if (!result.$1 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.$2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+
+    if (previousName != updatedData.name ||
+        previousAccent != updatedData.accent) {
+      StoryRegistry.instance.updateCharacter(
+        projectTitle: widget.title,
+        oldName: previousName,
+        newName: updatedData.name,
+        accentColor: updatedData.accent,
+      );
+      return;
+    }
+
+    StoryRegistry.instance.registerCharacter(
+      projectTitle: widget.title,
+      name: updatedData.name,
+      accentColor: updatedData.accent,
+    );
   }
 
   void _setAvatarGridColumns(int columnCount) {
@@ -148,56 +277,83 @@ class _ProjectPageState extends State<ProjectPage> {
 
     setState(() {
       _avatarGridColumns = columnCount;
-      _persistProjectCharacters();
     });
+    unawaited(_persistProjectViewSettings());
   }
 
-  void _createCharacter() async {
+  Future<void> _createCharacter() async {
     _setActiveSection(ProjectSectionId.characters);
     final draft = await showCreateCharacterDialog(context);
     if (!mounted || draft == null) {
       return;
     }
 
-    setState(() {
-      _characters.add(
-        CharacterListItem(
-          data: CharacterCardData(
-            name: draft.name,
-            alias: draft.alias.isEmpty ? 'Sem vulgo' : draft.alias,
-            motto: draft.motto,
-            formationsAndOccupations: draft.formationsAndOccupations,
-            titles: draft.titles,
-            genderTag: draft.genderTag,
-            sexualityTag: draft.sexualityTag,
-            ethnicityTag: draft.ethnicityTag,
-            functionTag: draft.functionTag,
-            relevanceTag: draft.relevanceTag,
-            visibleProfileFields: draft.visibleProfileFields,
-            accent: draft.accentColor,
-            avatarColor: draft.coverColor,
-            profileImage: draft.profileImage,
-            icon: Icons.person_rounded,
-            birthYear: 2000,
-            birthDay: draft.birthDay,
-            birthMonth: draft.birthMonth,
-            heightCm: draft.heightCm,
-            weightKg: draft.weightKg,
-            quote: draft.motto,
-            synopsis: draft.synopsis,
-            seed: DateTime.now().microsecondsSinceEpoch,
-          ),
-          unpinnedIndex: _characters.where((item) => !item.isPinned).length,
+    final projectId = widget.projectId;
+    if (projectId == null) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final created = await _characterRepository.createCharacter(
+      CharacterListItem(
+        projectId: projectId,
+        projectTitle: widget.title,
+        data: CharacterCardData(
+          name: draft.name,
+          alias: draft.alias,
+          motto: draft.motto,
+          formationsAndOccupations: draft.formationsAndOccupations,
+          titles: draft.titles,
+          genderTag: draft.genderTag,
+          sexualityTag: draft.sexualityTag,
+          ethnicityTag: draft.ethnicityTag,
+          functionTag: draft.functionTag,
+          relevanceTag: draft.relevanceTag,
+          visibleProfileFields: draft.visibleProfileFields,
+          accent: draft.accentColor,
+          avatarColor: draft.coverColor,
+          profileImage: draft.profileImage,
+          icon: Icons.person_rounded,
+          birthYear: 2000,
+          birthDay: draft.birthDay,
+          birthMonth: draft.birthMonth,
+          heightCm: draft.heightCm,
+          weightKg: draft.weightKg,
+          quote: draft.motto,
+          synopsis: draft.synopsis,
+          seed: DateTime.now().microsecondsSinceEpoch,
+        ),
+        unpinnedIndex: _characters.where((item) => !item.isPinned).length,
+        createdAt: now,
+        lastModified: now,
+        lastAccessed: now,
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!created.$1 || created.$2 == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(created.$3 ?? 'Falha ao criar personagem'),
+          behavior: SnackBarBehavior.floating,
         ),
       );
-      StoryRegistry.instance.registerCharacter(
-        projectTitle: widget.title,
-        name: draft.name,
-        accentColor: draft.accentColor,
-      );
+      return;
+    }
+
+    setState(() {
+      _characters.add(created.$2!);
       _isCreateMenuOpen = false;
-      _persistProjectCharacters();
     });
+
+    StoryRegistry.instance.registerCharacter(
+      projectTitle: widget.title,
+      name: draft.name,
+      accentColor: draft.accentColor,
+    );
   }
 
   void _createDiagram() {
@@ -205,16 +361,44 @@ class _ProjectPageState extends State<ProjectPage> {
     _showComingSoon('Novo diagrama');
   }
 
+  Widget _buildCharactersSection() {
+    if (_isLoadingCharacters) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_characterErrorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(32, 20, 32, 160),
+          child: Text(
+            _characterErrorMessage!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF544959),
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return CharactersSection(
+      characters: _characters,
+      showAvatarGrid: _characterDisplayMode == CharacterDisplayMode.avatars,
+      avatarGridColumns: _avatarGridColumns,
+      onToggleDisplayMode: _toggleCharacterDisplayMode,
+      onChangeAvatarGridColumns: _setAvatarGridColumns,
+      onTogglePinned: _togglePinnedCharacter,
+      onCharacterEdited: (character, updatedData) =>
+          unawaited(_updateCharacter(character, updatedData)),
+      onCharacterViewed: (character) => unawaited(_touchCharacter(character)),
+    );
+  }
+
   Widget _buildSectionBody() {
     return switch (_activeSection) {
-      ProjectSectionId.characters => CharactersSection(
-        characters: _characters,
-        showAvatarGrid: _characterDisplayMode == CharacterDisplayMode.avatars,
-        avatarGridColumns: _avatarGridColumns,
-        onToggleDisplayMode: _toggleCharacterDisplayMode,
-        onChangeAvatarGridColumns: _setAvatarGridColumns,
-        onTogglePinned: _togglePinnedCharacter,
-      ),
+      ProjectSectionId.characters => _buildCharactersSection(),
       _ => _UnderConstructionSection(
         icon: _sectionMeta[_activeSection]!.icon,
         title: _sectionMeta[_activeSection]!.label,
@@ -225,8 +409,8 @@ class _ProjectPageState extends State<ProjectPage> {
   void _togglePinnedCharacter(CharacterListItem character) {
     setState(() {
       _charactersPinController.togglePinned(_characters, character);
-      _persistProjectCharacters();
     });
+    unawaited(_persistCharacterOrdering());
   }
 
   void _toggleCharacterDisplayMode() {
@@ -234,12 +418,147 @@ class _ProjectPageState extends State<ProjectPage> {
       _characterDisplayMode = _characterDisplayMode == CharacterDisplayMode.list
           ? CharacterDisplayMode.avatars
           : CharacterDisplayMode.list;
-      _persistProjectCharacters();
     });
+    unawaited(_persistProjectViewSettings());
   }
 
   @override
   Widget build(BuildContext context) {
+    final resolvedCoverColor = widget.coverColor ?? widget.accentColor;
+    final headerBackground = Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  widget.accentColor.withValues(alpha: 0.08),
+                  resolvedCoverColor.withValues(alpha: 0.92),
+                ),
+                Color.alphaBlend(
+                  resolvedCoverColor.withValues(alpha: 0.88),
+                  Colors.black.withValues(alpha: 0.06),
+                ),
+                Color.alphaBlend(
+                  widget.accentColor.withValues(alpha: 0.05),
+                  Colors.white.withValues(alpha: 0.1),
+                ),
+              ],
+              stops: const [0.0, 0.56, 1.0],
+            ),
+          ),
+        ),
+        if (widget.coverImage.bytes != null)
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.78,
+              child: ProjectImageTransformView(
+                imageBytes: widget.coverImage.bytes!,
+                imageWidth: widget.coverImage.width ?? 1,
+                imageHeight: widget.coverImage.height ?? 1,
+                scale: widget.coverImage.scale,
+                offsetX: widget.coverImage.offsetX,
+                offsetY: widget.coverImage.offsetY,
+              ),
+            ),
+          ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.18),
+                  Colors.transparent,
+                  Colors.white.withValues(alpha: 0.05),
+                  Colors.white.withValues(alpha: 0.16),
+                ],
+                stops: const [0.0, 0.34, 0.76, 1.0],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.14),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.06),
+                ],
+                stops: const [0.0, 0.52, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+    final headerCenter = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            widget.title.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.fade,
+            softWrap: false,
+            style: TextStyle(
+              color: const Color(0xFFF8EFF5),
+              fontSize: 31,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 2.8,
+              height: 1,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 18,
+                  offset: const Offset(0, 2),
+                ),
+                Shadow(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  blurRadius: 12,
+                  offset: Offset.zero,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '...$_activeSectionLabel...',
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: const Color(0xFFF7EEF4).withValues(alpha: 0.92),
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            letterSpacing: 0.3,
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.34),
+                blurRadius: 12,
+                offset: const Offset(0, 1),
+              ),
+              Shadow(
+                color: Colors.white.withValues(alpha: 0.16),
+                blurRadius: 10,
+                offset: Offset.zero,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
       bottomNavigationBar: _ProjectFooterNav(
@@ -260,13 +579,14 @@ class _ProjectPageState extends State<ProjectPage> {
                 subtitle: _activeSectionLabel,
                 onBackPressed: () => Navigator.of(context).pop(),
                 onConfigPressed: () {},
-                headerHeight: 118,
                 titleFontSize: 31,
                 titleLetterSpacing: 2.8,
                 contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 titleHorizontalPadding: 60,
                 titleShadow: true,
                 surroundSubtitleWithDots: true,
+                centerChild: headerCenter,
+                backgroundChild: headerBackground,
               ),
               const FuncoesBusca(),
               Expanded(child: _buildSectionBody()),
@@ -583,6 +903,12 @@ Color _lightenProjectAccent(Color color, double amount) {
 Color _darkenProjectAccent(Color color, double amount) {
   final hsl = HSLColor.fromColor(color);
   return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
+}
+
+CharacterDisplayMode _characterDisplayModeFromStorage(String rawValue) {
+  return rawValue == CharacterDisplayMode.avatars.name
+      ? CharacterDisplayMode.avatars
+      : CharacterDisplayMode.list;
 }
 
 class _UnderConstructionSection extends StatelessWidget {

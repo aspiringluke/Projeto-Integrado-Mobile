@@ -91,13 +91,7 @@ class ExpandedCharacterBody extends StatelessWidget {
         ),
       ];
     }
-    final result = <Widget>[];
-    for (final tag in tags) {
-      result.add(tag);
-      result.add(const SizedBox(width: 8));
-    }
-    if (result.isNotEmpty) result.removeLast();
-    return result;
+    return tags;
   }
 
   @override
@@ -170,47 +164,77 @@ class ExpandedCharacterBody extends StatelessWidget {
             isEditing: isEditing,
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: CharacterBirthdayField(
-                  accentColor: accentColor,
-                  birthdayLabel: birthdayLabel,
-                  signData: signData,
-                  isEditing: isEditing,
-                  onTapAge: onTapAge,
-                  onTapBirthday: onTapBirthday,
-                  onTapSign: onTapSign,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CharacterHeightField(
-                  accentColor: accentColor,
-                  heightLabel: heightLabel,
-                  unitLabel: heightUnitCompactLabel(heightUnit),
-                  controller: heightController,
-                  isEditing: isEditing,
-                  onTapUnit: onTapHeightUnit,
-                  onCommitHeight: onCommitHeight,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CharacterWeightField(
-                  accentColor: accentColor,
-                  weightLabel: weightLabel,
-                  unitLabel: weightUnitCompactLabel(weightUnit),
-                  controller: weightController,
-                  isEditing: isEditing,
-                  onTapUnit: onTapWeightUnit,
-                  onCommitWeight: onCommitWeight,
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final birthdayField = CharacterBirthdayField(
+                accentColor: accentColor,
+                birthdayLabel: birthdayLabel,
+                signData: signData,
+                isEditing: isEditing,
+                onTapAge: onTapAge,
+                onTapBirthday: onTapBirthday,
+                onTapSign: onTapSign,
+              );
+              final heightField = CharacterHeightField(
+                accentColor: accentColor,
+                heightLabel: heightLabel,
+                unitLabel: heightUnitCompactLabel(heightUnit),
+                controller: heightController,
+                isEditing: isEditing,
+                onTapUnit: onTapHeightUnit,
+                onCommitHeight: onCommitHeight,
+              );
+              final weightField = CharacterWeightField(
+                accentColor: accentColor,
+                weightLabel: weightLabel,
+                unitLabel: weightUnitCompactLabel(weightUnit),
+                controller: weightController,
+                isEditing: isEditing,
+                onTapUnit: onTapWeightUnit,
+                onCommitWeight: onCommitWeight,
+              );
+
+              if (constraints.maxWidth < 360) {
+                return Column(
+                  children: [
+                    birthdayField,
+                    const SizedBox(height: 8),
+                    heightField,
+                    const SizedBox(height: 8),
+                    weightField,
+                  ],
+                );
+              }
+
+              if (constraints.maxWidth < 460) {
+                return Column(
+                  children: [
+                    birthdayField,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: heightField),
+                        const SizedBox(width: 8),
+                        Expanded(child: weightField),
+                      ],
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: birthdayField),
+                  const SizedBox(width: 8),
+                  Expanded(child: heightField),
+                  const SizedBox(width: 8),
+                  Expanded(child: weightField),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
-          Row(children: _buildTagRow()),
+          Wrap(spacing: 8, runSpacing: 8, children: _buildTagRow()),
         ],
       ),
     );

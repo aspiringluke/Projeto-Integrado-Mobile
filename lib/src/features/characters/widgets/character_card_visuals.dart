@@ -11,7 +11,6 @@ class CharacterAvatarTile extends StatelessWidget {
   final Color accent;
   final Color avatarColor;
   final ProjectImageData profileImage;
-  final IconData icon;
   final bool isExpanded;
   final VoidCallback? onTap;
 
@@ -20,7 +19,6 @@ class CharacterAvatarTile extends StatelessWidget {
     required this.accent,
     required this.avatarColor,
     required this.profileImage,
-    required this.icon,
     required this.isExpanded,
     this.onTap,
   });
@@ -117,7 +115,7 @@ class CharacterAvatarTile extends StatelessWidget {
                           ),
                           Center(
                             child: Icon(
-                              icon,
+                              Icons.person_rounded,
                               size: 38,
                               color: const Color(0xFF171419),
                             ),

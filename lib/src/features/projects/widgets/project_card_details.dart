@@ -52,6 +52,7 @@ class _ProjectDetails extends StatelessWidget {
   final _ProjectDateEntry dateEntry;
   final List<ProjectTagData> tags;
   final Color accentColor;
+  final ProjectImageData coverImage;
   final ProjectImageData accentImage;
   final bool isEditing;
   final TextEditingController synopsisController;
@@ -65,6 +66,7 @@ class _ProjectDetails extends StatelessWidget {
     required this.dateEntry,
     required this.tags,
     required this.accentColor,
+    required this.coverImage,
     required this.accentImage,
     required this.isEditing,
     required this.synopsisController,
@@ -323,6 +325,8 @@ class _ProjectDetails extends StatelessWidget {
             builder: (_) => ProjectPage(
               title: projectTitle,
               accentColor: accentColor,
+              coverColor: accentColor,
+              coverImage: coverImage,
               initialSection: ProjectSectionId.configProjeto,
             ),
           ),

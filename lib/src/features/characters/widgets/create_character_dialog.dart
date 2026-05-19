@@ -14,6 +14,7 @@ import '../../projects/widgets/create_project_dialog_image_widgets.dart';
 import '../../projects/widgets/create_project_dialog_sections.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../../projects/widgets/project_image_transform_view.dart';
+import '../../tags/controllers/tag_controller.dart';
 import '../utils/characters_utils.dart';
 import 'character_card_visuals.dart';
 import 'character_fields.dart';
@@ -111,10 +112,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   late final CreateProjectDialogController _dialogController;
   late final CreateProjectDialogImageController _imageController;
   late final Set<CharacterProfileFieldId> _visibleProfileFields;
-  late List<ProjectTagData> _genderTags;
-  late List<ProjectTagData> _sexualityTags;
-  late List<ProjectTagData> _ethnicityTags;
-  List<ProjectTagData>? _functionTags;
+  late final Map<_CharacterTagKind, TagController> _tagControllers;
   late List<_RelevanceParameterConfig> _relevanceParameters;
   late List<_RelevanceCategoryConfig> _relevanceCategories;
   late Map<String, double> _relevanceValues;
@@ -162,10 +160,14 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       CharacterProfileFieldId.weight,
       CharacterProfileFieldId.height,
     };
-    _genderTags = _seedCharacterTags(_CharacterTagKind.gender);
-    _sexualityTags = _seedCharacterTags(_CharacterTagKind.sexuality);
-    _ethnicityTags = _seedCharacterTags(_CharacterTagKind.ethnicity);
-    _functionTags = _seedCharacterTags(_CharacterTagKind.function);
+    _tagControllers = <_CharacterTagKind, TagController>{
+      for (final kind in _CharacterTagKind.values)
+        kind: TagController(
+          knownTags: _seedCharacterTags(kind),
+          draftTagColor: _tagCategoryColor(kind),
+          groupTitle: _tagGroupStorageTitle(kind),
+        ),
+    };
     _relevanceParameters = _defaultRelevanceParameters();
     _relevanceCategories = _defaultRelevanceCategories();
     _relevanceValues = {
@@ -182,6 +184,9 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
   @override
   void dispose() {
+    for (final controller in _tagControllers.values) {
+      controller.dispose();
+    }
     _imageController.removeListener(_refresh);
     _imageController.dispose();
     _dialogController.removeListener(_refresh);
@@ -230,9 +235,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
 
   void _submit() {
     final formIsValid = _formKey.currentState?.validate() ?? false;
-    final requiredTagsAreValid =
-        _selectedGenderTag.trim().isNotEmpty &&
-        _selectedRelevanceTag.trim().isNotEmpty;
+    final requiredTagsAreValid = _selectedRelevanceTag.trim().isNotEmpty;
 
     setState(() {
       _showRequiredTagErrors = !requiredTagsAreValid;
@@ -412,7 +415,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                               _selectedFunctionTag ?? '',
                             ),
                             accentColor: _dialogController.accentColor,
-                            showRequiredErrors: _showRequiredTagErrors == true,
+                            showRequiredErrors: false,
                             onPickGenderTag: () =>
                                 _openTagSelector(_CharacterTagKind.gender),
                             onPickSexualityTag: () =>
@@ -671,8 +674,10 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
-    monthController.dispose();
-    dayController.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      monthController.dispose();
+      dayController.dispose();
+    });
 
     if (!mounted || selectedDate == null) {
       return;
@@ -880,6 +885,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     final result = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -887,7 +893,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
             final accent = _dialogController.accentColor;
 
             return ProjectBottomSheetFrame(
-              title: '${_tagKindTitle(kind)}${isRequired ? ' *' : ''}',
+              title: _tagKindTitle(kind),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1061,7 +1067,10 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
-    inputController.dispose();
+    Future<void>.delayed(
+      const Duration(milliseconds: 300),
+      inputController.dispose,
+    );
 
     if (!mounted || result == null) {
       return;
@@ -1088,6 +1097,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
           builder: (context, setModalState) {
             final accent = _dialogController.accentColor;
             final screenSize = MediaQuery.sizeOf(context);
+            final menuHeight = min(max(screenSize.height - 150, 260.0), 620.0);
             final score = _calculateRelevanceScore(
               values: tempValues,
               weights: tempWeights,
@@ -1108,7 +1118,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                   child: _CharacterCenteredMenuFrame(
                     title: 'Relevância narrativa',
                     child: SizedBox(
-                      height: min(screenSize.height * 0.78, 620),
+                      height: menuHeight,
                       child: Column(
                         mainAxisSize: MainAxisSize.max,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1496,14 +1506,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   List<ProjectTagData> _knownTagsFor(_CharacterTagKind kind) {
-    return switch (kind) {
-      _CharacterTagKind.gender => _genderTags,
-      _CharacterTagKind.sexuality => _sexualityTags,
-      _CharacterTagKind.ethnicity => _ethnicityTags,
-      _CharacterTagKind.function => _functionTags ??= _seedCharacterTags(
-        _CharacterTagKind.function,
-      ),
-    };
+    return _tagControllers[kind]?.knownTags ?? const <ProjectTagData>[];
   }
 
   String _selectedTagFor(_CharacterTagKind kind) {
@@ -1519,17 +1522,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     if (label.trim().isEmpty) {
       return null;
     }
-
-    final normalized = normalizeProjectTagLabel(label);
-    final tags = _knownTagsFor(kind);
-
-    for (final tag in tags) {
-      if (tag.normalizedLabel == normalized) {
-        return tag.color;
-      }
-    }
-
-    return null;
+    return _tagControllers[kind]?.colorForLabel(label);
   }
 
   void _setSelectedTag(_CharacterTagKind kind, String value) {
@@ -1550,45 +1543,20 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   bool _isRequiredTagKind(_CharacterTagKind kind) {
-    return kind == _CharacterTagKind.gender;
+    return false;
   }
 
   String? _addTagFor(_CharacterTagKind kind, String input) {
-    final sanitized = sanitizeProjectTagLabel(input);
-    if (sanitized.isEmpty) {
+    final controller = _tagControllers[kind];
+    if (controller == null) {
       return null;
     }
 
-    List<ProjectTagData> tags = _knownTagsFor(kind);
-    final normalized = normalizeProjectTagLabel(sanitized);
-    final existing = tags.where((tag) => tag.normalizedLabel == normalized);
-    if (existing.isNotEmpty) {
-      return existing.first.label;
-    }
-
-    final newTag = ProjectTagData(
-      label: sanitized,
-      color: _tagCategoryColor(kind),
+    final resolved = controller.upsertTagLabel(
+      input,
+      newTagColor: _tagCategoryColor(kind),
     );
-
-    setState(() {
-      tags = <ProjectTagData>[...tags, newTag];
-      switch (kind) {
-        case _CharacterTagKind.gender:
-          _genderTags = tags;
-          break;
-        case _CharacterTagKind.sexuality:
-          _sexualityTags = tags;
-          break;
-        case _CharacterTagKind.ethnicity:
-          _ethnicityTags = tags;
-          break;
-        case _CharacterTagKind.function:
-          _functionTags = tags;
-          break;
-      }
-    });
-
-    return newTag.label;
+    if (resolved == null) return null;
+    return resolved;
   }
 }

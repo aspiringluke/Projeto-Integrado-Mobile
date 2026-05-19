@@ -236,3 +236,12 @@ IconData _tagKindIcon(_CharacterTagKind kind) {
     _CharacterTagKind.function => Icons.theater_comedy_outlined,
   };
 }
+
+String _tagGroupStorageTitle(_CharacterTagKind kind) {
+  return switch (kind) {
+    _CharacterTagKind.gender => 'Personagem:Gênero',
+    _CharacterTagKind.sexuality => 'Personagem:Sexualidade',
+    _CharacterTagKind.ethnicity => 'Personagem:Etnia',
+    _CharacterTagKind.function => 'Personagem:Função',
+  };
+}

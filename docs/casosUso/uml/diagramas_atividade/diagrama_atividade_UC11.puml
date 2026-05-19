@@ -12,9 +12,12 @@ start
 :Alterar preferência;
 
 |Sistema|
-:Aplicar alteração;
-
-|Sistema|
-:Salvar preferências;
+if (Valor informado é válido?) then (sim)
+  :Aplicar alteração;
+  :Salvar preferências;
+else (não)
+  :Bloquear alteração;
+  :Exibir mensagem de validação;
+endif
 stop
 @enduml

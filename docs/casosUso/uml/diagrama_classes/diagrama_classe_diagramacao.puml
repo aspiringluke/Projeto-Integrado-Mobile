@@ -1,0 +1,60 @@
+@startuml Diagrama de classes do PI - Diagramacao
+
+class Diagrama {
+    idDiagrama: int
+    título: string
+    nós: nó[]
+    arestas: aresta[]
+    tags: Tag[]
+    gruposTag: TagGroup[]
+
+    gerenciarNós()
+    gerenciarArestas()
+}
+
+class Nó {
+    título: string
+    descrição: string
+    objeto: Object?
+}
+
+class Aresta {
+    título: string
+    nó_origem: nó
+    nó_destino: nó
+    estilo:
+    \tponta_origem
+    \tponta_destino
+    \tforma
+    \tcor
+}
+
+class Tag {
+    idTag: int
+    descricao: string
+    cor: string
+    idGrupoTag: int?
+}
+
+class TagGroup {
+    idGrupoTag: int
+    descricao: string
+    cor: string
+}
+
+interface Taggable {
+    adicionarTag(ref objeto, tag)
+    removerTag(ref objeto, tag)
+}
+
+Diagrama --* Nó: Possui
+Diagrama --* Aresta: Possui
+Aresta --* Nó: Conecta
+
+Taggable <.. Diagrama
+
+TagGroup --> Tag: Agrupa
+Diagrama --> Tag: Classifica com
+Diagrama --> TagGroup: Possui grupos
+
+@enduml

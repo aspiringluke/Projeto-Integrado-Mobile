@@ -137,43 +137,66 @@ class CreateProjectDialogCoverImagePickerCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onPick,
-                  icon: const Icon(Icons.upload_file_rounded, size: 18),
-                  label: Text(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final pickButton = OutlinedButton.icon(
+                onPressed: onPick,
+                icon: const Icon(Icons.upload_file_rounded, size: 18),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
                     imageBytes == null ? 'Escolher imagem' : 'Trocar imagem',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF514752),
-                    side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.82),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    maxLines: 1,
                   ),
                 ),
-              ),
-              if (onRemove != null) ...[
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: onRemove,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF8B5668),
-                    side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.82),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF514752),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.82)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Text('Remover'),
                 ),
-              ],
-            ],
+              );
+              final removeButton = onRemove == null
+                  ? null
+                  : OutlinedButton(
+                      onPressed: onRemove,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF8B5668),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.82),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Remover'),
+                      ),
+                    );
+
+              if (removeButton != null && constraints.maxWidth < 310) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    pickButton,
+                    const SizedBox(height: 8),
+                    removeButton,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: pickButton),
+                  if (removeButton != null) ...[
+                    const SizedBox(width: 8),
+                    Flexible(child: removeButton),
+                  ],
+                ],
+              );
+            },
           ),
         ],
       ),

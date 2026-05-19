@@ -249,6 +249,7 @@ class EditableSynopsisPanel extends StatefulWidget {
   final ScrollController scrollController;
   final bool isEditing;
   final String placeholderText;
+  final ValueChanged<String>? onChanged;
   final TextStyle textStyle;
   final SynopsisViewerBuilder viewerBuilder;
   final double height;
@@ -261,6 +262,10 @@ class EditableSynopsisPanel extends StatefulWidget {
   final double blurSigma;
   final Gradient? backgroundGradient;
   final Color? focusedBorderColor;
+  final int minLines;
+  final int? maxLines;
+  final TextInputType keyboardType;
+  final TextInputAction? textInputAction;
 
   const EditableSynopsisPanel({
     super.key,
@@ -268,6 +273,7 @@ class EditableSynopsisPanel extends StatefulWidget {
     required this.scrollController,
     required this.isEditing,
     required this.placeholderText,
+    this.onChanged,
     required this.textStyle,
     required this.viewerBuilder,
     this.height = 92,
@@ -280,6 +286,10 @@ class EditableSynopsisPanel extends StatefulWidget {
     this.blurSigma = 0,
     this.backgroundGradient,
     this.focusedBorderColor,
+    this.minLines = 1,
+    this.maxLines,
+    this.keyboardType = TextInputType.multiline,
+    this.textInputAction,
   });
 
   @override
@@ -353,11 +363,13 @@ class _EditableSynopsisPanelState extends State<EditableSynopsisPanel> {
             ? TextField(
                 focusNode: _focusNode,
                 controller: widget.controller,
+                onChanged: widget.onChanged,
                 scrollController: widget.scrollController,
                 scrollPhysics: const ClampingScrollPhysics(),
-                keyboardType: TextInputType.multiline,
-                maxLines: null,
-                minLines: 1,
+                keyboardType: widget.keyboardType,
+                textInputAction: widget.textInputAction,
+                maxLines: widget.maxLines,
+                minLines: widget.minLines,
                 textAlignVertical: TextAlignVertical.top,
                 scrollPadding: EdgeInsets.zero,
                 decoration: InputDecoration(

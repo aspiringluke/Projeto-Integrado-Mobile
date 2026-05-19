@@ -4,9 +4,17 @@ class CharactersPinController {
   const CharactersPinController();
 
   List<CharacterListItem> toListItems(List<CharacterCardData> characters) {
+    final now = DateTime.now();
     return characters.indexed
         .map(
-          (entry) => CharacterListItem(data: entry.$2, unpinnedIndex: entry.$1),
+          (entry) => CharacterListItem(
+            projectId: 0,
+            data: entry.$2,
+            unpinnedIndex: entry.$1,
+            createdAt: now,
+            lastModified: now,
+            lastAccessed: now,
+          ),
         )
         .toList(growable: true);
   }

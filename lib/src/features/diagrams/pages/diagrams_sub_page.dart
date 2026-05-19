@@ -66,6 +66,8 @@ class _DiagramGroupCard extends StatelessWidget {
           children: [
             Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Color(0xFF3B3238),
                 fontSize: 19,
@@ -75,6 +77,8 @@ class _DiagramGroupCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Color(0xFF6A6167),
                 fontSize: 13,

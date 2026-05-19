@@ -130,43 +130,57 @@ class _NavItem extends StatelessWidget {
         ? const Color(0xFF544959)
         : const Color(0xFF544959).withValues(alpha: 0.46);
 
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      opacity: isActive ? 1.0 : 0.58,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(30),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(30),
-          splashColor: const Color(0xFFEB76AE).withValues(alpha: 0.16),
-          onTap: onTap,
-          child: Center(
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              style: TextStyle(
-                color: foregroundColor,
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedScale(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutCubic,
-                    scale: isActive ? 1.0 : 0.96,
-                    child: Icon(icon, color: foregroundColor, size: 20),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showLabel = constraints.maxWidth >= 86;
+
+        return AnimatedOpacity(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          opacity: isActive ? 1.0 : 0.58,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(30),
+              splashColor: const Color(0xFFEB76AE).withValues(alpha: 0.16),
+              onTap: onTap,
+              child: Center(
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
                   ),
-                  const SizedBox(width: 8),
-                  Text(label),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedScale(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        scale: isActive ? 1.0 : 0.96,
+                        child: Icon(icon, color: foregroundColor, size: 20),
+                      ),
+                      if (showLabel) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

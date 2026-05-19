@@ -251,6 +251,90 @@ class StoryRegistry extends ChangeNotifier {
     notifyListeners();
   }
 
+  void syncProjects(Iterable<RegisteredProjectRef> projects) {
+    _projects
+      ..clear()
+      ..addAll(projects);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void syncCharacters(Iterable<RegisteredCharacterRef> characters) {
+    _characters
+      ..clear()
+      ..addAll(characters);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void syncProjectsAndCharacters({
+    required Iterable<RegisteredProjectRef> projects,
+    required Iterable<RegisteredCharacterRef> characters,
+  }) {
+    _projects
+      ..clear()
+      ..addAll(projects);
+    _characters
+      ..clear()
+      ..addAll(characters);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void updateCharacter({
+    required String projectTitle,
+    required String oldName,
+    required String newName,
+    required Color accentColor,
+  }) {
+    final normalizedProjectTitle = projectTitle.trim();
+    final normalizedOldName = oldName.trim();
+    final normalizedNewName = newName.trim();
+
+    if (normalizedProjectTitle.isEmpty ||
+        normalizedOldName.isEmpty ||
+        normalizedNewName.isEmpty) {
+      return;
+    }
+
+    final existingIndex = _characters.indexWhere(
+      (character) => character.matchesIdentity(
+        projectTitle: normalizedProjectTitle,
+        name: normalizedOldName,
+      ),
+    );
+
+    if (existingIndex == -1) {
+      registerCharacter(
+        projectTitle: normalizedProjectTitle,
+        name: normalizedNewName,
+        accentColor: accentColor,
+      );
+      return;
+    }
+
+    final currentCharacter = _characters[existingIndex];
+    _characters[existingIndex] = RegisteredCharacterRef(
+      projectTitle: currentCharacter.projectTitle,
+      name: normalizedNewName,
+      accentColor: accentColor,
+      projectAliases: _mergeAliases(currentCharacter.projectAliases, [
+        currentCharacter.projectTitle,
+        ...currentCharacter.projectAliases,
+      ]),
+      nameAliases: _mergeAliases(currentCharacter.nameAliases, [
+        currentCharacter.name,
+        ...currentCharacter.nameAliases,
+      ]),
+    );
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
   void registerNote({
     required int id,
     required String title,

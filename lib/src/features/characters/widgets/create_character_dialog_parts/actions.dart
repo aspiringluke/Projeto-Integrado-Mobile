@@ -24,7 +24,10 @@ class _CreateCharacterActionsRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('Cancelar'),
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Cancelar'),
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -39,7 +42,10 @@ class _CreateCharacterActionsRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('Criar personagem'),
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Criar personagem'),
+            ),
           ),
         ),
       ],
