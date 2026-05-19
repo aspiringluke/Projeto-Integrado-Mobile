@@ -17,6 +17,7 @@ class FolderController extends ChangeNotifier {
   String? _errorMessage;
   List<Folder> _folders = const [];
   int? _currentParentFolderId;
+  int _loadRequestToken = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -36,11 +37,15 @@ class FolderController extends ChangeNotifier {
   }
 
   Future<(bool, String?)> loadFolders({int? parentFolderId}) async {
+    final requestToken = ++_loadRequestToken;
     _setLoading(true);
     _setError(null);
     _currentParentFolderId = parentFolderId;
 
     final result = await repository.listFolders(parentFolderId);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
 
     _setLoading(false);
 
@@ -51,6 +56,9 @@ class FolderController extends ChangeNotifier {
 
     _folders = result.$2 ?? const [];
     _folders = await _syncProtectedProjectFolders(_folders);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
     _syncFoldersToRegistry(_folders);
     notifyListeners();
     return (true, null);
@@ -288,8 +296,9 @@ class FolderController extends ChangeNotifier {
       final isProjectRoot = normalizedProjectTitles.contains(normalizedTitle);
       if (!isProjectRoot) continue;
 
-      final currentProjectRootTitle =
-          folder.metadata.projectRootTitle?.trim().toLowerCase();
+      final currentProjectRootTitle = folder.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
       if (currentProjectRootTitle == normalizedTitle) continue;
 
       final updatedMetadata = folder.metadata.copyWith(

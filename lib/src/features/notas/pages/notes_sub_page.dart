@@ -23,6 +23,38 @@ enum _NotesContentScope { all, notes, folders }
 
 enum _SelectionKind { note, folder }
 
+abstract class _NotesSubPageActions {
+  Future<void> createNoteFromFab();
+  Future<void> createFolderFromFab();
+  Future<void> onPrimaryActionPressed();
+}
+
+class NotesSubPageController {
+  _NotesSubPageActions? _actions;
+
+  void _attach(_NotesSubPageActions actions) {
+    _actions = actions;
+  }
+
+  void _detach(_NotesSubPageActions actions) {
+    if (identical(_actions, actions)) {
+      _actions = null;
+    }
+  }
+
+  Future<void> createNoteFromFab() async {
+    await _actions?.createNoteFromFab();
+  }
+
+  Future<void> createFolderFromFab() async {
+    await _actions?.createFolderFromFab();
+  }
+
+  Future<void> onPrimaryActionPressed() async {
+    await _actions?.onPrimaryActionPressed();
+  }
+}
+
 class _SelectedItem {
   final _SelectionKind kind;
   final int id;
@@ -39,13 +71,16 @@ class _SelectedItem {
 }
 
 class NotesSubPage extends StatefulWidget {
-  const NotesSubPage({super.key});
+  final NotesSubPageController? controller;
+
+  const NotesSubPage({super.key, this.controller});
 
   @override
   State<NotesSubPage> createState() => NotesSubPageState();
 }
 
-class NotesSubPageState extends State<NotesSubPage> {
+class NotesSubPageState extends State<NotesSubPage>
+    implements _NotesSubPageActions {
   static const _contentScopeOrder = <_NotesContentScope>[
     _NotesContentScope.all,
     _NotesContentScope.notes,
@@ -94,6 +129,7 @@ class NotesSubPageState extends State<NotesSubPage> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._attach(this);
     _folderController = FolderController(repository: FolderRepository());
     _noteController = NoteController(repository: NoteRepository());
     _contentScrollController.addListener(_syncContentDividerVisibility);
@@ -101,7 +137,17 @@ class NotesSubPageState extends State<NotesSubPage> {
   }
 
   @override
+  void didUpdateWidget(covariant NotesSubPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) return;
+
+    oldWidget.controller?._detach(this);
+    widget.controller?._attach(this);
+  }
+
+  @override
   void dispose() {
+    widget.controller?._detach(this);
     _contentScrollController.removeListener(_syncContentDividerVisibility);
     _contentScrollController.dispose();
     _folderController.dispose();
@@ -120,14 +166,17 @@ class NotesSubPageState extends State<NotesSubPage> {
     });
   }
 
+  @override
   Future<void> createNoteFromFab() async {
     await _createNoteFlow();
   }
 
+  @override
   Future<void> createFolderFromFab() async {
     await _createFolderFlow();
   }
 
+  @override
   Future<void> onPrimaryActionPressed() async {
     final selected = await showNotesCreateActionSheet(context);
     if (!mounted || selected == null) return;

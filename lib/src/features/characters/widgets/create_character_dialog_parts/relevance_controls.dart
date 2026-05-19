@@ -370,59 +370,61 @@ class _RelevanceParameterControlState
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: projectPink.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useStackedHeader = constraints.maxWidth < 340;
+          final symbolBadge = Container(
+            width: 32,
+            height: 24,
+            decoration: BoxDecoration(
+              color: projectPink.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                widget.parameter.symbol,
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(projectPink, 0.18),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
                 ),
-                child: Center(
-                  child: Text(
-                    widget.parameter.symbol,
-                    style: TextStyle(
-                      color: _darkenCharacterDialogColor(projectPink, 0.18),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
+              ),
+            ),
+          );
+          final nameField = widget.isEditing
+              ? TextField(
+                  controller: _nameController,
+                  focusNode: _nameFocusNode,
+                  minLines: 1,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: widget.isEditing
-                    ? TextField(
-                        controller: _nameController,
-                        focusNode: _nameFocusNode,
-                        maxLines: 1,
-                        style: const TextStyle(
-                          color: Color(0xFF3A3339),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        onChanged: widget.onNameChanged,
-                      )
-                    : Text(
-                        widget.parameter.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF3A3339),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-              ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: widget.onNameChanged,
+                )
+              : Text(
+                  widget.parameter.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                );
+          final actions = Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 4,
+            children: [
               Text(
                 widget.value.toStringAsFixed(1),
                 style: const TextStyle(
@@ -431,7 +433,6 @@ class _RelevanceParameterControlState
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 4),
               _RelevanceParameterIconButton(
                 icon: widget.isEditing
                     ? Icons.check_rounded
@@ -443,86 +444,117 @@ class _RelevanceParameterControlState
                 onTap: widget.canRemove ? widget.onRemove : null,
               ),
             ],
-          ),
-          const SizedBox(height: 4),
-          widget.isEditing
-              ? TextField(
-                  controller: _descriptionController,
-                  focusNode: _descriptionFocusNode,
-                  minLines: 2,
-                  maxLines: 3,
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.54),
-                    fontSize: 10.2,
-                    height: 1.22,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: widget.onDescriptionChanged,
-                )
-              : Text(
-                  widget.parameter.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.54),
-                    fontSize: 10.2,
-                    height: 1.22,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-          const SizedBox(height: 2),
-          SliderTheme(
-            data: sliderTheme,
-            child: Slider(
-              value: widget.value.clamp(0, 10),
-              min: 0,
-              max: 10,
-              divisions: 20,
-              onChanged: widget.onValueChanged,
-            ),
-          ),
-          Row(
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Peso',
-                style: TextStyle(
-                  color: Color(0xFF6A6167),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
+              if (useStackedHeader)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        symbolBadge,
+                        const SizedBox(width: 8),
+                        Expanded(child: nameField),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Align(alignment: Alignment.centerRight, child: actions),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    symbolBadge,
+                    const SizedBox(width: 8),
+                    Expanded(child: nameField),
+                    const SizedBox(width: 8),
+                    actions,
+                  ],
+                ),
+              const SizedBox(height: 4),
+              widget.isEditing
+                  ? TextField(
+                      controller: _descriptionController,
+                      focusNode: _descriptionFocusNode,
+                      minLines: 2,
+                      maxLines: 3,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.54),
+                        fontSize: 10.2,
+                        height: 1.22,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: widget.onDescriptionChanged,
+                    )
+                  : Text(
+                      widget.parameter.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.54),
+                        fontSize: 10.2,
+                        height: 1.22,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+              const SizedBox(height: 2),
+              SliderTheme(
+                data: sliderTheme,
+                child: Slider(
+                  value: widget.value.clamp(0, 10),
+                  min: 0,
+                  max: 10,
+                  divisions: 20,
+                  onChanged: widget.onValueChanged,
                 ),
               ),
-              Expanded(
-                child: SliderTheme(
-                  data: sliderTheme,
-                  child: Slider(
-                    value: widget.weight.clamp(0, 1),
-                    min: 0,
-                    max: 1,
-                    divisions: 20,
-                    onChanged: widget.onWeightChanged,
+              Row(
+                children: [
+                  const Text(
+                    'Peso',
+                    style: TextStyle(
+                      color: Color(0xFF6A6167),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ),
-              SizedBox(
-                width: 38,
-                child: Text(
-                  '${(widget.weight * 100).toStringAsFixed(0)}%',
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: Color(0xFF6A6167),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: SliderTheme(
+                      data: sliderTheme,
+                      child: Slider(
+                        value: widget.weight.clamp(0, 1),
+                        min: 0,
+                        max: 1,
+                        divisions: 20,
+                        onChanged: widget.onWeightChanged,
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(
+                    width: 38,
+                    child: Text(
+                      '${(widget.weight * 100).toStringAsFixed(0)}%',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: Color(0xFF6A6167),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

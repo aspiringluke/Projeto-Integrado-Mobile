@@ -25,8 +25,8 @@ class _ShellPageState extends State<ShellPage> {
   late NavTab _activeTab;
   late bool _toIdeas;
   late final ProjectListController _projectListController;
-  final GlobalKey<IdeasContentState> _ideasContentKey =
-      GlobalKey<IdeasContentState>();
+  final IdeasContentController _ideasContentController =
+      IdeasContentController();
   bool _showIdeasQuickActions = false;
 
   @override
@@ -73,8 +73,7 @@ class _ShellPageState extends State<ShellPage> {
       return;
     }
 
-    final ideasState = _ideasContentKey.currentState;
-    if (ideasState == null || !ideasState.isNotesView) return;
+    if (!_ideasContentController.isNotesView) return;
 
     setState(() {
       _showIdeasQuickActions = !_showIdeasQuickActions;
@@ -82,13 +81,13 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Future<void> _onCreateNotePressed() async {
-    await _ideasContentKey.currentState?.onCreateNoteRequested();
+    await _ideasContentController.onCreateNoteRequested();
     if (!mounted) return;
     setState(() => _showIdeasQuickActions = false);
   }
 
   Future<void> _onCreateFolderPressed() async {
-    await _ideasContentKey.currentState?.onCreateFolderRequested();
+    await _ideasContentController.onCreateFolderRequested();
     if (!mounted) return;
     setState(() => _showIdeasQuickActions = false);
   }
@@ -168,6 +167,9 @@ class _ShellPageState extends State<ShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showQuickActions =
+        _activeTab == NavTab.ideas && _showIdeasQuickActions;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
       bottomNavigationBar: CustomNavBar(
@@ -180,6 +182,16 @@ class _ShellPageState extends State<ShellPage> {
           Positioned.fill(
             child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
           ),
+          if (showQuickActions)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  setState(() => _showIdeasQuickActions = false);
+                },
+                child: const SizedBox.expand(),
+              ),
+            ),
           Column(
             children: [
               const MainHeader(asSliver: false),
@@ -189,7 +201,7 @@ class _ShellPageState extends State<ShellPage> {
                   activeTab: _activeTab,
                   toIdeas: _toIdeas,
                   projectListController: _projectListController,
-                  ideasContentKey: _ideasContentKey,
+                  ideasContentController: _ideasContentController,
                 ),
               ),
             ],
@@ -270,13 +282,13 @@ class _AnimatedTabContent extends StatelessWidget {
   final NavTab activeTab;
   final bool toIdeas;
   final ProjectListController projectListController;
-  final GlobalKey<IdeasContentState> ideasContentKey;
+  final IdeasContentController ideasContentController;
 
   const _AnimatedTabContent({
     required this.activeTab,
     required this.toIdeas,
     required this.projectListController,
-    required this.ideasContentKey,
+    required this.ideasContentController,
   });
 
   @override
@@ -330,7 +342,7 @@ class _AnimatedTabContent extends StatelessWidget {
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
             ? ProjectListPage(controller: projectListController)
-            : IdeasContent(key: ideasContentKey),
+            : IdeasContent(controller: ideasContentController),
       ),
     );
   }

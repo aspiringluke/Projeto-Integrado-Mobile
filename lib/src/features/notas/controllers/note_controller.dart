@@ -20,6 +20,7 @@ class NoteController extends ChangeNotifier {
   String? _errorMessage;
   List<Note> _notes = const [];
   int? _currentFolderId;
+  int _loadRequestToken = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -39,11 +40,16 @@ class NoteController extends ChangeNotifier {
   }
 
   Future<(bool, String?)> loadNotes({int? folderId}) async {
+    final requestToken = ++_loadRequestToken;
     _setLoading(true);
     _setError(null);
     _currentFolderId = folderId;
 
     final result = await repository.listNotes(folderId);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
+
     _setLoading(false);
 
     if (!result.$1) {
@@ -54,6 +60,9 @@ class NoteController extends ChangeNotifier {
 
     _notes = result.$2 ?? const [];
     await _syncNoteMentions(_notes);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
     notifyListeners();
     return (true, null);
   }
@@ -248,8 +257,9 @@ class NoteController extends ChangeNotifier {
       current = result.$2!;
       final currentTitle = current.title.trim();
       final normalizedTitle = currentTitle.toLowerCase();
-      final projectRootTitle =
-          current.metadata.projectRootTitle?.trim().toLowerCase();
+      final projectRootTitle = current.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
       final isKnownProjectRoot =
           (projectRootTitle != null &&
               projectRootTitle.isNotEmpty &&

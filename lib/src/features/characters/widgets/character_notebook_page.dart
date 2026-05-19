@@ -665,17 +665,17 @@ class _PsychRadarCard extends StatelessWidget {
                         return Transform.scale(
                           scale: chartZoom,
                           child: CustomPaint(
-                              painter: _PsychRadarPainter(
-                                accentColor: accentColor,
-                                pointColor: pointColor ?? accentColor,
-                                nodes: nodes,
-                                values: values,
-                                selectedNodeId: selectedNodeId,
-                                selectedNodeScale: scale,
-                              ),
+                            painter: _PsychRadarPainter(
+                              accentColor: accentColor,
+                              pointColor: pointColor ?? accentColor,
+                              nodes: nodes,
+                              values: values,
+                              selectedNodeId: selectedNodeId,
+                              selectedNodeScale: scale,
                             ),
-                          );
-                        },
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -710,9 +710,9 @@ class _PsychFacetRadarCard extends StatelessWidget {
   final ValueChanged<String> onFacetSelected;
   final VoidCallback onBack;
   final void Function(String traitId, String facetId, double value)
-      onFacetChanged;
+  onFacetChanged;
   final void Function(_PsychTraitDefinition trait, _PsychFacetDefinition facet)
-      onFacetEdit;
+  onFacetEdit;
 
   const _PsychFacetRadarCard({
     required this.accentColor,
@@ -872,7 +872,7 @@ class _PsychFacetBarCard extends StatelessWidget {
   final String? selectedFacetId;
   final ValueChanged<String> onFacetSelected;
   final void Function(String traitId, String facetId, double value)
-      onFacetChanged;
+  onFacetChanged;
 
   const _PsychFacetBarCard({
     required this.accentColor,
@@ -991,7 +991,7 @@ class _PsychFacetBarRow extends StatelessWidget {
   final bool selected;
   final ValueChanged<String> onFacetSelected;
   final void Function(String traitId, String facetId, double value)
-      onFacetChanged;
+  onFacetChanged;
 
   const _PsychFacetBarRow({
     required this.accentColor,
@@ -1224,8 +1224,10 @@ class _PsychTraitQuickButton extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: selected
-                      ? _darkenCharacterDialogColor(accentColor, 0.10)
-                          .withValues(alpha: 0.62)
+                      ? _darkenCharacterDialogColor(
+                          accentColor,
+                          0.10,
+                        ).withValues(alpha: 0.62)
                       : Colors.black.withValues(alpha: 0.82),
                   fontSize: 9.1,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
@@ -1509,9 +1511,7 @@ class _PsychRadarPainter extends CustomPainter {
       final pointRadius = isSelected ? 3.8 * selectedNodeScale : 2.7;
       final pointPaint = Paint()
         ..style = PaintingStyle.fill
-        ..color = isSelected
-            ? pointColor
-            : pointColor.withValues(alpha: 0.82);
+        ..color = isSelected ? pointColor : pointColor.withValues(alpha: 0.82);
       canvas.drawCircle(
         point,
         pointRadius + 4,
@@ -1531,10 +1531,7 @@ class _PsychRadarPainter extends CustomPainter {
             fontWeight: FontWeight.w800,
             height: 1,
             shadows: [
-              Shadow(
-                color: Colors.white.withValues(alpha: 0.7),
-                blurRadius: 4,
-              ),
+              Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 4),
             ],
           ),
         ),
@@ -1575,7 +1572,8 @@ class _PsychRadarPainter extends CustomPainter {
       )..layout(maxWidth: 72);
 
       final labelOffset =
-          labels[index] - Offset(labelPainter.width / 2, labelPainter.height / 2);
+          labels[index] -
+          Offset(labelPainter.width / 2, labelPainter.height / 2);
       labelPainter.paint(canvas, labelOffset);
     }
   }
@@ -1910,6 +1908,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     final text = _mottoController.text;
     if (text == _draft.motto && text == _draft.quote) return;
     _updateDraft(_draft.copyWith(motto: text, quote: text), rebuild: false);
+  }
+
+  void _clearMenuFocus() {
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   DateTime get _birthday => _birthdayValue ??= DateTime(
@@ -2423,10 +2425,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     final selectedFacet = _selectedPsychFacetId == null
         ? selectedTrait.facets.first
         : _psychFacetDefinitionFor(selectedTrait, _selectedPsychFacetId!);
-    final leftFlex =
-        _psychSplitFocus == _PsychSplitFocus.facets ? 1 : 4;
-    final rightFlex =
-        _psychSplitFocus == _PsychSplitFocus.traits ? 1 : 4;
+    final leftFlex = _psychSplitFocus == _PsychSplitFocus.facets ? 1 : 4;
+    final rightFlex = _psychSplitFocus == _PsychSplitFocus.traits ? 1 : 4;
 
     Widget buildBigFiveCard() {
       return Column(
@@ -2456,21 +2456,29 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (var index = 0; index < _psychBigFiveTraits.length; index += 1)
+                  for (
+                    var index = 0;
+                    index < _psychBigFiveTraits.length;
+                    index += 1
+                  )
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: index == _psychBigFiveTraits.length - 1 ? 0 : 6,
+                          right: index == _psychBigFiveTraits.length - 1
+                              ? 0
+                              : 6,
                         ),
                         child: _PsychTraitQuickButton(
                           accentColor: _draft.accent,
-                          icon: _psychTraitIconFor(_psychBigFiveTraits[index].id),
-                          trait: _psychBigFiveTraits[index],
-                          selected: _selectedPsychTraitId ==
-                              _psychBigFiveTraits[index].id,
-                          onTap: () => _selectPsychTrait(
+                          icon: _psychTraitIconFor(
                             _psychBigFiveTraits[index].id,
                           ),
+                          trait: _psychBigFiveTraits[index],
+                          selected:
+                              _selectedPsychTraitId ==
+                              _psychBigFiveTraits[index].id,
+                          onTap: () =>
+                              _selectPsychTrait(_psychBigFiveTraits[index].id),
                         ),
                       ),
                     ),
@@ -2549,28 +2557,38 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.50),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _draft.avatarColor.withValues(alpha: 0.08)),
+              border: Border.all(
+                color: _draft.avatarColor.withValues(alpha: 0.08),
+              ),
             ),
             child: SizedBox(
               height: 62,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (var index = 0; index < _psychBigFiveTraits.length; index += 1)
+                  for (
+                    var index = 0;
+                    index < _psychBigFiveTraits.length;
+                    index += 1
+                  )
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: index == _psychBigFiveTraits.length - 1 ? 0 : 6,
+                          right: index == _psychBigFiveTraits.length - 1
+                              ? 0
+                              : 6,
                         ),
                         child: _PsychTraitQuickButton(
                           accentColor: _draft.accent,
-                          icon: _psychTraitIconFor(_psychBigFiveTraits[index].id),
-                          trait: _psychBigFiveTraits[index],
-                          selected: _selectedPsychTraitId ==
-                              _psychBigFiveTraits[index].id,
-                          onTap: () => _selectPsychTrait(
+                          icon: _psychTraitIconFor(
                             _psychBigFiveTraits[index].id,
                           ),
+                          trait: _psychBigFiveTraits[index],
+                          selected:
+                              _selectedPsychTraitId ==
+                              _psychBigFiveTraits[index].id,
+                          onTap: () =>
+                              _selectPsychTrait(_psychBigFiveTraits[index].id),
                         ),
                       ),
                     ),
@@ -2618,21 +2636,29 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (var index = 0; index < _psychBigFiveTraits.length; index += 1)
+                  for (
+                    var index = 0;
+                    index < _psychBigFiveTraits.length;
+                    index += 1
+                  )
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: index == _psychBigFiveTraits.length - 1 ? 0 : 6,
+                          right: index == _psychBigFiveTraits.length - 1
+                              ? 0
+                              : 6,
                         ),
                         child: _PsychTraitQuickButton(
                           accentColor: _draft.accent,
-                          icon: _psychTraitIconFor(_psychBigFiveTraits[index].id),
-                          trait: _psychBigFiveTraits[index],
-                          selected: _selectedPsychTraitId ==
-                              _psychBigFiveTraits[index].id,
-                          onTap: () => _selectPsychTrait(
+                          icon: _psychTraitIconFor(
                             _psychBigFiveTraits[index].id,
                           ),
+                          trait: _psychBigFiveTraits[index],
+                          selected:
+                              _selectedPsychTraitId ==
+                              _psychBigFiveTraits[index].id,
+                          onTap: () =>
+                              _selectPsychTrait(_psychBigFiveTraits[index].id),
                         ),
                       ),
                     ),
@@ -2724,6 +2750,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         ),
       );
     }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
       child: Container(
@@ -2780,9 +2807,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
-          final scale = Tween<double>(begin: 0.98, end: 1).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOut),
-          );
+          final scale = Tween<double>(
+            begin: 0.98,
+            end: 1,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
           return FadeTransition(
             opacity: animation,
             child: ScaleTransition(scale: scale, child: child),
@@ -2919,11 +2947,13 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                           child: SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               activeTrackColor: _draft.accent,
-                              inactiveTrackColor:
-                                  _draft.accent.withValues(alpha: 0.14),
+                              inactiveTrackColor: _draft.accent.withValues(
+                                alpha: 0.14,
+                              ),
                               thumbColor: _draft.accent,
-                              overlayColor:
-                                  _draft.accent.withValues(alpha: 0.12),
+                              overlayColor: _draft.accent.withValues(
+                                alpha: 0.12,
+                              ),
                               trackHeight: 4,
                             ),
                             child: Slider(
@@ -3089,7 +3119,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     setState(() {
       _psychSplitFocus = _PsychSplitFocus.traits;
       _selectedPsychTraitId = traitId;
-      final hasCurrentFacet = _selectedPsychFacetId != null &&
+      final hasCurrentFacet =
+          _selectedPsychFacetId != null &&
           trait.facets.any((facet) => facet.id == _selectedPsychFacetId);
       _selectedPsychFacetId = hasCurrentFacet
           ? _selectedPsychFacetId
@@ -3384,6 +3415,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _selectBirthday() async {
+    _clearMenuFocus();
     var tempMonth = _birthday.month;
     var tempDay = _birthday.day;
     final monthController = FixedExtentScrollController(
@@ -3583,6 +3615,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       dayController.dispose();
     });
 
+    _clearMenuFocus();
     if (!mounted || selectedDate == null) return;
     _birthdayValue = selectedDate;
     _updateDraft(
@@ -3595,6 +3628,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _openBirthdaySignSheet(ZodiacSignData currentSign) async {
+    _clearMenuFocus();
     final selectedDate = await showModalBottomSheet<DateTime>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -3778,6 +3812,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || selectedDate == null) return;
     _birthdayValue = selectedDate;
     _updateDraft(
@@ -3790,6 +3825,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _openTagSelector(_TagKind kind) async {
+    _clearMenuFocus();
     final inputController = TextEditingController();
     final selectedLabel = _selectedTagFor(kind);
     final result = await showModalBottomSheet<String>(
@@ -3982,6 +4018,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       const Duration(milliseconds: 300),
       inputController.dispose,
     );
+    _clearMenuFocus();
     if (!mounted || result == null) return;
     _setSelectedTag(kind, result);
     _updateDraft(
@@ -3995,6 +4032,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _openTagSelectorLegacy(_TagKind kind) async {
+    _clearMenuFocus();
     final selectedLabel = _selectedTagFor(kind);
     final isRequired = kind == _TagKind.gender;
     final currentValue = selectedLabel;
@@ -4087,6 +4125,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || result == null) return;
     setState(() {
       switch (kind) {
@@ -4111,6 +4150,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _openRelevanceSelector() async {
+    _clearMenuFocus();
     var temp = _relevance.copyWith();
 
     final result = await showModalBottomSheet<_RelevanceParameterBundle>(
@@ -4206,6 +4246,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || result == null) return;
     setState(() {
       _relevance = result;
@@ -4215,6 +4256,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _selectHeightUnit() async {
+    _clearMenuFocus();
     final selectedUnit = await showModalBottomSheet<HeightUnit>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -4236,6 +4278,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || selectedUnit == null) return;
     setState(() {
       _heightUnit = selectedUnit;
@@ -4244,6 +4287,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _selectWeightUnit() async {
+    _clearMenuFocus();
     final selectedUnit = await showModalBottomSheet<WeightUnit>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -4265,6 +4309,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || selectedUnit == null) return;
     setState(() {
       _weightUnit = selectedUnit;
@@ -5363,12 +5408,16 @@ class _NotebookTextFieldCard extends StatelessWidget {
                 child: Icon(icon, size: 15, color: const Color(0xFF544959)),
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF2C262C),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF2C262C),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -7280,9 +7329,3 @@ BoxDecoration _buildCharacterDialogSurfaceDecoration({
     ],
   );
 }
-
-
-
-
-
-

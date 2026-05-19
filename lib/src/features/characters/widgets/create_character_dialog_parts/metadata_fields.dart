@@ -144,12 +144,14 @@ class _CharacterMetadataSection extends StatelessWidget {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              _CharacterMeasureField(
-                                label: label,
-                                controller: controller,
-                                hintText: hintText,
-                                focusedColor: accentColor,
-                                icon: icon,
+                              Expanded(
+                                child: _CharacterMeasureField(
+                                  label: label,
+                                  controller: controller,
+                                  hintText: hintText,
+                                  focusedColor: accentColor,
+                                  icon: icon,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               _CharacterUnitPillButton(
@@ -264,7 +266,6 @@ class _CharacterCompactField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMultiline = maxLines > 1;
-    final fillsCustomHeight = isMultiline || fieldHeight != null;
     final resolvedFieldHeight =
         fieldHeight ??
         (isMultiline ? 84 : _characterDialogSingleLineFieldHeight);
@@ -279,9 +280,9 @@ class _CharacterCompactField extends StatelessWidget {
             textInputAction: isMultiline
                 ? TextInputAction.newline
                 : TextInputAction.next,
-            minLines: fillsCustomHeight ? null : 1,
-            maxLines: fillsCustomHeight ? null : 1,
-            expands: fillsCustomHeight,
+            minLines: isMultiline ? null : 1,
+            maxLines: isMultiline ? null : 1,
+            expands: isMultiline,
             validator: validator,
             textAlignVertical: TextAlignVertical.center,
             style: const TextStyle(
@@ -393,16 +394,14 @@ class _CharacterMeasureField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: _characterDialogMeasureFieldWidth,
       height: _characterDialogMeasureControlHeight,
       child: TextFormField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textInputAction: TextInputAction.next,
         textAlignVertical: TextAlignVertical.center,
-        minLines: null,
-        maxLines: null,
-        expands: true,
+        minLines: 1,
+        maxLines: 1,
         style: TextStyle(
           color: Colors.black.withValues(alpha: 0.68),
           fontSize: 11.8,
@@ -450,6 +449,7 @@ class _CharacterMeasureFieldPrefix extends StatelessWidget {
           Text(
             label,
             maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFF3A3339),
               fontSize: 10.8,

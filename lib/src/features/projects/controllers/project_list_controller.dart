@@ -63,6 +63,7 @@ class ProjectListController extends ChangeNotifier {
   final List<ProjectTagData> _availableTags = <ProjectTagData>[];
   bool _isLoading = false;
   String? _errorMessage;
+  int _loadRequestToken = 0;
 
   ProjectListController({
     ProjectRepository? projectRepository,
@@ -116,6 +117,7 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
+    _invalidatePendingLoads(resetLoading: true);
     final project = _mapRecordToItem(created.$2!);
     _projects.add(project);
     StoryRegistry.instance.registerProject(
@@ -127,11 +129,16 @@ class ProjectListController extends ChangeNotifier {
   }
 
   Future<void> loadProjects() async {
+    final requestToken = ++_loadRequestToken;
     _setLoading(true);
     _setError(null);
     notifyListeners();
 
     final result = await _projectRepository.listProjects();
+    if (requestToken != _loadRequestToken) {
+      return;
+    }
+
     if (!result.$1) {
       _projects.clear();
       _setLoading(false);
@@ -148,6 +155,9 @@ class ProjectListController extends ChangeNotifier {
             .map(_mapRecordToItem),
       );
     await _syncStoryRegistryFromStorage();
+    if (requestToken != _loadRequestToken) {
+      return;
+    }
     _setLoading(false);
     notifyListeners();
   }
@@ -237,6 +247,7 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
+    _invalidatePendingLoads(resetLoading: true);
     project.title = sanitizedTitle;
     project.synopsis = synopsis;
     project.lastModified = DateTime.now();
@@ -261,6 +272,7 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
+    _invalidatePendingLoads(resetLoading: true);
     project.characterDisplayMode = characterDisplayMode;
     project.characterGridColumns = characterGridColumns;
     notifyListeners();
@@ -383,7 +395,9 @@ class ProjectListController extends ChangeNotifier {
 
   Future<void> _syncStoryRegistryFromStorage() async {
     final characterResult = await _characterRepository.listAllCharacters();
-    final characters = characterResult.$1 ? characterResult.$2 ?? const <CharacterListItem>[] : const <CharacterListItem>[];
+    final characters = characterResult.$1
+        ? characterResult.$2 ?? const <CharacterListItem>[]
+        : const <CharacterListItem>[];
 
     StoryRegistry.instance.syncProjectsAndCharacters(
       projects: _projects
@@ -442,6 +456,13 @@ class ProjectListController extends ChangeNotifier {
       characterDisplayMode: record.characterDisplayMode,
       characterGridColumns: record.characterGridColumns,
     );
+  }
+
+  void _invalidatePendingLoads({bool resetLoading = false}) {
+    _loadRequestToken += 1;
+    if (resetLoading) {
+      _setLoading(false);
+    }
   }
 
   int _unpinnedIndexAt(int listIndex) {

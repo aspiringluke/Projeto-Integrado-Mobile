@@ -95,6 +95,7 @@ class _ProjectPageState extends State<ProjectPage> {
   late int _avatarGridColumns;
   bool _isLoadingCharacters = false;
   String? _characterErrorMessage;
+  int _characterLoadRequestToken = 0;
 
   @override
   void initState() {
@@ -151,13 +152,16 @@ class _ProjectPageState extends State<ProjectPage> {
       return;
     }
 
+    final requestToken = ++_characterLoadRequestToken;
     setState(() {
       _isLoadingCharacters = true;
       _characterErrorMessage = null;
     });
 
-    final result = await _characterRepository.listCharactersForProject(projectId);
-    if (!mounted) {
+    final result = await _characterRepository.listCharactersForProject(
+      projectId,
+    );
+    if (!mounted || requestToken != _characterLoadRequestToken) {
       return;
     }
 
@@ -344,9 +348,12 @@ class _ProjectPageState extends State<ProjectPage> {
       return;
     }
 
+    _characterLoadRequestToken += 1;
     setState(() {
       _characters.add(created.$2!);
       _isCreateMenuOpen = false;
+      _isLoadingCharacters = false;
+      _characterErrorMessage = null;
     });
 
     StoryRegistry.instance.registerCharacter(

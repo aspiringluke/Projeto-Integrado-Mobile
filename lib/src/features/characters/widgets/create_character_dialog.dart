@@ -83,7 +83,6 @@ const double _characterDialogCompactPrefixWidth = 108;
 const double _characterDialogSingleLineFieldHeight = 58;
 const double _characterDialogNameFieldHeight = 70;
 const double _characterDialogMeasureControlHeight = 50;
-const double _characterDialogMeasureFieldWidth = 150;
 const double _characterDialogMeasureUnitWidth = 44;
 const double _characterDialogMeasureLayoutBreakpoint = 414;
 
@@ -209,6 +208,10 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _clearMenuFocus() {
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   double _calculateSynopsisHeight(double maxWidth) {
@@ -487,6 +490,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _selectHeightUnit() async {
+    _clearMenuFocus();
     final selectedUnit = await showModalBottomSheet<HeightUnit>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -508,6 +512,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || selectedUnit == null) {
       return;
     }
@@ -528,6 +533,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _selectWeightUnit() async {
+    _clearMenuFocus();
     final selectedUnit = await showModalBottomSheet<WeightUnit>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -549,6 +555,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || selectedUnit == null) {
       return;
     }
@@ -569,6 +576,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _selectBirthday() async {
+    _clearMenuFocus();
     var tempMonth = _birthdayValue.month;
     var tempDay = _birthdayValue.day;
     final monthController = FixedExtentScrollController(
@@ -679,6 +687,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       dayController.dispose();
     });
 
+    _clearMenuFocus();
     if (!mounted || selectedDate == null) {
       return;
     }
@@ -689,6 +698,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _openBirthdaySignSheet(ZodiacSignData currentSign) async {
+    _clearMenuFocus();
     final selectedDate = await showModalBottomSheet<DateTime>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -868,6 +878,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || selectedDate == null) {
       return;
     }
@@ -878,6 +889,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _openTagSelector(_CharacterTagKind kind) async {
+    _clearMenuFocus();
     final inputController = TextEditingController();
     final selectedLabel = _selectedTagFor(kind);
     final isRequired = _isRequiredTagKind(kind);
@@ -1072,6 +1084,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       inputController.dispose,
     );
 
+    _clearMenuFocus();
     if (!mounted || result == null) {
       return;
     }
@@ -1082,6 +1095,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   }
 
   Future<void> _openRelevanceSelector() async {
+    _clearMenuFocus();
     var tempParameters = List<_RelevanceParameterConfig>.from(
       _relevanceParameters,
     );
@@ -1335,6 +1349,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       },
     );
 
+    _clearMenuFocus();
     if (!mounted || result == null) {
       return;
     }

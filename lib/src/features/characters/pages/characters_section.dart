@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/characters_models.dart';
 import '../widgets/character_card.dart';
 import '../widgets/character_card_visuals.dart';
+import '../widgets/character_notebook_page.dart';
 
 class CharactersSection extends StatelessWidget {
   final List<CharacterListItem> characters;
@@ -29,6 +30,22 @@ class CharactersSection extends StatelessWidget {
     required this.onToggleDisplayMode,
     required this.onChangeAvatarGridColumns,
   });
+
+  Future<void> _openCharacterPage(
+    BuildContext context,
+    CharacterListItem character,
+  ) async {
+    onCharacterViewed(character);
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CharacterNotebookPage(
+          data: character.data,
+          onChanged: (updatedData) => onCharacterEdited(character, updatedData),
+        ),
+      ),
+    );
+    onCharacterViewed(character);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,149 +179,158 @@ class CharactersSection extends StatelessWidget {
         final character = characters[index];
         return Tooltip(
           message: character.data.name,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+              onTap: () => _openCharacterPage(context, character),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CharacterAvatarTile(
-                      accent: character.data.accent,
-                      avatarColor: character.data.avatarColor,
-                      profileImage: character.data.profileImage,
-                      isExpanded: false,
-                      onTap: null,
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              character.data.accent.withValues(alpha: 0.08),
-                              Colors.transparent,
-                              character.data.avatarColor.withValues(
-                                alpha: 0.06,
-                              ),
-                            ],
-                            stops: const [0.0, 0.48, 1.0],
-                          ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CharacterAvatarTile(
+                          accent: character.data.accent,
+                          avatarColor: character.data.avatarColor,
+                          profileImage: character.data.profileImage,
+                          isExpanded: false,
+                          onTap: null,
                         ),
                       ),
-                    ),
-                  ),
-                  if (avatarGridColumns == 3)
-                    Positioned(
-                      left: 10,
-                      right: 10,
-                      bottom: 10,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              character.data.accent.withValues(alpha: 0.72),
-                              character.data.avatarColor.withValues(
-                                alpha: 0.28,
-                              ),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.24),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.16),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  character.data.name.split(' ').first,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.2,
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  character.data.accent.withValues(alpha: 0.08),
+                                  Colors.transparent,
+                                  character.data.avatarColor.withValues(
+                                    alpha: 0.06,
                                   ),
-                                ),
+                                ],
+                                stops: const [0.0, 0.48, 1.0],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () => onTogglePinned(character),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.84),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.14),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                      if (avatarGridColumns == 3)
+                        Positioned(
+                          left: 10,
+                          right: 10,
+                          bottom: 10,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  character.data.accent.withValues(alpha: 0.72),
+                                  character.data.avatarColor.withValues(
+                                    alpha: 0.28,
+                                  ),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.24),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.16),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      character.data.name.split(' ').first,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        child: Icon(
-                          character.isPinned
-                              ? Icons.push_pin
-                              : Icons.push_pin_outlined,
-                          size: 18,
-                          color: character.isPinned
-                              ? const Color(0xFF7C4E63)
-                              : const Color(0xFF544959),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () => onTogglePinned(character),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.84),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.14),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              character.isPinned
+                                  ? Icons.push_pin
+                                  : Icons.push_pin_outlined,
+                              size: 18,
+                              color: character.isPinned
+                                  ? const Color(0xFF7C4E63)
+                                  : const Color(0xFF544959),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
