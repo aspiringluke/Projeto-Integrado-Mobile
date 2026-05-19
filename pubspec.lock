@@ -312,6 +312,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.17.0"
+  mistralai_dart:
+    dependency: "direct main"
+    description:
+      name: mistralai_dart
+      sha256: "7c568dc6c87eda94c2b5d946fc23c74d0420e45b15d74c30ab01859194f8f9c0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   native_toolchain_c:
     dependency: transitive
     description:

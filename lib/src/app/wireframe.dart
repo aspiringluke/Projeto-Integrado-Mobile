@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import './pages/shell_page.dart';
 import './widgets/custom_nav_bar.dart';
+import '../features/chatbot/pages/chatbot_page.dart';
 
 class Wireframe extends StatelessWidget {
   const Wireframe({super.key});
@@ -16,6 +17,7 @@ class Wireframe extends StatelessWidget {
         "/": (_) => const ShellPage(initialTab: NavTab.projects),
         "/projects": (_) => const ShellPage(initialTab: NavTab.projects),
         "/ideas": (_) => const ShellPage(initialTab: NavTab.ideas),
+        "/chatbot": (_) => const ChatbotPage(),
       },
     );
   }
