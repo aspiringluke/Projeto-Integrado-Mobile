@@ -51,7 +51,7 @@ const String _titlesPlaceholderText =
 
 enum _CharacterColorTarget { cover, accent }
 
-enum _PsychViewMode { bigFive, facet }
+enum _PsychViewMode { bigFive }
 
 enum _PsychSplitFocus { none, traits, facets }
 
@@ -2164,7 +2164,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   String? _selectedPsychTraitId;
   String? _selectedPsychFacetId;
   _PsychSplitFocus _psychSplitFocus = _PsychSplitFocus.none;
-  _PsychViewMode _psychViewMode = _PsychViewMode.bigFive;
+  final _PsychViewMode _psychViewMode = _PsychViewMode.bigFive;
   String? _psychTransitionTraitId;
   Timer? _psychTransitionTimer;
 
@@ -7159,7 +7159,7 @@ class _AddRelevanceParameterButton extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Adicionar parametro',
+                'Adicionar parâmetro',
                 style: TextStyle(
                   color: _darkenCharacterDialogColor(projectPink, 0.18),
                   fontSize: 12,
@@ -8153,7 +8153,7 @@ List<_RelevanceCategory> _defaultRelevanceCategories() {
       min: 2,
       max: 4.9,
       description:
-          'Têm momentos de importância pontual. Brilham ou influênciam a história em eventos específicos, mas permanecem omissos ou em segundo plano na maior parte do tempo.',
+          'Têm momentos de importância pontual. Brilham ou influenciam a história em eventos específicos, mas permanecem omissos ou em segundo plano na maior parte do tempo.',
       color: Color(0xFF8EAFF1),
     ),
     _RelevanceCategory(
@@ -8161,7 +8161,7 @@ List<_RelevanceCategory> _defaultRelevanceCategories() {
       min: 5,
       max: 7.9,
       description:
-          'Personagens orbitais tem grande significância para algo importante para a narrativa (como outros personagens de núcleo). A história não é sobre eles, mas mesmo assim têm grande peso em seu direcionamento.',
+          'Personagens orbitais têm grande significância para algo importante para a narrativa (como outros personagens de núcleo). A história não é sobre eles, mas mesmo assim têm grande peso em seu direcionamento.',
       color: Color(0xFFDF9C53),
     ),
     _RelevanceCategory(
@@ -8246,11 +8246,11 @@ _RelevanceParameterBundle _readStoredRelevanceBundle(
       name:
           notebookValues[_relevanceStorageKey(id, 'name')] ??
           fallback?.name ??
-          'Novo parametro',
+          'Novo parâmetro',
       description:
           notebookValues[_relevanceStorageKey(id, 'description')] ??
           fallback?.description ??
-          'Descreva o criterio narrativo.',
+          'Descreva o critério narrativo.',
       weight:
           (double.tryParse(
                     notebookValues[_relevanceStorageKey(id, 'weight')] ?? '',
@@ -8451,8 +8451,8 @@ _RelevanceParameter _createBlankRelevanceParameter(
   return _RelevanceParameter(
     id: id,
     symbol: 'P$index',
-    name: 'Novo parametro',
-    description: 'Descreva o criterio narrativo.',
+    name: 'Novo parâmetro',
+    description: 'Descreva o critério narrativo.',
     weight: 0.10,
   );
 }

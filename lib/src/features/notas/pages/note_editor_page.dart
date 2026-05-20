@@ -12,6 +12,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_color
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/projects/pages/project_page.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
+import 'package:projeto_integrado_mobile/src/shared/utils/pt_br_text.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/synopsis_scroll_box.dart';
 
 part 'note_editor/note_association_sheet.dart';
@@ -399,7 +400,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                             child: TextField(
                               controller: _titleController,
                               decoration: notesInputDecoration(
-                                labelText: 'Titulo',
+                                labelText: 'Título',
                                 prefixIcon: const Icon(Icons.title_rounded),
                               ),
                               textInputAction: TextInputAction.done,

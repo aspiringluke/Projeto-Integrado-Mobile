@@ -244,9 +244,13 @@ class _FolderMetadataEditorSheetState
                       title: 'Classificações',
                       subtitle: _metadata.tagGroups.isEmpty
                           ? 'Nenhuma criada'
-                          : '${_metadata.tagGroups.length} grupo(s)',
+                          : ptBrCount(
+                              _metadata.tagGroups.length,
+                              singular: 'grupo',
+                              plural: 'grupos',
+                            ),
                       hintText:
-                          'Crie grupos para organizar tags por intenção e encontrar depois com menos atrito.',
+                          'Crie grupos para organizar tags por intenção e encontrar depois com mais facilidade.',
                       isExpanded: true,
                       onToggle: () {},
                       child: Column(
@@ -430,7 +434,7 @@ class _FolderTagGroupEditDialogState extends State<_FolderTagGroupEditDialog> {
               builder: (context, value, _) {
                 final label = value.text.trim();
                 return _ClassificationPreviewChip(
-                  label: label.isEmpty ? 'Preview' : label,
+                  label: label.isEmpty ? 'Prévia' : label,
                   color: _selectedColor,
                 );
               },
@@ -706,7 +710,7 @@ class _FolderTagGroupComposer extends StatelessWidget {
                     builder: (context, value, _) {
                       final label = value.text.trim();
                       return _ClassificationPreviewChip(
-                        label: label.isEmpty ? 'Preview' : label,
+                        label: label.isEmpty ? 'Prévia' : label,
                         color: selectedColor,
                       );
                     },

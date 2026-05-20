@@ -37,7 +37,7 @@ class _CharacterProfilePhotoSection extends StatelessWidget {
           const SizedBox(height: 5),
           CreateProjectDialogFieldDescription(
             text:
-                'Escolha a imagem principal do personagem. GIF também é suportado. O enquadramento abaixo replica a mesma moldura usada no card.',
+                'Escolha a imagem principal do personagem. GIF também é suportado. O enquadramento abaixo replica a mesma moldura usada no cartão.',
           ),
           const SizedBox(height: 8),
           _CharacterProfileImageEditor(

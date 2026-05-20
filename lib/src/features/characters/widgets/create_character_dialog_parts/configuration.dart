@@ -163,7 +163,7 @@ List<_RelevanceCategoryConfig> _defaultRelevanceCategories() {
       min: 2,
       max: 4.9,
       description:
-          'Têm momentos de importância pontual. Brilham ou influênciam a história em eventos específicos, mas permanecem omissos ou em segundo plano na maior parte do tempo.',
+          'Têm momentos de importância pontual. Brilham ou influenciam a história em eventos específicos, mas permanecem omissos ou em segundo plano na maior parte do tempo.',
       color: Color(0xFF8EAFF1),
     ),
     _RelevanceCategoryConfig(
@@ -171,7 +171,7 @@ List<_RelevanceCategoryConfig> _defaultRelevanceCategories() {
       min: 5,
       max: 7.9,
       description:
-          'Personagens orbitais tem grande significância para algo importante para a narrativa (como outros personagens de núcleo). A história não é sobre eles, mas mesmo assim têm grande peso em seu direcionamento.',
+          'Personagens orbitais têm grande significância para algo importante para a narrativa (como outros personagens de núcleo). A história não é sobre eles, mas mesmo assim têm grande peso em seu direcionamento.',
       color: Color(0xFFDF9C53),
     ),
     _RelevanceCategoryConfig(

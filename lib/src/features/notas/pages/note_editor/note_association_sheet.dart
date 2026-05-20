@@ -205,9 +205,13 @@ class _NoteAssociationSheetState extends State<_NoteAssociationSheet> {
                           title: 'Classificações',
                           subtitle: widget.controller.tagGroups.isEmpty
                               ? 'Nenhuma criada'
-                              : '${widget.controller.tagGroups.length} grupo(s)',
+                              : ptBrCount(
+                                  widget.controller.tagGroups.length,
+                                  singular: 'grupo',
+                                  plural: 'grupos',
+                                ),
                           hintText:
-                              'Crie grupos para organizar tags por inten\u00e7\u00e3o e achar depois com menos atrito.',
+                              'Crie grupos para organizar tags por intenção e encontrar depois com mais facilidade.',
                           isExpanded: _classificationsExpanded,
                           onToggle: () => setState(
                             () => _classificationsExpanded =
@@ -797,7 +801,7 @@ class _TagGroupComposer extends StatelessWidget {
                       final label = value.text.trim();
                       return _ClassificationPreviewChip(
                         label: label.isEmpty
-                            ? 'Preview da classificação'
+                            ? 'Prévia da classificação'
                             : label,
                         color: selectedColor,
                       );
@@ -916,7 +920,7 @@ class _TagGroupEditDialogState extends State<_TagGroupEditDialog> {
               builder: (context, value, _) {
                 final label = value.text.trim();
                 return _ClassificationPreviewChip(
-                  label: label.isEmpty ? 'Preview da classificação' : label,
+                  label: label.isEmpty ? 'Prévia da classificação' : label,
                   color: _selectedColor,
                 );
               },

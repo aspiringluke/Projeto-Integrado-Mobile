@@ -1601,8 +1601,8 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     return _RelevanceParameterConfig(
       id: id,
       symbol: 'P$index',
-      name: 'Novo parametro',
-      description: 'Descreva o criterio narrativo.',
+      name: 'Novo parâmetro',
+      description: 'Descreva o critério narrativo.',
       weight: 0.10,
     );
   }

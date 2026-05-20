@@ -161,17 +161,32 @@ class _DeleteMetricsSummary extends StatelessWidget {
       children: [
         _DeleteSummaryChip(
           icon: Icons.short_text_rounded,
-          label: '${formatCompactCount(stats.words)} palavras',
+          label: ptBrCount(
+            stats.words,
+            singular: 'palavra',
+            plural: 'palavras',
+            formatNumber: formatCompactCount,
+          ),
           tint: const Color(0xFF7A5B86),
         ),
         _DeleteSummaryChip(
           icon: Icons.onetwothree_rounded,
-          label: '${formatCompactCount(stats.characters)} caracteres',
+          label: ptBrCount(
+            stats.characters,
+            singular: 'caractere',
+            plural: 'caracteres',
+            formatNumber: formatCompactCount,
+          ),
           tint: const Color(0xFFB05C8D),
         ),
         _DeleteSummaryChip(
           icon: Icons.alternate_email_rounded,
-          label: '${formatCompactCount(stats.mentions)} menções',
+          label: ptBrCount(
+            stats.mentions,
+            singular: 'menção',
+            plural: 'menções',
+            formatNumber: formatCompactCount,
+          ),
           tint: const Color(0xFFDA6A9E),
         ),
       ],
@@ -459,7 +474,11 @@ class _MoveTargetTile extends StatelessWidget {
 
 String _folderMetadataSummary(NoteMetadata metadata) {
   if (metadata.tagGroups.isNotEmpty) {
-    return '${metadata.tagGroups.length} grupo(s)';
+    return ptBrCount(
+      metadata.tagGroups.length,
+      singular: 'grupo',
+      plural: 'grupos',
+    );
   }
 
   return 'Sem tags';
@@ -475,7 +494,8 @@ String _folderTagsSummary(NoteMetadata metadata) {
     (count, group) => count + group.tags.length,
   );
 
-  return tagCount == 0
-      ? '${metadata.tagGroups.length} grupo(s)'
-      : '${metadata.tagGroups.length} grupo(s), $tagCount tag(s)';
+  return ptBrCountSummary([
+    ptBrCount(metadata.tagGroups.length, singular: 'grupo', plural: 'grupos'),
+    if (tagCount > 0) ptBrCount(tagCount, singular: 'tag', plural: 'tags'),
+  ]);
 }

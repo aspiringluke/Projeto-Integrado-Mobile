@@ -360,7 +360,7 @@ class _AddRelevanceParameterButton extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Adicionar parametro',
+                'Adicionar parâmetro',
                 style: TextStyle(
                   color: _darkenCharacterDialogColor(projectPink, 0.18),
                   fontSize: 12,

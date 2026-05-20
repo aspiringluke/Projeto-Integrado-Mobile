@@ -8,7 +8,7 @@ typedef SynopsisViewerBuilder =
     Widget Function(BuildContext context, String text, TextStyle style);
 
 const String synopsisPlaceholderText =
-    'Esse é o campo de síntese. Uma boa síntese encapsula o máximo de informações pertinentes quanto possível na menor quantidade de palavras que puder, criando uma imagem mental precisa de o que você está falando sobre. Fale tudo explicitamente importante e deixe tudo implicitamente importante inferível nas entrelinhas e na escolha cautelosa de palavras.';
+    'Este é o campo de síntese. Uma boa síntese reúne o máximo de informações pertinentes no menor número possível de palavras, criando uma imagem mental precisa do assunto. Explicite o que for essencial e deixe o que for implícito surgir nas entrelinhas, pela escolha cuidadosa das palavras.';
 
 class SynopsisScrollBox extends StatefulWidget {
   final ScrollController controller;
