@@ -49,14 +49,11 @@ A implementação prioriza:
 
 - navegação fluida entre projetos, personagens, notas e diagramas;
 - estrutura de gerenciamento de conteúdo com pastas e itens organizáveis por drag-and-drop;
-- editor de diagramas com nós, arestas e grupos para modelar relações narrativas de forma visual;
 - suporte a imagens, tags e campos customizáveis em fichas de personagens e ideias;
-- modo de desempenho que reduz animações e sombras para rodar melhor em dispositivos de entrada;
-- validação de limites de sinopse e persistência local para evitar perda de dados.
 
 Essa base Flutter permite que o aplicativo una edição de texto, organização de roteiro e ferramentas visuais em um único produto, mantendo o foco na criação e no suporte ao usuário criativo.
 
-É importante ressaltar que na versão MVP desse projeto, as implementações de editor de diagramas e gerenciamento de conteúdo com drag-and-drop não foram concretizadas.
+É importante ressaltar que na versão MVP desse projeto, as implementações de editor de diagramas, limite de sinopse e modo desempenho não foram concretizadas.
 
 ---
 
@@ -106,6 +103,10 @@ Exemplo de build:
 flutter build apk --dart-define=MISTRAL_API_KEY=sua_chave_aqui
 ```
 
+Exemplo com arquivo:
+
+```bash
+flutter [run | build apk] -- dart-define-from-file=[config.json | .env]
 ---
 
 ## 🗂 Estrutura das Pastas
@@ -136,30 +137,9 @@ Projeto-Integrado-Mobile/
 │       │   └── tags/
 │       └── shared/
 ├── linux/
-├── ref/
-│   └── sqlite/
 ├── test/
 └── web/
 ```
-
-Resumo da responsabilidade de cada área:
-
-- `android/`, `linux/` e `web/`: arquivos específicos de plataforma para build e execução;
-- `assets/images/`: imagens utilizadas pela interface e pelos fluxos visuais do app;
-- `docs/`: documentação de engenharia, casos de uso e diagramas;
-- `lib/src/app/`: estrutura principal da aplicação, incluindo roteamento, widgets globais e acesso a banco;
-- `lib/src/features/`: organização por funcionalidades centrais do produto;
-- `lib/src/features/characters/`: cadastro, edição e visualização de personagens;
-- `lib/src/features/chatbot/`: recursos conversacionais e serviços ligados à IA;
-- `lib/src/features/notas/`: criação e edição de notas de apoio narrativo;
-- `lib/src/features/projects/`: gerenciamento dos projetos e seus dados principais;
-- `lib/src/features/diagrams/`: base para os recursos visuais de modelagem narrativa;
-- `lib/src/features/tags/`: categorização e organização complementar de conteúdo, presente na estrutura de `dev`;
-- `lib/src/shared/` e `lib/src/features/shared/`: utilitários e componentes reutilizados entre módulos;
-- `ref/sqlite/`: materiais auxiliares relacionados ao uso de SQLite;
-- `test/`: testes automatizados do projeto.
-
-Essa divisão facilita a manutenção, porque cada funcionalidade cresce dentro do seu próprio módulo sem concentrar regras de negócio, telas e serviços em um único lugar.
 
 ---
 
@@ -239,8 +219,6 @@ Ao final da utilização, o app se mostra como uma central de organização cria
    git clone https://github.com/aspiringluke/Projeto-Integrado-Mobile.git
    ```
 
-2. **Instalar as dependências**
+2. **Baixar o repositório sem usar Git**
 
-   ```bash
-   flutter pub get
-   ```
+   Acesse a página do projeto no GitHub, clique em `Code` e depois em `Download ZIP`. Após extrair os arquivos em sua máquina, abra a pasta do projeto normalmente na IDE de sua preferência.
