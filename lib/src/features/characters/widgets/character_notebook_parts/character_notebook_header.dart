@@ -2,19 +2,13 @@ part of '../character_notebook_page.dart';
 
 class _NotebookHeader extends StatelessWidget {
   final CharacterCardData data;
-  final bool isImageControlsExpanded;
   final VoidCallback onClose;
-  final VoidCallback onToggleImageControls;
   final ValueChanged<ProjectImageData> onProfileImageChanged;
-  final ValueChanged<double> onProfileScaleChanged;
 
   const _NotebookHeader({
     required this.data,
-    required this.isImageControlsExpanded,
     required this.onClose,
-    required this.onToggleImageControls,
     required this.onProfileImageChanged,
-    required this.onProfileScaleChanged,
   });
 
   @override
@@ -45,10 +39,7 @@ class _NotebookHeader extends StatelessWidget {
             children: [
               _NotebookHeaderCoverBackground(
                 data: data,
-                isImageControlsExpanded: isImageControlsExpanded,
-                onToggleImageControls: onToggleImageControls,
                 onProfileImageChanged: onProfileImageChanged,
-                onProfileScaleChanged: onProfileScaleChanged,
               ),
               Positioned.fill(
                 child: IgnorePointer(
@@ -234,26 +225,71 @@ class _NotebookHeaderTitleBlock extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           if (data.alias.trim().isNotEmpty)
-            Text(
-              data.alias,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: const Color(0xFFF1ECF0).withValues(alpha: 0.74),
-                fontSize: 12.5,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w600,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.14),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
+            _NotebookHeaderAliasBubble(alias: data.alias, color: data.accent),
         ],
+      ),
+    );
+  }
+}
+
+class _NotebookHeaderAliasBubble extends StatelessWidget {
+  final String alias;
+  final Color color;
+
+  const _NotebookHeaderAliasBubble({required this.alias, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 240),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.46),
+            width: 0.85,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.14),
+              color.withValues(alpha: 0.26),
+              color.withValues(alpha: 0.16),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.12),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          child: Text(
+            alias,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.94),
+              fontSize: 10.5,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w700,
+              height: 1.0,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -261,17 +297,11 @@ class _NotebookHeaderTitleBlock extends StatelessWidget {
 
 class _NotebookHeaderCoverBackground extends StatelessWidget {
   final CharacterCardData data;
-  final bool isImageControlsExpanded;
-  final VoidCallback onToggleImageControls;
   final ValueChanged<ProjectImageData> onProfileImageChanged;
-  final ValueChanged<double> onProfileScaleChanged;
 
   const _NotebookHeaderCoverBackground({
     required this.data,
-    required this.isImageControlsExpanded,
-    required this.onToggleImageControls,
     required this.onProfileImageChanged,
-    required this.onProfileScaleChanged,
   });
 
   @override
@@ -349,8 +379,8 @@ class _NotebookHeaderCoverBackground extends StatelessWidget {
                   },
                   child: _NotebookHeaderCoverImageLayer(
                     profileImage: profileImage,
-                    sigma: 0,
-                    opacity: 0.9,
+                    sigma: 0.5,
+                    opacity: 0.7,
                   ),
                 );
               },
@@ -400,18 +430,6 @@ class _NotebookHeaderCoverBackground extends StatelessWidget {
             ),
           ),
         ),
-        if (data.profileImage.bytes != null)
-          Positioned(
-            right: 14,
-            bottom: 10,
-            child: _NotebookHeaderImageControls(
-              accentColor: data.accent,
-              isExpanded: isImageControlsExpanded,
-              scale: data.profileImage.scale,
-              onToggle: onToggleImageControls,
-              onScaleChanged: onProfileScaleChanged,
-            ),
-          ),
       ],
     );
   }
@@ -449,124 +467,6 @@ class _NotebookHeaderCoverImageLayer extends StatelessWidget {
               imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
               child: image,
             ),
-    );
-  }
-}
-
-class _NotebookHeaderImageControls extends StatelessWidget {
-  final Color accentColor;
-  final bool isExpanded;
-  final double scale;
-  final VoidCallback onToggle;
-  final ValueChanged<double> onScaleChanged;
-
-  const _NotebookHeaderImageControls({
-    required this.accentColor,
-    required this.isExpanded,
-    required this.scale,
-    required this.onToggle,
-    required this.onScaleChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          width: isExpanded ? 168 : 46,
-          height: 42,
-          padding: EdgeInsets.only(
-            left: 6,
-            right: isExpanded ? 10 : 6,
-            top: 5,
-            bottom: 5,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.38)),
-            boxShadow: [
-              BoxShadow(
-                color: accentColor.withValues(alpha: 0.12),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _NotebookHeaderImageControlButton(
-                icon: isExpanded
-                    ? Icons.keyboard_arrow_right_rounded
-                    : Icons.tune_rounded,
-                tooltip: isExpanded ? 'Recolher ajuste' : 'Ajustar imagem',
-                onTap: onToggle,
-              ),
-              if (isExpanded) ...[
-                const SizedBox(width: 4),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 4,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 6,
-                      ),
-                      overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 12,
-                      ),
-                      activeTrackColor: Colors.white.withValues(alpha: 0.92),
-                      inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
-                      thumbColor: Colors.white,
-                    ),
-                    child: Slider(
-                      value: scale.clamp(1.0, 3.0).toDouble(),
-                      min: 1,
-                      max: 3,
-                      onChanged: onScaleChanged,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NotebookHeaderImageControlButton extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _NotebookHeaderImageControlButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: Icon(icon, size: 20, color: Colors.white),
-          ),
-        ),
-      ),
     );
   }
 }

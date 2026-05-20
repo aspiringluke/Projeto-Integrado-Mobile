@@ -119,7 +119,6 @@ class _ProjectPageState extends State<ProjectPage> {
   int _characterLoadRequestToken = 0;
   bool _hasPendingProjectChanges = false;
   bool _isClosing = false;
-  bool _isBannerImageControlsExpanded = false;
   late String _lastPersistedProjectTitle;
   late final ValueNotifier<String> _projectTitleNotifier;
 
@@ -262,16 +261,6 @@ class _ProjectPageState extends State<ProjectPage> {
 
   void _updateBannerCoverImage(ProjectImageData image) {
     _updateProjectDraft(_projectDraft.copyWith(coverImage: image));
-  }
-
-  void _setBannerCoverScale(double scale) {
-    _updateBannerCoverImage(_projectDraft.coverImage.copyWith(scale: scale));
-  }
-
-  void _toggleBannerImageControls() {
-    setState(() {
-      _isBannerImageControlsExpanded = !_isBannerImageControlsExpanded;
-    });
   }
 
   void _setActiveSection(ProjectSectionId section) {
@@ -712,18 +701,6 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
           ),
         ),
-        if (coverImage.bytes != null)
-          Positioned(
-            right: 14,
-            bottom: 10,
-            child: _ProjectBannerImageControls(
-              accentColor: accentColor,
-              isExpanded: _isBannerImageControlsExpanded,
-              scale: coverImage.scale,
-              onToggle: _toggleBannerImageControls,
-              onScaleChanged: _setBannerCoverScale,
-            ),
-          ),
       ],
     );
     return PopScope<void>(

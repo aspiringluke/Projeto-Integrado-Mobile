@@ -81,7 +81,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   _CharacterColorTarget _activeColorTarget = _CharacterColorTarget.cover;
   bool _hasPendingParentSync = false;
   bool _didFlushParentSync = false;
-  bool _isHeaderImageControlsExpanded = false;
 
   DateTime? _birthdayValue;
   double? _heightCmValue;
@@ -301,11 +300,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     builder: (context, headerDraft, _) {
                       return _NotebookHeader(
                         data: headerDraft,
-                        isImageControlsExpanded: _isHeaderImageControlsExpanded,
                         onClose: _closePage,
-                        onToggleImageControls: _toggleHeaderImageControls,
                         onProfileImageChanged: _updateProfileImage,
-                        onProfileScaleChanged: _setProfileImageScale,
                       );
                     },
                   ),
@@ -1150,12 +1146,6 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       characterName: _draft.name,
       profileImage: _draft.profileImage,
     );
-  }
-
-  void _toggleHeaderImageControls() {
-    setState(() {
-      _isHeaderImageControlsExpanded = !_isHeaderImageControlsExpanded;
-    });
   }
 
   void _updateActiveColor(Color color) {

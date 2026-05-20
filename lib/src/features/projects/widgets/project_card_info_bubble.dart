@@ -200,8 +200,8 @@ class _ProjectCharacterThumbnail extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.white.withValues(alpha: 0.18),
-            Colors.white.withValues(alpha: 0.04),
+            Colors.white.withValues(alpha: 0.08),
+            Colors.white.withValues(alpha: 0.02),
             Colors.transparent,
           ],
           stops: const [0.0, 0.32, 0.72],
