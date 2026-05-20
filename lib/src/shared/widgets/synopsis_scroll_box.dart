@@ -103,26 +103,20 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
             _refreshScrollbar();
             return false;
           },
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (_) {
-              _refreshScrollbar();
-              return false;
-            },
-            child: ScrollConfiguration(
-              behavior: scrollBehavior,
-              child: widget.childIsScrollable
-                  ? widget.child
-                  : SingleChildScrollView(
-                      controller: widget.controller,
-                      physics: const BouncingScrollPhysics(
-                        parent: ClampingScrollPhysics(),
-                      ),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: widget.child,
-                      ),
+          child: ScrollConfiguration(
+            behavior: scrollBehavior,
+            child: widget.childIsScrollable
+                ? widget.child
+                : SingleChildScrollView(
+                    controller: widget.controller,
+                    physics: const BouncingScrollPhysics(
+                      parent: ClampingScrollPhysics(),
                     ),
-            ),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: widget.child,
+                    ),
+                  ),
           ),
         );
 

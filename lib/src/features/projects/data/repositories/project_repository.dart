@@ -65,6 +65,10 @@ class ProjectRepository {
     return service.updateProject(project);
   }
 
+  Future<(bool, String)> saveProjectOrdering(List<ProjectRecord> projects) {
+    return service.updateProjectOrdering(projects);
+  }
+
   Future<(bool, String)> updateProject(
     int id, {
     String? title,

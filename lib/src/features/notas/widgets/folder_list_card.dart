@@ -24,7 +24,6 @@ class FolderListCard extends StatefulWidget {
   final bool isPinned;
   final List<String> summaryTags;
   final int noteCount;
-  final Future<int> Function(int folderId)? noteCountLoader;
   final ValueChanged<int>? onAcceptNote;
   final ValueChanged<int>? onAcceptFolder;
   final FolderPreviewData? preview;
@@ -43,7 +42,6 @@ class FolderListCard extends StatefulWidget {
     this.isPinned = false,
     this.summaryTags = const <String>[],
     this.noteCount = 0,
-    this.noteCountLoader,
     this.onAcceptNote,
     this.onAcceptFolder,
     this.preview,
@@ -294,17 +292,7 @@ class _FolderListCardState extends State<FolderListCard> {
             );
           }
 
-          if (widget.noteCountLoader == null || widget.folder.id == null) {
-            return buildCard(widget.noteCount);
-          }
-
-          return FutureBuilder<int>(
-            future: widget.noteCountLoader!(widget.folder.id!),
-            builder: (context, snapshot) {
-              final resolvedCount = snapshot.data ?? widget.noteCount;
-              return buildCard(resolvedCount);
-            },
-          );
+          return buildCard(widget.noteCount);
         },
       ),
     );
@@ -322,6 +310,9 @@ class _FolderListCardState extends State<FolderListCard> {
             tint: group.color,
           ),
         );
+        if (chips.length >= 6) {
+          return chips;
+        }
       }
     }
 

@@ -240,12 +240,12 @@ class NoteEditorController extends ChangeNotifier {
     );
     _folderId = targetFolderId;
 
-    final result = await repository.updateNote(
-      noteId,
-      _title.trim().isEmpty ? 'Sem título' : _title.trim(),
-      _description,
-      targetFolderId,
-      _color,
+    final result = await repository.saveNote(
+      id: noteId,
+      titulo: _title.trim().isEmpty ? 'Sem título' : _title.trim(),
+      descricao: _description,
+      idPasta: targetFolderId,
+      color: _color,
       metadata: _metadata,
     );
 

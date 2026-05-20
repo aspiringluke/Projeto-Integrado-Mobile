@@ -19,56 +19,8 @@ import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_card_w
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 
-enum _NotesContentScope { all, notes, folders }
-
-enum _SelectionKind { note, folder }
-
-abstract class _NotesSubPageActions {
-  Future<void> createNoteFromFab();
-  Future<void> createFolderFromFab();
-  Future<void> onPrimaryActionPressed();
-}
-
-class NotesSubPageController {
-  _NotesSubPageActions? _actions;
-
-  void _attach(_NotesSubPageActions actions) {
-    _actions = actions;
-  }
-
-  void _detach(_NotesSubPageActions actions) {
-    if (identical(_actions, actions)) {
-      _actions = null;
-    }
-  }
-
-  Future<void> createNoteFromFab() async {
-    await _actions?.createNoteFromFab();
-  }
-
-  Future<void> createFolderFromFab() async {
-    await _actions?.createFolderFromFab();
-  }
-
-  Future<void> onPrimaryActionPressed() async {
-    await _actions?.onPrimaryActionPressed();
-  }
-}
-
-class _SelectedItem {
-  final _SelectionKind kind;
-  final int id;
-
-  const _SelectedItem({required this.kind, required this.id});
-
-  @override
-  bool operator ==(Object other) {
-    return other is _SelectedItem && other.kind == kind && other.id == id;
-  }
-
-  @override
-  int get hashCode => Object.hash(kind, id);
-}
+part 'notes_sub_page_parts/notes_sub_page_models.dart';
+part 'notes_sub_page_parts/notes_sub_page_breadcrumb.dart';
 
 class NotesSubPage extends StatefulWidget {
   final NotesSubPageController? controller;
@@ -98,6 +50,7 @@ class NotesSubPageState extends State<NotesSubPage>
   final ScrollController _contentScrollController = ScrollController();
   final Set<_SelectedItem> _selectedItems = <_SelectedItem>{};
   Map<int, ContentStats> _folderStatsById = <int, ContentStats>{};
+  Map<int, int> _folderNoteCountById = <int, int>{};
   Map<int, FolderPreviewData> _folderPreviewById = <int, FolderPreviewData>{};
   int _statsRequestToken = 0;
   bool _showContentDivider = false;
@@ -673,19 +626,28 @@ class NotesSubPageState extends State<NotesSubPage>
         .toList(growable: false);
 
     final folderStatsById = <int, ContentStats>{};
+    final folderNoteCountById = <int, int>{};
     final folderPreviewById = <int, FolderPreviewData>{};
 
     if (folderIds.isNotEmpty) {
-      final folderResults = await Future.wait(
+      final statsFuture = Future.wait(
         folderIds.map(
           (folderId) => _folderController.getFolderTreeStats(folderId),
         ),
       );
-      final previewResults = await Future.wait(
+      final countFuture = Future.wait(
+        folderIds.map(
+          (folderId) => _folderController.countNotesInFolderTree(folderId),
+        ),
+      );
+      final previewFuture = Future.wait(
         folderIds.map(
           (folderId) => _folderController.getFolderTreePreview(folderId),
         ),
       );
+      final folderResults = await statsFuture;
+      final countResults = await countFuture;
+      final previewResults = await previewFuture;
 
       if (!mounted || requestToken != _statsRequestToken) return;
 
@@ -694,6 +656,11 @@ class NotesSubPageState extends State<NotesSubPage>
         final folderId = folderIds[index];
         if (result.$1 && result.$2 != null) {
           folderStatsById[folderId] = result.$2!;
+        }
+
+        final countResult = countResults[index];
+        if (countResult.$1) {
+          folderNoteCountById[folderId] = countResult.$2;
         }
 
         final previewResult = previewResults[index];
@@ -707,6 +674,7 @@ class NotesSubPageState extends State<NotesSubPage>
 
     setState(() {
       _folderStatsById = folderStatsById;
+      _folderNoteCountById = folderNoteCountById;
       _folderPreviewById = folderPreviewById;
     });
   }
@@ -1220,6 +1188,9 @@ class NotesSubPageState extends State<NotesSubPage>
                                   folderStats:
                                       _folderStatsById[folderId] ??
                                       const ContentStats.zero(),
+                                  noteCount: folderId == null
+                                      ? 0
+                                      : _folderNoteCountById[folderId] ?? 0,
                                   preview: folderId == null
                                       ? null
                                       : _folderPreviewById[folderId],
@@ -1242,12 +1213,6 @@ class NotesSubPageState extends State<NotesSubPage>
                                           _SelectionKind.folder,
                                           folderId,
                                         ),
-                                  noteCountLoader: (folderId) async {
-                                    final result = await _folderController
-                                        .countNotesInFolderTree(folderId);
-                                    if (!result.$1) return 0;
-                                    return result.$2;
-                                  },
                                   onAcceptNote: folderId == null
                                       ? null
                                       : (noteId) => _moveNoteToFolder(
@@ -1407,111 +1372,4 @@ class _DeleteSelectionSummary {
     required this.stats,
     required this.noteTitles,
   });
-}
-
-class _NotesBreadcrumb extends StatelessWidget {
-  final List<Folder> segments;
-  final VoidCallback onHomeTap;
-  final ValueChanged<Folder> onFolderTap;
-
-  const _NotesBreadcrumb({
-    required this.segments,
-    required this.onHomeTap,
-    required this.onFolderTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = <String>[
-      'Notas',
-      ...segments
-          .map((folder) => folder.title.trim())
-          .where((title) => title.isNotEmpty),
-    ];
-    final currentIndex = labels.length - 1;
-
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        for (var index = 0; index < labels.length; index += 1) ...[
-          if (index > 0)
-            const Text(
-              '/',
-              style: TextStyle(
-                color: kNotesMutedText,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          _BreadcrumbLabel(
-            label: labels[index],
-            isCurrent: index == currentIndex,
-            onTap: index == 0
-                ? onHomeTap
-                : () => onFolderTap(segments[index - 1]),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _BreadcrumbLabel extends StatelessWidget {
-  final String label;
-  final bool isCurrent;
-  final VoidCallback onTap;
-
-  const _BreadcrumbLabel({
-    required this.label,
-    required this.isCurrent,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final baseColor = isCurrent ? kNotesText : kNotesMutedText;
-    final barWidth = isCurrent ? (label.length * 3.4).clamp(12.0, 26.0) : 0.0;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 1),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: baseColor,
-                  fontSize: isCurrent ? 16 : 14.2,
-                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 3),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                height: 2,
-                width: barWidth,
-                decoration: BoxDecoration(
-                  color: isCurrent
-                      ? kNotesPink.withValues(alpha: 0.72)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

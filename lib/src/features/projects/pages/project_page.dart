@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -20,3 +20,4 @@ import '../widgets/project_general_section.dart';
 import '../widgets/project_image_transform_view.dart';
 
 part 'project_page_shell.dart';
+part 'project_page_parts/project_page_action_widgets.dart';

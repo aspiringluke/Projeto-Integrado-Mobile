@@ -43,6 +43,19 @@ final RegExp _mentionPattern = RegExp(
   r'@[^\s\r\n`<>\[\]\(\){}@,.;:!?]+(?:\s+[^\s\r\n`<>\[\]\(\){}@,.;:!?]+)*',
   caseSensitive: false,
 );
+final RegExp _fencedCodePattern = RegExp(r'```[\s\S]*?```');
+final RegExp _markdownImagePattern = RegExp(r'!\[([^\]]*)\]\([^)]+\)');
+final RegExp _markdownLinkPattern = RegExp(r'\[([^\]]+)\]\([^)]+\)');
+final RegExp _inlineCodePattern = RegExp(r'`([^`]+)`');
+final RegExp _headingPattern = RegExp(r'^\s{0,3}#{1,6}\s*', multiLine: true);
+final RegExp _blockquotePattern = RegExp(r'^\s{0,3}>\s?', multiLine: true);
+final RegExp _listMarkerPattern = RegExp(
+  r'^\s*(?:[-*+]|\d+\.)\s+',
+  multiLine: true,
+);
+final RegExp _emphasisPattern = RegExp(r'[*_~]');
+final RegExp _htmlTagPattern = RegExp(r'<[^>]+>');
+final RegExp _whitespacePattern = RegExp(r'\s+');
 
 String formatCompactCount(int value) {
   final absValue = value.abs();
@@ -83,28 +96,25 @@ String buildNotePreview(String text, {int maxLength = 120}) {
 String _normalizePreviewText(String text) {
   var value = text;
 
-  value = value.replaceAll(RegExp(r'```[\s\S]*?```'), ' ');
+  value = value.replaceAll(_fencedCodePattern, ' ');
   value = value.replaceAllMapped(
-    RegExp(r'!\[([^\]]*)\]\([^)]+\)'),
+    _markdownImagePattern,
     (match) => match.group(1) ?? '',
   );
   value = value.replaceAllMapped(
-    RegExp(r'\[([^\]]+)\]\([^)]+\)'),
+    _markdownLinkPattern,
     (match) => match.group(1) ?? '',
   );
   value = value.replaceAllMapped(
-    RegExp(r'`([^`]+)`'),
+    _inlineCodePattern,
     (match) => match.group(1) ?? '',
   );
-  value = value.replaceAll(RegExp(r'^\s{0,3}#{1,6}\s*', multiLine: true), '');
-  value = value.replaceAll(RegExp(r'^\s{0,3}>\s?', multiLine: true), '');
-  value = value.replaceAll(
-    RegExp(r'^\s*(?:[-*+]|\d+\.)\s+', multiLine: true),
-    '',
-  );
-  value = value.replaceAll(RegExp(r'[*_~]'), '');
-  value = value.replaceAll(RegExp(r'<[^>]+>'), ' ');
-  value = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+  value = value.replaceAll(_headingPattern, '');
+  value = value.replaceAll(_blockquotePattern, '');
+  value = value.replaceAll(_listMarkerPattern, '');
+  value = value.replaceAll(_emphasisPattern, '');
+  value = value.replaceAll(_htmlTagPattern, ' ');
+  value = value.replaceAll(_whitespacePattern, ' ').trim();
 
   return value;
 }

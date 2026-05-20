@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -15,13 +16,15 @@ class FolderController extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  List<Folder> _folders = const [];
+  final List<Folder> _folders = <Folder>[];
+  late final UnmodifiableListView<Folder> _foldersView =
+      UnmodifiableListView<Folder>(_folders);
   int? _currentParentFolderId;
   int _loadRequestToken = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<Folder> get folders => List.unmodifiable(_folders);
+  List<Folder> get folders => _foldersView;
   int? get currentParentFolderId => _currentParentFolderId;
 
   void _setLoading(bool value) {
@@ -54,11 +57,15 @@ class FolderController extends ChangeNotifier {
       return (false, _errorMessage);
     }
 
-    _folders = result.$2 ?? const [];
-    _folders = await _syncProtectedProjectFolders(_folders);
+    final syncedFolders = await _syncProtectedProjectFolders(
+      result.$2 ?? const <Folder>[],
+    );
     if (requestToken != _loadRequestToken) {
       return (true, null);
     }
+    _folders
+      ..clear()
+      ..addAll(syncedFolders);
     _syncFoldersToRegistry(_folders);
     notifyListeners();
     return (true, null);
@@ -322,14 +329,16 @@ class FolderController extends ChangeNotifier {
   }
 
   void _syncFoldersToRegistry(Iterable<Folder> folders) {
-    for (final folder in folders) {
-      final folderId = folder.id;
-      if (folderId == null || folderId <= 0) continue;
-      StoryRegistry.instance.registerFolder(
-        id: folderId,
-        title: folder.title,
-        accentColor: folder.color,
-      );
-    }
+    StoryRegistry.instance.upsertFolders(
+      folders
+          .where((folder) => folder.id != null && folder.id! > 0)
+          .map(
+            (folder) => RegisteredFolderRef(
+              id: folder.id!,
+              title: folder.title,
+              accentColor: folder.color,
+            ),
+          ),
+    );
   }
 }

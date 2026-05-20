@@ -145,7 +145,6 @@ class CreateProjectDialogTagsSection extends StatelessWidget {
   final CreateProjectDialogController controller;
   final TextEditingController newTagController;
   final VoidCallback onAddTag;
-  final VoidCallback onTagInputChanged;
   final InputDecoration Function({
     required String hintText,
     required Color focusedColor,
@@ -157,7 +156,6 @@ class CreateProjectDialogTagsSection extends StatelessWidget {
     required this.controller,
     required this.newTagController,
     required this.onAddTag,
-    required this.onTagInputChanged,
     required this.buildInputDecoration,
   });
 
@@ -217,7 +215,6 @@ class CreateProjectDialogTagsSection extends StatelessWidget {
                   hintText: 'Nova tag',
                   focusedColor: controller.accentColor,
                 ),
-                onChanged: (_) => onTagInputChanged(),
                 onFieldSubmitted: (_) => onAddTag(),
               ),
             ),
@@ -240,24 +237,29 @@ class CreateProjectDialogTagsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            CreateProjectDialogDraftTagPreview(
-              label: newTagController.text.trim().isEmpty
-                  ? 'Nova tag'
-                  : sanitizeProjectTagLabel(newTagController.text),
-              color: controller.newTagColor,
-            ),
-            for (final color in projectTagPalette)
-              CreateProjectDialogTagColorSwatch(
-                color: color,
-                isSelected: color == controller.newTagColor,
-                onTap: () => controller.setNewTagColor(color),
-              ),
-          ],
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: newTagController,
+          builder: (context, value, _) {
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                CreateProjectDialogDraftTagPreview(
+                  label: value.text.trim().isEmpty
+                      ? 'Nova tag'
+                      : sanitizeProjectTagLabel(value.text),
+                  color: controller.newTagColor,
+                ),
+                for (final color in projectTagPalette)
+                  CreateProjectDialogTagColorSwatch(
+                    color: color,
+                    isSelected: color == controller.newTagColor,
+                    onTap: () => controller.setNewTagColor(color),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );

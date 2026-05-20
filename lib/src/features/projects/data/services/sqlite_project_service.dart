@@ -222,6 +222,54 @@ class SqliteProjectService implements IProjectService {
     }
   }
 
+  @override
+  Future<(bool, String)> updateProjectOrdering(
+    List<ProjectRecord> projects,
+  ) async {
+    final records = projects
+        .where((project) => project.id != null)
+        .toList(growable: false);
+    if (records.isEmpty) {
+      return (true, 'Nenhum projeto para ordenar');
+    }
+
+    final conn = await getConnection();
+    final now = _nowIso();
+
+    try {
+      conn.execute('BEGIN IMMEDIATE');
+      for (final project in records) {
+        conn.execute(
+          '''
+          UPDATE Projeto
+          SET
+            fixado = ?,
+            ordemNaoFixada = ?,
+            lastModified = ?,
+            lastAccessed = ?
+          WHERE idProjeto = ?
+          ''',
+          [
+            project.isPinned ? 1 : 0,
+            project.unpinnedIndex,
+            now,
+            project.lastAccessed.toIso8601String(),
+            project.id,
+          ],
+        );
+      }
+      conn.execute('COMMIT');
+      return (true, 'OrdenaÃ§Ã£o dos projetos atualizada');
+    } catch (error) {
+      try {
+        conn.execute('ROLLBACK');
+      } catch (_) {}
+      return (false, _cleanError(error));
+    } finally {
+      conn.close();
+    }
+  }
+
   ProjectRecord _mapProject(Map<String, Object?> row) {
     return ProjectRecord(
       id: row['idProjeto'] as int?,

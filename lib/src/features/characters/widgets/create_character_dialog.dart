@@ -19,6 +19,7 @@ import '../utils/characters_utils.dart';
 import 'character_card_visuals.dart';
 import 'character_fields.dart';
 import 'character_placeholder_texts.dart';
+part 'create_character_dialog_parts/draft.dart';
 
 part 'create_character_dialog_parts/configuration.dart';
 part 'create_character_dialog_parts/metadata_fields.dart';
@@ -33,52 +34,6 @@ Future<CreateCharacterDraft?> showCreateCharacterDialog(BuildContext context) {
     barrierDismissible: true,
     builder: (_) => const _CreateCharacterDialog(),
   );
-}
-
-class CreateCharacterDraft {
-  final String name;
-  final String synopsis;
-  final String motto;
-  final String alias;
-  final String formationsAndOccupations;
-  final String titles;
-  final int birthDay;
-  final int birthMonth;
-  final double weightKg;
-  final double heightCm;
-  final String genderTag;
-  final String sexualityTag;
-  final String ethnicityTag;
-  final String functionTag;
-  final String relevanceTag;
-  final Map<String, String> notebookComplexityValues;
-  final Set<CharacterProfileFieldId> visibleProfileFields;
-  final Color coverColor;
-  final Color accentColor;
-  final ProjectImageData profileImage;
-
-  const CreateCharacterDraft({
-    required this.name,
-    required this.synopsis,
-    required this.motto,
-    required this.alias,
-    required this.formationsAndOccupations,
-    required this.titles,
-    required this.birthDay,
-    required this.birthMonth,
-    required this.weightKg,
-    required this.heightCm,
-    required this.genderTag,
-    required this.sexualityTag,
-    required this.ethnicityTag,
-    required this.functionTag,
-    required this.relevanceTag,
-    required this.notebookComplexityValues,
-    required this.visibleProfileFields,
-    required this.coverColor,
-    required this.accentColor,
-    required this.profileImage,
-  });
 }
 
 const double _characterDialogPrefixWidth = 124;
@@ -150,7 +105,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _weightUnit = WeightUnit.kilograms;
     _heightController = TextEditingController();
     _weightController = TextEditingController();
-    _synopsisController.addListener(_refresh);
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
     _dialogController = CreateProjectDialogController(availableTags: const []);
@@ -194,7 +148,6 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     _imageController.dispose();
     _dialogController.removeListener(_refresh);
     _dialogController.dispose();
-    _synopsisController.removeListener(_refresh);
     _nameController.dispose();
     _synopsisController.dispose();
     _mottoController.dispose();
@@ -358,17 +311,22 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                             focusedColor: _dialogController.accentColor,
                           ),
                           const SizedBox(height: 10),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              return CreateProjectDialogSynopsisField(
-                                controller: _synopsisController,
-                                scrollController: _synopsisScrollController,
-                                textStyle: _synopsisTextStyle,
-                                height: _calculateSynopsisHeight(
-                                  constraints.maxWidth,
-                                ),
-                                focusedBorderColor:
-                                    _dialogController.accentColor,
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _synopsisController,
+                            builder: (context, value, child) {
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return CreateProjectDialogSynopsisField(
+                                    controller: _synopsisController,
+                                    scrollController: _synopsisScrollController,
+                                    textStyle: _synopsisTextStyle,
+                                    height: _calculateSynopsisHeight(
+                                      constraints.maxWidth,
+                                    ),
+                                    focusedBorderColor:
+                                        _dialogController.accentColor,
+                                  );
+                                },
                               );
                             },
                           ),

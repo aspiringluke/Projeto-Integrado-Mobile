@@ -68,7 +68,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     super.initState();
     _titleController = TextEditingController();
     _synopsisController = TextEditingController();
-    _synopsisController.addListener(_onSynopsisTextChanged);
     _newTagController = TextEditingController();
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
@@ -86,17 +85,12 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _imageController.dispose();
     _dialogController.removeListener(_onDialogControllerChanged);
     _dialogController.dispose();
-    _synopsisController.removeListener(_onSynopsisTextChanged);
     _titleController.dispose();
     _synopsisController.dispose();
     _newTagController.dispose();
     _contentScrollController.dispose();
     _synopsisScrollController.dispose();
     super.dispose();
-  }
-
-  void _onSynopsisTextChanged() {
-    setState(() {});
   }
 
   void _onDialogControllerChanged() {
@@ -238,17 +232,22 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             buildInputDecoration: _buildInputDecoration,
                           ),
                           const SizedBox(height: 10),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              return CreateProjectDialogSynopsisField(
-                                controller: _synopsisController,
-                                scrollController: _synopsisScrollController,
-                                textStyle: _synopsisTextStyle,
-                                height: _calculateSynopsisHeight(
-                                  constraints.maxWidth,
-                                ),
-                                focusedBorderColor:
-                                    _dialogController.accentColor,
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _synopsisController,
+                            builder: (context, value, child) {
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return CreateProjectDialogSynopsisField(
+                                    controller: _synopsisController,
+                                    scrollController: _synopsisScrollController,
+                                    textStyle: _synopsisTextStyle,
+                                    height: _calculateSynopsisHeight(
+                                      constraints.maxWidth,
+                                    ),
+                                    focusedBorderColor:
+                                        _dialogController.accentColor,
+                                  );
+                                },
                               );
                             },
                           ),
@@ -257,7 +256,6 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                             controller: _dialogController,
                             newTagController: _newTagController,
                             onAddTag: _addTagFromInput,
-                            onTagInputChanged: () => setState(() {}),
                             buildInputDecoration: _buildInputDecoration,
                           ),
                           const SizedBox(height: 10),

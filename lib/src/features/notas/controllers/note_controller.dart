@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -18,13 +19,16 @@ class NoteController extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  List<Note> _notes = const [];
+  final List<Note> _notes = <Note>[];
+  late final UnmodifiableListView<Note> _notesView = UnmodifiableListView<Note>(
+    _notes,
+  );
   int? _currentFolderId;
   int _loadRequestToken = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<Note> get notes => List.unmodifiable(_notes);
+  List<Note> get notes => _notesView;
   int? get currentFolderId => _currentFolderId;
 
   void _setLoading(bool value) {
@@ -53,12 +57,14 @@ class NoteController extends ChangeNotifier {
     _setLoading(false);
 
     if (!result.$1) {
-      _notes = const [];
+      _notes.clear();
       _setError(result.$3 ?? 'Falha ao listar notas');
       return (false, _errorMessage);
     }
 
-    _notes = result.$2 ?? const [];
+    _notes
+      ..clear()
+      ..addAll(result.$2 ?? const <Note>[]);
     await _syncNoteMentions(_notes);
     if (requestToken != _loadRequestToken) {
       return (true, null);
@@ -204,26 +210,31 @@ class NoteController extends ChangeNotifier {
   }
 
   Future<void> _syncNoteMentions(List<Note> notes) async {
-    final result = await repository.listAllNotes();
+    final result = await repository.listNoteRegistryRefs();
     if (result.$1 && result.$2 != null) {
-      for (final note in result.$2!) {
-        StoryRegistry.instance.registerNote(
-          id: note.id ?? 0,
-          title: note.title,
-          accentColor: note.color,
-        );
-      }
+      StoryRegistry.instance.syncNotes(
+        result.$2!.map(
+          (note) => RegisteredNoteRef(
+            id: note.id,
+            title: note.title,
+            accentColor: note.color,
+          ),
+        ),
+      );
       return;
     }
 
-    for (final note in notes) {
-      if (note.id == null) continue;
-      StoryRegistry.instance.registerNote(
-        id: note.id!,
-        title: note.title,
-        accentColor: note.color,
-      );
-    }
+    StoryRegistry.instance.syncNotes(
+      notes
+          .where((note) => note.id != null)
+          .map(
+            (note) => RegisteredNoteRef(
+              id: note.id!,
+              title: note.title,
+              accentColor: note.color,
+            ),
+          ),
+    );
   }
 
   Future<NoteMetadata> _resolveDraftMetadata(int? folderId) async {

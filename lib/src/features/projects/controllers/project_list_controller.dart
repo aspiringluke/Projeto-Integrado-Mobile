@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -67,6 +68,10 @@ class ProjectListController extends ChangeNotifier {
   final List<ProjectListItem> _projects = <ProjectListItem>[];
   final List<ProjectTagData> _availableTags = <ProjectTagData>[];
   final List<CharacterListItem> _allCharacters = <CharacterListItem>[];
+  late final UnmodifiableListView<ProjectListItem> _projectView =
+      UnmodifiableListView<ProjectListItem>(_projects);
+  late final UnmodifiableListView<ProjectTagData> _availableTagView =
+      UnmodifiableListView<ProjectTagData>(_availableTags);
   bool _isLoading = false;
   String? _errorMessage;
   int _loadRequestToken = 0;
@@ -86,8 +91,8 @@ class ProjectListController extends ChangeNotifier {
   bool get isEmpty => _projects.isEmpty;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<ProjectListItem> get projects => List.unmodifiable(_projects);
-  List<ProjectTagData> get availableTags => List.unmodifiable(_availableTags);
+  List<ProjectListItem> get projects => _projectView;
+  List<ProjectTagData> get availableTags => _availableTagView;
 
   Future<void> addProject({
     required String title,
@@ -298,11 +303,12 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
-    final updateResult = await _projectRepository.updateProject(
-      project.id!,
-      title: sanitizedTitle,
-      synopsis: synopsis,
-      lastAccessed: project.lastAccessed,
+    final updateResult = await _projectRepository.saveProject(
+      _projectRecordFromListItem(project).copyWith(
+        title: sanitizedTitle,
+        synopsis: synopsis,
+        lastAccessed: project.lastAccessed,
+      ),
     );
 
     if (!updateResult.$1) {
@@ -340,11 +346,12 @@ class ProjectListController extends ChangeNotifier {
     project.characterGridColumns = characterGridColumns;
     notifyListeners();
 
-    final result = await _projectRepository.updateProject(
-      project.id!,
-      characterDisplayMode: characterDisplayMode,
-      characterGridColumns: characterGridColumns,
-      lastAccessed: project.lastAccessed,
+    final result = await _projectRepository.saveProject(
+      _projectRecordFromListItem(project).copyWith(
+        characterDisplayMode: characterDisplayMode,
+        characterGridColumns: characterGridColumns,
+        lastAccessed: project.lastAccessed,
+      ),
     );
 
     if (!result.$1) {
@@ -405,15 +412,44 @@ class ProjectListController extends ChangeNotifier {
     _normalizePinnedGroups();
     _updateUnpinnedSlots();
 
-    for (final project in _projects) {
-      if (project.id == null) continue;
-      await _projectRepository.updateProject(
-        project.id!,
-        isPinned: project.isPinned,
-        unpinnedIndex: project.unpinnedIndex,
-        lastAccessed: project.lastAccessed,
-      );
+    final records = _projects
+        .where((project) => project.id != null)
+        .map(
+          (project) => _projectRecordFromListItem(project).copyWith(
+            isPinned: project.isPinned,
+            unpinnedIndex: project.unpinnedIndex,
+            lastAccessed: project.lastAccessed,
+          ),
+        )
+        .toList(growable: false);
+    if (records.isEmpty) return;
+
+    final result = await _projectRepository.saveProjectOrdering(records);
+    if (!result.$1) {
+      _setError(result.$2);
+      notifyListeners();
     }
+  }
+
+  ProjectRecord _projectRecordFromListItem(ProjectListItem project) {
+    return ProjectRecord(
+      id: project.id,
+      title: project.title,
+      synopsis: project.synopsis,
+      tags: project.tags,
+      coverColor: project.coverColor,
+      accentColor: project.accentColor,
+      coverImage: project.coverImage,
+      accentImage: project.accentImage,
+      isPinned: project.isPinned,
+      unpinnedIndex: project.unpinnedIndex,
+      characterDisplayMode: project.characterDisplayMode,
+      characterGridColumns: project.characterGridColumns,
+      featuredCharacterIds: project.featuredCharacterIds,
+      createdAt: project.createdAt,
+      lastModified: project.lastModified,
+      lastAccessed: project.lastAccessed,
+    );
   }
 
   Future<void> _syncAutoFolderRename(String oldTitle, String newTitle) async {
@@ -532,12 +568,19 @@ class ProjectListController extends ChangeNotifier {
   }
 
   void _applyDisplayedCharacters(List<CharacterListItem> characters) {
+    final charactersByProject = <int, List<CharacterListItem>>{};
+    for (final character in characters) {
+      final projectId = character.projectId;
+      charactersByProject
+          .putIfAbsent(projectId, () => <CharacterListItem>[])
+          .add(character);
+    }
+
     for (final project in _projects) {
       project.displayedCharacters = resolveProjectShowcaseCharacters(
         selectedCharacterIds: project.featuredCharacterIds,
-        characters: characters
-            .where((character) => character.projectId == project.id)
-            .toList(growable: false),
+        characters:
+            charactersByProject[project.id] ?? const <CharacterListItem>[],
       );
     }
   }

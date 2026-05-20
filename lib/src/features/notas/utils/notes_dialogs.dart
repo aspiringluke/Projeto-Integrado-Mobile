@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/models/content_stats.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
@@ -13,6 +13,7 @@ part 'notes_dialogs/form_dialogs.dart';
 part 'notes_dialogs/confirmation_dialogs.dart';
 part 'notes_dialogs/metadata_widgets.dart';
 part 'notes_dialogs/folder_metadata_sheet.dart';
+part 'notes_dialogs/folder_metadata_sheet_widgets.dart';
 
 enum NotesCreateAction { note, folder }
 

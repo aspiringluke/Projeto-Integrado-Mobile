@@ -32,6 +32,10 @@ class CharacterRepository {
     return service.touchCharacter(id);
   }
 
+  Future<(bool, String)> saveCharacter(CharacterListItem character) {
+    return service.updateCharacter(character);
+  }
+
   Future<(bool, String)> updateCharacter(
     int id, {
     int? projectId,

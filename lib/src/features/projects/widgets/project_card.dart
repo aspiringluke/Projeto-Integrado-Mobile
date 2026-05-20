@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +24,7 @@ import '../../../shared/widgets/synopsis_scroll_box.dart';
 
 part 'project_card_header.dart';
 part 'project_card_details.dart';
+part 'project_card_parts/project_card_details_widgets.dart';
 part 'project_card_info_bubble.dart';
 
 class ProjectCard extends StatefulWidget {
@@ -126,7 +126,6 @@ class _ProjectCardState extends State<ProjectCard>
     _synopsisScrollController = ScrollController();
     _titleController = TextEditingController(text: widget.title);
     _synopsisController = TextEditingController(text: widget.synopsis);
-    _synopsisController.addListener(_handleSynopsisChanged);
     _titleFocusNode = FocusNode();
     _entranceController.forward();
   }
@@ -147,19 +146,12 @@ class _ProjectCardState extends State<ProjectCard>
   @override
   void dispose() {
     _titleController.dispose();
-    _synopsisController.removeListener(_handleSynopsisChanged);
     _synopsisController.dispose();
     _synopsisScrollController.dispose();
     _titleFocusNode.dispose();
     _entranceController.dispose();
     _expandController.dispose();
     super.dispose();
-  }
-
-  void _handleSynopsisChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _toggleExpand() {
@@ -394,7 +386,6 @@ class _ProjectCardState extends State<ProjectCard>
                                           widget.displayedCharacters,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,
-                                      synopsisText: _synopsisController.text,
                                       onCycleDateType: _cycleDateType,
                                       onToggleEditing: _toggleEditing,
                                       onProjectChanged: widget.onProjectChanged,

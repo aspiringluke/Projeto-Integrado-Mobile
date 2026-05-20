@@ -287,6 +287,44 @@ class SqliteNoteService implements INoteService {
   }
 
   @override
+  Future<(bool, List<({Color color, int id, String title})>?, String?)>
+  listNoteRegistryRefs() async {
+    final conn = await getConnection();
+    try {
+      final results = conn.select("""
+                    SELECT
+                      idNota,
+                      titulo,
+                      cor
+                    FROM Nota
+                """);
+
+      if (results.isEmpty) {
+        return (true, null, null);
+      }
+
+      return (
+        true,
+        results
+            .map(
+              (row) => (
+                id: row["idNota"] as int? ?? 0,
+                title: row["titulo"] as String? ?? '',
+                color: Color(int.parse(row["cor"] as String? ?? '0')),
+              ),
+            )
+            .where((note) => note.id > 0 && note.title.trim().isNotEmpty)
+            .toList(growable: false),
+        null,
+      );
+    } catch (e) {
+      return (false, null, cleanError(e));
+    } finally {
+      conn.close();
+    }
+  }
+
+  @override
   Future<(bool, String)> updateNote(
     int id,
     String newTitulo,

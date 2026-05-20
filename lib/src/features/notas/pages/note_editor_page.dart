@@ -1,4 +1,4 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +16,7 @@ import 'package:projeto_integrado_mobile/src/shared/utils/pt_br_text.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/synopsis_scroll_box.dart';
 
 part 'note_editor/note_association_sheet.dart';
+part 'note_editor/note_association_sheet_widgets.dart';
 part 'note_editor/note_editor_content.dart';
 part 'note_editor/mention_rendering.dart';
 part 'note_editor/note_editor_shared_widgets.dart';
@@ -404,7 +405,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                                 prefixIcon: const Icon(Icons.title_rounded),
                               ),
                               textInputAction: TextInputAction.done,
-                              onChanged: (_) => setState(() {}),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -470,7 +470,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                                     controller: _descriptionController,
                                     focusNode: _descriptionFocusNode,
                                     scrollController: _editorScrollController,
-                                    onChanged: () => setState(() {}),
+                                    onChanged: () {},
                                   ),
                           ),
                         ),

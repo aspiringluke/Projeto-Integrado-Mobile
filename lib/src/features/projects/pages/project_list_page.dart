@@ -52,15 +52,19 @@ class ProjectListPage extends StatelessWidget {
           );
         }
 
+        final projects = controller.projects;
+        final availableTags = controller.availableTags;
+
         Widget buildProjectCard(BuildContext context, int index) {
-          final project = controller.projects[index];
+          final project = projects[index];
+          final projectKey = ValueKey(project.id ?? project.title);
           final card = RepaintBoundary(
             child: ProjectCard(
               projectId: project.id,
               title: project.title,
               synopsis: project.synopsis,
               tags: project.tags,
-              availableTags: controller.availableTags,
+              availableTags: availableTags,
               coverColor: project.coverColor,
               accentColor: project.accentColor,
               coverImage: project.coverImage,
@@ -93,19 +97,19 @@ class ProjectListPage extends StatelessWidget {
 
           if (isMobileReorderEnabled) {
             return ReorderableDelayedDragStartListener(
-              key: ValueKey(project.title),
+              key: projectKey,
               index: index,
               child: card,
             );
           }
 
-          return KeyedSubtree(key: ValueKey(project.title), child: card);
+          return KeyedSubtree(key: projectKey, child: card);
         }
 
         if (!isMobileReorderEnabled) {
           return ListView.builder(
             padding: listPadding,
-            itemCount: controller.projects.length,
+            itemCount: projects.length,
             itemBuilder: buildProjectCard,
           );
         }
@@ -113,7 +117,7 @@ class ProjectListPage extends StatelessWidget {
         return ReorderableListView.builder(
           buildDefaultDragHandles: false,
           padding: listPadding,
-          itemCount: controller.projects.length,
+          itemCount: projects.length,
           onReorder: controller.reorderProjects,
           proxyDecorator: (widget, index, animation) {
             return Material(

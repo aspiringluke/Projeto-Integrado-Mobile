@@ -90,9 +90,11 @@ class _ProjectInfoButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (characters.isEmpty) {
       return const SizedBox(
-        width: 76,
-        height: 76,
-        child: Center(child: _DottedCircle()),
+        height: 52,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: _DottedCircle(diameter: _thumbnailSize),
+        ),
       );
     }
 
@@ -212,96 +214,19 @@ class _ProjectCharacterThumbnail extends StatelessWidget {
                 size: size * 0.56,
                 color: const Color(0xFF171419).withValues(alpha: 0.7),
               )
-            : _StaticProjectCharacterThumbnailImage(image: image, size: size),
+            : ProjectImageTransformView(
+                imageBytes: image.bytes!,
+                imageWidth: image.width ?? size,
+                imageHeight: image.height ?? size,
+                scale: image.scale,
+                offsetX: image.offsetX,
+                offsetY: image.offsetY,
+                viewportWidth: size,
+                viewportHeight: size,
+              ),
       ),
     );
   }
-}
-
-class _StaticProjectCharacterThumbnailImage extends StatefulWidget {
-  final ProjectImageData image;
-  final double size;
-
-  const _StaticProjectCharacterThumbnailImage({
-    required this.image,
-    required this.size,
-  });
-
-  @override
-  State<_StaticProjectCharacterThumbnailImage> createState() =>
-      _StaticProjectCharacterThumbnailImageState();
-}
-
-class _StaticProjectCharacterThumbnailImageState
-    extends State<_StaticProjectCharacterThumbnailImage> {
-  late Future<Uint8List> _imageBytes;
-
-  @override
-  void initState() {
-    super.initState();
-    _imageBytes = _resolveThumbnailBytes(widget.image.bytes!);
-  }
-
-  @override
-  void didUpdateWidget(
-    covariant _StaticProjectCharacterThumbnailImage oldWidget,
-  ) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.image.bytes != widget.image.bytes) {
-      _imageBytes = _resolveThumbnailBytes(widget.image.bytes!);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List>(
-      future: _imageBytes,
-      builder: (context, snapshot) {
-        final imageBytes = snapshot.data ?? widget.image.bytes!;
-        return ProjectImageTransformView(
-          imageBytes: imageBytes,
-          imageWidth: widget.image.width ?? widget.size,
-          imageHeight: widget.image.height ?? widget.size,
-          scale: widget.image.scale,
-          offsetX: widget.image.offsetX,
-          offsetY: widget.image.offsetY,
-          viewportWidth: widget.size,
-          viewportHeight: widget.size,
-        );
-      },
-    );
-  }
-}
-
-Future<Uint8List> _resolveThumbnailBytes(Uint8List bytes) {
-  if (!_isGifBytes(bytes)) {
-    return Future<Uint8List>.value(bytes);
-  }
-
-  return _decodeFirstGifFrame(bytes);
-}
-
-bool _isGifBytes(Uint8List bytes) {
-  if (bytes.lengthInBytes < 6) {
-    return false;
-  }
-
-  return bytes[0] == 0x47 &&
-      bytes[1] == 0x49 &&
-      bytes[2] == 0x46 &&
-      bytes[3] == 0x38 &&
-      (bytes[4] == 0x37 || bytes[4] == 0x39) &&
-      bytes[5] == 0x61;
-}
-
-Future<Uint8List> _decodeFirstGifFrame(Uint8List bytes) async {
-  final codec = await instantiateImageCodec(bytes);
-  final frame = await codec.getNextFrame();
-  final image = frame.image;
-  final data = await image.toByteData(format: ImageByteFormat.png);
-  image.dispose();
-  codec.dispose();
-  return data?.buffer.asUint8List() ?? bytes;
 }
 
 class _ProjectCharacterNamePill extends StatelessWidget {
@@ -347,13 +272,15 @@ class _ProjectCharacterNamePill extends StatelessWidget {
 }
 
 class _DottedCircle extends StatelessWidget {
-  const _DottedCircle();
+  final double diameter;
+
+  const _DottedCircle({required this.diameter});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 52,
-      height: 52,
+      width: diameter,
+      height: diameter,
       child: CustomPaint(
         painter: _DottedCirclePainter(
           color: const Color(0xFFB0B0B0),
