@@ -249,6 +249,8 @@ class CharacterQuoteStrip extends StatelessWidget {
   final TextEditingController controller;
   final bool isEditing;
   final String hintText;
+  final bool showHintText;
+  final String? tooltipText;
 
   const CharacterQuoteStrip({
     super.key,
@@ -256,10 +258,31 @@ class CharacterQuoteStrip extends StatelessWidget {
     required this.controller,
     required this.isEditing,
     this.hintText = 'Frase de efeito do personagem',
+    this.showHintText = true,
+    this.tooltipText,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tooltipTheme = Theme.of(context).copyWith(
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: const Color(0xFF181419),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+        ),
+        textStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 11.2,
+          height: 1.35,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        waitDuration: Duration.zero,
+        showDuration: const Duration(seconds: 8),
+        preferBelow: false,
+      ),
+    );
+
     return _CharacterPillSurface(
       radius: 999,
       padding: const EdgeInsets.fromLTRB(0, 0, 12, 0),
@@ -306,7 +329,7 @@ class CharacterQuoteStrip extends StatelessWidget {
                     decoration: InputDecoration(
                       isDense: true,
                       border: InputBorder.none,
-                      hintText: hintText,
+                      hintText: showHintText ? hintText : null,
                       prefixText: '"',
                       suffixText: '"',
                       prefixStyle: TextStyle(
@@ -335,6 +358,21 @@ class CharacterQuoteStrip extends StatelessWidget {
                     ),
                   ),
           ),
+          if ((tooltipText ?? '').trim().isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Theme(
+              data: tooltipTheme,
+              child: Tooltip(
+                message: tooltipText!,
+                triggerMode: TooltipTriggerMode.tap,
+                child: Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: Colors.black.withValues(alpha: 0.42),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -325,6 +325,7 @@ class _ProjectPageState extends State<ProjectPage> {
           weightKg: draft.weightKg,
           quote: draft.motto,
           synopsis: draft.synopsis,
+          notebookComplexityValues: draft.notebookComplexityValues,
           seed: DateTime.now().microsecondsSinceEpoch,
         ),
         unpinnedIndex: _characters.where((item) => !item.isPinned).length,

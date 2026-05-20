@@ -207,6 +207,8 @@ class _CharacterMetadataSection extends StatelessWidget {
                       controller: mottoController,
                       isEditing: true,
                       hintText: characterMottoPlaceholderText,
+                      showHintText: false,
+                      tooltipText: characterMottoPlaceholderText,
                     ),
                     const SizedBox(height: 10),
                     _CharacterCompactField(

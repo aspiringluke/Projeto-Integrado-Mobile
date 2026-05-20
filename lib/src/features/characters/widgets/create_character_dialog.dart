@@ -51,6 +51,7 @@ class CreateCharacterDraft {
   final String ethnicityTag;
   final String functionTag;
   final String relevanceTag;
+  final Map<String, String> notebookComplexityValues;
   final Set<CharacterProfileFieldId> visibleProfileFields;
   final Color coverColor;
   final Color accentColor;
@@ -72,6 +73,7 @@ class CreateCharacterDraft {
     required this.ethnicityTag,
     required this.functionTag,
     required this.relevanceTag,
+    required this.notebookComplexityValues,
     required this.visibleProfileFields,
     required this.coverColor,
     required this.accentColor,
@@ -124,6 +126,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
   String _selectedEthnicityTag = '';
   String? _selectedFunctionTag = '';
   String _selectedRelevanceTag = '';
+  _RelevanceEditorMode _relevanceMode = _RelevanceEditorMode.advanced;
 
   static const double _synopsisMaxHeight = 196;
 
@@ -266,6 +269,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
         ethnicityTag: _selectedEthnicityTag,
         functionTag: _selectedFunctionTag ?? '',
         relevanceTag: _selectedRelevanceTag,
+        notebookComplexityValues: _buildStoredRelevanceSelection(),
         visibleProfileFields: _visibleProfileFields.toSet(),
         coverColor: _dialogController.coverColor,
         accentColor: _dialogController.accentColor,
@@ -372,14 +376,14 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                           _CharacterRelevanceSelectorField(
                             value: _selectedRelevanceTag,
                             selectedColor: _relevanceCategoryForScore(
-                              _calculateRelevanceScore(),
+                              _effectiveRelevanceScore(),
                             ).color,
                             accentColor: _dialogController.accentColor,
                             categories: _relevanceCategories,
                             showError:
                                 _showRequiredTagErrors == true &&
                                 _selectedRelevanceTag.trim().isEmpty,
-                            score: _calculateRelevanceScore(),
+                            score: _effectiveRelevanceScore(),
                             onTap: _openRelevanceSelector,
                           ),
                           const SizedBox(height: 10),
@@ -1079,6 +1083,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     var editingParameterIds = <String>{};
     var tempValues = Map<String, double>.from(_relevanceValues);
     var tempWeights = Map<String, double>.from(_relevanceWeights);
+    var tempMode = _relevanceMode;
 
     final result = await showDialog<_RelevanceSelectionResult>(
       context: context,
@@ -1119,6 +1124,40 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                             category: category,
                             categories: _relevanceCategories,
                             accentColor: accent,
+                            onScoreChanged:
+                                tempMode == _RelevanceEditorMode.simple
+                                ? (nextScore) {
+                                    setModalState(() {
+                                      tempValues = _applyUniformRelevanceValue(
+                                        parameters: tempParameters,
+                                        score: nextScore,
+                                      );
+                                    });
+                                  }
+                                : null,
+                          ),
+                          const SizedBox(height: 10),
+                          _RelevanceEditorToolbar(
+                            mode: tempMode,
+                            onModeChanged: (mode) {
+                              setModalState(() {
+                                tempMode = mode;
+                              });
+                            },
+                            onReset: () {
+                              setModalState(() {
+                                editingParameterIds = <String>{};
+                                tempParameters = _defaultRelevanceParameters();
+                                tempValues = {
+                                  for (final parameter in tempParameters)
+                                    parameter.id: 0,
+                                };
+                                tempWeights = {
+                                  for (final parameter in tempParameters)
+                                    parameter.id: parameter.weight,
+                                };
+                              });
+                            },
                           ),
                           const SizedBox(height: 10),
                           Expanded(
@@ -1129,136 +1168,173 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _RelevanceFormulaNote(accentColor: accent),
-                                  const SizedBox(height: 10),
-                                  for (final parameter in tempParameters) ...[
-                                    _RelevanceParameterControl(
-                                      parameter: parameter,
-                                      value: tempValues[parameter.id] ?? 0,
-                                      weight:
-                                          tempWeights[parameter.id] ??
-                                          parameter.weight,
-                                      canRemove: tempParameters.length > 1,
-                                      isEditing: editingParameterIds.contains(
-                                        parameter.id,
-                                      ),
-                                      onEdit: () {
-                                        setModalState(() {
-                                          editingParameterIds = {
-                                            ...editingParameterIds,
-                                          };
-                                          if (!editingParameterIds.add(
-                                            parameter.id,
-                                          )) {
-                                            editingParameterIds.remove(
+                                  if (tempMode ==
+                                      _RelevanceEditorMode.advanced) ...[
+                                    _RelevanceFormulaNote(accentColor: accent),
+                                    const SizedBox(height: 10),
+                                    for (final parameter in tempParameters) ...[
+                                      _RelevanceParameterControl(
+                                        parameter: parameter,
+                                        value: tempValues[parameter.id] ?? 0,
+                                        weight:
+                                            tempWeights[parameter.id] ??
+                                            parameter.weight,
+                                        canRemove: tempParameters.length > 1,
+                                        canResetToDefault:
+                                            _defaultRelevanceParameterById(
                                               parameter.id,
-                                            );
-                                          }
-                                        });
-                                      },
-                                      onNameChanged: (value) {
-                                        setModalState(() {
-                                          tempParameters = [
-                                            for (final item in tempParameters)
-                                              item.id == parameter.id
-                                                  ? item.copyWith(name: value)
-                                                  : item,
-                                          ];
-                                        });
-                                      },
-                                      onDescriptionChanged: (value) {
-                                        setModalState(() {
-                                          tempParameters = [
-                                            for (final item in tempParameters)
-                                              item.id == parameter.id
-                                                  ? item.copyWith(
-                                                      description: value,
-                                                    )
-                                                  : item,
-                                          ];
-                                        });
-                                      },
-                                      onRemove: () {
-                                        if (tempParameters.length <= 1) {
-                                          return;
-                                        }
-                                        setModalState(() {
-                                          tempParameters = tempParameters
-                                              .where(
-                                                (item) =>
-                                                    item.id != parameter.id,
-                                              )
-                                              .toList();
-                                          tempValues = {...tempValues}
-                                            ..remove(parameter.id);
-                                          tempWeights = {...tempWeights}
-                                            ..remove(parameter.id);
-                                          editingParameterIds = {
-                                            ...editingParameterIds,
-                                          }..remove(parameter.id);
-                                          tempWeights =
-                                              _normalizeRelevanceWeights(
-                                                parameters: tempParameters,
-                                                weights: tempWeights,
+                                            ) !=
+                                            null,
+                                        isEditing: editingParameterIds.contains(
+                                          parameter.id,
+                                        ),
+                                        onEdit: () {
+                                          setModalState(() {
+                                            editingParameterIds = {
+                                              ...editingParameterIds,
+                                            };
+                                            if (!editingParameterIds.add(
+                                              parameter.id,
+                                            )) {
+                                              editingParameterIds.remove(
+                                                parameter.id,
                                               );
-                                        });
-                                      },
-                                      onValueChanged: (value) {
+                                            }
+                                          });
+                                        },
+                                        onNameChanged: (value) {
+                                          setModalState(() {
+                                            tempParameters = [
+                                              for (final item in tempParameters)
+                                                item.id == parameter.id
+                                                    ? item.copyWith(name: value)
+                                                    : item,
+                                            ];
+                                          });
+                                        },
+                                        onDescriptionChanged: (value) {
+                                          setModalState(() {
+                                            tempParameters = [
+                                              for (final item in tempParameters)
+                                                item.id == parameter.id
+                                                    ? item.copyWith(
+                                                        description: value,
+                                                      )
+                                                    : item,
+                                            ];
+                                          });
+                                        },
+                                        onResetToDefault: () {
+                                          final defaultParameter =
+                                              _defaultRelevanceParameterById(
+                                                parameter.id,
+                                              );
+                                          if (defaultParameter == null) {
+                                            return;
+                                          }
+                                          setModalState(() {
+                                            tempParameters = [
+                                              for (final item in tempParameters)
+                                                item.id == parameter.id
+                                                    ? defaultParameter
+                                                    : item,
+                                            ];
+                                            tempWeights =
+                                                _redistributeRelevanceWeights(
+                                                  parameters: tempParameters,
+                                                  weights: {
+                                                    ...tempWeights,
+                                                    parameter.id:
+                                                        defaultParameter.weight,
+                                                  },
+                                                  changedId: parameter.id,
+                                                  requestedWeight:
+                                                      defaultParameter.weight,
+                                                );
+                                          });
+                                        },
+                                        onRemove: () {
+                                          if (tempParameters.length <= 1) {
+                                            return;
+                                          }
+                                          setModalState(() {
+                                            tempParameters = tempParameters
+                                                .where(
+                                                  (item) =>
+                                                      item.id != parameter.id,
+                                                )
+                                                .toList();
+                                            tempValues = {...tempValues}
+                                              ..remove(parameter.id);
+                                            tempWeights = {...tempWeights}
+                                              ..remove(parameter.id);
+                                            editingParameterIds = {
+                                              ...editingParameterIds,
+                                            }..remove(parameter.id);
+                                            tempWeights =
+                                                _normalizeRelevanceWeights(
+                                                  parameters: tempParameters,
+                                                  weights: tempWeights,
+                                                );
+                                          });
+                                        },
+                                        onValueChanged: (value) {
+                                          setModalState(() {
+                                            tempValues = {
+                                              ...tempValues,
+                                              parameter.id: value,
+                                            };
+                                          });
+                                        },
+                                        onWeightChanged: (value) {
+                                          setModalState(() {
+                                            tempWeights =
+                                                _redistributeRelevanceWeights(
+                                                  parameters: tempParameters,
+                                                  weights: tempWeights,
+                                                  changedId: parameter.id,
+                                                  requestedWeight: value,
+                                                );
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                    _AddRelevanceParameterButton(
+                                      onTap: () {
+                                        final newParameter =
+                                            _createBlankRelevanceParameter(
+                                              tempParameters,
+                                            );
                                         setModalState(() {
+                                          tempParameters = [
+                                            ...tempParameters,
+                                            newParameter,
+                                          ];
                                           tempValues = {
                                             ...tempValues,
-                                            parameter.id: value,
+                                            newParameter.id: 0,
                                           };
-                                        });
-                                      },
-                                      onWeightChanged: (value) {
-                                        setModalState(() {
+                                          editingParameterIds = {
+                                            ...editingParameterIds,
+                                            newParameter.id,
+                                          };
                                           tempWeights =
                                               _redistributeRelevanceWeights(
                                                 parameters: tempParameters,
-                                                weights: tempWeights,
-                                                changedId: parameter.id,
-                                                requestedWeight: value,
+                                                weights: {
+                                                  ...tempWeights,
+                                                  newParameter.id:
+                                                      newParameter.weight,
+                                                },
+                                                changedId: newParameter.id,
+                                                requestedWeight:
+                                                    newParameter.weight,
                                               );
                                         });
                                       },
                                     ),
-                                    const SizedBox(height: 8),
                                   ],
-                                  _AddRelevanceParameterButton(
-                                    onTap: () {
-                                      final newParameter =
-                                          _createBlankRelevanceParameter(
-                                            tempParameters,
-                                          );
-                                      setModalState(() {
-                                        tempParameters = [
-                                          ...tempParameters,
-                                          newParameter,
-                                        ];
-                                        tempValues = {
-                                          ...tempValues,
-                                          newParameter.id: 0,
-                                        };
-                                        editingParameterIds = {
-                                          ...editingParameterIds,
-                                          newParameter.id,
-                                        };
-                                        tempWeights =
-                                            _redistributeRelevanceWeights(
-                                              parameters: tempParameters,
-                                              weights: {
-                                                ...tempWeights,
-                                                newParameter.id:
-                                                    newParameter.weight,
-                                              },
-                                              changedId: newParameter.id,
-                                              requestedWeight:
-                                                  newParameter.weight,
-                                            );
-                                      });
-                                    },
-                                  ),
                                 ],
                               ),
                             ),
@@ -1296,6 +1372,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
                                         weights: tempWeights,
                                         parameters: tempParameters,
                                         categoryName: category.name,
+                                        mode: tempMode,
                                       ),
                                     );
                                   },
@@ -1335,6 +1412,7 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
       _relevanceParameters = result.parameters;
       _relevanceValues = result.values;
       _relevanceWeights = result.weights;
+      _relevanceMode = result.mode;
       _selectedRelevanceTag = result.categoryName;
     });
   }
@@ -1360,6 +1438,48 @@ class _CreateCharacterDialogState extends State<_CreateCharacterDialog> {
     }
 
     return (weightedTotal / weightTotal).clamp(0, 10);
+  }
+
+  double _effectiveRelevanceScore() {
+    return _calculateRelevanceScore();
+  }
+
+  Map<String, double> _applyUniformRelevanceValue({
+    required List<_RelevanceParameterConfig> parameters,
+    required double score,
+  }) {
+    final clampedScore = score.clamp(0.0, 10.0).toDouble();
+    return {for (final parameter in parameters) parameter.id: clampedScore};
+  }
+
+  Map<String, String> _buildStoredRelevanceSelection() {
+    final values = <String, String>{
+      _relevanceStorageModeKey: switch (_relevanceMode) {
+        _RelevanceEditorMode.simple => 'simple',
+        _RelevanceEditorMode.advanced => 'advanced',
+      },
+    };
+    values[_relevanceStorageOrderKey] = _relevanceParameters
+        .map((parameter) => parameter.id)
+        .join('|');
+
+    for (final parameter in _relevanceParameters) {
+      values[_relevanceStorageKey(parameter.id, 'symbol')] = parameter.symbol;
+      values[_relevanceStorageKey(parameter.id, 'name')] = parameter.name;
+      values[_relevanceStorageKey(parameter.id, 'description')] =
+          parameter.description;
+      values[_relevanceStorageKey(parameter.id, 'value')] =
+          (_relevanceValues[parameter.id] ?? 0).toStringAsFixed(1);
+      values[_relevanceStorageKey(
+        parameter.id,
+        'weight',
+      )] = ((_relevanceWeights[parameter.id] ?? parameter.weight).clamp(
+        0.0,
+        1.0,
+      )).toString();
+    }
+
+    return values;
   }
 
   Map<String, double> _redistributeRelevanceWeights({

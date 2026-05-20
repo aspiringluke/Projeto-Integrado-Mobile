@@ -39,10 +39,11 @@ enum _NotebookTab { geral, psique, historia, notas, design }
 
 enum _NotebookSection { identidade, tags, medidas, narrativa, imagem }
 
+enum _RelevanceEditorMode { simple, advanced }
+
 const String _namePlaceholderText = characterNamePlaceholderText;
 const String _aliasPlaceholderText = characterAliasPlaceholderText;
-const String _mottoPlaceholderText =
-    'Frase de efeito é um "motto", ou lema. Uma frase curta que encapsula os ideais, propósitos e/ou crenças de uma pessoa de forma a caracterizá-las.';
+const String _mottoPlaceholderText = characterMottoPlaceholderText;
 const String _formationsPlaceholderText =
     'Em que o personagem é formalmente formado e com o que o personagem formalmente trabalha.';
 const String _titlesPlaceholderText =
@@ -628,18 +629,25 @@ class _PsychRadarCard extends StatelessWidget {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTapDown: (details) {
-                    final selected = geometry.hitTest(
+                    final pointSelection = geometry.hitTestPoint(
                       size: chartSize,
                       localPosition: details.localPosition,
                     );
+                    final labelSelection = geometry.hitTestLabel(
+                      size: chartSize,
+                      localPosition: details.localPosition,
+                    );
+                    final selected = pointSelection ?? labelSelection;
                     if (selected != null) {
                       onNodeSelected(selected);
                     }
-                    _updateInteractiveValue(
-                      geometry: geometry,
-                      size: chartSize,
-                      localPosition: details.localPosition,
-                    );
+                    if (pointSelection != null) {
+                      _updateInteractiveValue(
+                        geometry: geometry,
+                        size: chartSize,
+                        localPosition: details.localPosition,
+                      );
+                    }
                   },
                   onPanStart: (details) {
                     _updateInteractiveValue(
@@ -941,15 +949,6 @@ class _PsychFacetBarCard extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 1),
-                    Text(
-                      'toque ou arraste',
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.52),
-                        fontSize: 10.2,
-                        height: 1.25,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -965,19 +964,39 @@ class _PsychFacetBarCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          for (final facet in trait.facets)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: _PsychFacetBarRow(
-                accentColor: accentColor,
-                traitId: trait.id,
-                facet: facet,
-                value: values[facet.id] ?? 5,
-                selected: facet.id == selectedFacet.id,
-                onFacetSelected: onFacetSelected,
-                onFacetChanged: onFacetChanged,
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final tileHeight = switch (constraints.maxWidth) {
+                >= 620 => 96.0,
+                >= 500 => 92.0,
+                _ => 90.0,
+              };
+
+              return GridView.builder(
+                itemCount: trait.facets.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  mainAxisExtent: tileHeight,
+                ),
+                itemBuilder: (context, index) {
+                  final facet = trait.facets[index];
+                  return _PsychFacetBarRow(
+                    accentColor: accentColor,
+                    traitId: trait.id,
+                    facet: facet,
+                    value: values[facet.id] ?? 5,
+                    selected: facet.id == selectedFacet.id,
+                    onFacetSelected: onFacetSelected,
+                    onFacetChanged: onFacetChanged,
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -1012,6 +1031,24 @@ class _PsychFacetBarRow extends StatelessWidget {
             const Color(0xFF171419),
           )
         : accentColor.withValues(alpha: 0.82);
+    final tooltipTheme = Theme.of(context).copyWith(
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: const Color(0xFF181419),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+        ),
+        textStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 11.2,
+          height: 1.35,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        waitDuration: Duration.zero,
+        showDuration: const Duration(seconds: 8),
+        preferBelow: false,
+      ),
+    );
 
     return Material(
       color: Colors.transparent,
@@ -1019,71 +1056,121 @@ class _PsychFacetBarRow extends StatelessWidget {
         onTap: () => onFacetSelected(facet.id),
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+          padding: const EdgeInsets.fromLTRB(8, 6, 8, 5),
           decoration: BoxDecoration(
-            color: selected
-                ? accentColor.withValues(alpha: 0.09)
-                : Colors.white.withValues(alpha: 0.34),
+            color: Colors.white.withValues(alpha: selected ? 0.42 : 0.34),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? accentColor.withValues(alpha: 0.18)
+                  ? accentColor.withValues(alpha: 0.52)
                   : accentColor.withValues(alpha: 0.07),
+              width: selected ? 1.15 : 0.9,
             ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.18),
+                      blurRadius: 0,
+                      spreadRadius: 1.1,
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      facet.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF2E2830),
-                        fontSize: 10.8,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            facet.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF2E2830),
+                              fontSize: 10.3,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Theme(
+                          data: tooltipTheme,
+                          child: Tooltip(
+                            message: facet.description,
+                            triggerMode: TooltipTriggerMode.tap,
+                            child: Icon(
+                              Icons.info_outline_rounded,
+                              size: 12,
+                              color: Colors.black.withValues(alpha: 0.42),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    value.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: _darkenCharacterDialogColor(accentColor, 0.18),
-                      fontSize: 10.8,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? accentColor.withValues(alpha: 0.1)
+                          : Colors.white.withValues(alpha: 0.54),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      value.toStringAsFixed(1),
+                      style: TextStyle(
+                        color: _darkenCharacterDialogColor(accentColor, 0.18),
+                        fontSize: 9.8,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: fillColor,
-                  inactiveTrackColor: Colors.black.withValues(alpha: 0.05),
-                  thumbColor: fillColor,
-                  overlayColor: fillColor.withValues(alpha: 0.12),
-                  trackHeight: 5,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 6,
+              const SizedBox(height: 2),
+              SizedBox(
+                height: 20,
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: fillColor,
+                    inactiveTrackColor: Colors.black.withValues(alpha: 0.05),
+                    thumbColor: fillColor,
+                    overlayColor: fillColor.withValues(alpha: 0.1),
+                    trackHeight: 3.2,
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 10,
+                    ),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 4.5,
+                    ),
                   ),
-                ),
-                child: Slider(
-                  min: 0,
-                  max: 10,
-                  divisions: 100,
-                  value: value.clamp(0, 10),
-                  onChanged: (next) {
-                    onFacetSelected(facet.id);
-                    onFacetChanged(
-                      traitId,
-                      facet.id,
-                      next.clamp(0, 10).toDouble(),
-                    );
-                  },
+                  child: Slider(
+                    min: 0,
+                    max: 10,
+                    divisions: 100,
+                    value: value.clamp(0, 10),
+                    onChanged: (next) {
+                      onFacetSelected(facet.id);
+                      onFacetChanged(
+                        traitId,
+                        facet.id,
+                        next.clamp(0, 10).toDouble(),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -1666,7 +1753,7 @@ class _PsychRadarGeometry {
     });
   }
 
-  String? hitTest({required Size size, required Offset localPosition}) {
+  String? hitTestPoint({required Size size, required Offset localPosition}) {
     final points = pointsFor(size);
     var bestIndex = -1;
     var bestDistance = double.infinity;
@@ -1683,6 +1770,33 @@ class _PsychRadarGeometry {
       return null;
     }
     return nodes[bestIndex].id;
+  }
+
+  String? hitTestLabel({required Size size, required Offset localPosition}) {
+    final labels = labelPointsFor(size);
+    for (var index = 0; index < labels.length; index += 1) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: nodes[index].chartLabel,
+          style: const TextStyle(
+            fontSize: 10.0,
+            fontWeight: FontWeight.w700,
+            height: 1.0,
+          ),
+        ),
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+        maxLines: 2,
+      )..layout(maxWidth: 72);
+
+      final labelOffset =
+          labels[index] - Offset(textPainter.width / 2, textPainter.height / 2);
+      final labelRect = (labelOffset & textPainter.size).inflate(8);
+      if (labelRect.contains(localPosition)) {
+        return nodes[index].id;
+      }
+    }
+    return null;
   }
 
   double valueFromPosition({
@@ -1730,6 +1844,251 @@ class _PsychFacetDefinition {
     required this.description,
   });
 }
+
+class _PsychTraitContentOverride {
+  final String label;
+  final String chartLabel;
+  final String description;
+
+  const _PsychTraitContentOverride({
+    required this.label,
+    required this.chartLabel,
+    required this.description,
+  });
+}
+
+class _PsychFacetContentOverride {
+  final String label;
+  final String description;
+
+  const _PsychFacetContentOverride({
+    required this.label,
+    required this.description,
+  });
+}
+
+const Map<String, _PsychTraitContentOverride>
+_psychTraitContentOverrides = <String, _PsychTraitContentOverride>{
+  'consciencia': _PsychTraitContentOverride(
+    label: 'Consciência',
+    chartLabel: 'Consciência',
+    description:
+        'Diz respeito à forma como controlamos, conduzimos e direcionamos nossos impulsos.',
+  ),
+  'neuroticismo': _PsychTraitContentOverride(
+    label: 'Neuroticismo',
+    chartLabel: 'Neuroticismo',
+    description: 'Tendência a sentir emoções negativas.',
+  ),
+  'afabilidade': _PsychTraitContentOverride(
+    label: 'Afabilidade',
+    chartLabel: 'Afabilidade',
+    description:
+        'Pessoas agradáveis aos outros, simpáticas. Se preocupam com a cooperação e a harmonia social e facilmente se dão bem com outras pessoas.',
+  ),
+  'abertura': _PsychTraitContentOverride(
+    label: 'Abertura à experiência',
+    chartLabel: 'Abertura\nà experiência',
+    description:
+        'Pessoas criativas, apreciadoras da arte e da beleza e que gostam do novo.',
+  ),
+  'extroversao': _PsychTraitContentOverride(
+    label: 'Extroversão',
+    chartLabel: 'Extroversão',
+    description:
+        'A extroversão é marcada pela sociabilidade, engajamento com o mundo externo.',
+  ),
+};
+
+const Map<String, Map<String, _PsychFacetContentOverride>>
+_psychFacetContentOverrides = <String, Map<String, _PsychFacetContentOverride>>{
+  'consciencia': <String, _PsychFacetContentOverride>{
+    'competencia': _PsychFacetContentOverride(
+      label: 'Autoeficácia',
+      description:
+          'Quem pontua alto normalmente tem confiança para realizar as coisas. Se sente capaz, acredita que tem a inteligência (senso comum) e autocontrole necessários para alcançar o sucesso e lida tranquilamente com os desafios e dificuldades da vida. Pessoas com pontuação baixa não se sentem eficazes e podem se sentir perdidas, como se não estivessem no controle de suas vidas.',
+    ),
+    'ordem': _PsychFacetContentOverride(
+      label: 'Ordem',
+      description:
+          'Pontuação alta indica clareza e abordagem metódica das tarefas. Essas pessoas gostam de viver de acordo com rotinas e horários, costumam criar listas e fazer planejamento. Organização é seu sobrenome. Pessoas com baixa pontuação tendem a ser desorganizadas e dispersas.',
+    ),
+    'senso_de_dever': _PsychFacetContentOverride(
+      label: 'Senso de Dever',
+      description:
+          'Pessoas conscienciosas, muito dogmáticas em seus valores. Valorizam o dever e a obrigação. Têm um forte senso moral. Pessoas com pontuação baixa consideram regras, contratos e regulamentações exageradas, podendo ser vistas como não confiáveis ou até mesmo irresponsáveis.',
+    ),
+    'busca_de_realizacao': _PsychFacetContentOverride(
+      label: 'Realização-Esforço',
+      description:
+          "Disposição para trabalhar duro e motivação por metas, com esforço para alcançar a excelência. Gostam de se sentir reconhecidas e têm objetivos claros na vida. Às vezes a busca por perfeição as torna 'workaholic', obcecadas com o trabalho. Pessoas que pontuam pouco nessa competência se sentem realizadas quando cumprem determinada tarefa com o mínimo de trabalho e esforço, podendo ser vistas como preguiçosas.",
+    ),
+    'autodisciplina': _PsychFacetContentOverride(
+      label: 'Autodisciplina',
+      description:
+          "Alta capacidade de seguir com as tarefas e limitar a distração. Se mantêm persistentes mesmo em tarefas difíceis ou de que não gostem. Não procrastinam para começar e finalizar tarefas e são extremamente focadas quando iniciam uma atividade. Pessoas com pouca autodisciplina procrastinam e têm mais dificuldade de 'acompanhar o ritmo'. Muitas vezes não conseguem completar tarefas, mesmo as que querem muito finalizar.",
+    ),
+    'deliberacao': _PsychFacetContentOverride(
+      label: 'Cautela',
+      description:
+          'Tendem a refletir cuidadosamente sobre as decisões antes de agir. Pensam nas possibilidades e consequências das ações antes de tomar uma decisão. Já os que pontuam baixo normalmente falam ou fazem a primeira coisa que vem à mente sem pensar muito nas consequências de suas palavras e ações.',
+    ),
+  },
+  'afabilidade': <String, _PsychFacetContentOverride>{
+    'confianca': _PsychFacetContentOverride(
+      label: 'Confiança',
+      description:
+          'Quem pontua alto em confiança normalmente acredita que a maioria das pessoas é justa, honesta e bem-intencionada por natureza. Pessoas com baixa pontuação são desconfiadas e enxergam os outros como egoístas, desonestos e perigosos.',
+    ),
+    'sinceridade': _PsychFacetContentOverride(
+      label: 'Moralidade',
+      description:
+          'Pessoas que se baseiam na ética e na justiça, sinceras e francas. Esse grupo tem facilidade em lidar com outras pessoas e normalmente não gosta de manipulações nas relações. Pontuação baixa caracteriza pessoas que acreditam que é necessário ou comum que as relações sociais causem decepção.',
+    ),
+    'altruismo': _PsychFacetContentOverride(
+      label: 'Altruísmo',
+      description:
+          'Se sentem recompensadas ao ajudar outras pessoas como forma de autorrealização, fortemente movidas pela compaixão e dedicadas a promover o bem-estar dos outros. Extremamente generosas e dispostas a ajudar quem está em necessidade. Pontuação baixa para altruísmo indica pessoas que não se sentem bem ajudando necessitados. Ajudar parece mais uma obrigação do que uma ação gratificante.',
+    ),
+    'complacencia': _PsychFacetContentOverride(
+      label: 'Cooperação',
+      description:
+          'Indivíduos que não gostam de confrontos ou agressividade. Preferem comprometer ou negar suas próprias necessidades, se isso resultar em harmonia entre os demais. Já os que pontuam pouco são mais propensos a intimidar os outros para conseguir o que querem.',
+    ),
+    'modestia': _PsychFacetContentOverride(
+      label: 'Modéstia',
+      description:
+          'Pessoas que falam de realizações próprias com bastante humildade. Não gostam de ser consideradas superiores ou melhores do que as outras. Em alguns casos essa atitude pode ocasionar baixa autoconfiança ou autoestima. As que têm pontuação baixa se consideram superiores e podem ser vistas como arrogantes por outras pessoas.',
+    ),
+    'ternura': _PsychFacetContentOverride(
+      label: 'Empatia',
+      description:
+          'Pontuação alta indica capacidade de se pôr no lugar do outro. Sentem a dor alheia com compaixão e se preocupam com os demais. O sofrimento humano é algo que as afeta fortemente. Pessoas com baixa pontuação nessa competência não se afetam muito pelo sofrimento humano. Acreditam na meritocracia e que julgamentos são baseados na razão. Estão mais preocupadas com a verdade e a justiça imparcial do que com a misericórdia ou pena.',
+    ),
+  },
+  'abertura': <String, _PsychFacetContentOverride>{
+    'fantasia': _PsychFacetContentOverride(
+      label: 'Fantasia',
+      description:
+          'Vida mental ativa, criativa e de forte imaginação. Para essas pessoas o mundo real é muito comum, normal e rotineiro, por isso estão sempre criando maneiras de fantasiar um mundo mais interessante e fabuloso. Quem não tem pontuação alta para fantasia é mais orientado por fatos do que por imaginação.',
+    ),
+    'estetica': _PsychFacetContentOverride(
+      label: 'Estética',
+      description:
+          'Forte valorização da arte e da beleza, interesse por poesia, arte e música. Essas pessoas normalmente desenvolvem habilidades artísticas e têm sensibilidade a eventos naturais e à estética. Já as que têm baixa pontuação têm pouca ou nenhuma sensibilidade estética e interesse pela arte.',
+    ),
+    'sentimentos': _PsychFacetContentOverride(
+      label: 'Emotividade',
+      description:
+          'Receptivas e conscientes de seus próprios sentimentos e emoções. Sentem emoções fortes e tendem a expressá-las abertamente. Pessoas pouco emotivas tendem a não expressar suas emoções de forma aberta.',
+    ),
+    'acoes': _PsychFacetContentOverride(
+      label: 'Aventura',
+      description:
+          'Dispostas a explorar novos lugares, experimentar novos alimentos e começar novas atividades. Pessoas aventureiras estão sempre em busca do desconhecido, gostam de desbravar lugares e não gostam de rotina. É aquela pessoa que gosta de mudar a cada dia seu caminho de volta para casa. Ao contrário, pessoas com baixa pontuação em aventura se sentem desconfortáveis com mudanças e preferem rotinas familiares.',
+    ),
+    'ideias': _PsychFacetContentOverride(
+      label: 'Intelecto',
+      description:
+          'Curiosas e cheias de ideias. Interesse por argumentos filosóficos. Pessoas abertas para o novo e o incomum gostam de debater questões intelectuais, decifrar enigmas e enfrentar desafios para a mente. Normalmente se saem melhor em questões de raciocínio rápido e lógica. Já pessoas com baixa pontuação preferem lidar com pessoas em vez de ideias e consideram exercícios intelectuais uma perda de tempo.',
+    ),
+    'valores': _PsychFacetContentOverride(
+      label: 'Liberalismo',
+      description:
+          'Gosta de explorar e avaliar seus próprios valores sociais, políticos e religiosos. Liberalismo psicológico refere-se a uma abertura para desafiar a autoridade, o convencional e o tradicional. Demonstra aversão em relação às regras, se questiona com frequência sobre o que é imposto e aprecia revoluções sociais. Não se importa com estabilidade e segurança, é inconformada e entra em conflito com a tradição. Já o contrário, pessoas conservadoras psicologicamente, preferem segurança e estabilidade. Sentem-se bem com o tradicional e normalmente não saem da zona de conforto.',
+    ),
+  },
+  'extroversao': <String, _PsychFacetContentOverride>{
+    'cordialidade': _PsychFacetContentOverride(
+      label: 'Simpatia',
+      description:
+          'Pessoas amigáveis, que fazem amigos rapidamente e com muita facilidade. As que pontuam baixo em simpatia não são necessariamente frias e hostis, são apenas menos comunicativas, mais distantes e reservadas.',
+    ),
+    'gregariedade': _PsychFacetContentOverride(
+      label: 'Sociabilidade',
+      description:
+          'Preferência pela companhia dos outros e tendência a evitar estar sozinho. Se sentem bem em multidões e aglomerações. Já as que pontuam pouco tendem a se sentir tensas em grandes multidões e por isso evitam aglomerações. Não são antissociais nem antipáticas.',
+    ),
+    'assertividade': _PsychFacetContentOverride(
+      label: 'Assertividade',
+      description:
+          'Gostam de assumir o comando e direcionar as atividades dos outros. Tendem a conquistar cargos de liderança e a dominar situações sociais. Já pessoas com baixa pontuação tendem a ser mais quietas e não se incomodam quando outras comandam as atividades em grupo.',
+    ),
+    'atividade': _PsychFacetContentOverride(
+      label: 'Atividade',
+      description:
+          'Pessoas com estilo de vida acelerado e propensas a estarem ativas. Gostam de estar em movimento e normalmente estão envolvidas em muitas atividades ao mesmo tempo. Pessoas com baixa pontuação seguem um ritmo mais lento e tranquilo, sendo mais relaxadas.',
+    ),
+    'excitação': _PsychFacetContentOverride(
+      label: 'Busca de Sensações',
+      description:
+          'Alegres e estimuladas. Têm preferência por barulho. Ficam entediadas facilmente, adoram luzes brilhantes e movimento. São mais propensas a se arriscar e viver fortes emoções. Pessoas com baixa pontuação não gostam de barulho e tumulto, e fogem de experiências com emoções intensas.',
+    ),
+    'emocao_positiva': _PsychFacetContentOverride(
+      label: 'Emoções Positivas',
+      description:
+          'Pessoas alto-astral, bem-humoradas, lidam com as situações com emoções positivas, felicidade, entusiasmo e alegria. Pessoas com baixa pontuação não têm um temperamento tão enérgico e alto-astral.',
+    ),
+  },
+  'neuroticismo': <String, _PsychFacetContentOverride>{
+    'ansiedade': _PsychFacetContentOverride(
+      label: 'Ansiedade',
+      description:
+          'Tipo de pessoa que está sempre em alerta. Sente ansiedade e que algo perigoso está prestes a acontecer. É mais propensa a sentir medo e tensão em situações comuns. Pessoas com baixa pontuação em ansiedade geralmente não têm medo, sendo calmas e tranquilas.',
+    ),
+    'raiva': _PsychFacetContentOverride(
+      label: 'Raiva',
+      description:
+          'Pessoas com alta pontuação nessa categoria se frustram quando as coisas não vão do seu jeito e têm tendência a sentir amargura e raiva. Gostam de ser tratadas de forma justa e se sentem injustiçadas quando enganadas. Pessoas com baixa pontuação dificilmente passam raiva.',
+    ),
+    'depressao': _PsychFacetContentOverride(
+      label: 'Melancolia',
+      description:
+          'Pontuações altas identificam pessoas que têm dificuldade em iniciar atividades e maior propensão a experimentar sintomas depressivos.',
+    ),
+    'autoconsciencia': _PsychFacetContentOverride(
+      label: 'Autoconsciência',
+      description:
+          'Pessoas autoconscientes são sensíveis ao que os outros pensam sobre elas. A preocupação com rejeição e ridicularização as deixa com vergonha e desconfortáveis perto de outras pessoas. Sentem-se constrangidas facilmente e frequentemente envergonhadas. O medo de que os outros vão criticá-las ou tirar sarro delas é exagerado e irrealista.',
+    ),
+    'impulsividade': _PsychFacetContentOverride(
+      label: 'Impulsividade',
+      description:
+          'Pessoas impulsivas são incapazes de controlar desejos ou impulsos. Sentem dificuldade em resistir a vontades. Tendem a satisfazer seus prazeres e buscam recompensas instantâneas em vez de benefícios de longo prazo. Já pessoas pouco impulsivas não experimentam necessidades exageradas ou desejos irresistíveis.',
+    ),
+    'vulnerabilidade': _PsychFacetContentOverride(
+      label: 'Vulnerabilidade',
+      description:
+          'Pessoas com pontuação alta em vulnerabilidade experimentam pânico, confusão e desamparo quando estão sob pressão ou estresse. Pessoas com baixa pontuação se sentem mais equilibradas, confiantes e com raciocínio claro quando estão estressadas.',
+    ),
+  },
+};
+
+List<_PsychTraitDefinition> get _psychBigFiveCatalog => <_PsychTraitDefinition>[
+  for (final trait in _psychBigFiveTraits)
+    _PsychTraitDefinition(
+      id: trait.id,
+      label: _psychTraitContentOverrides[trait.id]?.label ?? trait.label,
+      chartLabel:
+          _psychTraitContentOverrides[trait.id]?.chartLabel ?? trait.chartLabel,
+      description:
+          _psychTraitContentOverrides[trait.id]?.description ??
+          trait.description,
+      color: trait.color,
+      facets: <_PsychFacetDefinition>[
+        for (final facet in trait.facets)
+          _PsychFacetDefinition(
+            id: facet.id,
+            label:
+                _psychFacetContentOverrides[trait.id]?[facet.id]?.label ??
+                facet.label,
+            description:
+                _psychFacetContentOverrides[trait.id]?[facet.id]?.description ??
+                facet.description,
+          ),
+      ],
+    ),
+];
 
 IconData _psychTraitIconFor(String traitId) {
   switch (traitId) {
@@ -1796,6 +2155,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   HeightUnit _heightUnit = HeightUnit.centimeters;
   WeightUnit _weightUnit = WeightUnit.kilograms;
   _RelevanceParameterBundle _relevance = _RelevanceParameterBundle.defaults();
+  _RelevanceEditorMode _relevanceMode = _RelevanceEditorMode.advanced;
   String _selectedGenderTag = '';
   String _selectedSexualityTag = '';
   String _selectedEthnicityTag = '';
@@ -1847,6 +2207,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       for (final section in _NotebookSection.values) section: GlobalKey(),
     };
 
+    _relevance = _readStoredRelevanceBundle(
+      _draft.notebookComplexityValues,
+      fallbackTag: _draft.relevanceTag,
+    );
+    _relevanceMode = _readStoredRelevanceMode(_draft.notebookComplexityValues);
     _selectedGenderTag = _draft.genderTag;
     _selectedSexualityTag = _draft.sexualityTag;
     _selectedEthnicityTag = _draft.ethnicityTag;
@@ -1860,7 +2225,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     final seededPsychValues = Map<String, String>.from(
       _draft.notebookComplexityValues,
     );
-    for (final trait in _psychBigFiveTraits) {
+    for (final trait in _psychBigFiveCatalog) {
       for (final facet in trait.facets) {
         seededPsychValues.putIfAbsent(
           _psychFacetStorageKey(trait.id, facet.id),
@@ -1871,8 +2236,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     if (seededPsychValues.length != _draft.notebookComplexityValues.length) {
       _draft = _draft.copyWith(notebookComplexityValues: seededPsychValues);
     }
-    _selectedPsychTraitId = _psychBigFiveTraits.first.id;
-    _selectedPsychFacetId = _psychBigFiveTraits.first.facets.first.id;
+    _selectedPsychTraitId = _psychBigFiveCatalog.first.id;
+    _selectedPsychFacetId = _psychBigFiveCatalog.first.facets.first.id;
   }
 
   @override
@@ -2137,12 +2502,12 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                   _CharacterRelevanceSelectorField(
                     value: _selectedRelevanceTag,
                     selectedColor: _relevance
-                        .categoryForScore(_relevance.score)
+                        .categoryForScore(_effectiveRelevanceScore())
                         .color,
                     accentColor: _draft.accent,
                     categories: _relevance.categories,
                     showError: false,
-                    score: _relevance.score,
+                    score: _effectiveRelevanceScore(),
                     onTap: _openRelevanceSelector,
                   ),
                   const SizedBox(height: 12),
@@ -2184,6 +2549,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                     accentColor: _draft.accent,
                     controller: _mottoController,
                     isEditing: true,
+                    hintText: _mottoPlaceholderText,
+                    showHintText: false,
+                    tooltipText: _mottoPlaceholderText,
                   ),
                   const SizedBox(height: 12),
                   _NotebookTextFieldCard(
@@ -2489,27 +2857,27 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 children: [
                   for (
                     var index = 0;
-                    index < _psychBigFiveTraits.length;
+                    index < _psychBigFiveCatalog.length;
                     index += 1
                   )
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: index == _psychBigFiveTraits.length - 1
+                          right: index == _psychBigFiveCatalog.length - 1
                               ? 0
                               : 6,
                         ),
                         child: _PsychTraitQuickButton(
                           accentColor: _draft.accent,
                           icon: _psychTraitIconFor(
-                            _psychBigFiveTraits[index].id,
+                            _psychBigFiveCatalog[index].id,
                           ),
-                          trait: _psychBigFiveTraits[index],
+                          trait: _psychBigFiveCatalog[index],
                           selected:
                               _selectedPsychTraitId ==
-                              _psychBigFiveTraits[index].id,
+                              _psychBigFiveCatalog[index].id,
                           onTap: () =>
-                              _selectPsychTrait(_psychBigFiveTraits[index].id),
+                              _selectPsychTrait(_psychBigFiveCatalog[index].id),
                         ),
                       ),
                     ),
@@ -2599,27 +2967,27 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 children: [
                   for (
                     var index = 0;
-                    index < _psychBigFiveTraits.length;
+                    index < _psychBigFiveCatalog.length;
                     index += 1
                   )
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: index == _psychBigFiveTraits.length - 1
+                          right: index == _psychBigFiveCatalog.length - 1
                               ? 0
                               : 6,
                         ),
                         child: _PsychTraitQuickButton(
                           accentColor: _draft.accent,
                           icon: _psychTraitIconFor(
-                            _psychBigFiveTraits[index].id,
+                            _psychBigFiveCatalog[index].id,
                           ),
-                          trait: _psychBigFiveTraits[index],
+                          trait: _psychBigFiveCatalog[index],
                           selected:
                               _selectedPsychTraitId ==
-                              _psychBigFiveTraits[index].id,
+                              _psychBigFiveCatalog[index].id,
                           onTap: () =>
-                              _selectPsychTrait(_psychBigFiveTraits[index].id),
+                              _selectPsychTrait(_psychBigFiveCatalog[index].id),
                         ),
                       ),
                     ),
@@ -2669,27 +3037,27 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 children: [
                   for (
                     var index = 0;
-                    index < _psychBigFiveTraits.length;
+                    index < _psychBigFiveCatalog.length;
                     index += 1
                   )
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: index == _psychBigFiveTraits.length - 1
+                          right: index == _psychBigFiveCatalog.length - 1
                               ? 0
                               : 6,
                         ),
                         child: _PsychTraitQuickButton(
                           accentColor: _draft.accent,
                           icon: _psychTraitIconFor(
-                            _psychBigFiveTraits[index].id,
+                            _psychBigFiveCatalog[index].id,
                           ),
-                          trait: _psychBigFiveTraits[index],
+                          trait: _psychBigFiveCatalog[index],
                           selected:
                               _selectedPsychTraitId ==
-                              _psychBigFiveTraits[index].id,
+                              _psychBigFiveCatalog[index].id,
                           onTap: () =>
-                              _selectPsychTrait(_psychBigFiveTraits[index].id),
+                              _selectPsychTrait(_psychBigFiveCatalog[index].id),
                         ),
                       ),
                     ),
@@ -2875,7 +3243,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    for (final trait in _psychBigFiveTraits)
+                    for (final trait in _psychBigFiveCatalog)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: _PsychTraitOverviewTile(
@@ -3077,7 +3445,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   List<_PsychRadarNodeDefinition> get _psychBigFiveRadarNodes {
     return [
-      for (final trait in _psychBigFiveTraits)
+      for (final trait in _psychBigFiveCatalog)
         _PsychRadarNodeDefinition(
           id: trait.id,
           label: trait.label,
@@ -3105,7 +3473,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   Map<String, double> get _psychTraitValues {
     return {
-      for (final trait in _psychBigFiveTraits)
+      for (final trait in _psychBigFiveCatalog)
         trait.id: _psychTraitValue(trait.id),
     };
   }
@@ -3161,11 +3529,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   _PsychTraitDefinition _psychTraitDefinitionFor(String? traitId) {
     if (traitId == null) {
-      return _psychBigFiveTraits.first;
+      return _psychBigFiveCatalog.first;
     }
-    return _psychBigFiveTraits.firstWhere(
+    return _psychBigFiveCatalog.firstWhere(
       (trait) => trait.id == traitId,
-      orElse: () => _psychBigFiveTraits.first,
+      orElse: () => _psychBigFiveCatalog.first,
     );
   }
 
@@ -3182,8 +3550,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   void _returnToBigFive() {
     setState(() {
       _psychSplitFocus = _PsychSplitFocus.traits;
-      _selectedPsychTraitId = _psychBigFiveTraits.first.id;
-      _selectedPsychFacetId = _psychBigFiveTraits.first.facets.first.id;
+      _selectedPsychTraitId = _psychBigFiveCatalog.first.id;
+      _selectedPsychFacetId = _psychBigFiveCatalog.first.facets.first.id;
     });
   }
 
@@ -4066,95 +4434,335 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     });
   }
 
+  double _effectiveRelevanceScore() {
+    return _relevance.score;
+  }
+
+  Map<String, double> _applyUniformRelevanceValue({
+    required List<_RelevanceParameter> parameters,
+    required double score,
+  }) {
+    final clampedScore = score.clamp(0.0, 10.0).toDouble();
+    return {for (final parameter in parameters) parameter.id: clampedScore};
+  }
+
   Future<void> _openRelevanceSelector() async {
     _clearMenuFocus();
-    var temp = _relevance.copyWith();
+    var tempParameters = List<_RelevanceParameter>.from(_relevance.parameters);
+    var editingParameterIds = <String>{};
+    var tempValues = Map<String, double>.from(_relevance.values);
+    var tempWeights = Map<String, double>.from(_relevance.weights);
+    var tempMode = _relevanceMode;
 
-    final result = await showModalBottomSheet<_RelevanceParameterBundle>(
+    final result = await showDialog<_RelevanceParameterBundle>(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.24),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final score = temp.score;
-            final category = temp.categoryForScore(score);
-            final screenHeight = MediaQuery.sizeOf(context).height;
-            final sheetHeight = min(max(screenHeight - 180, 280.0), 640.0);
+            final tempBundle = _RelevanceParameterBundle(
+              parameters: tempParameters,
+              values: tempValues,
+              weights: tempWeights,
+            );
+            final score = tempBundle.score;
+            final category = tempBundle.categoryForScore(score);
+            final screenSize = MediaQuery.sizeOf(context);
+            final menuHeight = min(max(screenSize.height - 150, 260.0), 620.0);
 
-            return ProjectBottomSheetFrame(
-              title: 'Relevância narrativa',
-              child: SizedBox(
-                height: sheetHeight,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _RelevanceSummaryCard(
-                      score: score,
-                      category: category,
-                      categories: temp.categories,
-                    ),
-                    const SizedBox(height: 10),
-                    _RelevanceFormulaNote(accentColor: _draft.accent),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: temp.parameters.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final parameter = temp.parameters[index];
-                          return _RelevanceParameterControl(
-                            parameter: parameter,
-                            value: temp.values[parameter.id] ?? 0,
-                            weight:
-                                temp.weights[parameter.id] ?? parameter.weight,
-                            onValueChanged: (value) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 22,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: min(screenSize.width - 28, 620),
+                  child: _CharacterCenteredMenuFrame(
+                    title: 'Relevância narrativa',
+                    child: SizedBox(
+                      height: menuHeight,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _RelevanceSummaryCard(
+                            score: score,
+                            category: category,
+                            categories: tempBundle.categories,
+                            onScoreChanged:
+                                tempMode == _RelevanceEditorMode.simple
+                                ? (nextScore) {
+                                    setModalState(() {
+                                      tempValues = _applyUniformRelevanceValue(
+                                        parameters: tempParameters,
+                                        score: nextScore,
+                                      );
+                                    });
+                                  }
+                                : null,
+                          ),
+                          const SizedBox(height: 10),
+                          _RelevanceEditorToolbar(
+                            mode: tempMode,
+                            onModeChanged: (mode) {
                               setModalState(() {
-                                temp = temp.copyWith(
-                                  values: {...temp.values, parameter.id: value},
-                                );
+                                tempMode = mode;
                               });
                             },
-                            onWeightChanged: (value) {
+                            onReset: () {
                               setModalState(() {
-                                temp = temp.copyWith(
-                                  weights: _redistributeRelevanceWeights(
-                                    parameters: temp.parameters,
-                                    weights: temp.weights,
-                                    changedId: parameter.id,
-                                    requestedWeight: value,
+                                editingParameterIds = <String>{};
+                                tempParameters = _defaultRelevanceParameters();
+                                tempValues = {
+                                  for (final parameter in tempParameters)
+                                    parameter.id: 0,
+                                };
+                                tempWeights = {
+                                  for (final parameter in tempParameters)
+                                    parameter.id: parameter.weight,
+                                };
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(
+                                parent: ClampingScrollPhysics(),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (tempMode ==
+                                      _RelevanceEditorMode.advanced) ...[
+                                    _RelevanceFormulaNote(
+                                      accentColor: _draft.accent,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    for (final parameter in tempParameters) ...[
+                                      _RelevanceParameterControl(
+                                        parameter: parameter,
+                                        value: tempValues[parameter.id] ?? 0,
+                                        weight:
+                                            tempWeights[parameter.id] ??
+                                            parameter.weight,
+                                        canRemove: tempParameters.length > 1,
+                                        canResetToDefault:
+                                            _defaultRelevanceParameterById(
+                                              parameter.id,
+                                            ) !=
+                                            null,
+                                        isEditing: editingParameterIds.contains(
+                                          parameter.id,
+                                        ),
+                                        onEdit: () {
+                                          setModalState(() {
+                                            editingParameterIds = {
+                                              ...editingParameterIds,
+                                            };
+                                            if (!editingParameterIds.add(
+                                              parameter.id,
+                                            )) {
+                                              editingParameterIds.remove(
+                                                parameter.id,
+                                              );
+                                            }
+                                          });
+                                        },
+                                        onNameChanged: (value) {
+                                          setModalState(() {
+                                            tempParameters = [
+                                              for (final item in tempParameters)
+                                                item.id == parameter.id
+                                                    ? item.copyWith(name: value)
+                                                    : item,
+                                            ];
+                                          });
+                                        },
+                                        onDescriptionChanged: (value) {
+                                          setModalState(() {
+                                            tempParameters = [
+                                              for (final item in tempParameters)
+                                                item.id == parameter.id
+                                                    ? item.copyWith(
+                                                        description: value,
+                                                      )
+                                                    : item,
+                                            ];
+                                          });
+                                        },
+                                        onResetToDefault: () {
+                                          final defaultParameter =
+                                              _defaultRelevanceParameterById(
+                                                parameter.id,
+                                              );
+                                          if (defaultParameter == null) {
+                                            return;
+                                          }
+                                          setModalState(() {
+                                            tempParameters = [
+                                              for (final item in tempParameters)
+                                                item.id == parameter.id
+                                                    ? defaultParameter
+                                                    : item,
+                                            ];
+                                            tempWeights =
+                                                _redistributeRelevanceWeights(
+                                                  parameters: tempParameters,
+                                                  weights: {
+                                                    ...tempWeights,
+                                                    parameter.id:
+                                                        defaultParameter.weight,
+                                                  },
+                                                  changedId: parameter.id,
+                                                  requestedWeight:
+                                                      defaultParameter.weight,
+                                                );
+                                          });
+                                        },
+                                        onRemove: () {
+                                          if (tempParameters.length <= 1) {
+                                            return;
+                                          }
+                                          setModalState(() {
+                                            tempParameters = tempParameters
+                                                .where(
+                                                  (item) =>
+                                                      item.id != parameter.id,
+                                                )
+                                                .toList();
+                                            tempValues = {...tempValues}
+                                              ..remove(parameter.id);
+                                            tempWeights = {...tempWeights}
+                                              ..remove(parameter.id);
+                                            editingParameterIds = {
+                                              ...editingParameterIds,
+                                            }..remove(parameter.id);
+                                            tempWeights =
+                                                _normalizeRelevanceWeights(
+                                                  parameters: tempParameters,
+                                                  weights: tempWeights,
+                                                );
+                                          });
+                                        },
+                                        onValueChanged: (value) {
+                                          setModalState(() {
+                                            tempValues = {
+                                              ...tempValues,
+                                              parameter.id: value,
+                                            };
+                                          });
+                                        },
+                                        onWeightChanged: (value) {
+                                          setModalState(() {
+                                            tempWeights =
+                                                _redistributeRelevanceWeights(
+                                                  parameters: tempParameters,
+                                                  weights: tempWeights,
+                                                  changedId: parameter.id,
+                                                  requestedWeight: value,
+                                                );
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                    _AddRelevanceParameterButton(
+                                      onTap: () {
+                                        final newParameter =
+                                            _createBlankRelevanceParameter(
+                                              tempParameters,
+                                            );
+                                        setModalState(() {
+                                          tempParameters = [
+                                            ...tempParameters,
+                                            newParameter,
+                                          ];
+                                          tempValues = {
+                                            ...tempValues,
+                                            newParameter.id: 0,
+                                          };
+                                          editingParameterIds = {
+                                            ...editingParameterIds,
+                                            newParameter.id,
+                                          };
+                                          tempWeights =
+                                              _redistributeRelevanceWeights(
+                                                parameters: tempParameters,
+                                                weights: {
+                                                  ...tempWeights,
+                                                  newParameter.id:
+                                                      newParameter.weight,
+                                                },
+                                                changedId: newParameter.id,
+                                                requestedWeight:
+                                                    newParameter.weight,
+                                              );
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF514752),
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.82,
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
                                   ),
-                                );
-                              });
-                            },
-                          );
-                        },
+                                  child: const Text('Cancelar'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(
+                                      _RelevanceParameterBundle(
+                                        parameters: tempParameters,
+                                        values: tempValues,
+                                        weights: tempWeights,
+                                      ),
+                                    );
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFFDF6EB8),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: const Text('Aplicar'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Cancelar'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: () => Navigator.of(context).pop(temp),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFFDF6EB8),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Aplicar'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -4167,8 +4775,19 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     if (!mounted || result == null) return;
     setState(() {
       _relevance = result;
+      _relevanceMode = tempMode;
       _selectedRelevanceTag = result.categoryForScore(result.score).name;
-      _updateDraft(_draft.copyWith(relevanceTag: _selectedRelevanceTag));
+      _updateDraft(
+        _draft.copyWith(
+          relevanceTag: _selectedRelevanceTag,
+          notebookComplexityValues: _storeRelevanceBundle(
+            _draft.notebookComplexityValues,
+            result,
+            mode: _relevanceMode,
+          ),
+        ),
+        rebuild: false,
+      );
     });
   }
 
@@ -4566,9 +5185,9 @@ List<_NotebookHeaderTagItem> _buildNotebookHeaderTags(CharacterCardData data) {
 Color _notebookHeaderRelevanceColor(String label) {
   return switch (label.trim().toLowerCase()) {
     'contorno' => const Color(0xFF8E838B),
-    'periferico' => const Color(0xFF8EAFF1),
+    'periférico' => const Color(0xFF8EAFF1),
     'orbital' => const Color(0xFFDF9C53),
-    'nucleo' => const Color(0xFFDF6EB8),
+    'núcleo' => const Color(0xFFDF6EB8),
     _ => const Color(0xFF8E838B),
   };
 }
@@ -5208,7 +5827,7 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
                           if (widget.fields != null &&
                               widget.fields!.isNotEmpty)
                             Text(
-                              widget.fields!.map((f) => '• $f').join('  '),
+                              widget.fields!.map((f) => 'â€¢ $f').join('  '),
                               style: TextStyle(
                                 color: Colors.black.withValues(alpha: 0.48),
                                 fontSize: 10.5,
@@ -6141,15 +6760,18 @@ class _RelevanceSummaryCard extends StatelessWidget {
   final double score;
   final _RelevanceCategory category;
   final List<_RelevanceCategory> categories;
+  final ValueChanged<double>? onScoreChanged;
 
   const _RelevanceSummaryCard({
     required this.score,
     required this.category,
     required this.categories,
+    this.onScoreChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isInteractive = onScoreChanged != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -6193,36 +6815,49 @@ class _RelevanceSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                _RelevanceSpectrumBar(score: score, categories: categories),
+                if (isInteractive)
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: category.color,
+                      inactiveTrackColor: category.color.withValues(
+                        alpha: 0.18,
+                      ),
+                      thumbColor: const Color(0xFF2C262C),
+                      overlayColor: category.color.withValues(alpha: 0.12),
+                      trackHeight: 9,
+                    ),
+                    child: Slider(
+                      value: score.clamp(0.0, 10.0).toDouble(),
+                      min: 0,
+                      max: 10,
+                      divisions: 100,
+                      label: score.toStringAsFixed(1),
+                      onChanged: onScoreChanged,
+                    ),
+                  )
+                else
+                  _RelevanceSpectrumBar(score: score, categories: categories),
                 const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        category.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.58),
-                          fontSize: 11.2,
-                          height: 1.2,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
+                Text(
+                  category.description,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.58),
+                    fontSize: 11.2,
+                    height: 1.2,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${category.min.toStringAsFixed(1)}-${category.max.toStringAsFixed(1)}',
+                    style: TextStyle(
+                      color: _darkenCharacterDialogColor(category.color, 0.18),
+                      fontSize: 10.8,
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${category.min.toStringAsFixed(1)}-${category.max.toStringAsFixed(1)}',
-                      style: TextStyle(
-                        color: _darkenCharacterDialogColor(
-                          category.color,
-                          0.18,
-                        ),
-                        fontSize: 10.8,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -6301,6 +6936,51 @@ class _RelevanceSpectrumBar extends StatelessWidget {
   }
 }
 
+class _CharacterCenteredMenuFrame extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _CharacterCenteredMenuFrame({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.38),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.58),
+              width: 0.9,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2C262C),
+                ),
+              ),
+              const SizedBox(height: 14),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RelevanceFormulaNote extends StatelessWidget {
   final Color accentColor;
 
@@ -6317,7 +6997,7 @@ class _RelevanceFormulaNote extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
       ),
       child: Text(
-        'Os pesos fecham 100%. Ao mudar um peso, os demais se redistribuem automaticamente.',
+        'Pense em conceitos capazes de fazer um personagem ser importante na sua história e atribua a eles um peso e um valor, determinando em que setores exatamente um personagem é importante. O modelo abaixo é uma base genérica.',
         style: TextStyle(
           color: Colors.black.withValues(alpha: 0.56),
           fontSize: 10.4,
@@ -6329,10 +7009,212 @@ class _RelevanceFormulaNote extends StatelessWidget {
   }
 }
 
-class _RelevanceParameterControl extends StatelessWidget {
+class _RelevanceEditorToolbar extends StatelessWidget {
+  final _RelevanceEditorMode mode;
+  final ValueChanged<_RelevanceEditorMode> onModeChanged;
+  final VoidCallback onReset;
+
+  const _RelevanceEditorToolbar({
+    required this.mode,
+    required this.onModeChanged,
+    required this.onReset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _RelevanceModeToggle(mode: mode, onModeChanged: onModeChanged),
+        ),
+        const SizedBox(width: 8),
+        TextButton.icon(
+          onPressed: onReset,
+          icon: const Icon(Icons.restart_alt_rounded, size: 17),
+          label: const Text('Padrão'),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF514752),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RelevanceModeToggle extends StatelessWidget {
+  final _RelevanceEditorMode mode;
+  final ValueChanged<_RelevanceEditorMode> onModeChanged;
+
+  const _RelevanceModeToggle({required this.mode, required this.onModeChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.54),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.82)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _RelevanceModeToggleButton(
+              label: 'Simples',
+              selected: mode == _RelevanceEditorMode.simple,
+              onTap: () => onModeChanged(_RelevanceEditorMode.simple),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _RelevanceModeToggleButton(
+              label: 'Avançado',
+              selected: mode == _RelevanceEditorMode.advanced,
+              onTap: () => onModeChanged(_RelevanceEditorMode.advanced),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelevanceModeToggleButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RelevanceModeToggleButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFFDF6EB8);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.16)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            border: selected
+                ? Border.all(color: accent.withValues(alpha: 0.3))
+                : null,
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected
+                  ? _darkenCharacterDialogColor(accent, 0.18)
+                  : const Color(0xFF514752),
+              fontSize: 11.2,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddRelevanceParameterButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AddRelevanceParameterButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const projectPink = Color(0xFFDF6EB8);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          width: double.infinity,
+          height: 42,
+          decoration: BoxDecoration(
+            color: projectPink.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: projectPink.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add_rounded,
+                size: 18,
+                color: _darkenCharacterDialogColor(projectPink, 0.18),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Adicionar parametro',
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(projectPink, 0.18),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelevanceParameterIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _RelevanceParameterIconButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final color = enabled ? const Color(0xFF7D6171) : const Color(0xFFB9AFB6);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: Icon(icon, size: 15, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelevanceParameterControl extends StatefulWidget {
   final _RelevanceParameter parameter;
   final double value;
   final double weight;
+  final bool canRemove;
+  final bool canResetToDefault;
+  final bool isEditing;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
+  final VoidCallback onResetToDefault;
+  final ValueChanged<String> onNameChanged;
+  final ValueChanged<String> onDescriptionChanged;
   final ValueChanged<double> onValueChanged;
   final ValueChanged<double> onWeightChanged;
 
@@ -6340,9 +7222,68 @@ class _RelevanceParameterControl extends StatelessWidget {
     required this.parameter,
     required this.value,
     required this.weight,
+    required this.canRemove,
+    required this.canResetToDefault,
+    required this.isEditing,
+    required this.onEdit,
+    required this.onRemove,
+    required this.onResetToDefault,
+    required this.onNameChanged,
+    required this.onDescriptionChanged,
     required this.onValueChanged,
     required this.onWeightChanged,
   });
+
+  @override
+  State<_RelevanceParameterControl> createState() =>
+      _RelevanceParameterControlState();
+}
+
+class _RelevanceParameterControlState
+    extends State<_RelevanceParameterControl> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final FocusNode _nameFocusNode;
+  late final FocusNode _descriptionFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.parameter.name);
+    _descriptionController = TextEditingController(
+      text: widget.parameter.description,
+    );
+    _nameFocusNode = FocusNode();
+    _descriptionFocusNode = FocusNode();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RelevanceParameterControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parameter.name != widget.parameter.name &&
+        !_nameFocusNode.hasFocus) {
+      _nameController.text = widget.parameter.name;
+      _nameController.selection = TextSelection.collapsed(
+        offset: widget.parameter.name.length,
+      );
+    }
+    if (oldWidget.parameter.description != widget.parameter.description &&
+        !_descriptionFocusNode.hasFocus) {
+      _descriptionController.text = widget.parameter.description;
+      _descriptionController.selection = TextSelection.collapsed(
+        offset: widget.parameter.description.length,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _nameFocusNode.dispose();
+    _descriptionFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -6360,39 +7301,56 @@ class _RelevanceParameterControl extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(10, 9, 10, 8),
+      padding: const EdgeInsets.fromLTRB(9, 8, 9, 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.46),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: projectPink.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useStackedHeader = constraints.maxWidth < 340;
+          final symbolBadge = Container(
+            width: 32,
+            height: 24,
+            decoration: BoxDecoration(
+              color: projectPink.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                _relevanceMonogram(
+                  widget.parameter.name,
+                  fallback: widget.parameter.symbol,
                 ),
-                child: Center(
-                  child: Text(
-                    parameter.symbol,
-                    style: TextStyle(
-                      color: _darkenCharacterDialogColor(projectPink, 0.18),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(projectPink, 0.18),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  parameter.name,
+            ),
+          );
+          final nameField = widget.isEditing
+              ? TextField(
+                  controller: _nameController,
+                  focusNode: _nameFocusNode,
+                  minLines: 1,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: widget.onNameChanged,
+                )
+              : Text(
+                  widget.parameter.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -6400,78 +7358,149 @@ class _RelevanceParameterControl extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
-                ),
-              ),
+                );
+          final actions = Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 4,
+            children: [
               Text(
-                value.toStringAsFixed(1),
+                widget.value.toStringAsFixed(1),
                 style: const TextStyle(
                   color: Color(0xFF514752),
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              _RelevanceParameterIconButton(
+                icon: widget.isEditing
+                    ? Icons.check_rounded
+                    : Icons.edit_rounded,
+                onTap: widget.onEdit,
+              ),
+              _RelevanceParameterIconButton(
+                icon: Icons.restart_alt_rounded,
+                onTap: widget.canResetToDefault
+                    ? widget.onResetToDefault
+                    : null,
+              ),
+              _RelevanceParameterIconButton(
+                icon: Icons.delete_outline_rounded,
+                onTap: widget.canRemove ? widget.onRemove : null,
+              ),
             ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            parameter.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.black.withValues(alpha: 0.54),
-              fontSize: 10.2,
-              height: 1.22,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const SizedBox(height: 2),
-          SliderTheme(
-            data: sliderTheme,
-            child: Slider(
-              value: value.clamp(0, 10),
-              min: 0,
-              max: 10,
-              divisions: 20,
-              onChanged: onValueChanged,
-            ),
-          ),
-          Row(
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Peso',
-                style: TextStyle(
-                  color: Color(0xFF6A6167),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
+              if (useStackedHeader)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        symbolBadge,
+                        const SizedBox(width: 8),
+                        Expanded(child: nameField),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Align(alignment: Alignment.centerRight, child: actions),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    symbolBadge,
+                    const SizedBox(width: 8),
+                    Expanded(child: nameField),
+                    const SizedBox(width: 8),
+                    actions,
+                  ],
+                ),
+              const SizedBox(height: 4),
+              widget.isEditing
+                  ? TextField(
+                      controller: _descriptionController,
+                      focusNode: _descriptionFocusNode,
+                      minLines: 2,
+                      maxLines: 3,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.54),
+                        fontSize: 10.2,
+                        height: 1.22,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: widget.onDescriptionChanged,
+                    )
+                  : Text(
+                      widget.parameter.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.54),
+                        fontSize: 10.2,
+                        height: 1.22,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+              const SizedBox(height: 2),
+              SliderTheme(
+                data: sliderTheme,
+                child: Slider(
+                  value: widget.value.clamp(0, 10),
+                  min: 0,
+                  max: 10,
+                  divisions: 20,
+                  onChanged: widget.onValueChanged,
                 ),
               ),
-              Expanded(
-                child: SliderTheme(
-                  data: sliderTheme,
-                  child: Slider(
-                    value: weight.clamp(0, 1),
-                    min: 0,
-                    max: 1,
-                    divisions: 20,
-                    onChanged: onWeightChanged,
+              Row(
+                children: [
+                  const Text(
+                    'Peso',
+                    style: TextStyle(
+                      color: Color(0xFF6A6167),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ),
-              SizedBox(
-                width: 38,
-                child: Text(
-                  '${(weight * 100).toStringAsFixed(0)}%',
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: Color(0xFF6A6167),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: SliderTheme(
+                      data: sliderTheme,
+                      child: Slider(
+                        value: widget.weight.clamp(0, 1),
+                        min: 0,
+                        max: 1,
+                        divisions: 20,
+                        onChanged: widget.onWeightChanged,
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(
+                    width: 38,
+                    child: Text(
+                      '${(widget.weight * 100).toStringAsFixed(0)}%',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: Color(0xFF6A6167),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -6964,6 +7993,21 @@ class _RelevanceParameter {
     required this.description,
     required this.weight,
   });
+
+  _RelevanceParameter copyWith({
+    String? symbol,
+    String? name,
+    String? description,
+    double? weight,
+  }) {
+    return _RelevanceParameter(
+      id: id,
+      symbol: symbol ?? this.symbol,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      weight: weight ?? this.weight,
+    );
+  }
 }
 
 class _RelevanceCategory {
@@ -7047,7 +8091,7 @@ List<_RelevanceParameter> _defaultRelevanceParameters() {
       symbol: 'Cc',
       name: 'Centralidade causal',
       description:
-          'Baixo: reage aos eventos. Alto: cria viradas, escolhas vitais e consequencias irreversiveis.',
+          'Baixo: reage aos eventos. Alto: cria viradas, escolhas vitais e consequências irreversíveis.',
       weight: 0.45,
     ),
     _RelevanceParameter(
@@ -7055,23 +8099,23 @@ List<_RelevanceParameter> _defaultRelevanceParameters() {
       symbol: 'Dr',
       name: 'Densidade relacional',
       description:
-          'Baixo: poucas conexoes. Alto: conecta grupos, move relacoes e irradia influencia no elenco.',
+          'Baixo: poucas conexões. Alto: conecta grupos, move relações e irradia influência no elenco.',
       weight: 0.25,
     ),
     _RelevanceParameter(
       id: 'thematic',
       symbol: 'Ct',
-      name: 'Carga tematica',
+      name: 'Carga temática',
       description:
-          'Baixo: pouca tese propria. Alto: encarna conflitos, ideias e perguntas centrais da obra.',
+          'Baixo: pouca tese própria. Alto: encarna conflitos, ideias e perguntas centrais da obra.',
       weight: 0.15,
     ),
     _RelevanceParameter(
       id: 'presence',
       symbol: 'Pd',
-      name: 'Presenca discursiva',
+      name: 'Presença discursiva',
       description:
-          'Baixo: aparece pouco. Alto: ocupa cenas, falas, paginas ou atencao recorrente.',
+          'Baixo: aparece pouco. Alto: ocupa cenas, falas, páginas ou atenção recorrente.',
       weight: 0.10,
     ),
     _RelevanceParameter(
@@ -7079,10 +8123,19 @@ List<_RelevanceParameter> _defaultRelevanceParameters() {
       symbol: 'Me',
       name: 'Mutabilidade estrutural',
       description:
-          'Baixo: permanece estavel. Alto: muda psicologicamente ou reposiciona sua funcao na trama.',
+          'Baixo: permanece estável. Alto: muda psicologicamente ou reposiciona sua função na trama.',
       weight: 0.05,
     ),
   ];
+}
+
+_RelevanceParameter? _defaultRelevanceParameterById(String id) {
+  for (final parameter in _defaultRelevanceParameters()) {
+    if (parameter.id == id) {
+      return parameter;
+    }
+  }
+  return null;
 }
 
 List<_RelevanceCategory> _defaultRelevanceCategories() {
@@ -7091,31 +8144,193 @@ List<_RelevanceCategory> _defaultRelevanceCategories() {
       name: 'Contorno',
       min: 0,
       max: 1.9,
-      description: 'Figura passiva ou cenografica.',
+      description:
+          'Existem apenas para enriquecer o mundo, dar cor ou construir o contexto de algum objeto narrativo (como familiares ou habitantes locais), com pouco ou nenhum impacto no avanço da trama.',
       color: Color(0xFF8E838B),
     ),
     _RelevanceCategory(
-      name: 'Periferico',
+      name: 'Periférico',
       min: 2,
       max: 4.9,
-      description: 'Agente funcional, gatilho ou catalisador.',
+      description:
+          'Têm momentos de importância pontual. Brilham ou influênciam a história em eventos específicos, mas permanecem omissos ou em segundo plano na maior parte do tempo.',
       color: Color(0xFF8EAFF1),
     ),
     _RelevanceCategory(
       name: 'Orbital',
       min: 5,
       max: 7.9,
-      description: 'Sustentacao critica ao redor do nucleo.',
+      description:
+          'Personagens orbitais tem grande significância para algo importante para a narrativa (como outros personagens de núcleo). A história não é sobre eles, mas mesmo assim têm grande peso em seu direcionamento.',
       color: Color(0xFFDF9C53),
     ),
     _RelevanceCategory(
-      name: 'Nucleo',
+      name: 'Núcleo',
       min: 8,
       max: 10,
-      description: 'Entidade vital da espinha causal da historia.',
+      description:
+          'Personagens que fazem a narrativa girar ao redor deles, movendo a trama central em conjunto. A história comumente é sobre eles.',
       color: Color(0xFFDF6EB8),
     ),
   ];
+}
+
+const String _relevanceStoragePrefix = 'relevance::';
+const String _relevanceStorageOrderKey = '${_relevanceStoragePrefix}order';
+const String _relevanceStorageModeKey = '${_relevanceStoragePrefix}mode';
+
+String _relevanceStorageKey(String parameterId, String field) {
+  return '$_relevanceStoragePrefix$parameterId::$field';
+}
+
+String _relevanceMonogram(String name, {String fallback = '?'}) {
+  final words = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((word) => word.isNotEmpty)
+      .take(2)
+      .toList(growable: false);
+  if (words.isEmpty) {
+    return fallback;
+  }
+  if (words.length == 1) {
+    final letter = words.first[0];
+    return '${letter.toUpperCase()}${letter.toLowerCase()}';
+  }
+
+  final first = words.first[0];
+  final second = words[1][0];
+  return '${first.toUpperCase()}${second.toLowerCase()}';
+}
+
+_RelevanceEditorMode _readStoredRelevanceMode(
+  Map<String, String> notebookValues,
+) {
+  return switch (notebookValues[_relevanceStorageModeKey]) {
+    'simple' => _RelevanceEditorMode.simple,
+    _ => _RelevanceEditorMode.advanced,
+  };
+}
+
+_RelevanceParameterBundle _readStoredRelevanceBundle(
+  Map<String, String> notebookValues, {
+  String fallbackTag = '',
+}) {
+  final rawOrder = notebookValues[_relevanceStorageOrderKey];
+  final orderedIds = rawOrder
+      ?.split('|')
+      .map((entry) => entry.trim())
+      .where((entry) => entry.isNotEmpty)
+      .toList(growable: false);
+  if (orderedIds == null || orderedIds.isEmpty) {
+    return _defaultRelevanceBundleForTag(fallbackTag);
+  }
+
+  final defaults = {
+    for (final parameter in _defaultRelevanceParameters())
+      parameter.id: parameter,
+  };
+  final parameters = <_RelevanceParameter>[];
+  final values = <String, double>{};
+  final weights = <String, double>{};
+
+  for (var index = 0; index < orderedIds.length; index += 1) {
+    final id = orderedIds[index];
+    final fallback = defaults[id];
+    final parameter = _RelevanceParameter(
+      id: id,
+      symbol:
+          notebookValues[_relevanceStorageKey(id, 'symbol')] ??
+          fallback?.symbol ??
+          'P${index + 1}',
+      name:
+          notebookValues[_relevanceStorageKey(id, 'name')] ??
+          fallback?.name ??
+          'Novo parametro',
+      description:
+          notebookValues[_relevanceStorageKey(id, 'description')] ??
+          fallback?.description ??
+          'Descreva o criterio narrativo.',
+      weight:
+          (double.tryParse(
+                    notebookValues[_relevanceStorageKey(id, 'weight')] ?? '',
+                  ) ??
+                  fallback?.weight ??
+                  0.10)
+              .clamp(0.0, 1.0)
+              .toDouble(),
+    );
+    parameters.add(parameter);
+    values[id] =
+        (double.tryParse(
+                  notebookValues[_relevanceStorageKey(id, 'value')] ?? '',
+                ) ??
+                0.0)
+            .clamp(0.0, 10.0)
+            .toDouble();
+    weights[id] = parameter.weight;
+  }
+
+  return _RelevanceParameterBundle(
+    parameters: parameters,
+    values: values,
+    weights: _normalizeRelevanceWeights(
+      parameters: parameters,
+      weights: weights,
+    ),
+  );
+}
+
+_RelevanceParameterBundle _defaultRelevanceBundleForTag(String relevanceTag) {
+  final parameters = _defaultRelevanceParameters();
+  final seededScore = switch (relevanceTag.trim().toLowerCase()) {
+    'núcleo' => 9.0,
+    'orbital' => 6.5,
+    'periférico' => 3.5,
+    'contorno' => 1.0,
+    _ => 0.0,
+  };
+  return _RelevanceParameterBundle(
+    parameters: parameters,
+    values: {for (final parameter in parameters) parameter.id: seededScore},
+    weights: {
+      for (final parameter in parameters) parameter.id: parameter.weight,
+    },
+  );
+}
+
+Map<String, String> _storeRelevanceBundle(
+  Map<String, String> currentValues,
+  _RelevanceParameterBundle bundle, {
+  required _RelevanceEditorMode mode,
+}) {
+  final nextValues = Map<String, String>.from(currentValues)
+    ..removeWhere((key, _) => key.startsWith(_relevanceStoragePrefix));
+  nextValues[_relevanceStorageModeKey] = switch (mode) {
+    _RelevanceEditorMode.simple => 'simple',
+    _RelevanceEditorMode.advanced => 'advanced',
+  };
+  nextValues[_relevanceStorageOrderKey] = bundle.parameters
+      .map((parameter) => parameter.id)
+      .join('|');
+
+  for (final parameter in bundle.parameters) {
+    nextValues[_relevanceStorageKey(parameter.id, 'symbol')] = parameter.symbol;
+    nextValues[_relevanceStorageKey(parameter.id, 'name')] = parameter.name;
+    nextValues[_relevanceStorageKey(parameter.id, 'description')] =
+        parameter.description;
+    nextValues[_relevanceStorageKey(parameter.id, 'value')] =
+        (bundle.values[parameter.id] ?? 0).toStringAsFixed(1);
+    nextValues[_relevanceStorageKey(
+      parameter.id,
+      'weight',
+    )] = ((bundle.weights[parameter.id] ?? parameter.weight).clamp(
+      0.0,
+      1.0,
+    )).toString();
+  }
+
+  return nextValues;
 }
 
 Map<String, double> _redistributeRelevanceWeights({
@@ -7124,35 +8339,122 @@ Map<String, double> _redistributeRelevanceWeights({
   required String changedId,
   required double requestedWeight,
 }) {
-  final clamped = requestedWeight.clamp(0.0, 1.0).toDouble();
-  if (parameters.length <= 1) {
-    return {changedId: 1};
-  }
-
-  final remaining = (1.0 - clamped).clamp(0.0, 1.0).toDouble();
-  final otherIds = parameters
-      .map((p) => p.id)
-      .where((id) => id != changedId)
-      .toList();
-  final otherTotal = otherIds.fold<double>(
+  const totalWeightUnits = 20;
+  final ids = [for (final parameter in parameters) parameter.id];
+  final current = {
+    for (final parameter in parameters)
+      parameter.id: weights[parameter.id] ?? parameter.weight,
+  };
+  final changedUnits = (requestedWeight.clamp(0.0, 1.0) * totalWeightUnits)
+      .round()
+      .clamp(0, totalWeightUnits);
+  final remainingUnits = totalWeightUnits - changedUnits;
+  final otherIds = ids.where((id) => id != changedId).toList();
+  final otherCurrentTotal = otherIds.fold<double>(
     0,
-    (sum, id) => sum + (weights[id] ?? 0),
+    (total, id) => total + (current[id] ?? 0),
   );
 
-  if (otherTotal <= 0) {
-    final equal = remaining / otherIds.length;
+  final adjustedUnits = <String, int>{changedId: changedUnits};
+  if (otherIds.isEmpty) {
+    return {changedId: changedUnits / totalWeightUnits};
+  }
+
+  if (remainingUnits == 0) {
+    for (final id in otherIds) {
+      adjustedUnits[id] = 0;
+    }
     return {
-      for (final parameter in parameters)
-        parameter.id: parameter.id == changedId ? clamped : equal.toDouble(),
+      for (final entry in adjustedUnits.entries)
+        entry.key: entry.value / totalWeightUnits,
     };
   }
 
-  final result = <String, double>{changedId: clamped};
-  for (final id in otherIds) {
-    final base = weights[id] ?? 0;
-    result[id] = ((base / otherTotal) * remaining).toDouble();
+  if (otherCurrentTotal <= 0) {
+    final baseUnits = remainingUnits ~/ otherIds.length;
+    final leftoverUnits = remainingUnits % otherIds.length;
+    for (var index = 0; index < otherIds.length; index += 1) {
+      adjustedUnits[otherIds[index]] =
+          baseUnits + (index < leftoverUnits ? 1 : 0);
+    }
+    return {
+      for (final entry in adjustedUnits.entries)
+        entry.key: entry.value / totalWeightUnits,
+    };
   }
-  return result;
+
+  final quotas = <String, double>{};
+  var allocatedUnits = changedUnits;
+  for (final id in otherIds) {
+    final quota = ((current[id] ?? 0) / otherCurrentTotal) * remainingUnits;
+    quotas[id] = quota;
+    final units = quota.floor();
+    adjustedUnits[id] = units;
+    allocatedUnits += units;
+  }
+
+  final sortedRemainders = otherIds.toList()
+    ..sort(
+      (a, b) => ((quotas[b] ?? 0) - (quotas[b] ?? 0).floor()).compareTo(
+        (quotas[a] ?? 0) - (quotas[a] ?? 0).floor(),
+      ),
+    );
+
+  var remainderIndex = 0;
+  while (allocatedUnits < totalWeightUnits) {
+    final id = sortedRemainders[remainderIndex % sortedRemainders.length];
+    adjustedUnits[id] = (adjustedUnits[id] ?? 0) + 1;
+    allocatedUnits += 1;
+    remainderIndex += 1;
+  }
+
+  return {
+    for (final entry in adjustedUnits.entries)
+      entry.key: entry.value / totalWeightUnits,
+  };
+}
+
+Map<String, double> _normalizeRelevanceWeights({
+  required List<_RelevanceParameter> parameters,
+  required Map<String, double> weights,
+}) {
+  if (parameters.isEmpty) {
+    return {};
+  }
+
+  final total = parameters.fold<double>(
+    0,
+    (sum, parameter) => sum + (weights[parameter.id] ?? parameter.weight),
+  );
+
+  if (total <= 0) {
+    final equalWeight = 1 / parameters.length;
+    return {for (final parameter in parameters) parameter.id: equalWeight};
+  }
+
+  return {
+    for (final parameter in parameters)
+      parameter.id: (weights[parameter.id] ?? parameter.weight) / total,
+  };
+}
+
+_RelevanceParameter _createBlankRelevanceParameter(
+  List<_RelevanceParameter> parameters,
+) {
+  var index = parameters.length + 1;
+  var id = 'custom_$index';
+  while (parameters.any((parameter) => parameter.id == id)) {
+    index += 1;
+    id = 'custom_$index';
+  }
+
+  return _RelevanceParameter(
+    id: id,
+    symbol: 'P$index',
+    name: 'Novo parametro',
+    description: 'Descreva o criterio narrativo.',
+    weight: 0.10,
+  );
 }
 
 List<ZodiacSignData> _allZodiacSigns() {
