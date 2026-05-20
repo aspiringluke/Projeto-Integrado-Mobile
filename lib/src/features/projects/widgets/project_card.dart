@@ -1,16 +1,23 @@
 import 'dart:ui';
+import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../characters/data/repositories/character_repository.dart';
+import '../../characters/models/characters_models.dart';
+import '../../characters/widgets/character_notebook_page.dart';
 import '../models/project_image_data.dart';
+import '../models/project_record.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
+import '../utils/project_character_showcase.dart';
 import '../../../shared/utils/rect_from_context.dart';
 import '../../../shared/widgets/anchored_info_bubble.dart';
 import 'project_cover_fill.dart';
+import 'project_image_transform_view.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
 import '../../../shared/widgets/pin_badge.dart';
@@ -25,6 +32,7 @@ class ProjectCard extends StatefulWidget {
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
+  final List<ProjectTagData> availableTags;
   final Color coverColor;
   final Color accentColor;
   final ProjectImageData coverImage;
@@ -36,8 +44,12 @@ class ProjectCard extends StatefulWidget {
   final DateTime lastAccessed;
   final String characterDisplayMode;
   final int characterGridColumns;
+  final List<int> featuredCharacterIds;
+  final List<CharacterListItem> displayedCharacters;
+  final int unpinnedIndex;
   final VoidCallback? onOpenProject;
   final VoidCallback? onProjectReloadRequested;
+  final ValueChanged<ProjectRecord>? onProjectChanged;
   final void Function(String title, String synopsis)? onProjectEdited;
 
   const ProjectCard({
@@ -46,6 +58,7 @@ class ProjectCard extends StatefulWidget {
     this.title = 'Projeto 1',
     this.synopsis = '',
     this.tags = const <ProjectTagData>[],
+    this.availableTags = const <ProjectTagData>[],
     this.coverColor = defaultProjectCoverColor,
     this.accentColor = defaultProjectAccentColor,
     this.coverImage = const ProjectImageData(),
@@ -57,8 +70,12 @@ class ProjectCard extends StatefulWidget {
     required this.lastAccessed,
     this.characterDisplayMode = 'list',
     this.characterGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
+    this.displayedCharacters = const <CharacterListItem>[],
+    this.unpinnedIndex = 0,
     this.onOpenProject,
     this.onProjectReloadRequested,
+    this.onProjectChanged,
     this.onProjectEdited,
   });
 
@@ -159,19 +176,34 @@ class _ProjectCardState extends State<ProjectCard>
 
   Future<void> _openProject() async {
     widget.onOpenProject?.call();
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final updatedProject = await Navigator.of(context).push<ProjectRecord>(
+      MaterialPageRoute<ProjectRecord>(
         builder: (_) => ProjectPage(
           projectId: widget.projectId,
           title: widget.title,
+          synopsis: widget.synopsis,
+          tags: widget.tags,
+          availableTags: widget.availableTags,
           accentColor: widget.accentColor,
           coverColor: widget.coverColor,
           coverImage: widget.coverImage,
+          accentImage: widget.accentImage,
+          createdAt: widget.createdAt,
+          lastModified: widget.lastModified,
+          lastAccessed: widget.lastAccessed,
+          isPinned: widget.isPinned,
+          unpinnedIndex: widget.unpinnedIndex,
           initialCharacterDisplayMode: widget.characterDisplayMode,
           initialAvatarGridColumns: widget.characterGridColumns,
+          featuredCharacterIds: widget.featuredCharacterIds,
         ),
       ),
     );
+    if (updatedProject != null) {
+      widget.onProjectChanged?.call(updatedProject);
+      return;
+    }
+
     widget.onProjectReloadRequested?.call();
   }
 
@@ -342,15 +374,32 @@ class _ProjectCardState extends State<ProjectCard>
                                     opacity: _detailsFadeAnimation,
                                     child: _ProjectDetails(
                                       projectTitle: widget.title,
+                                      projectId: widget.projectId,
+                                      synopsis: widget.synopsis,
                                       dateEntry: _currentDateEntry,
                                       tags: widget.tags,
+                                      availableTags: widget.availableTags,
+                                      coverColor: widget.coverColor,
                                       accentColor: widget.accentColor,
                                       coverImage: widget.coverImage,
+                                      accentImage: widget.accentImage,
+                                      createdAt: widget.createdAt,
+                                      lastModified: widget.lastModified,
+                                      lastAccessed: widget.lastAccessed,
+                                      isPinned: widget.isPinned,
+                                      unpinnedIndex: widget.unpinnedIndex,
+                                      featuredCharacterIds:
+                                          widget.featuredCharacterIds,
+                                      displayedCharacters:
+                                          widget.displayedCharacters,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,
                                       synopsisText: _synopsisController.text,
                                       onCycleDateType: _cycleDateType,
                                       onToggleEditing: _toggleEditing,
+                                      onProjectChanged: widget.onProjectChanged,
+                                      onProjectReloadRequested:
+                                          widget.onProjectReloadRequested,
                                       synopsisScrollController:
                                           _synopsisScrollController,
                                     ),

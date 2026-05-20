@@ -113,8 +113,18 @@ void initializeSchema(CommonDatabase conn) {
     columnName: 'metadata',
     definition: 'TEXT',
   );
-  _ensureColumn(conn, tableName: 'Projeto', columnName: 'titulo', definition: 'TEXT');
-  _ensureColumn(conn, tableName: 'Projeto', columnName: 'corCapa', definition: 'TEXT');
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'titulo',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'corCapa',
+    definition: 'TEXT',
+  );
   _ensureColumn(
     conn,
     tableName: 'Projeto',
@@ -163,7 +173,18 @@ void initializeSchema(CommonDatabase conn) {
     columnName: 'colunasGradePersonagens',
     definition: 'INTEGER DEFAULT 3',
   );
-  _ensureColumn(conn, tableName: 'Personagem', columnName: 'nome', definition: 'TEXT');
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'personagensDestaqueJson',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Personagem',
+    columnName: 'nome',
+    definition: 'TEXT',
+  );
   _ensureColumn(
     conn,
     tableName: 'Personagem',

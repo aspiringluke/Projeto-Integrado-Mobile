@@ -3,23 +3,43 @@ part of 'project_page.dart';
 class ProjectPage extends StatefulWidget {
   final int? projectId;
   final String title;
+  final String synopsis;
+  final List<ProjectTagData> tags;
   final Color accentColor;
   final Color? coverColor;
   final ProjectImageData coverImage;
+  final ProjectImageData accentImage;
+  final List<ProjectTagData> availableTags;
+  final DateTime? createdAt;
+  final DateTime? lastModified;
+  final DateTime? lastAccessed;
+  final bool isPinned;
+  final int unpinnedIndex;
   final ProjectSectionId initialSection;
   final String initialCharacterDisplayMode;
   final int initialAvatarGridColumns;
+  final List<int> featuredCharacterIds;
 
   const ProjectPage({
     super.key,
     this.projectId,
     required this.title,
+    this.synopsis = '',
+    this.tags = const <ProjectTagData>[],
     this.accentColor = const Color(0xFFDF6EB8),
     this.coverColor,
     this.coverImage = const ProjectImageData(),
+    this.accentImage = const ProjectImageData(),
+    this.availableTags = const <ProjectTagData>[],
+    this.createdAt,
+    this.lastModified,
+    this.lastAccessed,
+    this.isPinned = false,
+    this.unpinnedIndex = 0,
     this.initialSection = ProjectSectionId.configProjeto,
     this.initialCharacterDisplayMode = 'list',
     this.initialAvatarGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
   });
 
   @override
@@ -53,9 +73,9 @@ class _ProjectPageState extends State<ProjectPage> {
   static const Map<ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
       <ProjectSectionId, _ProjectSectionMeta>{
         ProjectSectionId.configProjeto: _ProjectSectionMeta(
-          label: 'Página inicial',
+          label: 'Geral',
           icon: Icons.tune_rounded,
-          isImplemented: false,
+          isImplemented: true,
         ),
         ProjectSectionId.insights: _ProjectSectionMeta(
           label: 'IA',
@@ -91,27 +111,138 @@ class _ProjectPageState extends State<ProjectPage> {
   final CharacterRepository _characterRepository = CharacterRepository();
   final ProjectRepository _projectRepository = ProjectRepository();
   late List<CharacterListItem> _characters;
+  late ProjectRecord _projectDraft;
   late CharacterDisplayMode _characterDisplayMode;
   late int _avatarGridColumns;
   bool _isLoadingCharacters = false;
   String? _characterErrorMessage;
   int _characterLoadRequestToken = 0;
+  bool _hasPendingProjectChanges = false;
+  bool _isClosing = false;
+  bool _isBannerImageControlsExpanded = false;
+  late String _lastPersistedProjectTitle;
 
   @override
   void initState() {
     super.initState();
     _activeSection = widget.initialSection;
     _characters = <CharacterListItem>[];
+    final now = DateTime.now();
+    _projectDraft = ProjectRecord(
+      id: widget.projectId,
+      title: widget.title,
+      synopsis: widget.synopsis,
+      tags: widget.tags,
+      coverColor: widget.coverColor ?? widget.accentColor,
+      accentColor: widget.accentColor,
+      coverImage: widget.coverImage,
+      accentImage: const ProjectImageData(),
+      isPinned: widget.isPinned,
+      unpinnedIndex: widget.unpinnedIndex,
+      characterDisplayMode: widget.initialCharacterDisplayMode,
+      characterGridColumns: widget.initialAvatarGridColumns,
+      featuredCharacterIds: widget.featuredCharacterIds,
+      createdAt: widget.createdAt ?? now,
+      lastModified: widget.lastModified ?? now,
+      lastAccessed: widget.lastAccessed ?? now,
+    );
+    _lastPersistedProjectTitle = _projectDraft.title;
     _characterDisplayMode = _characterDisplayModeFromStorage(
       widget.initialCharacterDisplayMode,
     );
     _avatarGridColumns = widget.initialAvatarGridColumns.clamp(2, 6);
-    if (widget.projectId != null) {
+    if (_projectDraft.id != null) {
       unawaited(_loadCharacters());
     }
   }
 
   String get _activeSectionLabel => _sectionMeta[_activeSection]!.label;
+
+  void _updateProjectDraft(ProjectRecord next) {
+    setState(() {
+      _projectDraft = next.copyWith(
+        lastModified: DateTime.now(),
+        lastAccessed: DateTime.now(),
+      );
+      _hasPendingProjectChanges = true;
+    });
+  }
+
+  Future<bool> _flushProjectDraft() async {
+    if (!_hasPendingProjectChanges) {
+      return true;
+    }
+
+    if (_projectDraft.id == null) {
+      _hasPendingProjectChanges = false;
+      return true;
+    }
+
+    final previousTitle = _lastPersistedProjectTitle;
+    final projectToSave = _projectDraft.copyWith(
+      accentImage: const ProjectImageData(),
+      characterDisplayMode: _characterDisplayMode.name,
+      characterGridColumns: _avatarGridColumns,
+    );
+    final result = await _projectRepository.saveProject(projectToSave);
+
+    if (!mounted) {
+      return false;
+    }
+
+    if (!result.$1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.$2), behavior: SnackBarBehavior.floating),
+      );
+      return false;
+    }
+
+    _hasPendingProjectChanges = false;
+    _projectDraft = projectToSave;
+    _lastPersistedProjectTitle = _projectDraft.title;
+    if (previousTitle.trim() != _projectDraft.title.trim()) {
+      StoryRegistry.instance.renameProject(previousTitle, _projectDraft.title);
+    } else {
+      StoryRegistry.instance.registerProject(
+        title: _projectDraft.title,
+        accentColor: _projectDraft.accentColor,
+      );
+    }
+    return true;
+  }
+
+  Future<void> _closeProjectPage() async {
+    if (_isClosing) {
+      return;
+    }
+
+    _isClosing = true;
+    final didFlush = await _flushProjectDraft();
+    if (!mounted) {
+      return;
+    }
+
+    if (!didFlush) {
+      _isClosing = false;
+      return;
+    }
+
+    Navigator.of(context).pop(_projectDraft);
+  }
+
+  void _updateBannerCoverImage(ProjectImageData image) {
+    _updateProjectDraft(_projectDraft.copyWith(coverImage: image));
+  }
+
+  void _setBannerCoverScale(double scale) {
+    _updateBannerCoverImage(_projectDraft.coverImage.copyWith(scale: scale));
+  }
+
+  void _toggleBannerImageControls() {
+    setState(() {
+      _isBannerImageControlsExpanded = !_isBannerImageControlsExpanded;
+    });
+  }
 
   void _setActiveSection(ProjectSectionId section) {
     setState(() {
@@ -147,7 +278,7 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   Future<void> _loadCharacters() async {
-    final projectId = widget.projectId;
+    final projectId = _projectDraft.id;
     if (projectId == null) {
       return;
     }
@@ -173,12 +304,14 @@ class _ProjectPageState extends State<ProjectPage> {
         return;
       }
 
-      _characters = result.$2 ?? <CharacterListItem>[];
+      _characters = (result.$2 ?? const <CharacterListItem>[]).toList(
+        growable: true,
+      );
     });
   }
 
   Future<void> _persistProjectViewSettings() async {
-    final projectId = widget.projectId;
+    final projectId = _projectDraft.id;
     if (projectId == null) {
       return;
     }
@@ -204,7 +337,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
       await _characterRepository.updateCharacter(
         characterId,
-        projectTitle: widget.title,
+        projectTitle: _projectDraft.title,
         isPinned: character.isPinned,
         unpinnedIndex: character.unpinnedIndex,
         lastAccessed: character.lastAccessed,
@@ -242,7 +375,7 @@ class _ProjectPageState extends State<ProjectPage> {
     if (characterId != null) {
       final result = await _characterRepository.updateCharacter(
         characterId,
-        projectTitle: widget.title,
+        projectTitle: _projectDraft.title,
         data: updatedData,
         lastAccessed: character.lastAccessed,
       );
@@ -259,7 +392,7 @@ class _ProjectPageState extends State<ProjectPage> {
     if (previousName != updatedData.name ||
         previousAccent != updatedData.accent) {
       StoryRegistry.instance.updateCharacter(
-        projectTitle: widget.title,
+        projectTitle: _projectDraft.title,
         oldName: previousName,
         newName: updatedData.name,
         accentColor: updatedData.accent,
@@ -268,7 +401,7 @@ class _ProjectPageState extends State<ProjectPage> {
     }
 
     StoryRegistry.instance.registerCharacter(
-      projectTitle: widget.title,
+      projectTitle: _projectDraft.title,
       name: updatedData.name,
       accentColor: updatedData.accent,
     );
@@ -292,7 +425,7 @@ class _ProjectPageState extends State<ProjectPage> {
       return;
     }
 
-    final projectId = widget.projectId;
+    final projectId = _projectDraft.id;
     if (projectId == null) {
       return;
     }
@@ -301,7 +434,7 @@ class _ProjectPageState extends State<ProjectPage> {
     final created = await _characterRepository.createCharacter(
       CharacterListItem(
         projectId: projectId,
-        projectTitle: widget.title,
+        projectTitle: _projectDraft.title,
         data: CharacterCardData(
           name: draft.name,
           alias: draft.alias,
@@ -358,7 +491,7 @@ class _ProjectPageState extends State<ProjectPage> {
     });
 
     StoryRegistry.instance.registerCharacter(
-      projectTitle: widget.title,
+      projectTitle: _projectDraft.title,
       name: draft.name,
       accentColor: draft.accentColor,
     );
@@ -406,6 +539,13 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Widget _buildSectionBody() {
     return switch (_activeSection) {
+      ProjectSectionId.configProjeto => ProjectGeneralSection(
+        project: _projectDraft,
+        availableTags: widget.availableTags,
+        availableCharacters: _characters,
+        isLoadingCharacters: _isLoadingCharacters,
+        onChanged: _updateProjectDraft,
+      ),
       ProjectSectionId.characters => _buildCharactersSection(),
       _ => _UnderConstructionSection(
         icon: _sectionMeta[_activeSection]!.icon,
@@ -432,7 +572,9 @@ class _ProjectPageState extends State<ProjectPage> {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedCoverColor = widget.coverColor ?? widget.accentColor;
+    final resolvedCoverColor = _projectDraft.coverColor;
+    final accentColor = _projectDraft.accentColor;
+    final coverImage = _projectDraft.coverImage;
     final headerBackground = Stack(
       fit: StackFit.expand,
       children: [
@@ -443,7 +585,7 @@ class _ProjectPageState extends State<ProjectPage> {
               end: Alignment.bottomRight,
               colors: [
                 Color.alphaBlend(
-                  widget.accentColor.withValues(alpha: 0.08),
+                  accentColor.withValues(alpha: 0.08),
                   resolvedCoverColor.withValues(alpha: 0.92),
                 ),
                 Color.alphaBlend(
@@ -451,7 +593,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   Colors.black.withValues(alpha: 0.06),
                 ),
                 Color.alphaBlend(
-                  widget.accentColor.withValues(alpha: 0.05),
+                  accentColor.withValues(alpha: 0.05),
                   Colors.white.withValues(alpha: 0.1),
                 ),
               ],
@@ -459,53 +601,97 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
           ),
         ),
-        if (widget.coverImage.bytes != null)
+        if (coverImage.bytes != null)
           Positioned.fill(
-            child: Opacity(
-              opacity: 0.78,
-              child: ProjectImageTransformView(
-                imageBytes: widget.coverImage.bytes!,
-                imageWidth: widget.coverImage.width ?? 1,
-                imageHeight: widget.coverImage.height ?? 1,
-                scale: widget.coverImage.scale,
-                offsetX: widget.coverImage.offsetX,
-                offsetY: widget.coverImage.offsetY,
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final metrics = computeProjectImageViewportMetrics(
+                  viewportSize: constraints.biggest,
+                  imageWidth: coverImage.width ?? 0,
+                  imageHeight: coverImage.height ?? 0,
+                  scale: coverImage.scale,
+                );
+
+                return GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanUpdate: (details) {
+                    final offset = resolveProjectImageDragOffset(
+                      currentOffsetX: coverImage.offsetX,
+                      currentOffsetY: coverImage.offsetY,
+                      dragDelta: details.delta,
+                      metrics: metrics,
+                    );
+                    _updateBannerCoverImage(
+                      coverImage.copyWith(
+                        offsetX: offset.dx,
+                        offsetY: offset.dy,
+                      ),
+                    );
+                  },
+                  child: Opacity(
+                    opacity: 0.78,
+                    child: ProjectImageTransformView(
+                      imageBytes: coverImage.bytes!,
+                      imageWidth: coverImage.width ?? 1,
+                      imageHeight: coverImage.height ?? 1,
+                      scale: coverImage.scale,
+                      offsetX: coverImage.offsetX,
+                      offsetY: coverImage.offsetY,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.18),
-                  Colors.transparent,
-                  Colors.white.withValues(alpha: 0.05),
-                  Colors.white.withValues(alpha: 0.16),
-                ],
-                stops: const [0.0, 0.34, 0.76, 1.0],
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.18),
+                    Colors.transparent,
+                    Colors.white.withValues(alpha: 0.05),
+                    Colors.white.withValues(alpha: 0.16),
+                  ],
+                  stops: const [0.0, 0.34, 0.76, 1.0],
+                ),
               ),
             ),
           ),
         ),
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withValues(alpha: 0.14),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.06),
-                ],
-                stops: const [0.0, 0.52, 1.0],
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.14),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.06),
+                  ],
+                  stops: const [0.0, 0.52, 1.0],
+                ),
               ),
             ),
           ),
         ),
+        if (coverImage.bytes != null)
+          Positioned(
+            right: 14,
+            bottom: 10,
+            child: _ProjectBannerImageControls(
+              accentColor: accentColor,
+              isExpanded: _isBannerImageControlsExpanded,
+              scale: coverImage.scale,
+              onToggle: _toggleBannerImageControls,
+              onScaleChanged: _setBannerCoverScale,
+            ),
+          ),
       ],
     );
     final headerCenter = Column(
@@ -514,7 +700,7 @@ class _ProjectPageState extends State<ProjectPage> {
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-            widget.title.toUpperCase(),
+            _projectDraft.title.toUpperCase(),
             maxLines: 1,
             overflow: TextOverflow.fade,
             softWrap: false,
@@ -567,59 +753,67 @@ class _ProjectPageState extends State<ProjectPage> {
       ],
     );
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFDF2F8),
-      bottomNavigationBar: _ProjectFooterNav(
-        accentColor: widget.accentColor,
-        activeSection: _activeSection,
-        onSelect: _setActiveSection,
-      ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
-          ),
-          Column(
-            children: [
-              MainHeader(
-                asSliver: false,
-                title: widget.title,
-                subtitle: _activeSectionLabel,
-                onBackPressed: () => Navigator.of(context).pop(),
-                onConfigPressed: () {},
-                titleFontSize: 31,
-                titleLetterSpacing: 2.8,
-                contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                titleHorizontalPadding: 60,
-                titleShadow: true,
-                surroundSubtitleWithDots: true,
-                centerChild: headerCenter,
-                backgroundChild: headerBackground,
-              ),
-              const FuncoesBusca(),
-              Expanded(child: _buildSectionBody()),
-            ],
-          ),
-          if (_isCreateMenuOpen)
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          unawaited(_closeProjectPage());
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFDF2F8),
+        bottomNavigationBar: _ProjectFooterNav(
+          accentColor: accentColor,
+          activeSection: _activeSection,
+          onSelect: _setActiveSection,
+        ),
+        body: Stack(
+          children: [
             Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _closeCreateMenu,
-                child: const SizedBox.expand(),
+              child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
+            ),
+            Column(
+              children: [
+                MainHeader(
+                  asSliver: false,
+                  title: _projectDraft.title,
+                  subtitle: _activeSectionLabel,
+                  onBackPressed: () => unawaited(_closeProjectPage()),
+                  onConfigPressed: () {},
+                  titleFontSize: 31,
+                  titleLetterSpacing: 2.8,
+                  contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  titleHorizontalPadding: 60,
+                  titleShadow: true,
+                  surroundSubtitleWithDots: true,
+                  centerChild: headerCenter,
+                  backgroundChild: headerBackground,
+                ),
+                const FuncoesBusca(),
+                Expanded(child: _buildSectionBody()),
+              ],
+            ),
+            if (_isCreateMenuOpen)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _closeCreateMenu,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            Positioned(
+              right: 18,
+              bottom: 88,
+              child: _ProjectCreateFab(
+                accentColor: accentColor,
+                isOpen: _isCreateMenuOpen,
+                onToggle: _toggleCreateMenu,
+                onCreateCharacter: _createCharacter,
+                onCreateDiagram: _createDiagram,
               ),
             ),
-          Positioned(
-            right: 18,
-            bottom: 88,
-            child: _ProjectCreateFab(
-              accentColor: widget.accentColor,
-              isOpen: _isCreateMenuOpen,
-              onToggle: _toggleCreateMenu,
-              onCreateCharacter: _createCharacter,
-              onCreateDiagram: _createDiagram,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -639,7 +833,7 @@ class _ProjectFooterNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = <(ProjectSectionId, String, IconData)>[
-      (ProjectSectionId.configProjeto, 'Página inicial', Icons.tune_rounded),
+      (ProjectSectionId.configProjeto, 'Geral', Icons.tune_rounded),
       (
         ProjectSectionId.characters,
         'Personagens',
@@ -696,6 +890,124 @@ class _ProjectFooterNav extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectBannerImageControls extends StatelessWidget {
+  final Color accentColor;
+  final bool isExpanded;
+  final double scale;
+  final VoidCallback onToggle;
+  final ValueChanged<double> onScaleChanged;
+
+  const _ProjectBannerImageControls({
+    required this.accentColor,
+    required this.isExpanded,
+    required this.scale,
+    required this.onToggle,
+    required this.onScaleChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          width: isExpanded ? 168 : 46,
+          height: 42,
+          padding: EdgeInsets.only(
+            left: 6,
+            right: isExpanded ? 10 : 6,
+            top: 5,
+            bottom: 5,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.38)),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.12),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _BannerControlButton(
+                icon: isExpanded
+                    ? Icons.keyboard_arrow_right_rounded
+                    : Icons.tune_rounded,
+                tooltip: isExpanded ? 'Recolher ajuste' : 'Ajustar imagem',
+                onTap: onToggle,
+              ),
+              if (isExpanded) ...[
+                const SizedBox(width: 4),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 6,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 12,
+                      ),
+                      activeTrackColor: Colors.white.withValues(alpha: 0.92),
+                      inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                      thumbColor: Colors.white,
+                    ),
+                    child: Slider(
+                      value: scale.clamp(1.0, 3.0).toDouble(),
+                      min: 1,
+                      max: 3,
+                      onChanged: onScaleChanged,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BannerControlButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _BannerControlButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(icon, size: 20, color: Colors.white),
           ),
         ),
       ),
@@ -823,31 +1135,31 @@ class _ProjectCreateFab extends StatelessWidget {
           child: GlassCircleButton(
             diameter: 52,
             onTap: onToggle,
-            blurSigma: 10,
-            fillColor: accentColor.withValues(alpha: 0.58),
+            blurSigma: 18,
+            fillColor: Colors.white.withValues(alpha: 0.2),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withValues(alpha: 0.88),
+                Colors.white.withValues(alpha: 0.54),
                 _lightenProjectAccent(
                   accentColor,
                   0.18,
-                ).withValues(alpha: 0.92),
-                accentColor.withValues(alpha: 0.98),
+                ).withValues(alpha: 0.34),
+                accentColor.withValues(alpha: 0.42),
               ],
               stops: const [0.0, 0.5, 1.0],
             ),
-            borderColor: Colors.white.withValues(alpha: 0.9),
+            borderColor: Colors.white.withValues(alpha: 0.72),
             boxShadow: [
               BoxShadow(
-                color: accentColor.withValues(alpha: open ? 0.18 : 0.12),
-                blurRadius: open ? 18 : 14,
+                color: accentColor.withValues(alpha: open ? 0.2 : 0.14),
+                blurRadius: open ? 22 : 18,
                 offset: const Offset(0, 6),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
+                color: Colors.black.withValues(alpha: 0.07),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -887,14 +1199,29 @@ class _CreateActionButton extends StatelessWidget {
       diameter: 44,
       onTap: onTap,
       tooltip: tooltip,
-      blurSigma: 8,
-      fillColor: tint.withValues(alpha: 0.82),
-      borderColor: Colors.white.withValues(alpha: 0.88),
+      blurSigma: 16,
+      fillColor: Colors.white.withValues(alpha: 0.18),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.52),
+          tint.withValues(alpha: 0.32),
+          tint.withValues(alpha: 0.42),
+        ],
+        stops: const [0.0, 0.55, 1.0],
+      ),
+      borderColor: Colors.white.withValues(alpha: 0.72),
       borderWidth: 0.85,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 10,
+          color: tint.withValues(alpha: 0.16),
+          blurRadius: 16,
+          offset: const Offset(0, 5),
+        ),
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.06),
+          blurRadius: 11,
           offset: const Offset(0, 4),
         ),
       ],

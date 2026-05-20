@@ -60,6 +60,7 @@ class ProjectListPage extends StatelessWidget {
               title: project.title,
               synopsis: project.synopsis,
               tags: project.tags,
+              availableTags: controller.availableTags,
               coverColor: project.coverColor,
               accentColor: project.accentColor,
               coverImage: project.coverImage,
@@ -71,14 +72,20 @@ class ProjectListPage extends StatelessWidget {
               lastAccessed: project.lastAccessed,
               characterDisplayMode: project.characterDisplayMode,
               characterGridColumns: project.characterGridColumns,
-              onOpenProject: () => unawaited(controller.markProjectOpened(project)),
+              featuredCharacterIds: project.featuredCharacterIds,
+              displayedCharacters: project.displayedCharacters,
+              unpinnedIndex: project.unpinnedIndex,
+              onOpenProject: () =>
+                  unawaited(controller.markProjectOpened(project)),
+              onProjectChanged: (updatedProject) =>
+                  controller.applyProjectPageUpdate(project, updatedProject),
               onProjectEdited: (title, synopsis) => unawaited(
-                  controller.updateProjectContent(
-                    project,
-                    title: title,
-                    synopsis: synopsis,
-                  ),
+                controller.updateProjectContent(
+                  project,
+                  title: title,
+                  synopsis: synopsis,
                 ),
+              ),
               onProjectReloadRequested: () =>
                   unawaited(controller.refreshAfterProjectPage()),
             ),

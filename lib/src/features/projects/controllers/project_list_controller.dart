@@ -14,6 +14,7 @@ import '../models/project_image_data.dart';
 import '../models/project_record.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
+import '../utils/project_character_showcase.dart';
 
 class ProjectListItem {
   final int? id;
@@ -31,6 +32,8 @@ class ProjectListItem {
   int unpinnedIndex;
   String characterDisplayMode;
   int characterGridColumns;
+  List<int> featuredCharacterIds;
+  List<CharacterListItem> displayedCharacters;
 
   ProjectListItem({
     this.id,
@@ -48,6 +51,8 @@ class ProjectListItem {
     required this.unpinnedIndex,
     this.characterDisplayMode = 'list',
     this.characterGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
+    this.displayedCharacters = const <CharacterListItem>[],
   });
 }
 
@@ -61,6 +66,7 @@ class ProjectListController extends ChangeNotifier {
   int? _projectTagGroupId;
   final List<ProjectListItem> _projects = <ProjectListItem>[];
   final List<ProjectTagData> _availableTags = <ProjectTagData>[];
+  final List<CharacterListItem> _allCharacters = <CharacterListItem>[];
   bool _isLoading = false;
   String? _errorMessage;
   int _loadRequestToken = 0;
@@ -91,6 +97,7 @@ class ProjectListController extends ChangeNotifier {
     Color accentColor = defaultProjectAccentColor,
     ProjectImageData coverImage = const ProjectImageData(),
     ProjectImageData accentImage = const ProjectImageData(),
+    List<int> featuredCharacterIds = const <int>[],
   }) async {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) {
@@ -109,6 +116,7 @@ class ProjectListController extends ChangeNotifier {
       accentColor: accentColor,
       coverImage: coverImage,
       accentImage: accentImage,
+      featuredCharacterIds: featuredCharacterIds,
       unpinnedIndex: unpinnedCount,
     );
 
@@ -154,7 +162,7 @@ class ProjectListController extends ChangeNotifier {
             .where((record) => record.title.trim().isNotEmpty)
             .map(_mapRecordToItem),
       );
-    await _syncStoryRegistryFromStorage();
+    await _syncCharactersFromStorage();
     if (requestToken != _loadRequestToken) {
       return;
     }
@@ -173,6 +181,61 @@ class ProjectListController extends ChangeNotifier {
 
   Future<void> refreshAfterProjectPage() async {
     await loadProjects();
+  }
+
+  void applyProjectPageUpdate(ProjectListItem project, ProjectRecord updated) {
+    final index = _projects.indexOf(project);
+    if (index == -1) {
+      return;
+    }
+
+    final oldTitle = project.title;
+    final resolvedTags = TagController.resolveProjectTagPool(
+      existingTags: _availableTags,
+      incomingTags: updated.tags,
+    );
+    _availableTags
+      ..clear()
+      ..addAll(resolvedTags.resolvedKnownTags);
+
+    _projects[index] = ProjectListItem(
+      id: updated.id ?? project.id,
+      title: updated.title,
+      synopsis: updated.synopsis,
+      tags: resolvedTags.resolvedIncomingTags,
+      coverColor: updated.coverColor,
+      accentColor: updated.accentColor,
+      coverImage: updated.coverImage,
+      accentImage: const ProjectImageData(),
+      createdAt: updated.createdAt,
+      lastModified: updated.lastModified,
+      lastAccessed: updated.lastAccessed,
+      isPinned: project.isPinned,
+      unpinnedIndex: project.unpinnedIndex,
+      characterDisplayMode: updated.characterDisplayMode,
+      characterGridColumns: updated.characterGridColumns,
+      featuredCharacterIds: List<int>.unmodifiable(
+        updated.featuredCharacterIds,
+      ),
+      displayedCharacters: _displayedCharactersForProject(
+        updated.id ?? project.id,
+        updated.featuredCharacterIds,
+      ),
+    );
+
+    if (oldTitle.trim() != updated.title.trim()) {
+      StoryRegistry.instance.renameProject(oldTitle, updated.title);
+      unawaited(_syncAutoFolderRename(oldTitle, updated.title));
+    } else {
+      StoryRegistry.instance.registerProject(
+        title: updated.title,
+        accentColor: updated.accentColor,
+      );
+    }
+
+    _invalidatePendingLoads(resetLoading: true);
+    notifyListeners();
+    unawaited(_refreshDisplayedCharactersForProject(_projects[index]));
   }
 
   void reorderProjects(int oldIndex, int newIndex) {
@@ -393,11 +456,16 @@ class ProjectListController extends ChangeNotifier {
     );
   }
 
-  Future<void> _syncStoryRegistryFromStorage() async {
+  Future<void> _syncCharactersFromStorage() async {
     final characterResult = await _characterRepository.listAllCharacters();
     final characters = characterResult.$1
         ? characterResult.$2 ?? const <CharacterListItem>[]
         : const <CharacterListItem>[];
+
+    _allCharacters
+      ..clear()
+      ..addAll(characters);
+    _applyDisplayedCharacters(characters);
 
     StoryRegistry.instance.syncProjectsAndCharacters(
       projects: _projects
@@ -447,7 +515,7 @@ class ProjectListController extends ChangeNotifier {
       coverColor: record.coverColor,
       accentColor: record.accentColor,
       coverImage: record.coverImage,
-      accentImage: record.accentImage,
+      accentImage: const ProjectImageData(),
       createdAt: record.createdAt,
       lastModified: record.lastModified,
       lastAccessed: record.lastAccessed,
@@ -455,7 +523,64 @@ class ProjectListController extends ChangeNotifier {
       unpinnedIndex: record.unpinnedIndex,
       characterDisplayMode: record.characterDisplayMode,
       characterGridColumns: record.characterGridColumns,
+      featuredCharacterIds: List<int>.unmodifiable(record.featuredCharacterIds),
+      displayedCharacters: _displayedCharactersForProject(
+        record.id,
+        record.featuredCharacterIds,
+      ),
     );
+  }
+
+  void _applyDisplayedCharacters(List<CharacterListItem> characters) {
+    for (final project in _projects) {
+      project.displayedCharacters = resolveProjectShowcaseCharacters(
+        selectedCharacterIds: project.featuredCharacterIds,
+        characters: characters
+            .where((character) => character.projectId == project.id)
+            .toList(growable: false),
+      );
+    }
+  }
+
+  List<CharacterListItem> _displayedCharactersForProject(
+    int? projectId,
+    List<int> featuredCharacterIds,
+  ) {
+    if (projectId == null) {
+      return const <CharacterListItem>[];
+    }
+
+    return resolveProjectShowcaseCharacters(
+      selectedCharacterIds: featuredCharacterIds,
+      characters: _allCharacters
+          .where((character) => character.projectId == projectId)
+          .toList(growable: false),
+    );
+  }
+
+  Future<void> _refreshDisplayedCharactersForProject(
+    ProjectListItem project,
+  ) async {
+    final projectId = project.id;
+    if (projectId == null) {
+      return;
+    }
+
+    final result = await _characterRepository.listCharactersForProject(
+      projectId,
+    );
+    if (!result.$1) {
+      return;
+    }
+
+    final characters = result.$2 ?? const <CharacterListItem>[];
+    _allCharacters.removeWhere((character) => character.projectId == projectId);
+    _allCharacters.addAll(characters);
+    project.displayedCharacters = resolveProjectShowcaseCharacters(
+      selectedCharacterIds: project.featuredCharacterIds,
+      characters: characters,
+    );
+    notifyListeners();
   }
 
   void _invalidatePendingLoads({bool resetLoading = false}) {

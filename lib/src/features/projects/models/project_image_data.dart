@@ -18,6 +18,25 @@ class ProjectImageData {
     this.offsetY = 0,
   });
 
+  ProjectImageData copyWith({
+    Uint8List? bytes,
+    double? width,
+    double? height,
+    double? scale,
+    double? offsetX,
+    double? offsetY,
+    bool clearBytes = false,
+  }) {
+    return ProjectImageData(
+      bytes: clearBytes ? null : bytes ?? this.bytes,
+      width: clearBytes ? null : width ?? this.width,
+      height: clearBytes ? null : height ?? this.height,
+      scale: scale ?? this.scale,
+      offsetX: offsetX ?? this.offsetX,
+      offsetY: offsetY ?? this.offsetY,
+    );
+  }
+
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'bytes': bytes == null ? null : base64Encode(bytes!),

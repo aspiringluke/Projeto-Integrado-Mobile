@@ -24,6 +24,7 @@ class ProjectRepository {
     int unpinnedIndex = 0,
     String characterDisplayMode = 'list',
     int characterGridColumns = 3,
+    List<int> featuredCharacterIds = const <int>[],
   }) {
     final now = DateTime.now();
 
@@ -40,6 +41,7 @@ class ProjectRepository {
         unpinnedIndex: unpinnedIndex,
         characterDisplayMode: characterDisplayMode,
         characterGridColumns: characterGridColumns,
+        featuredCharacterIds: featuredCharacterIds,
         createdAt: now,
         lastModified: now,
         lastAccessed: now,
@@ -59,6 +61,10 @@ class ProjectRepository {
     return service.touchProject(id);
   }
 
+  Future<(bool, String)> saveProject(ProjectRecord project) {
+    return service.updateProject(project);
+  }
+
   Future<(bool, String)> updateProject(
     int id, {
     String? title,
@@ -72,6 +78,7 @@ class ProjectRepository {
     int? unpinnedIndex,
     String? characterDisplayMode,
     int? characterGridColumns,
+    List<int>? featuredCharacterIds,
     DateTime? lastAccessed,
   }) async {
     final current = await getProject(id);
@@ -99,6 +106,8 @@ class ProjectRepository {
             characterDisplayMode ?? project.characterDisplayMode,
         characterGridColumns:
             characterGridColumns ?? project.characterGridColumns,
+        featuredCharacterIds:
+            featuredCharacterIds ?? project.featuredCharacterIds,
         lastAccessed: lastAccessed ?? project.lastAccessed,
       ),
     );

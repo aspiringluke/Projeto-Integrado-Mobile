@@ -14,6 +14,9 @@ import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/main_header.dart';
 import '../data/repositories/project_repository.dart';
 import '../models/project_image_data.dart';
+import '../models/project_record.dart';
+import '../models/project_tag_data.dart';
+import '../widgets/project_general_section.dart';
 import '../widgets/project_image_transform_view.dart';
 
 part 'project_page_shell.dart';

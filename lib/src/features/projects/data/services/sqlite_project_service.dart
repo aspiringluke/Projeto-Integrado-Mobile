@@ -6,6 +6,7 @@ import 'package:projeto_integrado_mobile/src/features/projects/data/services/i_p
 import 'package:projeto_integrado_mobile/src/features/projects/models/project_image_data.dart';
 import 'package:projeto_integrado_mobile/src/features/projects/models/project_record.dart';
 import 'package:projeto_integrado_mobile/src/features/projects/models/project_tag_data.dart';
+import 'package:projeto_integrado_mobile/src/features/projects/utils/project_character_showcase.dart';
 
 class SqliteProjectService implements IProjectService {
   @override
@@ -30,10 +31,11 @@ class SqliteProjectService implements IProjectService {
           ordemNaoFixada,
           modoVisualizacaoPersonagens,
           colunasGradePersonagens,
+          personagensDestaqueJson,
           createdAt,
           lastModified,
           lastAccessed
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         [
           project.title,
@@ -41,12 +43,13 @@ class SqliteProjectService implements IProjectService {
           project.coverColor.toARGB32().toString(),
           project.accentColor.toARGB32().toString(),
           _encodeImage(project.coverImage),
-          _encodeImage(project.accentImage),
+          _encodeImage(const ProjectImageData()),
           _encodeTags(project.tags),
           project.isPinned ? 1 : 0,
           project.unpinnedIndex,
           project.characterDisplayMode,
           project.characterGridColumns,
+          _encodeCharacterIds(project.featuredCharacterIds),
           now,
           now,
           now,
@@ -81,12 +84,12 @@ class SqliteProjectService implements IProjectService {
           corCapa,
           corDestaque,
           imagemCapa,
-          imagemDestaque,
           tagsJson,
           fixado,
           ordemNaoFixada,
           modoVisualizacaoPersonagens,
           colunasGradePersonagens,
+          personagensDestaqueJson,
           createdAt,
           lastModified,
           lastAccessed
@@ -113,8 +116,7 @@ class SqliteProjectService implements IProjectService {
     final conn = await getConnection();
 
     try {
-      final result = conn.select(
-        '''
+      final result = conn.select('''
         SELECT
           idProjeto,
           titulo,
@@ -122,29 +124,24 @@ class SqliteProjectService implements IProjectService {
           corCapa,
           corDestaque,
           imagemCapa,
-          imagemDestaque,
           tagsJson,
           fixado,
           ordemNaoFixada,
           modoVisualizacaoPersonagens,
           colunasGradePersonagens,
+          personagensDestaqueJson,
           createdAt,
           lastModified,
           lastAccessed
         FROM Projeto
         ORDER BY fixado DESC, ordemNaoFixada ASC, idProjeto ASC
-        ''',
-      );
+        ''');
 
       if (result.isEmpty) {
         return (true, null, null);
       }
 
-      return (
-        true,
-        result.map(_mapProject).toList(growable: false),
-        null,
-      );
+      return (true, result.map(_mapProject).toList(growable: false), null);
     } catch (error) {
       return (false, null, _cleanError(error));
     } finally {
@@ -157,10 +154,10 @@ class SqliteProjectService implements IProjectService {
     final conn = await getConnection();
 
     try {
-      conn.execute(
-        'UPDATE Projeto SET lastAccessed = ? WHERE idProjeto = ?',
-        [_nowIso(), id],
-      );
+      conn.execute('UPDATE Projeto SET lastAccessed = ? WHERE idProjeto = ?', [
+        _nowIso(),
+        id,
+      ]);
       return (true, 'Projeto $id acessado');
     } catch (error) {
       return (false, _cleanError(error));
@@ -193,6 +190,7 @@ class SqliteProjectService implements IProjectService {
           ordemNaoFixada = ?,
           modoVisualizacaoPersonagens = ?,
           colunasGradePersonagens = ?,
+          personagensDestaqueJson = ?,
           lastModified = ?,
           lastAccessed = ?
         WHERE idProjeto = ?
@@ -203,12 +201,13 @@ class SqliteProjectService implements IProjectService {
           project.coverColor.toARGB32().toString(),
           project.accentColor.toARGB32().toString(),
           _encodeImage(project.coverImage),
-          _encodeImage(project.accentImage),
+          _encodeImage(const ProjectImageData()),
           _encodeTags(project.tags),
           project.isPinned ? 1 : 0,
           project.unpinnedIndex,
           project.characterDisplayMode,
           project.characterGridColumns,
+          _encodeCharacterIds(project.featuredCharacterIds),
           _nowIso(),
           project.lastAccessed.toIso8601String(),
           project.id,
@@ -232,7 +231,7 @@ class SqliteProjectService implements IProjectService {
       coverColor: Color(_parseColor(row['corCapa']) ?? 0xFFDF6EB8),
       accentColor: Color(_parseColor(row['corDestaque']) ?? 0xFFDF6EB8),
       coverImage: _decodeImage(row['imagemCapa'] as String?),
-      accentImage: _decodeImage(row['imagemDestaque'] as String?),
+      accentImage: const ProjectImageData(),
       isPinned: (row['fixado'] as int? ?? 0) == 1,
       unpinnedIndex: row['ordemNaoFixada'] as int? ?? 0,
       characterDisplayMode:
@@ -241,6 +240,9 @@ class SqliteProjectService implements IProjectService {
           ? row['modoVisualizacaoPersonagens'] as String
           : 'list',
       characterGridColumns: row['colunasGradePersonagens'] as int? ?? 3,
+      featuredCharacterIds: _decodeCharacterIds(
+        row['personagensDestaqueJson'] as String?,
+      ),
       createdAt: _parseDate(row['createdAt']),
       lastModified: _parseDate(row['lastModified']),
       lastAccessed: _parseDate(row['lastAccessed']),
@@ -276,9 +278,35 @@ ProjectImageData _decodeImage(String? raw) {
 }
 
 String _encodeTags(List<ProjectTagData> tags) {
+  return jsonEncode(tags.map((tag) => tag.toJson()).toList(growable: false));
+}
+
+String _encodeCharacterIds(List<int> ids) {
   return jsonEncode(
-    tags.map((tag) => tag.toJson()).toList(growable: false),
+    ids.take(projectShowcaseCharacterLimit).toList(growable: false),
   );
+}
+
+List<int> _decodeCharacterIds(String? raw) {
+  if (raw == null || raw.trim().isEmpty) {
+    return const <int>[];
+  }
+
+  final decoded = jsonDecode(raw);
+  if (decoded is! List) {
+    return const <int>[];
+  }
+
+  return decoded
+      .map((value) {
+        if (value is int) return value;
+        if (value is num) return value.toInt();
+        if (value is String) return int.tryParse(value);
+        return null;
+      })
+      .whereType<int>()
+      .take(projectShowcaseCharacterLimit)
+      .toList(growable: false);
 }
 
 List<ProjectTagData> _decodeTags(String? raw) {

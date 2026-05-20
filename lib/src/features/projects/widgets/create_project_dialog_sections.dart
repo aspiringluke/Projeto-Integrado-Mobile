@@ -376,7 +376,9 @@ class CreateProjectDialogImageSection extends StatelessWidget {
       ),
       viewportPreset: createProjectDialogCoverViewportPreset,
       emptyStateText: 'Nenhuma imagem selecionada',
-      footerNote: 'Formatos suportados: JPEG, PNG, GIF e WEBP.',
+      footerNote:
+          imageController.imageErrorMessage ??
+          'Formatos suportados: JPEG, PNG, GIF e WEBP.',
       onScaleChanged: (value) => imageController.setImageScale(
         CreateProjectDialogColorTarget.cover,
         value,

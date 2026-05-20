@@ -173,7 +173,7 @@ Documento consolidado dos casos de uso.
 ## Fluxo principal
 
 1. Abrir área de imagem do item.
-2. Selecionar imagem (até 5 MB).
+2. Selecionar imagem (até 20 MB).
 3. Sistema valida o arquivo selecionado.
 4. Sistema salva a imagem no item.
 5. Usuário confirma salvamento.

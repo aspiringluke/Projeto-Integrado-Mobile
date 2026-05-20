@@ -90,62 +90,93 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
 
   @override
   Widget build(BuildContext context) {
-    final scrollMetrics = _resolveMetrics();
-    final scrollBehavior = const _SynopsisNoScrollbarBehavior().copyWith(
-      scrollbars: false,
-      overscroll: false,
-    );
-    final scrollableChild = NotificationListener<ScrollMetricsNotification>(
-      onNotification: (_) {
-        _refreshScrollbar();
-        return false;
-      },
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (_) {
-          _refreshScrollbar();
-          return false;
-        },
-        child: ScrollConfiguration(
-          behavior: scrollBehavior,
-          child: widget.childIsScrollable
-              ? widget.child
-              : SingleChildScrollView(
-                  controller: widget.controller,
-                  physics: const BouncingScrollPhysics(
-                    parent: ClampingScrollPhysics(),
-                  ),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: widget.child,
-                  ),
-                ),
-        ),
-      ),
-    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final effectiveHeight = _resolveHeight(constraints);
+        final scrollMetrics = _resolveMetrics(effectiveHeight);
+        final scrollBehavior = const _SynopsisNoScrollbarBehavior().copyWith(
+          scrollbars: false,
+          overscroll: false,
+        );
+        final scrollableChild = NotificationListener<ScrollMetricsNotification>(
+          onNotification: (_) {
+            _refreshScrollbar();
+            return false;
+          },
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (_) {
+              _refreshScrollbar();
+              return false;
+            },
+            child: ScrollConfiguration(
+              behavior: scrollBehavior,
+              child: widget.childIsScrollable
+                  ? widget.child
+                  : SingleChildScrollView(
+                      controller: widget.controller,
+                      physics: const BouncingScrollPhysics(
+                        parent: ClampingScrollPhysics(),
+                      ),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: widget.child,
+                      ),
+                    ),
+            ),
+          ),
+        );
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: widget.height),
-      child: Stack(
-        children: [
-          Padding(padding: widget.contentPadding, child: scrollableChild),
-          if (scrollMetrics.isVisible)
-            Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: IgnorePointer(
-                child: _SynopsisScrollIndicator(
-                  height: widget.height,
-                  metrics: scrollMetrics,
+        final content = Stack(
+          children: [
+            Padding(padding: widget.contentPadding, child: scrollableChild),
+            if (scrollMetrics.isVisible)
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: IgnorePointer(
+                  child: _SynopsisScrollIndicator(
+                    height: effectiveHeight,
+                    metrics: scrollMetrics,
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
+          ],
+        );
+
+        if (widget.height.isFinite) {
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: effectiveHeight),
+            child: content,
+          );
+        }
+
+        return SizedBox(height: effectiveHeight, child: content);
+      },
     );
   }
 
-  _SynopsisScrollMetrics _resolveMetrics() {
+  double _resolveHeight(BoxConstraints constraints) {
+    if (widget.height.isFinite) {
+      return math.max(0, widget.height);
+    }
+
+    if (constraints.maxHeight.isFinite) {
+      return math.max(0, constraints.maxHeight);
+    }
+
+    return 0;
+  }
+
+  _SynopsisScrollMetrics _resolveMetrics(double effectiveHeight) {
+    if (effectiveHeight <= 0) {
+      return const _SynopsisScrollMetrics(
+        isVisible: false,
+        thumbExtent: 0,
+        thumbOffset: 0,
+      );
+    }
+
     if (!widget.controller.hasClients) {
       return const _SynopsisScrollMetrics(
         isVisible: false,
@@ -156,7 +187,7 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
 
     final position = widget.controller.position;
     final viewportExtent = position.viewportDimension <= 0
-        ? widget.height
+        ? effectiveHeight
         : position.viewportDimension;
     final maxScrollExtent = position.maxScrollExtent;
 
@@ -169,17 +200,17 @@ class _SynopsisScrollBoxState extends State<SynopsisScrollBox> {
     }
 
     final totalContentExtent = viewportExtent + maxScrollExtent;
-    final thumbExtent = math.max(
-      24.0,
-      widget.height * (viewportExtent / totalContentExtent),
-    );
-    final availableOffset = widget.height - thumbExtent;
+    final thumbExtent = math
+        .max(24.0, effectiveHeight * (viewportExtent / totalContentExtent))
+        .clamp(0.0, effectiveHeight)
+        .toDouble();
+    final availableOffset = math.max(0.0, effectiveHeight - thumbExtent);
     final scrollFraction = (position.pixels / maxScrollExtent).clamp(0.0, 1.0);
 
     return _SynopsisScrollMetrics(
       isVisible: true,
       thumbExtent: thumbExtent,
-      thumbOffset: availableOffset * scrollFraction,
+      thumbOffset: math.max(0.0, availableOffset * scrollFraction),
     );
   }
 }
@@ -205,9 +236,17 @@ class _SynopsisScrollIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedHeight = math.max(0.0, height);
+    final thumbHeight = metrics.thumbExtent
+        .clamp(math.min(16.0, resolvedHeight), resolvedHeight)
+        .toDouble();
+    final thumbOffset = metrics.thumbOffset
+        .clamp(0.0, math.max(0.0, resolvedHeight - thumbHeight))
+        .toDouble();
+
     return SizedBox(
       width: 3,
-      height: height,
+      height: resolvedHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: const Color(0xFFD8D3D8),
@@ -218,9 +257,9 @@ class _SynopsisScrollIndicator extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             curve: Curves.easeOutCubic,
-            margin: EdgeInsets.only(top: metrics.thumbOffset),
+            margin: EdgeInsets.only(top: thumbOffset),
             width: 3,
-            height: metrics.thumbExtent.clamp(16.0, height),
+            height: thumbHeight,
             decoration: BoxDecoration(
               color: const Color(0xFFDF6EB8),
               borderRadius: BorderRadius.circular(999),

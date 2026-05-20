@@ -12,6 +12,7 @@ import '../../projects/models/project_image_data.dart';
 import '../../projects/models/project_tag_data.dart';
 import '../../projects/widgets/project_color_editor.dart';
 import '../../projects/utils/project_image_picker.dart';
+import '../../projects/utils/project_image_picker_result.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../../projects/widgets/project_image_transform_view.dart';
 import '../../../shared/widgets/synopsis_scroll_box.dart';
@@ -2148,6 +2149,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   _CharacterColorTarget _activeColorTarget = _CharacterColorTarget.cover;
   bool _hasPendingParentSync = false;
   bool _didFlushParentSync = false;
+  bool _isHeaderImageControlsExpanded = false;
 
   DateTime? _birthdayValue;
   double? _heightCmValue;
@@ -2364,7 +2366,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 RepaintBoundary(
-                  child: _NotebookHeader(data: _draft, onClose: _closePage),
+                  child: _NotebookHeader(
+                    data: _draft,
+                    isImageControlsExpanded: _isHeaderImageControlsExpanded,
+                    onClose: _closePage,
+                    onToggleImageControls: _toggleHeaderImageControls,
+                    onProfileImageChanged: _updateProfileImage,
+                    onProfileScaleChanged: _setProfileImageScale,
+                  ),
                 ),
                 Expanded(
                   child: SafeArea(
@@ -2787,9 +2796,13 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                   const SizedBox(height: 12),
                   _ImageTile(
                     accentColor: _draft.accent,
+                    avatarColor: _draft.avatarColor,
+                    image: _draft.profileImage,
                     imageLabel: _draft.profileImage.bytes == null
                         ? 'Nenhuma foto adicionada'
                         : 'Foto de perfil carregada',
+                    onScaleChanged: _setProfileImageScale,
+                    onOffsetChanged: _setProfileImageOffset,
                     onPickImage: _pickProfileImage,
                     onRemoveImage: _draft.profileImage.bytes == null
                         ? null
@@ -3668,22 +3681,28 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   }
 
   Future<void> _pickProfileImage() async {
-    final result = await pickProjectImage();
-    if (!mounted || result == null) return;
+    ProjectImagePickResult? result;
+    try {
+      result = await pickProjectImage();
+    } on ProjectImagePickException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    final codec = await instantiateImageCodec(result.bytes);
-    final frame = await codec.getNextFrame();
-    final image = frame.image;
-    final size = Size(image.width.toDouble(), image.height.toDouble());
-    image.dispose();
-    codec.dispose();
+    if (!mounted || result == null) return;
 
     _updateDraft(
       _draft.copyWith(
         profileImage: ProjectImageData(
           bytes: result.bytes,
-          width: size.width,
-          height: size.height,
+          width: result.width,
+          height: result.height,
         ),
       ),
     );
@@ -3691,6 +3710,26 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   void _removeProfileImage() {
     _updateDraft(_draft.copyWith(profileImage: const ProjectImageData()));
+  }
+
+  void _updateProfileImage(ProjectImageData image) {
+    _updateDraft(_draft.copyWith(profileImage: image));
+  }
+
+  void _setProfileImageScale(double scale) {
+    _updateProfileImage(_draft.profileImage.copyWith(scale: scale));
+  }
+
+  void _setProfileImageOffset(double offsetX, double offsetY) {
+    _updateProfileImage(
+      _draft.profileImage.copyWith(offsetX: offsetX, offsetY: offsetY),
+    );
+  }
+
+  void _toggleHeaderImageControls() {
+    setState(() {
+      _isHeaderImageControlsExpanded = !_isHeaderImageControlsExpanded;
+    });
   }
 
   void _updateActiveColor(Color color) {
@@ -5042,9 +5081,20 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
 class _NotebookHeader extends StatelessWidget {
   final CharacterCardData data;
+  final bool isImageControlsExpanded;
   final VoidCallback onClose;
+  final VoidCallback onToggleImageControls;
+  final ValueChanged<ProjectImageData> onProfileImageChanged;
+  final ValueChanged<double> onProfileScaleChanged;
 
-  const _NotebookHeader({required this.data, required this.onClose});
+  const _NotebookHeader({
+    required this.data,
+    required this.isImageControlsExpanded,
+    required this.onClose,
+    required this.onToggleImageControls,
+    required this.onProfileImageChanged,
+    required this.onProfileScaleChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -5072,21 +5122,29 @@ class _NotebookHeader extends StatelessWidget {
           backgroundChild: Stack(
             fit: StackFit.expand,
             children: [
-              IgnorePointer(child: _NotebookHeaderCoverBackground(data: data)),
+              _NotebookHeaderCoverBackground(
+                data: data,
+                isImageControlsExpanded: isImageControlsExpanded,
+                onToggleImageControls: onToggleImageControls,
+                onProfileImageChanged: onProfileImageChanged,
+                onProfileScaleChanged: onProfileScaleChanged,
+              ),
               Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        data.accent.withValues(alpha: 0.035),
-                        Colors.black.withValues(alpha: 0.12),
-                        Colors.white.withValues(alpha: 0.03),
-                        Colors.black.withValues(alpha: 0.12),
-                        data.accent.withValues(alpha: 0.035),
-                      ],
-                      stops: const [0.0, 0.18, 0.5, 0.82, 1.0],
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          data.accent.withValues(alpha: 0.035),
+                          Colors.black.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.03),
+                          Colors.black.withValues(alpha: 0.12),
+                          data.accent.withValues(alpha: 0.035),
+                        ],
+                        stops: const [0.0, 0.18, 0.5, 0.82, 1.0],
+                      ),
                     ),
                   ),
                 ),
@@ -5277,8 +5335,18 @@ class _NotebookHeaderTitleBlock extends StatelessWidget {
 
 class _NotebookHeaderCoverBackground extends StatelessWidget {
   final CharacterCardData data;
+  final bool isImageControlsExpanded;
+  final VoidCallback onToggleImageControls;
+  final ValueChanged<ProjectImageData> onProfileImageChanged;
+  final ValueChanged<double> onProfileScaleChanged;
 
-  const _NotebookHeaderCoverBackground({required this.data});
+  const _NotebookHeaderCoverBackground({
+    required this.data,
+    required this.isImageControlsExpanded,
+    required this.onToggleImageControls,
+    required this.onProfileImageChanged,
+    required this.onProfileScaleChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -5326,10 +5394,41 @@ class _NotebookHeaderCoverBackground extends StatelessWidget {
           ),
         ),
         if (data.profileImage.bytes != null) ...[
-          _NotebookHeaderCoverImageLayer(
-            profileImage: data.profileImage,
-            sigma: 0,
-            opacity: 0.9,
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final profileImage = data.profileImage;
+                final metrics = computeProjectImageViewportMetrics(
+                  viewportSize: constraints.biggest,
+                  imageWidth: profileImage.width ?? 0,
+                  imageHeight: profileImage.height ?? 0,
+                  scale: profileImage.scale,
+                );
+
+                return GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanUpdate: (details) {
+                    final offset = resolveProjectImageDragOffset(
+                      currentOffsetX: profileImage.offsetX,
+                      currentOffsetY: profileImage.offsetY,
+                      dragDelta: details.delta,
+                      metrics: metrics,
+                    );
+                    onProfileImageChanged(
+                      profileImage.copyWith(
+                        offsetX: offset.dx,
+                        offsetY: offset.dy,
+                      ),
+                    );
+                  },
+                  child: _NotebookHeaderCoverImageLayer(
+                    profileImage: profileImage,
+                    sigma: 0,
+                    opacity: 0.9,
+                  ),
+                );
+              },
+            ),
           ),
         ] else ...[
           _NotebookHeaderCoverIconLayer(
@@ -5339,38 +5438,54 @@ class _NotebookHeaderCoverBackground extends StatelessWidget {
           ),
         ],
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.18),
-                  Colors.transparent,
-                  Colors.white.withValues(alpha: 0.05),
-                  Colors.white.withValues(alpha: 0.16),
-                ],
-                stops: const [0.0, 0.34, 0.76, 1.0],
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.18),
+                    Colors.transparent,
+                    Colors.white.withValues(alpha: 0.05),
+                    Colors.white.withValues(alpha: 0.16),
+                  ],
+                  stops: const [0.0, 0.34, 0.76, 1.0],
+                ),
               ),
             ),
           ),
         ),
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withValues(alpha: 0.16),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.06),
-                ],
-                stops: const [0.0, 0.52, 1.0],
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.16),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.06),
+                  ],
+                  stops: const [0.0, 0.52, 1.0],
+                ),
               ),
             ),
           ),
         ),
+        if (data.profileImage.bytes != null)
+          Positioned(
+            right: 14,
+            bottom: 10,
+            child: _NotebookHeaderImageControls(
+              accentColor: data.accent,
+              isExpanded: isImageControlsExpanded,
+              scale: data.profileImage.scale,
+              onToggle: onToggleImageControls,
+              onScaleChanged: onProfileScaleChanged,
+            ),
+          ),
       ],
     );
   }
@@ -5408,6 +5523,124 @@ class _NotebookHeaderCoverImageLayer extends StatelessWidget {
               imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
               child: image,
             ),
+    );
+  }
+}
+
+class _NotebookHeaderImageControls extends StatelessWidget {
+  final Color accentColor;
+  final bool isExpanded;
+  final double scale;
+  final VoidCallback onToggle;
+  final ValueChanged<double> onScaleChanged;
+
+  const _NotebookHeaderImageControls({
+    required this.accentColor,
+    required this.isExpanded,
+    required this.scale,
+    required this.onToggle,
+    required this.onScaleChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          width: isExpanded ? 168 : 46,
+          height: 42,
+          padding: EdgeInsets.only(
+            left: 6,
+            right: isExpanded ? 10 : 6,
+            top: 5,
+            bottom: 5,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.38)),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.12),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _NotebookHeaderImageControlButton(
+                icon: isExpanded
+                    ? Icons.keyboard_arrow_right_rounded
+                    : Icons.tune_rounded,
+                tooltip: isExpanded ? 'Recolher ajuste' : 'Ajustar imagem',
+                onTap: onToggle,
+              ),
+              if (isExpanded) ...[
+                const SizedBox(width: 4),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 6,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 12,
+                      ),
+                      activeTrackColor: Colors.white.withValues(alpha: 0.92),
+                      inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                      thumbColor: Colors.white,
+                    ),
+                    child: Slider(
+                      value: scale.clamp(1.0, 3.0).toDouble(),
+                      min: 1,
+                      max: 3,
+                      onChanged: onScaleChanged,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotebookHeaderImageControlButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _NotebookHeaderImageControlButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(icon, size: 20, color: Colors.white),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -5827,7 +6060,7 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
                           if (widget.fields != null &&
                               widget.fields!.isNotEmpty)
                             Text(
-                              widget.fields!.map((f) => 'â€¢ $f').join('  '),
+                              widget.fields!.map((f) => '\u2022 $f').join('  '),
                               style: TextStyle(
                                 color: Colors.black.withValues(alpha: 0.48),
                                 fontSize: 10.5,
@@ -6305,13 +6538,21 @@ class _ImageTileLegacy extends StatelessWidget {
 
 class _ImageTile extends StatelessWidget {
   final Color accentColor;
+  final Color avatarColor;
+  final ProjectImageData image;
   final String imageLabel;
+  final ValueChanged<double> onScaleChanged;
+  final void Function(double offsetX, double offsetY) onOffsetChanged;
   final VoidCallback onPickImage;
   final VoidCallback? onRemoveImage;
 
   const _ImageTile({
     required this.accentColor,
+    required this.avatarColor,
+    required this.image,
     required this.imageLabel,
+    required this.onScaleChanged,
+    required this.onOffsetChanged,
     required this.onPickImage,
     required this.onRemoveImage,
   });
@@ -6348,6 +6589,16 @@ class _ImageTile extends StatelessWidget {
               height: 1.3,
             ),
           ),
+          if (image.bytes != null) ...[
+            const SizedBox(height: 10),
+            _NotebookProfileImageEditor(
+              image: image,
+              accentColor: accentColor,
+              avatarColor: avatarColor,
+              onScaleChanged: onScaleChanged,
+              onOffsetChanged: onOffsetChanged,
+            ),
+          ],
           const SizedBox(height: 10),
           Row(
             children: [
@@ -6369,6 +6620,229 @@ class _ImageTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NotebookProfileImageEditor extends StatelessWidget {
+  final ProjectImageData image;
+  final Color accentColor;
+  final Color avatarColor;
+  final ValueChanged<double> onScaleChanged;
+  final void Function(double offsetX, double offsetY) onOffsetChanged;
+
+  const _NotebookProfileImageEditor({
+    required this.image,
+    required this.accentColor,
+    required this.avatarColor,
+    required this.onScaleChanged,
+    required this.onOffsetChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final frameWidth = (constraints.maxWidth - 44)
+            .clamp(160.0, 260.0)
+            .toDouble();
+        final frameHeight =
+            frameWidth *
+            (characterProfileTileHeight / characterProfileTileWidth);
+        final canvasHeight = frameHeight + 44;
+        final frameTop = (canvasHeight - frameHeight) / 2;
+        final frameLeft = (constraints.maxWidth - frameWidth) / 2;
+        final metrics = computeProjectImageViewportMetrics(
+          viewportSize: Size(frameWidth, frameHeight),
+          imageWidth: image.width ?? 0,
+          imageHeight: image.height ?? 0,
+          scale: image.scale,
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                height: canvasHeight,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color.alphaBlend(
+                        accentColor.withValues(alpha: 0.14),
+                        Colors.white.withValues(alpha: 0.84),
+                      ),
+                      Color.alphaBlend(
+                        avatarColor.withValues(alpha: 0.34),
+                        const Color(0xFFF8F1F5),
+                      ),
+                      Color.alphaBlend(
+                        accentColor.withValues(alpha: 0.12),
+                        const Color(0xFFF0E2EA),
+                      ),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.82),
+                  ),
+                ),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanUpdate: (details) {
+                    final offset = resolveProjectImageDragOffset(
+                      currentOffsetX: image.offsetX,
+                      currentOffsetY: image.offsetY,
+                      dragDelta: details.delta,
+                      metrics: metrics,
+                    );
+                    onOffsetChanged(offset.dx, offset.dy);
+                  },
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: SizedBox(
+                          width: frameWidth,
+                          height: frameHeight,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              bottomLeft: Radius.circular(16),
+                              topRight: Radius.circular(18),
+                              bottomRight: Radius.circular(18),
+                            ),
+                            child: ProjectImageTransformView(
+                              imageBytes: image.bytes!,
+                              imageWidth: image.width ?? frameWidth,
+                              imageHeight: image.height ?? frameHeight,
+                              scale: image.scale,
+                              offsetX: image.offsetX,
+                              offsetY: image.offsetY,
+                              viewportWidth: frameWidth,
+                              viewportHeight: frameHeight,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IgnorePointer(
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              top: 0,
+                              height: frameTop,
+                              child: ColoredBox(
+                                color: Colors.white.withValues(alpha: 0.34),
+                              ),
+                            ),
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              height: frameTop,
+                              child: ColoredBox(
+                                color: Colors.white.withValues(alpha: 0.34),
+                              ),
+                            ),
+                            Positioned(
+                              left: 0,
+                              top: frameTop,
+                              bottom: frameTop,
+                              width: frameLeft,
+                              child: ColoredBox(
+                                color: Colors.white.withValues(alpha: 0.34),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              top: frameTop,
+                              bottom: frameTop,
+                              width: frameLeft,
+                              child: ColoredBox(
+                                color: Colors.white.withValues(alpha: 0.34),
+                              ),
+                            ),
+                            Positioned(
+                              left: frameLeft,
+                              top: frameTop,
+                              width: frameWidth,
+                              height: frameHeight,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    bottomLeft: Radius.circular(16),
+                                    topRight: Radius.circular(18),
+                                    bottomRight: Radius.circular(18),
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.94),
+                                    width: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Text(
+                  'Zoom',
+                  style: TextStyle(
+                    color: Color(0xFF514752),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 8,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 8,
+                      ),
+                      activeTrackColor: accentColor,
+                      inactiveTrackColor: accentColor.withValues(alpha: 0.22),
+                      thumbColor: accentColor,
+                    ),
+                    child: Slider(
+                      value: image.scale.clamp(1.0, 3.0).toDouble(),
+                      min: 1,
+                      max: 3,
+                      onChanged: onScaleChanged,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 36,
+                  child: Text(
+                    '${image.scale.toStringAsFixed(1)}x',
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      color: Color(0xFF7A7079),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

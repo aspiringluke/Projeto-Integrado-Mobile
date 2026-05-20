@@ -77,14 +77,271 @@ Future<void> _showAnchoredInfoBubble({
 }
 
 class _ProjectInfoButton extends StatelessWidget {
-  const _ProjectInfoButton();
+  final List<CharacterListItem> characters;
+  final ValueChanged<CharacterListItem>? onCharacterTap;
+
+  const _ProjectInfoButton({required this.characters, this.onCharacterTap});
+
+  static const double _thumbnailSize = 44;
+  static const double _thumbnailGap = 6;
+  static const double _comfortableTrailingSpace = 6;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 38,
-      height: 38,
-      child: Center(child: _DottedCircle()),
+    if (characters.isEmpty) {
+      return const SizedBox(
+        width: 76,
+        height: 76,
+        child: Center(child: _DottedCircle()),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : double.infinity;
+        final fitCount = availableWidth.isFinite
+            ? ((availableWidth + _thumbnailGap - _comfortableTrailingSpace) /
+                      (_thumbnailSize + _thumbnailGap))
+                  .floor()
+                  .clamp(1, projectShowcaseCharacterLimit)
+            : projectShowcaseCharacterLimit;
+        final visibleCharacters = characters
+            .take(fitCount)
+            .toList(growable: false);
+
+        return SizedBox(
+          height: 52,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < visibleCharacters.length; index++)
+                Padding(
+                  padding: EdgeInsets.only(
+                    right: index == visibleCharacters.length - 1
+                        ? 0
+                        : _thumbnailGap,
+                  ),
+                  child: Tooltip(
+                    message: visibleCharacters[index].data.name.trim().isEmpty
+                        ? 'Abrir personagem'
+                        : visibleCharacters[index].data.name,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: onCharacterTap == null
+                            ? null
+                            : () => onCharacterTap!(visibleCharacters[index]),
+                        child: _ProjectCharacterThumbnail(
+                          character: visibleCharacters[index],
+                          size: _thumbnailSize,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProjectCharacterThumbnail extends StatelessWidget {
+  final CharacterListItem character;
+  final double size;
+
+  const _ProjectCharacterThumbnail({
+    required this.character,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final image = character.data.profileImage;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            character.data.avatarColor.withValues(alpha: 0.95),
+            character.data.accent.withValues(alpha: 0.78),
+            Colors.white.withValues(alpha: 0.36),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.96),
+          width: 1.35,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 7,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      foregroundDecoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.72),
+          width: 0.75,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.18),
+            Colors.white.withValues(alpha: 0.04),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.32, 0.72],
+        ),
+      ),
+      child: ClipOval(
+        child: image.bytes == null
+            ? Icon(
+                Icons.person_rounded,
+                size: size * 0.56,
+                color: const Color(0xFF171419).withValues(alpha: 0.7),
+              )
+            : _StaticProjectCharacterThumbnailImage(image: image, size: size),
+      ),
+    );
+  }
+}
+
+class _StaticProjectCharacterThumbnailImage extends StatefulWidget {
+  final ProjectImageData image;
+  final double size;
+
+  const _StaticProjectCharacterThumbnailImage({
+    required this.image,
+    required this.size,
+  });
+
+  @override
+  State<_StaticProjectCharacterThumbnailImage> createState() =>
+      _StaticProjectCharacterThumbnailImageState();
+}
+
+class _StaticProjectCharacterThumbnailImageState
+    extends State<_StaticProjectCharacterThumbnailImage> {
+  late Future<Uint8List> _imageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _imageBytes = _resolveThumbnailBytes(widget.image.bytes!);
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant _StaticProjectCharacterThumbnailImage oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.image.bytes != widget.image.bytes) {
+      _imageBytes = _resolveThumbnailBytes(widget.image.bytes!);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _imageBytes,
+      builder: (context, snapshot) {
+        final imageBytes = snapshot.data ?? widget.image.bytes!;
+        return ProjectImageTransformView(
+          imageBytes: imageBytes,
+          imageWidth: widget.image.width ?? widget.size,
+          imageHeight: widget.image.height ?? widget.size,
+          scale: widget.image.scale,
+          offsetX: widget.image.offsetX,
+          offsetY: widget.image.offsetY,
+          viewportWidth: widget.size,
+          viewportHeight: widget.size,
+        );
+      },
+    );
+  }
+}
+
+Future<Uint8List> _resolveThumbnailBytes(Uint8List bytes) {
+  if (!_isGifBytes(bytes)) {
+    return Future<Uint8List>.value(bytes);
+  }
+
+  return _decodeFirstGifFrame(bytes);
+}
+
+bool _isGifBytes(Uint8List bytes) {
+  if (bytes.lengthInBytes < 6) {
+    return false;
+  }
+
+  return bytes[0] == 0x47 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x38 &&
+      (bytes[4] == 0x37 || bytes[4] == 0x39) &&
+      bytes[5] == 0x61;
+}
+
+Future<Uint8List> _decodeFirstGifFrame(Uint8List bytes) async {
+  final codec = await instantiateImageCodec(bytes);
+  final frame = await codec.getNextFrame();
+  final image = frame.image;
+  final data = await image.toByteData(format: ImageByteFormat.png);
+  image.dispose();
+  codec.dispose();
+  return data?.buffer.asUint8List() ?? bytes;
+}
+
+class _ProjectCharacterNamePill extends StatelessWidget {
+  final CharacterListItem character;
+
+  const _ProjectCharacterNamePill({required this.character});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 180),
+      padding: const EdgeInsets.fromLTRB(5, 4, 9, 4),
+      decoration: BoxDecoration(
+        color: character.data.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: character.data.accent.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ProjectCharacterThumbnail(character: character, size: 24),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              character.data.name.trim().isEmpty
+                  ? 'Sem nome'
+                  : character.data.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF3E313A),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -95,12 +352,12 @@ class _DottedCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 26,
-      height: 26,
+      width: 52,
+      height: 52,
       child: CustomPaint(
         painter: _DottedCirclePainter(
           color: const Color(0xFFB0B0B0),
-          strokeWidth: 2,
+          strokeWidth: 2.8,
         ),
       ),
     );

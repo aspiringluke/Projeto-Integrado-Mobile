@@ -49,28 +49,56 @@ class _ProjectDateEntries {
 
 class _ProjectDetails extends StatelessWidget {
   final String projectTitle;
+  final int? projectId;
+  final String synopsis;
   final _ProjectDateEntry dateEntry;
   final List<ProjectTagData> tags;
+  final List<ProjectTagData> availableTags;
+  final Color coverColor;
   final Color accentColor;
   final ProjectImageData coverImage;
+  final ProjectImageData accentImage;
+  final DateTime createdAt;
+  final DateTime lastModified;
+  final DateTime lastAccessed;
+  final bool isPinned;
+  final int unpinnedIndex;
+  final List<int> featuredCharacterIds;
+  final List<CharacterListItem> displayedCharacters;
   final bool isEditing;
   final TextEditingController synopsisController;
   final String synopsisText;
   final VoidCallback onCycleDateType;
   final VoidCallback onToggleEditing;
+  final ValueChanged<ProjectRecord>? onProjectChanged;
+  final VoidCallback? onProjectReloadRequested;
   final ScrollController synopsisScrollController;
 
   const _ProjectDetails({
     required this.projectTitle,
+    required this.projectId,
+    required this.synopsis,
     required this.dateEntry,
     required this.tags,
+    required this.availableTags,
+    required this.coverColor,
     required this.accentColor,
     required this.coverImage,
+    required this.accentImage,
+    required this.createdAt,
+    required this.lastModified,
+    required this.lastAccessed,
+    required this.isPinned,
+    required this.unpinnedIndex,
+    required this.featuredCharacterIds,
+    required this.displayedCharacters,
     required this.isEditing,
     required this.synopsisController,
     required this.synopsisText,
     required this.onCycleDateType,
     required this.onToggleEditing,
+    required this.onProjectChanged,
+    required this.onProjectReloadRequested,
     required this.synopsisScrollController,
   });
 
@@ -114,15 +142,7 @@ class _ProjectDetails extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(
-                child: ProjectAccentFill(
-                  accentColor: accentColor,
-                  imageBytes: coverImage.bytes,
-                  imageWidth: coverImage.width,
-                  imageHeight: coverImage.height,
-                  imageScale: coverImage.scale,
-                  imageOffsetX: coverImage.offsetX,
-                  imageOffsetY: coverImage.offsetY,
-                ),
+                child: ProjectAccentFill(accentColor: accentColor),
               ),
               Positioned.fill(
                 child: IgnorePointer(
@@ -255,20 +275,35 @@ class _ProjectDetails extends StatelessWidget {
                       const SizedBox(height: 16),
                     ],
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Builder(
-                          builder: (context) {
-                            return GestureDetector(
-                              behavior: HitTestBehavior.translucent,
-                              onTap: () => _showProjectCharacterInfo(
-                                context,
-                                rectFromContext(context),
-                              ),
-                              child: const _ProjectInfoButton(),
-                            );
-                          },
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              if (displayedCharacters.isEmpty) {
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.translucent,
+                                  onTap: () => _showProjectCharacterInfo(
+                                    context,
+                                    rectFromContext(context),
+                                  ),
+                                  child: _ProjectInfoButton(
+                                    characters: displayedCharacters,
+                                  ),
+                                );
+                              }
+
+                              return _ProjectInfoButton(
+                                characters: displayedCharacters,
+                                onCharacterTap: (character) =>
+                                    _openDisplayedCharacterPage(
+                                      context,
+                                      character,
+                                    ),
+                              );
+                            },
+                          ),
                         ),
+                        const SizedBox(width: 12),
                         GlassCircleButton(
                           diameter: 34,
                           blurSigma: 6,
@@ -316,19 +351,35 @@ class _ProjectDetails extends StatelessWidget {
     Rect anchorRect,
   ) async {
     final recognizer = TapGestureRecognizer()
-      ..onTap = () {
+      ..onTap = () async {
         Navigator.of(context).pop();
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
+        final updatedProject = await Navigator.of(context).push<ProjectRecord>(
+          MaterialPageRoute<ProjectRecord>(
             builder: (_) => ProjectPage(
+              projectId: projectId,
               title: projectTitle,
+              synopsis: synopsis,
+              tags: tags,
+              availableTags: availableTags,
               accentColor: accentColor,
-              coverColor: accentColor,
+              coverColor: coverColor,
               coverImage: coverImage,
+              accentImage: accentImage,
+              createdAt: createdAt,
+              lastModified: lastModified,
+              lastAccessed: lastAccessed,
+              isPinned: isPinned,
+              unpinnedIndex: unpinnedIndex,
+              featuredCharacterIds: featuredCharacterIds,
               initialSection: ProjectSectionId.configProjeto,
             ),
           ),
         );
+        if (updatedProject != null) {
+          onProjectChanged?.call(updatedProject);
+          return;
+        }
+        onProjectReloadRequested?.call();
       };
 
     await _showAnchoredInfoBubble(
@@ -339,8 +390,10 @@ class _ProjectDetails extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Nenhum personagem exibido aqui.',
+          Text(
+            displayedCharacters.isEmpty
+                ? 'Nenhum personagem exibido aqui.'
+                : 'Personagens exibidos',
             style: TextStyle(
               color: Color(0xFF3E313A),
               fontSize: 13.5,
@@ -348,6 +401,17 @@ class _ProjectDetails extends StatelessWidget {
               fontStyle: FontStyle.italic,
             ),
           ),
+          if (displayedCharacters.isNotEmpty) ...[
+            const SizedBox(height: 9),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final character in displayedCharacters)
+                  _ProjectCharacterNamePill(character: character),
+              ],
+            ),
+          ],
           const SizedBox(height: 7),
           Text(
             'Os 3 personagens de maior relevância são automaticamente exibidos, ou você pode escolher manualmente na',
@@ -385,6 +449,49 @@ class _ProjectDetails extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openDisplayedCharacterPage(
+    BuildContext context,
+    CharacterListItem character,
+  ) async {
+    final repository = CharacterRepository();
+    final navigator = Navigator.of(context);
+    final characterId = character.id;
+    if (characterId != null) {
+      character.lastAccessed = DateTime.now();
+      await repository.touchCharacter(characterId);
+    }
+
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => CharacterNotebookPage(
+          data: character.data,
+          onChanged: (updatedData) async {
+            character.data = updatedData;
+            character.lastModified = DateTime.now();
+            character.lastAccessed = DateTime.now();
+
+            if (characterId == null) {
+              return;
+            }
+
+            await repository.updateCharacter(
+              characterId,
+              projectTitle: character.projectTitle ?? projectTitle,
+              data: updatedData,
+              lastAccessed: character.lastAccessed,
+            );
+          },
+        ),
+      ),
+    );
+
+    if (characterId != null) {
+      character.lastAccessed = DateTime.now();
+      await repository.touchCharacter(characterId);
+    }
+    onProjectReloadRequested?.call();
   }
 }
 

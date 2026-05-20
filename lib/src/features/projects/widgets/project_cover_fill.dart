@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -96,23 +95,8 @@ Color _lightenProjectCoverColor(Color color, double amount) {
 
 class ProjectAccentFill extends StatelessWidget {
   final Color accentColor;
-  final Uint8List? imageBytes;
-  final double? imageWidth;
-  final double? imageHeight;
-  final double imageScale;
-  final double imageOffsetX;
-  final double imageOffsetY;
 
-  const ProjectAccentFill({
-    super.key,
-    required this.accentColor,
-    this.imageBytes,
-    this.imageWidth,
-    this.imageHeight,
-    this.imageScale = 1,
-    this.imageOffsetX = 0,
-    this.imageOffsetY = 0,
-  });
+  const ProjectAccentFill({super.key, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -139,32 +123,6 @@ class ProjectAccentFill extends StatelessWidget {
             ),
           ),
         ),
-        if (imageBytes != null)
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.44,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 1.6, sigmaY: 1.6),
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    Color.alphaBlend(
-                      accentColor.withValues(alpha: 0.24),
-                      Colors.white.withValues(alpha: 0.08),
-                    ),
-                    BlendMode.modulate,
-                  ),
-                  child: _ProjectCoverImageViewport(
-                    imageBytes: imageBytes!,
-                    imageWidth: imageWidth ?? 0,
-                    imageHeight: imageHeight ?? 0,
-                    scale: imageScale,
-                    offsetX: imageOffsetX,
-                    offsetY: imageOffsetY,
-                  ),
-                ),
-              ),
-            ),
-          ),
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(

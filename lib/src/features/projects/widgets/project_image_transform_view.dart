@@ -62,6 +62,31 @@ double clampProjectImageOffset(
   return offset.clamp(-1.0, 1.0).toDouble();
 }
 
+Offset resolveProjectImageDragOffset({
+  required double currentOffsetX,
+  required double currentOffsetY,
+  required Offset dragDelta,
+  required ProjectImageViewportMetrics metrics,
+}) {
+  final nextOffsetX = metrics.maxTranslationX <= 0
+      ? 0.0
+      : currentOffsetX + (dragDelta.dx / metrics.maxTranslationX);
+  final nextOffsetY = metrics.maxTranslationY <= 0
+      ? 0.0
+      : currentOffsetY + (dragDelta.dy / metrics.maxTranslationY);
+
+  return Offset(
+    clampProjectImageOffset(
+      nextOffsetX,
+      maxTranslation: metrics.maxTranslationX,
+    ),
+    clampProjectImageOffset(
+      nextOffsetY,
+      maxTranslation: metrics.maxTranslationY,
+    ),
+  );
+}
+
 class ProjectImageTransformView extends StatelessWidget {
   final Uint8List imageBytes;
   final double imageWidth;
