@@ -8,15 +8,14 @@ start
 if (Deseja atualizar imagem?) then (sim)
   :Acionar upload de imagem;
 endif
+if (Deseja remover imagem atual?) then (sim)
+  :Remover imagem do perfil;
+endif
 :Clicar em "Salvar";
 
 |Sistema|
-if (Dados válidos?) then (sim)
-  :Persistir alterações da ficha;
-  :Atualizar listagem;
-else (não)
-  :Exibir inconsistências de validação;
-endif
+:Persistir alterações da ficha;
+:Atualizar listagem;
 
 stop
 @enduml

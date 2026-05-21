@@ -4,17 +4,18 @@
 start
 :Acessar tela de edição do projeto;
 :Alterar nome e/ou sinopse;
-:Atualizar imagem/cor/tags/personagens do cartão;
+:Ajustar cor/tags/personagens do cartão;
+if (Deseja atualizar imagem?) then (sim)
+  :Acionar upload de imagem;
+endif
+if (Deseja remover imagem atual?) then (sim)
+  :Remover imagem do cartão;
+endif
 :Clicar em "Salvar";
 
 |Sistema|
-if (Dados válidos?) then (sim)
-  :Persistir alterações do projeto;
-  :Exibir confirmação de sucesso;
-else (não)
-  :Exibir erros de validação;
-  :Manter usuário na edição;
-endif
+:Persistir alterações do projeto;
+:Exibir confirmação de sucesso;
 
 stop
 @enduml

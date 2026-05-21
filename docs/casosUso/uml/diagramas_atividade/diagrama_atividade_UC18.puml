@@ -26,6 +26,9 @@ else (Excluir aresta)
   :Remover aresta e manter nós;
 endif
 
+|Usuário|
+:Confirmar salvamento;
+
 |Sistema|
 :Persistir estado do diagrama;
 stop
