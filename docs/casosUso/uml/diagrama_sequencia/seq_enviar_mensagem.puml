@@ -1,0 +1,60 @@
+@startuml Diagrama de Sequencia - Enviar mensagem (chatbot)
+
+title Diagrama de Sequencia - Enviar mensagem (chabot)
+
+skinparam backgroundColor white
+skinparam actorStyle awesome
+skinparam sequence {
+    ArrowColor #5B4B54
+    LifeLineBorderColor #8B7380
+    LifeLineBackgroundColor #F8F2F5
+    ParticipantBorderColor #8B7380
+    ParticipantBackgroundColor #FDF7FA
+    ActorBorderColor #6C5562
+    ActorBackgroundColor #F4E8EE
+}
+
+actor Usuario as u
+
+boundary ChatbotView as cv
+control ChatbotViewModel as cvm
+entity ChatbotRepository as cbr
+entity ChatbotService as cbs
+boundary API as api
+
+
+u -> cv : Abre ou cria conversa
+u -> cv : Digita e envia mensagem
+cv -> cvm : Solicita envio de mensagem
+cvm -> cbr : enviarMensagem(contexto, msg)
+cbr -> cbr : validarMensagem()
+alt Mensagem vazia
+    cbr -> cvm : Erro("Mensagem não pode ser vazia")
+    cvm -> cv : Erro
+    cv -> u : Solicita preenchimento da mensagem
+else Mensagem válida
+    cbr -> cbs : enviarMensagem(contexto, msg)
+    cbs -> api : solicitarServiço(mensagens)
+    ' Por favor NÃO APAGUE o espaço em branco entre "resposta" e "..."
+    ' Ele é necessário para centralizar corretamente o texto no diagrama
+    ...                                                                                                                                                                                                                                                                                                             Aguardar resposta...
+    alt Erro na API
+        api -> cbs : Erro
+        cbs -> cbr : Erro
+        cbr -> cvm : Erro
+        cvm -> cv : Erro
+        cv -> u : Mostrar mensagem de erro
+    else Sucesso
+        api -> cbs : resposta
+        cbs -> cbr : sucesso(resposta)
+        cbr -> cvm : sucesso(resposta)
+        note right of cvm
+        Sequência: Criar conversa
+        Sequência: Atualizar conversa
+        endnote
+        cvm -> cvm : Lógica de conversa
+        cvm -> cv : Resposta
+        cv -> u : Mostrar resposta
+    end
+end
+@enduml

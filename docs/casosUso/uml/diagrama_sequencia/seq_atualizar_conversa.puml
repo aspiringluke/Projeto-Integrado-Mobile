@@ -1,0 +1,53 @@
+@startuml Diagrama de Sequencia - Atualizar conversa (chatbot)
+
+title Diagrama de Sequencia - Atualizar conversa (chabot)
+
+skinparam backgroundColor white
+skinparam actorStyle awesome
+skinparam sequence {
+    ArrowColor #5B4B54
+    LifeLineBorderColor #8B7380
+    LifeLineBackgroundColor #F8F2F5
+    ParticipantBorderColor #8B7380
+    ParticipantBackgroundColor #FDF7FA
+    ActorBorderColor #6C5562
+    ActorBackgroundColor #F4E8EE
+}
+
+actor Usuario as u
+
+boundary ChatbotView as cv
+control ChatbotViewModel as cvm
+entity ConversaRepository as cr
+entity ConversaService as cs
+database BD
+
+
+u -> cv : Abre ou cria conversa
+u -> cv : Digita e envia mensagem
+note right of cv
+Sequência: Envio de mensagem
+endnote
+cv -> cvm : Processo de envio de mensagem
+' Por favor NÃO APAGUE o espaço em branco entre "resposta" e "..."
+' Ele é necessário para centralizar corretamente o texto no diagrama
+...Aguardar resposta                                                                                            ...
+note right of cvm
+Se [idConversa] NÃO for nulo:
+    Sequência: Criar conversa
+Senão:
+endnote
+cvm -> cr : atualizarConversa(mensagens)
+cr -> cs : atualizarConversa(mensagens)
+cs -> BD : UPDATE
+alt Erro no banco
+    cs -> cr : Erro
+    cr -> cvm : Erro
+    cvm -> cv : Erro
+    cv -> u : Mostrar mensagem de erro
+else Sucesso
+    cs -> cr : sucesso()
+    cr -> cvm : sucesso()
+    cvm -> cv : sucesso()
+end
+@enduml
