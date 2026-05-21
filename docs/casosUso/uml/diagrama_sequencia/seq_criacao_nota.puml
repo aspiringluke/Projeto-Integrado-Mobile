@@ -1,0 +1,44 @@
+@startuml Diagrama de Sequencia - Criacao de Nota
+
+title Diagrama de Sequencia - Criacao de Nota
+
+skinparam backgroundColor white
+skinparam sequence {
+    ArrowColor #5B4B54
+    LifeLineBorderColor #8B7380
+    LifeLineBackgroundColor #F8F2F5
+    ParticipantBorderColor #8B7380
+    ParticipantBackgroundColor #FDF7FA
+    ActorBorderColor #6C5562
+    ActorBackgroundColor #F4E8EE
+}
+
+actor "Usuario" as Usuario
+
+participant "NotesSubPage\n<<View>>" as NotesView
+participant "NoteController\n<<ViewModel>>" as NoteVM
+participant "NoteEditorPage\n<<View>>" as EditorView
+participant "NoteRepository\n<<Repository>>" as NoteRepository
+participant "SqliteNoteService\n<<Service>>" as NoteService
+participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
+
+Usuario -> NotesView: Criar nova nota
+NotesView -> NoteVM: Solicitar criacao inicial da nota
+NoteVM -> NoteRepository: Solicitar persistencia da nova nota
+NoteRepository -> NoteService: Encaminhar criacao de registro
+NoteService -> SQLiteDB: Gravar nova nota no banco
+SQLiteDB --> NoteService: Retornar identificador gerado
+NoteService --> NoteRepository: Confirmar sucesso e identificador
+NoteRepository --> NoteVM: Retornar resultado da criacao
+
+NoteVM -> NoteRepository: Solicitar notas da pasta atual
+NoteRepository -> NoteService: Solicitar leitura de notas
+NoteService -> SQLiteDB: Consultar notas da pasta
+SQLiteDB --> NoteService: Retornar lista de notas
+NoteService --> NoteRepository: Entregar lista de notas
+NoteRepository --> NoteVM: Retornar lista atualizada
+NoteVM --> NotesView: Estado atualizado
+
+NotesView -> EditorView: Abrir editor da nota (idNota)
+
+@enduml
