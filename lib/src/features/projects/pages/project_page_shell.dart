@@ -428,6 +428,47 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
+  Future<void> _deleteCharacter(CharacterListItem character) async {
+    final characterId = character.id;
+    if (characterId == null) {
+      setState(() {
+        _characters.remove(character);
+      });
+      return;
+    }
+
+    final result = await _characterRepository.deleteCharacter(characterId);
+    if (!mounted) {
+      return;
+    }
+
+    if (!result.$1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.$2), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+
+    setState(() {
+      _characters.removeWhere((item) => item.id == characterId);
+      if (_projectDraft.featuredCharacterIds.contains(characterId)) {
+        _projectDraft = _projectDraft.copyWith(
+          featuredCharacterIds: _projectDraft.featuredCharacterIds
+              .where((id) => id != characterId)
+              .toList(growable: false),
+        );
+        _hasPendingProjectChanges = true;
+      }
+    });
+
+    StoryRegistry.instance.removeCharacter(
+      projectTitle: _projectDraft.title,
+      name: character.data.name,
+    );
+    unawaited(_persistCharacterOrdering());
+    unawaited(_flushProjectDraft());
+  }
+
   void _setAvatarGridColumns(int columnCount) {
     if (columnCount < 2 || columnCount > 6) {
       return;
@@ -555,6 +596,7 @@ class _ProjectPageState extends State<ProjectPage> {
       onCharacterEdited: (character, updatedData) =>
           unawaited(_updateCharacter(character, updatedData)),
       onCharacterViewed: (character) => unawaited(_touchCharacter(character)),
+      onCharacterDeleted: (character) => unawaited(_deleteCharacter(character)),
     );
   }
 

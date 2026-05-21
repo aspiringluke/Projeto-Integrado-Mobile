@@ -92,6 +92,7 @@ class ProjectListPage extends StatelessWidget {
               ),
               onProjectReloadRequested: () =>
                   unawaited(controller.refreshAfterProjectPage()),
+              onDelete: () => unawaited(controller.deleteProject(project)),
             ),
           );
 

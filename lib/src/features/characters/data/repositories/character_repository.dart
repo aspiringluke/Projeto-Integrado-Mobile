@@ -36,6 +36,10 @@ class CharacterRepository {
     return service.updateCharacter(character);
   }
 
+  Future<(bool, String)> deleteCharacter(int id) {
+    return service.deleteCharacter(id);
+  }
+
   Future<(bool, String)> updateCharacter(
     int id, {
     int? projectId,

@@ -51,6 +51,7 @@ class ProjectCard extends StatefulWidget {
   final VoidCallback? onProjectReloadRequested;
   final ValueChanged<ProjectRecord>? onProjectChanged;
   final void Function(String title, String synopsis)? onProjectEdited;
+  final VoidCallback? onDelete;
 
   const ProjectCard({
     super.key,
@@ -77,6 +78,7 @@ class ProjectCard extends StatefulWidget {
     this.onProjectReloadRequested,
     this.onProjectChanged,
     this.onProjectEdited,
+    this.onDelete,
   });
 
   @override
@@ -263,6 +265,34 @@ class _ProjectCardState extends State<ProjectCard>
     }
   }
 
+  Future<void> _confirmDelete() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir projeto?'),
+          content: Text(
+            'Isso vai excluir "${widget.title}" e os personagens dele.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      widget.onDelete?.call();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return TapRegion(
@@ -357,6 +387,9 @@ class _ProjectCardState extends State<ProjectCard>
                                 bottomRadius: bottomRadius,
                                 onOpenProject: _openProject,
                                 onToggleExpand: _toggleExpand,
+                                onDelete: widget.onDelete == null
+                                    ? null
+                                    : _confirmDelete,
                               ),
                               ClipRect(
                                 child: SizeTransition(

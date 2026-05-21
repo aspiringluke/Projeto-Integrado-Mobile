@@ -69,6 +69,10 @@ class ProjectRepository {
     return service.updateProjectOrdering(projects);
   }
 
+  Future<(bool, String)> deleteProject(int id) {
+    return service.deleteProject(id);
+  }
+
   Future<(bool, String)> updateProject(
     int id, {
     String? title,

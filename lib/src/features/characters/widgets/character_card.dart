@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/anchored_info_bubble.dart';
+import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
@@ -23,6 +24,7 @@ class CharacterCard extends StatefulWidget {
   final VoidCallback onTogglePinned;
   final VoidCallback? onViewed;
   final ValueChanged<CharacterCardData>? onEdited;
+  final VoidCallback? onDelete;
 
   const CharacterCard({
     super.key,
@@ -34,6 +36,7 @@ class CharacterCard extends StatefulWidget {
     required this.onTogglePinned,
     this.onViewed,
     this.onEdited,
+    this.onDelete,
   });
 
   @override
@@ -293,6 +296,32 @@ class _CharacterCardState extends State<CharacterCard>
       profileImage: widget.data.profileImage,
     );
     widget.onViewed?.call();
+  }
+
+  Future<void> _confirmDelete() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir personagem?'),
+          content: Text('Isso vai excluir "${widget.data.name}".'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      widget.onDelete?.call();
+    }
   }
 
   void _cycleDateType() {
@@ -761,6 +790,9 @@ class _CharacterCardState extends State<CharacterCard>
                                 onOpenCharacterProfileViewer:
                                     _openCharacterProfileViewer,
                                 onToggleExpand: _toggleExpanded,
+                                onDelete: widget.onDelete == null
+                                    ? null
+                                    : _confirmDelete,
                               ),
                               ClipRect(
                                 child: SizeTransition(

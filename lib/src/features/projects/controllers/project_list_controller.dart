@@ -286,6 +286,37 @@ class ProjectListController extends ChangeNotifier {
     unawaited(_persistProjectOrdering());
   }
 
+  Future<void> deleteProject(ProjectListItem project) async {
+    final currentIndex = _projects.indexOf(project);
+    if (currentIndex == -1) return;
+
+    final projectId = project.id;
+    if (projectId == null) {
+      _projects.removeAt(currentIndex);
+      StoryRegistry.instance.removeProject(project.title);
+      _normalizePinnedGroups();
+      _updateUnpinnedSlots();
+      notifyListeners();
+      return;
+    }
+
+    final result = await _projectRepository.deleteProject(projectId);
+    if (!result.$1) {
+      _setError(result.$2);
+      notifyListeners();
+      return;
+    }
+
+    _invalidatePendingLoads(resetLoading: true);
+    _projects.removeWhere((item) => item.id == projectId);
+    _allCharacters.removeWhere((character) => character.projectId == projectId);
+    StoryRegistry.instance.removeProject(project.title);
+    _normalizePinnedGroups();
+    _updateUnpinnedSlots();
+    notifyListeners();
+    unawaited(_persistProjectOrdering());
+  }
+
   Future<void> updateProjectContent(
     ProjectListItem project, {
     required String title,

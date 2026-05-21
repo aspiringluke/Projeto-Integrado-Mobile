@@ -236,6 +236,22 @@ class StoryRegistry extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeProject(String title) {
+    final normalizedTitle = title.trim();
+    if (normalizedTitle.isEmpty) return;
+
+    _projects.removeWhere((project) => project.matchesTitle(normalizedTitle));
+    _characters.removeWhere(
+      (character) => _matchesAnyTitle(normalizedTitle, [
+        character.projectTitle,
+        ...character.projectAliases,
+      ]),
+    );
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
   void registerCharacter({
     required String projectTitle,
     required String name,
@@ -423,6 +439,22 @@ class StoryRegistry extends ChangeNotifier {
         currentCharacter.name,
         ...currentCharacter.nameAliases,
       ]),
+    );
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void removeCharacter({required String projectTitle, required String name}) {
+    final normalizedProjectTitle = projectTitle.trim();
+    final normalizedName = name.trim();
+    if (normalizedProjectTitle.isEmpty || normalizedName.isEmpty) return;
+
+    _characters.removeWhere(
+      (character) => character.matchesIdentity(
+        projectTitle: normalizedProjectTitle,
+        name: normalizedName,
+      ),
     );
 
     _rebuildMentionTargets();

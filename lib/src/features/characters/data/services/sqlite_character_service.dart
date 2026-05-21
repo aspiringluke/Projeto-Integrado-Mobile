@@ -43,7 +43,11 @@ class SqliteCharacterService implements ICharacterService {
       final inserted = conn.select('SELECT last_insert_rowid() AS id');
       final insertedId = inserted.first['id'] as int?;
       if (insertedId == null) {
-        return (false, null, 'Falha ao recuperar o identificador do personagem');
+        return (
+          false,
+          null,
+          'Falha ao recuperar o identificador do personagem',
+        );
       }
 
       return getCharacter(insertedId);
@@ -98,8 +102,7 @@ class SqliteCharacterService implements ICharacterService {
     final conn = await getConnection();
 
     try {
-      final result = conn.select(
-        '''
+      final result = conn.select('''
         SELECT
           p.idPersonagem,
           p.nome,
@@ -116,18 +119,13 @@ class SqliteCharacterService implements ICharacterService {
         LEFT JOIN Projeto proj
           ON proj.idProjeto = p.projeto_idProjeto
         ORDER BY p.fixado DESC, p.ordemNaoFixada ASC, p.idPersonagem ASC
-        ''',
-      );
+        ''');
 
       if (result.isEmpty) {
         return (true, null, null);
       }
 
-      return (
-        true,
-        result.map(_mapCharacter).toList(growable: false),
-        null,
-      );
+      return (true, result.map(_mapCharacter).toList(growable: false), null);
     } catch (error) {
       return (false, null, _cleanError(error));
     } finally {
@@ -169,11 +167,7 @@ class SqliteCharacterService implements ICharacterService {
         return (true, null, null);
       }
 
-      return (
-        true,
-        result.map(_mapCharacter).toList(growable: false),
-        null,
-      );
+      return (true, result.map(_mapCharacter).toList(growable: false), null);
     } catch (error) {
       return (false, null, _cleanError(error));
     } finally {
@@ -235,6 +229,20 @@ class SqliteCharacterService implements ICharacterService {
       );
 
       return (true, 'Personagem ${character.id} atualizado');
+    } catch (error) {
+      return (false, _cleanError(error));
+    } finally {
+      conn.close();
+    }
+  }
+
+  @override
+  Future<(bool, String)> deleteCharacter(int id) async {
+    final conn = await getConnection();
+
+    try {
+      conn.execute('DELETE FROM Personagem WHERE idPersonagem = ?', [id]);
+      return (true, 'Personagem $id excluido');
     } catch (error) {
       return (false, _cleanError(error));
     } finally {

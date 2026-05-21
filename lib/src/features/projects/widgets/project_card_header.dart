@@ -11,6 +11,7 @@ class _ProjectHeader extends StatelessWidget {
   final Radius bottomRadius;
   final VoidCallback onOpenProject;
   final VoidCallback onToggleExpand;
+  final VoidCallback? onDelete;
 
   const _ProjectHeader({
     required this.coverColor,
@@ -23,6 +24,7 @@ class _ProjectHeader extends StatelessWidget {
     required this.bottomRadius,
     required this.onOpenProject,
     required this.onToggleExpand,
+    required this.onDelete,
   });
 
   @override
@@ -63,7 +65,7 @@ class _ProjectHeader extends StatelessWidget {
               ),
             ),
             Positioned.fill(
-              right: 52,
+              right: 98,
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -140,23 +142,53 @@ class _ProjectHeader extends StatelessWidget {
               right: 10,
               top: 0,
               bottom: 0,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onToggleExpand,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      child: const _ExclusionIcon(
-                        icon: Icons.keyboard_arrow_down_rounded,
-                        size: 26,
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (onDelete != null) ...[
+                      GlassCircleButton(
+                        diameter: 34,
+                        onTap: onDelete,
+                        tooltip: 'Excluir projeto',
+                        fillColor: Colors.white.withValues(alpha: 0.18),
+                        borderColor: Colors.white.withValues(alpha: 0.78),
+                        borderWidth: 0.9,
+                        blurSigma: 9,
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          size: 18,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.24),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    GlassCircleButton(
+                      diameter: 34,
+                      onTap: onToggleExpand,
+                      tooltip: isExpanded ? 'Recolher' : 'Expandir',
+                      fillColor: Colors.white.withValues(alpha: 0.18),
+                      borderColor: Colors.white.withValues(alpha: 0.78),
+                      borderWidth: 0.9,
+                      blurSigma: 9,
+                      child: AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        child: const _ExclusionIcon(
+                          icon: Icons.keyboard_arrow_down_rounded,
+                          size: 25,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),

@@ -270,6 +270,26 @@ class SqliteProjectService implements IProjectService {
     }
   }
 
+  @override
+  Future<(bool, String)> deleteProject(int id) async {
+    final conn = await getConnection();
+
+    try {
+      conn.execute('BEGIN IMMEDIATE');
+      conn.execute('DELETE FROM Personagem WHERE projeto_idProjeto = ?', [id]);
+      conn.execute('DELETE FROM Projeto WHERE idProjeto = ?', [id]);
+      conn.execute('COMMIT');
+      return (true, 'Projeto $id excluido');
+    } catch (error) {
+      try {
+        conn.execute('ROLLBACK');
+      } catch (_) {}
+      return (false, _cleanError(error));
+    } finally {
+      conn.close();
+    }
+  }
+
   ProjectRecord _mapProject(Map<String, Object?> row) {
     return ProjectRecord(
       id: row['idProjeto'] as int?,

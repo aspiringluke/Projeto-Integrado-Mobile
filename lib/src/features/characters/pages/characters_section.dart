@@ -14,6 +14,7 @@ class CharactersSection extends StatelessWidget {
     CharacterCardData updatedData,
   )
   onCharacterEdited;
+  final ValueChanged<CharacterListItem> onCharacterDeleted;
   final bool showAvatarGrid;
   final int avatarGridColumns;
   final VoidCallback onToggleDisplayMode;
@@ -25,6 +26,7 @@ class CharactersSection extends StatelessWidget {
     required this.onTogglePinned,
     required this.onCharacterViewed,
     required this.onCharacterEdited,
+    required this.onCharacterDeleted,
     required this.showAvatarGrid,
     required this.avatarGridColumns,
     required this.onToggleDisplayMode,
@@ -160,6 +162,7 @@ class CharactersSection extends StatelessWidget {
           onTogglePinned: () => onTogglePinned(character),
           onViewed: () => onCharacterViewed(character),
           onEdited: (updatedData) => onCharacterEdited(character, updatedData),
+          onDelete: () => onCharacterDeleted(character),
         );
       },
     );

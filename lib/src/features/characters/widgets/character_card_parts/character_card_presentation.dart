@@ -1,4 +1,4 @@
-﻿part of '../character_card.dart';
+part of '../character_card.dart';
 
 class _CharacterHeader extends StatelessWidget {
   final CharacterCardData data;
@@ -7,6 +7,7 @@ class _CharacterHeader extends StatelessWidget {
   final VoidCallback onOpenCharacterPage;
   final VoidCallback onOpenCharacterProfileViewer;
   final VoidCallback onToggleExpand;
+  final VoidCallback? onDelete;
 
   const _CharacterHeader({
     required this.data,
@@ -15,6 +16,7 @@ class _CharacterHeader extends StatelessWidget {
     required this.onOpenCharacterPage,
     required this.onOpenCharacterProfileViewer,
     required this.onToggleExpand,
+    required this.onDelete,
   });
 
   @override
@@ -68,7 +70,7 @@ class _CharacterHeader extends StatelessWidget {
             ),
             Positioned.fill(
               left: characterProfileTileWidth,
-              right: 52,
+              right: 98,
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -161,31 +163,61 @@ class _CharacterHeader extends StatelessWidget {
               right: 10,
               top: 0,
               bottom: 0,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onToggleExpand,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: Colors.white.withValues(alpha: 0.92),
-                        size: 26,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (onDelete != null) ...[
+                      GlassCircleButton(
+                        diameter: 34,
+                        onTap: onDelete,
+                        tooltip: 'Excluir personagem',
+                        fillColor: Colors.white.withValues(alpha: 0.18),
+                        borderColor: Colors.white.withValues(alpha: 0.78),
+                        borderWidth: 0.9,
+                        blurSigma: 9,
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          size: 18,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.24),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    GlassCircleButton(
+                      diameter: 34,
+                      onTap: onToggleExpand,
+                      tooltip: isExpanded ? 'Recolher' : 'Expandir',
+                      fillColor: Colors.white.withValues(alpha: 0.18),
+                      borderColor: Colors.white.withValues(alpha: 0.78),
+                      borderWidth: 0.9,
+                      blurSigma: 9,
+                      child: AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          size: 25,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.24),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
