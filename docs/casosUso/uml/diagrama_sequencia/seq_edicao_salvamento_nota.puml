@@ -1,6 +1,6 @@
-@startuml Diagrama de Sequencia - Persistencia de Nota
+@startuml Diagrama de Sequencia - Edicao e Salvamento de Nota
 
-title Diagrama de Sequencia - Criacao e Salvamento de Nota
+title Diagrama de Sequencia - Edicao e Salvamento de Nota
 
 skinparam backgroundColor white
 skinparam sequence {
@@ -15,30 +15,13 @@ skinparam sequence {
 
 actor "Usuario" as Usuario
 
-participant "NotesSubPage\n<<View>>" as NotesView
-participant "NoteController\n<<ViewModel>>" as NoteVM
 participant "NoteEditorPage\n<<View>>" as EditorView
 participant "NoteEditorController\n<<ViewModel>>" as EditorVM
+participant "NotesSubPage\n<<View>>" as NotesView
+participant "NoteController\n<<ViewModel>>" as NoteVM
 participant "NoteRepository\n<<Repository>>" as NoteRepository
 participant "SqliteNoteService\n<<Service>>" as NoteService
 participant "db.dart / SQLite\n<<Database>>" as SQLiteDB
-
-Usuario -> NotesView: Criar nova nota
-NotesView -> NoteVM: Solicitar criacao inicial da nota
-NoteVM -> NoteRepository: Solicitar persistencia da nova nota
-NoteRepository -> NoteService: Encaminhar criacao de registro
-NoteService -> SQLiteDB: Gravar nova nota no banco
-SQLiteDB --> NoteService: Retornar identificador gerado
-NoteService --> NoteRepository: Confirmar sucesso e identificador
-NoteRepository --> NoteVM: Retornar resultado da criacao
-NoteVM -> NoteRepository: Solicitar notas da pasta atual
-NoteRepository -> NoteService: Solicitar leitura de notas
-NoteService -> SQLiteDB: Consultar notas da pasta
-SQLiteDB --> NoteService: Retornar lista de notas
-NoteService --> NoteRepository: Entregar lista de notas
-NoteRepository --> NoteVM: Retornar lista atualizada
-NoteVM --> NotesView: estado atualizado
-NotesView -> EditorView: Abrir editor da nota (idNota)
 
 EditorView -> EditorVM: Solicitar carregamento da nota
 EditorVM -> NoteRepository: Solicitar dados da nota
@@ -47,7 +30,7 @@ NoteService -> SQLiteDB: Consultar nota por identificador
 SQLiteDB --> NoteService: Retornar dados da nota
 NoteService --> NoteRepository: Entregar dados da nota
 NoteRepository --> EditorVM: Retornar dados da nota
-EditorVM --> EditorView: preencher formulario
+EditorVM --> EditorView: Preencher formulario
 
 Usuario -> EditorView: Editar titulo/conteudo e salvar
 EditorView -> EditorVM: Solicitar salvamento das alteracoes
@@ -60,15 +43,6 @@ alt Salvamento com sucesso
     NoteService --> NoteRepository: Confirmar salvamento
     NoteRepository --> EditorVM: Retornar sucesso
     EditorVM --> EditorView: sucesso
-    EditorView --> NotesView: Retornar changed=true
-    NotesView -> NoteVM: Solicitar recarga da listagem
-    NoteVM -> NoteRepository: Solicitar notas atualizadas
-    NoteRepository -> NoteService: Encaminhar leitura de notas
-    NoteService -> SQLiteDB: Consultar notas atualizadas
-    SQLiteDB --> NoteService: Retornar notas atualizadas
-    NoteService --> NoteRepository: Entregar notas atualizadas
-    NoteRepository --> NoteVM: Retornar notas atualizadas
-    NoteVM --> NotesView: atualizar lista
 else Falha ao salvar
     SQLiteDB --> NoteService: erro
     NoteService --> NoteRepository: Informar falha de persistencia
