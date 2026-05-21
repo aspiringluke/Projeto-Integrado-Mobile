@@ -35,7 +35,7 @@ alt Mensagem vazia
 else Mensagem válida
     cbr -> cbs : enviarMensagem(contexto, msg)
     cbs -> api : solicitarServiço(mensagens)
-    ' Por favor NÃO APAGUE o espaço em branco entre "resposta" e "..."
+    ' Por favor NÃO APAGUE o espaço em branco entre "..." e "Aguardar"
     ' Ele é necessário para centralizar corretamente o texto no diagrama
     ...                                                                                                                                                                                                                                                                                                             Aguardar resposta...
     alt Erro na API
