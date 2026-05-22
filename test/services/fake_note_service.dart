@@ -133,9 +133,10 @@ class FakeNoteService implements INoteService {
     if (note == null) {
       return (false, 'Nota não encontrada');
     }
+    final finalTitle = newTitulo.trim().isEmpty ? 'Sem título' : newTitulo;
     _notes[id] = Note(
       id: id,
-      title: newTitulo,
+      title: finalTitle,
       text: newDescricao,
       color: Color(int.parse(newColor)),
       idPasta: newIdPasta,
