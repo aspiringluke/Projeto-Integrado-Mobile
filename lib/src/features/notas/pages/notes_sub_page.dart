@@ -1082,6 +1082,9 @@ class NotesSubPageState extends State<NotesSubPage>
       body: previewText.isEmpty
           ? '${_folderNoteCountById[folderId] ?? 0} nota(s)'
           : previewText,
+      stats: folderId == null
+          ? const ContentStats.zero()
+          : _folderStatsById[folderId] ?? const ContentStats.zero(),
       accentColor: folder.color,
       icon: Icons.folder_outlined,
       isPinned: folder.metadata.pinned,
@@ -1101,6 +1104,7 @@ class NotesSubPageState extends State<NotesSubPage>
     return _NotesGridTile(
       title: note.title,
       body: buildNotePreview(note.text, maxLength: 160),
+      stats: ContentStats.fromText(note.text),
       accentColor: effectiveNoteColor,
       icon: Icons.sticky_note_2_outlined,
       isPinned: note.metadata.pinned,
@@ -1462,6 +1466,7 @@ class NotesSubPageState extends State<NotesSubPage>
 class _NotesGridTile extends StatelessWidget {
   final String title;
   final String body;
+  final ContentStats stats;
   final Color accentColor;
   final IconData icon;
   final bool isPinned;
@@ -1472,6 +1477,7 @@ class _NotesGridTile extends StatelessWidget {
   const _NotesGridTile({
     required this.title,
     required this.body,
+    required this.stats,
     required this.accentColor,
     required this.icon,
     required this.isPinned,
@@ -1516,7 +1522,7 @@ class _NotesGridTile extends StatelessWidget {
                     ),
                   ],
                   child: SizedBox(
-                    height: 118,
+                    height: 132,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1542,7 +1548,7 @@ class _NotesGridTile extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: kNotesText,
-                                  fontSize: 12.2,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                   height: 1.05,
                                 ),
@@ -1550,20 +1556,16 @@ class _NotesGridTile extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: Text(
-                            body.trim().isEmpty ? 'Sem conteúdo' : body.trim(),
-                            maxLines: 5,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: kNotesMutedText,
-                              fontSize: 10.8,
-                              height: 1.14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                        const SizedBox(height: 9),
+                        _GridFadingText(
+                          body.trim().isEmpty ? 'Sem conteúdo' : body.trim(),
                         ),
+                        const SizedBox(height: 8),
+                        if (!stats.isEmpty)
+                          _GridMetricsColumn(
+                            stats: stats,
+                            accentColor: accentColor,
+                          ),
                       ],
                     ),
                   ),
@@ -1596,6 +1598,159 @@ class _NotesGridTile extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _GridFadingText extends StatelessWidget {
+  final String text;
+
+  const _GridFadingText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final previewColor = kNotesMutedText.withValues(alpha: 0.94);
+
+    return SizedBox(
+      height: 16,
+      child: ShaderMask(
+        blendMode: BlendMode.srcIn,
+        shaderCallback: (bounds) {
+          return LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              previewColor,
+              previewColor,
+              previewColor.withValues(alpha: 0.0),
+            ],
+            stops: const [0.0, 0.78, 1.0],
+          ).createShader(bounds);
+        },
+        child: Text(
+          text,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.clip,
+          style: TextStyle(
+            color: previewColor,
+            fontSize: 10.8,
+            height: 1.0,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GridMetricsColumn extends StatelessWidget {
+  final ContentStats stats;
+  final Color accentColor;
+
+  const _GridMetricsColumn({required this.stats, required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: _GridMetricChip(
+              icon: Icons.short_text_rounded,
+              value: stats.words,
+              label: 'Palavras',
+              accentColor: accentColor,
+            ),
+          ),
+          const SizedBox(height: 3),
+          SizedBox(
+            width: double.infinity,
+            child: _GridMetricChip(
+              icon: Icons.onetwothree_rounded,
+              value: stats.characters,
+              label: 'Caracteres',
+              accentColor: accentColor,
+            ),
+          ),
+          const SizedBox(height: 3),
+          SizedBox(
+            width: double.infinity,
+            child: _GridMetricChip(
+              icon: Icons.alternate_email_rounded,
+              value: stats.mentions,
+              label: 'Menções',
+              accentColor: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GridMetricChip extends StatelessWidget {
+  final IconData icon;
+  final int value;
+  final String label;
+  final Color accentColor;
+
+  const _GridMetricChip({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final valueLabel = formatCompactCount(value);
+
+    return Tooltip(
+      message: '$valueLabel $label',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.44),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: accentColor.withValues(alpha: 0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 9, color: accentColor),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: kNotesMutedText,
+                  fontSize: 9.6,
+                  fontWeight: FontWeight.w600,
+                  height: 1,
+                ),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              valueLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: kNotesText,
+                fontSize: 9.8,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
