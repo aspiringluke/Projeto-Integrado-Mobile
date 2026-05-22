@@ -1,6 +1,8 @@
-﻿part of '../notes_sub_page.dart';
+part of '../notes_sub_page.dart';
 
 enum _NotesContentScope { all, notes, folders }
+
+enum _NotesDisplayMode { list, grid }
 
 enum _SelectionKind { note, folder }
 

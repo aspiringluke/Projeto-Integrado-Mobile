@@ -17,6 +17,7 @@ import '../../../shared/utils/rect_from_context.dart';
 import '../../../shared/widgets/anchored_info_bubble.dart';
 import 'project_cover_fill.dart';
 import 'project_image_transform_view.dart';
+import 'project_image_viewer_dialog.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
 import '../../../shared/widgets/pin_badge.dart';
@@ -201,6 +202,19 @@ class _ProjectCardState extends State<ProjectCard>
     widget.onProjectReloadRequested?.call();
   }
 
+  Future<void> _openCoverImageViewer() async {
+    if (widget.coverImage.bytes == null) {
+      return;
+    }
+
+    await showProjectImageViewerDialog(
+      context,
+      title: widget.title,
+      subtitle: 'Imagem do projeto',
+      image: widget.coverImage,
+    );
+  }
+
   void _cycleDateType() {
     setState(() {
       _activeDateType = switch (_activeDateType) {
@@ -266,31 +280,7 @@ class _ProjectCardState extends State<ProjectCard>
   }
 
   Future<void> _confirmDelete() async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Excluir projeto?'),
-          content: Text(
-            'Isso vai excluir "${widget.title}" e os personagens dele.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldDelete == true) {
-      widget.onDelete?.call();
-    }
+    widget.onDelete?.call();
   }
 
   @override
@@ -386,6 +376,10 @@ class _ProjectCardState extends State<ProjectCard>
                                 titleFocusNode: _titleFocusNode,
                                 bottomRadius: bottomRadius,
                                 onOpenProject: _openProject,
+                                onOpenCoverImageViewer:
+                                    widget.coverImage.bytes == null
+                                    ? null
+                                    : _openCoverImageViewer,
                                 onToggleExpand: _toggleExpand,
                                 onDelete: widget.onDelete == null
                                     ? null

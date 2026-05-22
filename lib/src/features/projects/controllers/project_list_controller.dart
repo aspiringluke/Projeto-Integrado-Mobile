@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import '../../characters/data/repositories/character_repository.dart';
 import '../../characters/models/characters_models.dart';
 import '../../notas/data/repositories/folder_repository.dart';
+import '../../notas/data/repositories/note_repository.dart';
+import '../../notas/models/note.dart';
+import '../../notas/models/note_metadata.dart';
 import '../../shared/story_registry.dart';
 import '../../tags/controllers/tag_controller.dart';
 import '../../tags/data/repositories/tag_group_repository.dart';
@@ -62,6 +65,7 @@ class ProjectListController extends ChangeNotifier {
 
   final ProjectRepository _projectRepository;
   final CharacterRepository _characterRepository;
+  final NoteRepository _noteRepository;
   final TagRepository _tagRepository;
   final TagGroupRepository _tagGroupRepository;
   int? _projectTagGroupId;
@@ -79,10 +83,12 @@ class ProjectListController extends ChangeNotifier {
   ProjectListController({
     ProjectRepository? projectRepository,
     CharacterRepository? characterRepository,
+    NoteRepository? noteRepository,
     TagRepository? tagRepository,
     TagGroupRepository? tagGroupRepository,
   }) : _projectRepository = projectRepository ?? ProjectRepository(),
        _characterRepository = characterRepository ?? CharacterRepository(),
+       _noteRepository = noteRepository ?? NoteRepository(),
        _tagRepository = tagRepository ?? TagRepository(),
        _tagGroupRepository = tagGroupRepository ?? TagGroupRepository() {
     unawaited(_hydrateInitialState());
@@ -286,7 +292,55 @@ class ProjectListController extends ChangeNotifier {
     unawaited(_persistProjectOrdering());
   }
 
-  Future<void> deleteProject(ProjectListItem project) async {
+  Future<
+    ({
+      int characterCount,
+      int linkedNoteCount,
+      int folderNoteCount,
+      bool hasProjectFolder,
+    })
+  >
+  buildProjectDeletionImpact(ProjectListItem project) async {
+    final normalizedTitle = _normalizeLabel(project.title);
+    final notesResult = await _noteRepository.listAllNotes();
+    final notes = notesResult.$1
+        ? notesResult.$2 ?? const <Note>[]
+        : const <Note>[];
+    final linkedNoteCount = notes
+        .where((note) => _isNoteLinkedToProject(note, normalizedTitle))
+        .length;
+
+    final folderRepository = FolderRepository();
+    final folder = await folderRepository.findRootFolderByTitle(project.title);
+    var folderNoteCount = 0;
+    if (folder?.id != null) {
+      final count = await folderRepository.countNotesInFolderTree(folder!.id!);
+      if (count.$1) {
+        folderNoteCount = count.$2;
+      }
+    }
+
+    return (
+      characterCount: characterCountForProject(project),
+      linkedNoteCount: linkedNoteCount,
+      folderNoteCount: folderNoteCount,
+      hasProjectFolder: folder?.id != null,
+    );
+  }
+
+  int characterCountForProject(ProjectListItem project) {
+    final projectId = project.id;
+    if (projectId == null) return 0;
+    return _allCharacters
+        .where((character) => character.projectId == projectId)
+        .length;
+  }
+
+  Future<void> deleteProject(
+    ProjectListItem project, {
+    bool deleteProjectFolder = false,
+    bool releaseProjectFolder = true,
+  }) async {
     final currentIndex = _projects.indexOf(project);
     if (currentIndex == -1) return;
 
@@ -298,6 +352,11 @@ class ProjectListController extends ChangeNotifier {
       _updateUnpinnedSlots();
       notifyListeners();
       return;
+    }
+
+    await _markProjectNotesAsFormerlyLinked(project.title);
+    if (releaseProjectFolder) {
+      await _releaseProjectFolder(project, deleteFolder: deleteProjectFolder);
     }
 
     final result = await _projectRepository.deleteProject(projectId);
@@ -316,6 +375,73 @@ class ProjectListController extends ChangeNotifier {
     notifyListeners();
     unawaited(_persistProjectOrdering());
   }
+
+  Future<void> _markProjectNotesAsFormerlyLinked(String projectTitle) async {
+    final normalizedTitle = _normalizeLabel(projectTitle);
+    if (normalizedTitle.isEmpty) return;
+
+    final result = await _noteRepository.listAllNotes();
+    if (!result.$1) return;
+
+    final notes = result.$2 ?? const <Note>[];
+    for (final note in notes) {
+      final noteId = note.id;
+      if (noteId == null || !_isNoteLinkedToProject(note, normalizedTitle)) {
+        continue;
+      }
+
+      final link = note.metadata.linkTarget;
+      await _noteRepository.saveNote(
+        id: noteId,
+        titulo: note.title,
+        descricao: note.text,
+        idPasta: note.idPasta,
+        color: note.color,
+        metadata: note.metadata.copyWith(
+          linkTarget: NoteLinkTarget(
+            projectTitle: _formerLinkLabel(projectTitle),
+            characterName: link.characterName?.trim().isEmpty == false
+                ? _formerLinkLabel(link.characterName!)
+                : null,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _releaseProjectFolder(
+    ProjectListItem project, {
+    required bool deleteFolder,
+  }) async {
+    final folderRepository = FolderRepository();
+    final folder = await folderRepository.findRootFolderByTitle(project.title);
+    final folderId = folder?.id;
+    if (folder == null || folderId == null) return;
+
+    final metadata = NoteMetadata(
+      tagGroups: folder.metadata.tagGroups,
+      linkTarget: NoteLinkTarget(projectTitle: _formerLinkLabel(project.title)),
+      pinned: folder.metadata.pinned,
+    );
+    await folderRepository.updateFolderMetadata(
+      folderId,
+      metadata.toJsonString(),
+    );
+
+    if (deleteFolder) {
+      await folderRepository.deleteFolder(folderId);
+    }
+  }
+
+  bool _isNoteLinkedToProject(Note note, String normalizedProjectTitle) {
+    return _normalizeLabel(note.metadata.linkTarget.projectTitle) ==
+        normalizedProjectTitle;
+  }
+
+  String _formerLinkLabel(String value) =>
+      'Anteriormente vinculado à ${value.trim()}';
+
+  String _normalizeLabel(String? value) => (value ?? '').trim().toLowerCase();
 
   Future<void> updateProjectContent(
     ProjectListItem project, {

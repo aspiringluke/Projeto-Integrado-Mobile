@@ -131,15 +131,7 @@ class _ConfirmDialog extends StatelessWidget {
           ),
           if (confirmRequiresHold) ...[
             const SizedBox(height: 10),
-            Text(
-              'Segure o botão "$confirmLabel" por 2 segundos para confirmar.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: kNotesMutedText.withValues(alpha: 0.88),
-                fontSize: 12,
-                height: 1.25,
-              ),
-            ),
+            _HoldInstructionBox(tint: confirmColor),
           ],
         ],
       ),
@@ -194,6 +186,638 @@ class _DeleteMetricsSummary extends StatelessWidget {
   }
 }
 
+class _DeleteCharacterConfirmationDialog extends StatefulWidget {
+  final String characterName;
+  final int linkedNoteCount;
+
+  const _DeleteCharacterConfirmationDialog({
+    required this.characterName,
+    required this.linkedNoteCount,
+  });
+
+  @override
+  State<_DeleteCharacterConfirmationDialog> createState() =>
+      _DeleteCharacterConfirmationDialogState();
+}
+
+class _DeleteCharacterConfirmationDialogState
+    extends State<_DeleteCharacterConfirmationDialog> {
+  CharacterLinkedNotesDeletionAction _linkedNotesAction =
+      CharacterLinkedNotesDeletionAction.keepLinkedNotes;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLinkedNotes = widget.linkedNoteCount > 0;
+
+    return NotesGlassCard(
+      elevated: true,
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Excluir personagem',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: kNotesText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            hasLinkedNotes
+                ? 'Isso vai excluir "${widget.characterName}". Escolha o que fazer com as notas vinculadas.'
+                : 'Isso vai excluir "${widget.characterName}".',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: kNotesMutedText, height: 1.35),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              _DeleteSummaryChip(
+                icon: Icons.link_rounded,
+                label: ptBrCount(
+                  widget.linkedNoteCount,
+                  singular: 'nota vinculada',
+                  plural: 'notas vinculadas',
+                ),
+                tint: const Color(0xFFB05C8D),
+              ),
+            ],
+          ),
+          if (hasLinkedNotes) ...[
+            const SizedBox(height: 16),
+            _DeleteActionTile(
+              title: 'Guardar notas',
+              subtitle:
+                  'Mantém as notas e muda o vínculo para "Anteriormente vinculado à ${widget.characterName.trim()}".',
+              icon: Icons.inventory_2_outlined,
+              selected:
+                  _linkedNotesAction ==
+                  CharacterLinkedNotesDeletionAction.keepLinkedNotes,
+              onTap: () => setState(
+                () => _linkedNotesAction =
+                    CharacterLinkedNotesDeletionAction.keepLinkedNotes,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DeleteActionTile(
+              title: 'Apagar notas',
+              subtitle:
+                  'Exclui as notas vinculadas a este personagem junto com ele.',
+              icon: Icons.delete_sweep_outlined,
+              selected:
+                  _linkedNotesAction ==
+                  CharacterLinkedNotesDeletionAction.deleteLinkedNotes,
+              onTap: () => setState(
+                () => _linkedNotesAction =
+                    CharacterLinkedNotesDeletionAction.deleteLinkedNotes,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _DialogActionButton(
+                  label: 'Cancelar',
+                  tint: Colors.white,
+                  textColor: kNotesPlum,
+                  onTap: () => Navigator.of(context).pop(null),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HoldToConfirmButton(
+                  label: 'Excluir',
+                  tint: const Color(0xFFE05E8A),
+                  textColor: Colors.white,
+                  onConfirmed: () =>
+                      Navigator.of(context).pop(_linkedNotesAction),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const _HoldInstructionBox(tint: Color(0xFFE05E8A)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteCharactersConfirmationDialog extends StatefulWidget {
+  final int characterCount;
+  final int linkedNoteCount;
+
+  const _DeleteCharactersConfirmationDialog({
+    required this.characterCount,
+    required this.linkedNoteCount,
+  });
+
+  @override
+  State<_DeleteCharactersConfirmationDialog> createState() =>
+      _DeleteCharactersConfirmationDialogState();
+}
+
+class _DeleteCharactersConfirmationDialogState
+    extends State<_DeleteCharactersConfirmationDialog> {
+  CharacterLinkedNotesDeletionAction _linkedNotesAction =
+      CharacterLinkedNotesDeletionAction.keepLinkedNotes;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLinkedNotes = widget.linkedNoteCount > 0;
+
+    return NotesGlassCard(
+      elevated: true,
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Excluir personagens',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: kNotesText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            hasLinkedNotes
+                ? 'Isso vai excluir ${widget.characterCount} personagem(ns). Escolha o que fazer com as notas vinculadas.'
+                : 'Isso vai excluir ${widget.characterCount} personagem(ns).',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: kNotesMutedText, height: 1.35),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              _DeleteSummaryChip(
+                icon: Icons.person_outline_rounded,
+                label: ptBrCount(
+                  widget.characterCount,
+                  singular: 'personagem',
+                  plural: 'personagens',
+                ),
+                tint: const Color(0xFF7A5B86),
+              ),
+              _DeleteSummaryChip(
+                icon: Icons.link_rounded,
+                label: ptBrCount(
+                  widget.linkedNoteCount,
+                  singular: 'nota vinculada',
+                  plural: 'notas vinculadas',
+                ),
+                tint: const Color(0xFFB05C8D),
+              ),
+            ],
+          ),
+          if (hasLinkedNotes) ...[
+            const SizedBox(height: 16),
+            _DeleteActionTile(
+              title: 'Guardar notas',
+              subtitle:
+                  'Mantém as notas e marca cada uma como anteriormente vinculada ao personagem removido.',
+              icon: Icons.inventory_2_outlined,
+              selected:
+                  _linkedNotesAction ==
+                  CharacterLinkedNotesDeletionAction.keepLinkedNotes,
+              onTap: () => setState(
+                () => _linkedNotesAction =
+                    CharacterLinkedNotesDeletionAction.keepLinkedNotes,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DeleteActionTile(
+              title: 'Apagar notas',
+              subtitle:
+                  'Exclui as notas vinculadas aos personagens selecionados.',
+              icon: Icons.delete_sweep_outlined,
+              selected:
+                  _linkedNotesAction ==
+                  CharacterLinkedNotesDeletionAction.deleteLinkedNotes,
+              onTap: () => setState(
+                () => _linkedNotesAction =
+                    CharacterLinkedNotesDeletionAction.deleteLinkedNotes,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _DialogActionButton(
+                  label: 'Cancelar',
+                  tint: Colors.white,
+                  textColor: kNotesPlum,
+                  onTap: () => Navigator.of(context).pop(null),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HoldToConfirmButton(
+                  label: 'Excluir',
+                  tint: const Color(0xFFE05E8A),
+                  textColor: Colors.white,
+                  onConfirmed: () =>
+                      Navigator.of(context).pop(_linkedNotesAction),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const _HoldInstructionBox(tint: Color(0xFFE05E8A)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteProjectConfirmationDialog extends StatefulWidget {
+  final String projectTitle;
+  final int characterCount;
+  final int linkedNoteCount;
+  final int folderNoteCount;
+  final bool hasProjectFolder;
+
+  const _DeleteProjectConfirmationDialog({
+    required this.projectTitle,
+    required this.characterCount,
+    required this.linkedNoteCount,
+    required this.folderNoteCount,
+    required this.hasProjectFolder,
+  });
+
+  @override
+  State<_DeleteProjectConfirmationDialog> createState() =>
+      _DeleteProjectConfirmationDialogState();
+}
+
+class _DeleteProjectConfirmationDialogState
+    extends State<_DeleteProjectConfirmationDialog> {
+  ProjectFolderDeletionAction _folderAction =
+      ProjectFolderDeletionAction.keepFolder;
+
+  @override
+  Widget build(BuildContext context) {
+    return NotesGlassCard(
+      elevated: true,
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Excluir projeto',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: kNotesText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Isso vai excluir "${widget.projectTitle}" e ${widget.characterCount} personagem(ns).',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: kNotesMutedText, height: 1.35),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              _DeleteSummaryChip(
+                icon: Icons.person_outline_rounded,
+                label: ptBrCount(
+                  widget.characterCount,
+                  singular: 'personagem',
+                  plural: 'personagens',
+                ),
+                tint: const Color(0xFF7A5B86),
+              ),
+              _DeleteSummaryChip(
+                icon: Icons.link_rounded,
+                label: ptBrCount(
+                  widget.linkedNoteCount,
+                  singular: 'nota vinculada',
+                  plural: 'notas vinculadas',
+                ),
+                tint: const Color(0xFFB05C8D),
+              ),
+              if (widget.hasProjectFolder)
+                _DeleteSummaryChip(
+                  icon: Icons.folder_outlined,
+                  label: ptBrCount(
+                    widget.folderNoteCount,
+                    singular: 'nota na pasta',
+                    plural: 'notas na pasta',
+                  ),
+                  tint: const Color(0xFFDA6A9E),
+                ),
+            ],
+          ),
+          if (widget.hasProjectFolder) ...[
+            const SizedBox(height: 16),
+            _DeleteActionTile(
+              title: 'Manter pasta',
+              subtitle:
+                  'Remove a proteção da pasta. Ela continua existindo e pode ser apagada depois.',
+              icon: Icons.inventory_2_outlined,
+              selected: _folderAction == ProjectFolderDeletionAction.keepFolder,
+              onTap: () => setState(
+                () => _folderAction = ProjectFolderDeletionAction.keepFolder,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DeleteActionTile(
+              title: 'Apagar pasta',
+              subtitle:
+                  'Exclui a pasta do projeto inteira, incluindo notas e subpastas.',
+              icon: Icons.folder_delete_outlined,
+              selected:
+                  _folderAction == ProjectFolderDeletionAction.deleteFolder,
+              onTap: () => setState(
+                () => _folderAction = ProjectFolderDeletionAction.deleteFolder,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _DialogActionButton(
+                  label: 'Cancelar',
+                  tint: Colors.white,
+                  textColor: kNotesPlum,
+                  onTap: () => Navigator.of(context).pop(null),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HoldToConfirmButton(
+                  label: 'Excluir',
+                  tint: const Color(0xFFE05E8A),
+                  textColor: Colors.white,
+                  onConfirmed: () => Navigator.of(context).pop(_folderAction),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const _HoldInstructionBox(tint: Color(0xFFE05E8A)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteProjectsConfirmationDialog extends StatefulWidget {
+  final int projectCount;
+  final int characterCount;
+  final int linkedNoteCount;
+  final int folderNoteCount;
+  final int projectFolderCount;
+
+  const _DeleteProjectsConfirmationDialog({
+    required this.projectCount,
+    required this.characterCount,
+    required this.linkedNoteCount,
+    required this.folderNoteCount,
+    required this.projectFolderCount,
+  });
+
+  @override
+  State<_DeleteProjectsConfirmationDialog> createState() =>
+      _DeleteProjectsConfirmationDialogState();
+}
+
+class _DeleteProjectsConfirmationDialogState
+    extends State<_DeleteProjectsConfirmationDialog> {
+  ProjectFolderDeletionAction _folderAction =
+      ProjectFolderDeletionAction.keepFolder;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasProjectFolders = widget.projectFolderCount > 0;
+
+    return NotesGlassCard(
+      elevated: true,
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Excluir projetos',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: kNotesText,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Isso vai excluir ${widget.projectCount} projeto(s) e ${widget.characterCount} personagem(ns).',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: kNotesMutedText, height: 1.35),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              _DeleteSummaryChip(
+                icon: Icons.folder_special_outlined,
+                label: ptBrCount(
+                  widget.projectCount,
+                  singular: 'projeto',
+                  plural: 'projetos',
+                ),
+                tint: const Color(0xFF7A5B86),
+              ),
+              _DeleteSummaryChip(
+                icon: Icons.person_outline_rounded,
+                label: ptBrCount(
+                  widget.characterCount,
+                  singular: 'personagem',
+                  plural: 'personagens',
+                ),
+                tint: const Color(0xFF9A5D8E),
+              ),
+              _DeleteSummaryChip(
+                icon: Icons.link_rounded,
+                label: ptBrCount(
+                  widget.linkedNoteCount,
+                  singular: 'nota vinculada',
+                  plural: 'notas vinculadas',
+                ),
+                tint: const Color(0xFFB05C8D),
+              ),
+              if (hasProjectFolders)
+                _DeleteSummaryChip(
+                  icon: Icons.folder_outlined,
+                  label: ptBrCount(
+                    widget.folderNoteCount,
+                    singular: 'nota em pasta',
+                    plural: 'notas em pastas',
+                  ),
+                  tint: const Color(0xFFDA6A9E),
+                ),
+            ],
+          ),
+          if (hasProjectFolders) ...[
+            const SizedBox(height: 16),
+            _DeleteActionTile(
+              title: 'Manter pastas',
+              subtitle:
+                  'Remove a proteção das pastas dos projetos. Elas continuam existindo e podem ser apagadas depois.',
+              icon: Icons.inventory_2_outlined,
+              selected: _folderAction == ProjectFolderDeletionAction.keepFolder,
+              onTap: () => setState(
+                () => _folderAction = ProjectFolderDeletionAction.keepFolder,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _DeleteActionTile(
+              title: 'Apagar pastas',
+              subtitle:
+                  'Exclui as pastas dos projetos, incluindo notas e subpastas.',
+              icon: Icons.folder_delete_outlined,
+              selected:
+                  _folderAction == ProjectFolderDeletionAction.deleteFolder,
+              onTap: () => setState(
+                () => _folderAction = ProjectFolderDeletionAction.deleteFolder,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _DialogActionButton(
+                  label: 'Cancelar',
+                  tint: Colors.white,
+                  textColor: kNotesPlum,
+                  onTap: () => Navigator.of(context).pop(null),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HoldToConfirmButton(
+                  label: 'Excluir',
+                  tint: const Color(0xFFE05E8A),
+                  textColor: Colors.white,
+                  onConfirmed: () => Navigator.of(context).pop(_folderAction),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const _HoldInstructionBox(tint: Color(0xFFE05E8A)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteActionTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DeleteActionTile({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: (selected ? kNotesPink : kNotesPlum).withValues(
+              alpha: selected ? 0.12 : 0.06,
+            ),
+            border: Border.all(
+              color: selected
+                  ? kNotesPink.withValues(alpha: 0.34)
+                  : Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: selected ? kNotesPink : kNotesPlum, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: kNotesText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: kNotesMutedText,
+                        fontSize: 11.5,
+                        height: 1.22,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                selected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: selected ? kNotesPink : kNotesMutedText,
+                size: 19,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DeleteSummaryChip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -228,6 +852,49 @@ class _DeleteSummaryChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HoldInstructionBox extends StatelessWidget {
+  final Color tint;
+
+  const _HoldInstructionBox({required this.tint});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.48),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: tint.withValues(alpha: 0.18)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.touch_app_rounded,
+              color: tint.withValues(alpha: 0.72),
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'Segure o botão apagar por 2 segundos para confirmar',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: kNotesMutedText.withValues(alpha: 0.9),
+                  fontSize: 11.7,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -314,15 +981,15 @@ class _HoldToConfirmButtonState extends State<_HoldToConfirmButton>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
-          final progress = _controller.value.clamp(0.0, 1.0);
-          final fillTint = _isHolding ? const Color(0xFFF16A9A) : widget.tint;
-          final fillGlow = Color.alphaBlend(
-            const Color(0xFFFFC3D7).withValues(alpha: 0.42),
-            fillTint,
+          final progress = _controller.value.clamp(0.0, 1.0).toDouble();
+          final fillTint = Color.alphaBlend(
+            const Color(0xFFFFBED3).withValues(alpha: 0.18),
+            widget.tint,
           );
-          final contentColor = _isHolding
-              ? Colors.white.withValues(alpha: 0.98)
-              : widget.textColor;
+          final textBlend = (progress * 2.2).clamp(0.0, 1.0).toDouble();
+          final contentColor =
+              Color.lerp(widget.tint, widget.textColor, textBlend) ??
+              widget.tint;
 
           return Material(
             color: Colors.transparent,
@@ -332,20 +999,14 @@ class _HoldToConfirmButtonState extends State<_HoldToConfirmButton>
               child: Ink(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      widget.tint.withValues(alpha: 0.98),
-                      widget.tint.withValues(alpha: 0.84),
-                    ],
-                  ),
+                  color: Colors.white.withValues(alpha: 0.96),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: widget.tint.withValues(alpha: 0.56),
+                    width: 1.2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: fillGlow.withValues(alpha: 0.18),
+                      color: widget.tint.withValues(alpha: 0.12),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -366,8 +1027,8 @@ class _HoldToConfirmButtonState extends State<_HoldToConfirmButton>
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                                 colors: [
-                                  fillGlow.withValues(alpha: 0.98),
-                                  fillTint.withValues(alpha: 0.88),
+                                  fillTint.withValues(alpha: 0.82),
+                                  widget.tint.withValues(alpha: 0.9),
                                 ],
                               ),
                             ),

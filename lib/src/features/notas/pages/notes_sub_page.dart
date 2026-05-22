@@ -18,6 +18,10 @@ import 'package:projeto_integrado_mobile/src/features/notas/widgets/note_list_ca
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_card_widgets.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
+import 'package:projeto_integrado_mobile/src/shared/widgets/buttons/glass_circle_button.dart';
+import 'package:projeto_integrado_mobile/src/shared/widgets/multi_select_action_bar.dart';
+import 'package:projeto_integrado_mobile/src/shared/widgets/pin_badge.dart';
+import 'package:projeto_integrado_mobile/src/shared/widgets/view_options_bar.dart';
 
 part 'notes_sub_page_parts/notes_sub_page_models.dart';
 part 'notes_sub_page_parts/notes_sub_page_breadcrumb.dart';
@@ -46,6 +50,7 @@ class NotesSubPageState extends State<NotesSubPage>
   int? _activeFolderParentId;
   List<Folder> _activeFolderPath = const [];
   _NotesContentScope _contentScope = _NotesContentScope.all;
+  _NotesDisplayMode _displayMode = _NotesDisplayMode.list;
   bool _selectionMode = false;
   final ScrollController _contentScrollController = ScrollController();
   final Set<_SelectedItem> _selectedItems = <_SelectedItem>{};
@@ -687,6 +692,14 @@ class NotesSubPageState extends State<NotesSubPage>
     });
   }
 
+  void _toggleDisplayMode() {
+    setState(() {
+      _displayMode = _displayMode == _NotesDisplayMode.list
+          ? _NotesDisplayMode.grid
+          : _NotesDisplayMode.list;
+    });
+  }
+
   String _contentScopeNoun({bool plural = false}) {
     return switch (_contentScope) {
       _NotesContentScope.all => plural ? 'itens' : 'item',
@@ -714,12 +727,14 @@ class NotesSubPageState extends State<NotesSubPage>
   }
 
   void _selectAllVisibleItems() {
+    final visibleFolders = _visibleFolders(_folderController.folders);
+    final visibleNotes = _visibleNotes(_noteController.notes);
     final selectedItems = <_SelectedItem>{
-      ..._folderController.folders
+      ...visibleFolders
           .map((folder) => folder.id)
           .whereType<int>()
           .map((id) => _SelectedItem(kind: _SelectionKind.folder, id: id)),
-      ..._noteController.notes
+      ...visibleNotes
           .map((note) => note.id)
           .whereType<int>()
           .map((id) => _SelectedItem(kind: _SelectionKind.note, id: id)),
@@ -795,6 +810,20 @@ class NotesSubPageState extends State<NotesSubPage>
     };
   }
 
+  List<Folder> _visibleFolders(List<Folder> folders) {
+    if (_contentScope == _NotesContentScope.notes) {
+      return const <Folder>[];
+    }
+    return folders;
+  }
+
+  List<Note> _visibleNotes(List<Note> notes) {
+    if (_contentScope == _NotesContentScope.folders) {
+      return const <Note>[];
+    }
+    return notes;
+  }
+
   List<Folder> _sortFolders(Iterable<Folder> folders) {
     final sorted = folders.toList(growable: false);
     sorted.sort((left, right) {
@@ -845,6 +874,242 @@ class NotesSubPageState extends State<NotesSubPage>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Widget _buildFolderEntry(Folder folder, {bool compact = false}) {
+    final folderId = folder.id;
+    final card = FolderListCard(
+      folder: folder,
+      folderStats: _folderStatsById[folderId] ?? const ContentStats.zero(),
+      noteCount: folderId == null ? 0 : _folderNoteCountById[folderId] ?? 0,
+      preview: folderId == null ? null : _folderPreviewById[folderId],
+      onTap: () => _openFolder(folder),
+      onRename: () => _renameFolderFlow(folder),
+      onDelete: () => _deleteFolderFlow(folder),
+      onTogglePinned: () => _toggleFolderPin(folder),
+      isPinned: folder.metadata.pinned,
+      showActions: !compact,
+      selectionMode: _isSelectionMode,
+      isSelected:
+          folderId != null && _isSelected(_SelectionKind.folder, folderId),
+      onToggleSelection: folderId == null
+          ? null
+          : () => _toggleSelectionItem(_SelectionKind.folder, folderId),
+      onAcceptNote: folderId == null
+          ? null
+          : (noteId) => _moveNoteToFolder(noteId: noteId, folderId: folderId),
+      onAcceptFolder: folderId == null
+          ? null
+          : (draggedFolderId) => _moveFolderToFolder(
+              folderId: draggedFolderId,
+              parentFolderId: folderId,
+            ),
+    );
+
+    if (folderId == null || _isSelectionMode) {
+      return card;
+    }
+
+    return LongPressDraggable<NotesDragPayload>(
+      data: NotesDragPayload(type: NotesDragType.folder, id: folderId),
+      delay: const Duration(milliseconds: 180),
+      feedback: Material(
+        color: Colors.transparent,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Opacity(opacity: 0.9, child: card),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.35, child: card),
+      child: card,
+    );
+  }
+
+  Widget _buildNoteEntry(Note note, {bool compact = false}) {
+    final noteId = note.id;
+    final effectiveNoteColor = resolveNoteAccentColor(
+      metadata: note.metadata,
+      fallbackColor: note.color,
+      registry: StoryRegistry.instance,
+    );
+    final card = NoteListCard(
+      title: note.title,
+      text: note.text,
+      highlightColor: effectiveNoteColor,
+      metadata: note.metadata,
+      createdAt: note.createdAt,
+      lastModified: note.lastModified,
+      lastAccessed: note.lastAccessed,
+      onTap: noteId == null ? null : () => _openNoteEditor(noteId),
+      onMoveTo: () => _moveNoteByMenuFlow(note),
+      onDelete: () => _deleteNoteFlow(note),
+      onTogglePinned: () => _toggleNotePin(note),
+      isPinned: note.metadata.pinned,
+      showActions: !compact,
+      selectionMode: _isSelectionMode,
+      isSelected: noteId != null && _isSelected(_SelectionKind.note, noteId),
+      onToggleSelection: noteId == null
+          ? null
+          : () => _toggleSelectionItem(_SelectionKind.note, noteId),
+    );
+
+    if (noteId == null || _isSelectionMode) {
+      return card;
+    }
+
+    return LongPressDraggable<NotesDragPayload>(
+      data: NotesDragPayload(type: NotesDragType.note, id: noteId),
+      delay: const Duration(milliseconds: 180),
+      feedback: Material(
+        color: Colors.transparent,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: NoteListCard(
+            title: note.title,
+            text: note.text,
+            highlightColor: effectiveNoteColor,
+            metadata: note.metadata,
+            createdAt: note.createdAt,
+            lastModified: note.lastModified,
+            lastAccessed: note.lastAccessed,
+            showActions: false,
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.35, child: card),
+      child: card,
+    );
+  }
+
+  Widget _buildEmptyContentState(bool isInsideFolder) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 28),
+      child: NotesGlassCard(
+        accentColor: kNotesPink,
+        radius: 20,
+        child: Text(
+          isInsideFolder
+              ? 'Nenhum item nesta pasta.'
+              : 'Crie uma nova pasta ou nota clicando no +',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: kNotesMutedText,
+            fontSize: 15,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentList({
+    required List<Folder> folders,
+    required List<Note> notes,
+    required bool isInsideFolder,
+  }) {
+    return ListView(
+      controller: _contentScrollController,
+      padding: EdgeInsets.zero,
+      children: [
+        ...folders.map(_buildFolderEntry),
+        ...notes.map(_buildNoteEntry),
+        if (notes.isEmpty && folders.isEmpty)
+          _buildEmptyContentState(isInsideFolder),
+      ],
+    );
+  }
+
+  Widget _buildContentGrid({
+    required List<Folder> folders,
+    required List<Note> notes,
+    required bool isInsideFolder,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        const spacing = 10.0;
+        const columns = 3;
+        const horizontalPadding = 12.0;
+        final contentWidth = (width - horizontalPadding * 2).clamp(
+          0.0,
+          double.infinity,
+        );
+        final tileWidth = (contentWidth - spacing * (columns - 1)) / columns;
+        final entries = <Widget>[
+          ...folders.map(_buildCompactFolderTile),
+          ...notes.map(_buildCompactNoteTile),
+        ];
+
+        return ListView(
+          controller: _contentScrollController,
+          padding: const EdgeInsets.only(bottom: 160),
+          children: [
+            if (entries.isEmpty)
+              _buildEmptyContentState(isInsideFolder)
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                ),
+                child: Wrap(
+                  spacing: spacing,
+                  runSpacing: 10,
+                  children: [
+                    for (final entry in entries)
+                      SizedBox(width: tileWidth, child: entry),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCompactFolderTile(Folder folder) {
+    final folderId = folder.id;
+    final preview = folderId == null ? null : _folderPreviewById[folderId];
+    final previewText = preview == null
+        ? ''
+        : preview.items
+              .map((item) => item.title.trim())
+              .where((title) => title.isNotEmpty)
+              .take(3)
+              .join(' · ');
+
+    return _NotesGridTile(
+      title: folder.title,
+      body: previewText.isEmpty
+          ? '${_folderNoteCountById[folderId] ?? 0} nota(s)'
+          : previewText,
+      accentColor: folder.color,
+      icon: Icons.folder_outlined,
+      isPinned: folder.metadata.pinned,
+      onTap: () => _openFolder(folder),
+      onTogglePinned: () => _toggleFolderPin(folder),
+      onDelete: () => _deleteFolderFlow(folder),
+    );
+  }
+
+  Widget _buildCompactNoteTile(Note note) {
+    final effectiveNoteColor = resolveNoteAccentColor(
+      metadata: note.metadata,
+      fallbackColor: note.color,
+      registry: StoryRegistry.instance,
+    );
+
+    return _NotesGridTile(
+      title: note.title,
+      body: buildNotePreview(note.text, maxLength: 160),
+      accentColor: effectiveNoteColor,
+      icon: Icons.sticky_note_2_outlined,
+      isPinned: note.metadata.pinned,
+      onTap: note.id == null ? null : () => _openNoteEditor(note.id!),
+      onTogglePinned: () => _toggleNotePin(note),
+      onDelete: () => _deleteNoteFlow(note),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -856,6 +1121,8 @@ class NotesSubPageState extends State<NotesSubPage>
       builder: (context, _) {
         final folders = _sortFolders(_folderController.folders);
         final notes = _sortNotes(_noteController.notes);
+        final visibleFolders = _visibleFolders(folders);
+        final visibleNotes = _visibleNotes(notes);
         final isLoading =
             _folderController.isLoading || _noteController.isLoading;
         final isInsideFolder = _activeFolderId != null;
@@ -1003,6 +1270,23 @@ class NotesSubPageState extends State<NotesSubPage>
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 10),
+                              ViewOptionsBar(
+                                title: 'VisualizaÃ§Ã£o',
+                                modeIcon: _displayMode == _NotesDisplayMode.grid
+                                    ? Icons.grid_view_rounded
+                                    : Icons.view_list_rounded,
+                                modeLabel:
+                                    _displayMode == _NotesDisplayMode.grid
+                                    ? 'Grade'
+                                    : 'Lista',
+                                toggleTooltip:
+                                    _displayMode == _NotesDisplayMode.grid
+                                    ? 'Exibir em lista'
+                                    : 'Exibir em grade',
+                                onToggleMode: _toggleDisplayMode,
+                                accentColor: kNotesPink,
+                              ),
                               if (isInsideFolder || _isSelectionMode) ...[
                                 const SizedBox(height: 10),
                                 if (isInsideFolder)
@@ -1114,42 +1398,19 @@ class NotesSubPageState extends State<NotesSubPage>
                                 if (_isSelectionMode)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: NotesGlassCard(
+                                    child: MultiSelectActionBar(
                                       accentColor: kNotesPink,
-                                      elevated: true,
-                                      radius: 18,
-                                      padding: const EdgeInsets.fromLTRB(
-                                        14,
-                                        12,
-                                        14,
-                                        12,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              '${_selectedNotesCount(_noteController.notes)} nota(s) e ${_selectedFoldersCount(_folderController.folders)} pasta(s) selecionadas',
-                                              style: const TextStyle(
-                                                color: kNotesText,
-                                                fontSize: 13.5,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                          NotesActionIconButton(
-                                            icon: Icons.close_rounded,
-                                            tooltip: 'Cancelar seleção',
-                                            onTap: _clearSelection,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          NotesActionIconButton(
+                                      label:
+                                          '${_selectedNotesCount(_noteController.notes)} nota(s) e ${_selectedFoldersCount(_folderController.folders)} pasta(s) selecionadas',
+                                      onClear: _clearSelection,
+                                      actions: [
+                                        MultiSelectAction(
                                             icon: Icons.delete_outline_rounded,
                                             tooltip: 'Excluir selecionados',
                                             onTap: _deleteSelectedItems,
                                             destructive: true,
                                           ),
-                                          const SizedBox(width: 8),
-                                          NotesActionIconButton(
+                                        MultiSelectAction(
                                             icon: Icons.drive_file_move_outline,
                                             tooltip: 'Mover selecionados',
                                             onTap: _moveSelectedItemsToFolder,
@@ -1177,181 +1438,163 @@ class NotesSubPageState extends State<NotesSubPage>
                   Expanded(
                     child: isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : ListView(
-                            controller: _contentScrollController,
-                            padding: EdgeInsets.zero,
-                            children: [
-                              ...folders.map((folder) {
-                                final folderId = folder.id;
-                                final card = FolderListCard(
-                                  folder: folder,
-                                  folderStats:
-                                      _folderStatsById[folderId] ??
-                                      const ContentStats.zero(),
-                                  noteCount: folderId == null
-                                      ? 0
-                                      : _folderNoteCountById[folderId] ?? 0,
-                                  preview: folderId == null
-                                      ? null
-                                      : _folderPreviewById[folderId],
-                                  onTap: () => _openFolder(folder),
-                                  onRename: () => _renameFolderFlow(folder),
-                                  onDelete: () => _deleteFolderFlow(folder),
-                                  onTogglePinned: () =>
-                                      _toggleFolderPin(folder),
-                                  isPinned: folder.metadata.pinned,
-                                  selectionMode: _isSelectionMode,
-                                  isSelected:
-                                      folderId != null &&
-                                      _isSelected(
-                                        _SelectionKind.folder,
-                                        folderId,
-                                      ),
-                                  onToggleSelection: folderId == null
-                                      ? null
-                                      : () => _toggleSelectionItem(
-                                          _SelectionKind.folder,
-                                          folderId,
-                                        ),
-                                  onAcceptNote: folderId == null
-                                      ? null
-                                      : (noteId) => _moveNoteToFolder(
-                                          noteId: noteId,
-                                          folderId: folderId,
-                                        ),
-                                  onAcceptFolder: folderId == null
-                                      ? null
-                                      : (draggedFolderId) =>
-                                            _moveFolderToFolder(
-                                              folderId: draggedFolderId,
-                                              parentFolderId: folderId,
-                                            ),
-                                );
-
-                                if (folderId == null || _isSelectionMode) {
-                                  return card;
-                                }
-
-                                return LongPressDraggable<NotesDragPayload>(
-                                  data: NotesDragPayload(
-                                    type: NotesDragType.folder,
-                                    id: folderId,
-                                  ),
-                                  delay: const Duration(milliseconds: 180),
-                                  feedback: Material(
-                                    color: Colors.transparent,
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 360,
-                                      ),
-                                      child: Opacity(opacity: 0.9, child: card),
-                                    ),
-                                  ),
-                                  childWhenDragging: Opacity(
-                                    opacity: 0.35,
-                                    child: card,
-                                  ),
-                                  child: card,
-                                );
-                              }),
-                              ...notes.map((note) {
-                                final noteId = note.id;
-                                final effectiveNoteColor =
-                                    resolveNoteAccentColor(
-                                      metadata: note.metadata,
-                                      fallbackColor: note.color,
-                                      registry: StoryRegistry.instance,
-                                    );
-                                final card = NoteListCard(
-                                  title: note.title,
-                                  text: note.text,
-                                  highlightColor: effectiveNoteColor,
-                                  metadata: note.metadata,
-                                  createdAt: note.createdAt,
-                                  lastModified: note.lastModified,
-                                  lastAccessed: note.lastAccessed,
-                                  onTap: noteId == null
-                                      ? null
-                                      : () => _openNoteEditor(noteId),
-                                  onMoveTo: () => _moveNoteByMenuFlow(note),
-                                  onDelete: () => _deleteNoteFlow(note),
-                                  onTogglePinned: () => _toggleNotePin(note),
-                                  isPinned: note.metadata.pinned,
-                                  selectionMode: _isSelectionMode,
-                                  isSelected:
-                                      noteId != null &&
-                                      _isSelected(_SelectionKind.note, noteId),
-                                  onToggleSelection: noteId == null
-                                      ? null
-                                      : () => _toggleSelectionItem(
-                                          _SelectionKind.note,
-                                          noteId,
-                                        ),
-                                );
-
-                                if (noteId == null || _isSelectionMode) {
-                                  return card;
-                                }
-
-                                return LongPressDraggable<NotesDragPayload>(
-                                  data: NotesDragPayload(
-                                    type: NotesDragType.note,
-                                    id: noteId,
-                                  ),
-                                  delay: const Duration(milliseconds: 180),
-                                  feedback: Material(
-                                    color: Colors.transparent,
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 360,
-                                      ),
-                                      child: NoteListCard(
-                                        title: note.title,
-                                        text: note.text,
-                                        highlightColor: effectiveNoteColor,
-                                        metadata: note.metadata,
-                                        createdAt: note.createdAt,
-                                        lastModified: note.lastModified,
-                                        lastAccessed: note.lastAccessed,
-                                        showActions: false,
-                                      ),
-                                    ),
-                                  ),
-                                  childWhenDragging: Opacity(
-                                    opacity: 0.35,
-                                    child: card,
-                                  ),
-                                  child: card,
-                                );
-                              }),
-                              if (notes.isEmpty && folders.isEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 28,
-                                  ),
-                                  child: NotesGlassCard(
-                                    accentColor: kNotesPink,
-                                    radius: 20,
-                                    child: Text(
-                                      isInsideFolder
-                                          ? 'Nenhum item nesta pasta.'
-                                          : 'Crie uma nova pasta ou nota clicando no +',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: kNotesMutedText,
-                                        fontSize: 15,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
+                        : _displayMode == _NotesDisplayMode.list
+                        ? _buildContentList(
+                            folders: visibleFolders,
+                            notes: visibleNotes,
+                            isInsideFolder: isInsideFolder,
+                          )
+                        : _buildContentGrid(
+                            folders: visibleFolders,
+                            notes: visibleNotes,
+                            isInsideFolder: isInsideFolder,
                           ),
                   ),
                 ],
               ),
             );
           },
+        );
+      },
+    );
+  }
+}
+
+class _NotesGridTile extends StatelessWidget {
+  final String title;
+  final String body;
+  final Color accentColor;
+  final IconData icon;
+  final bool isPinned;
+  final VoidCallback? onTap;
+  final VoidCallback onTogglePinned;
+  final VoidCallback onDelete;
+
+  const _NotesGridTile({
+    required this.title,
+    required this.body,
+    required this.accentColor,
+    required this.icon,
+    required this.isPinned,
+    required this.onTap,
+    required this.onTogglePinned,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tileWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 120.0;
+        final buttonSize = tileWidth < 104 ? 24.0 : 27.0;
+        final iconSize = tileWidth < 104 ? 12.0 : 14.0;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onTap,
+                child: NotesGlassCard(
+                  accentColor: accentColor,
+                  elevated: true,
+                  radius: 16,
+                  padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                  child: SizedBox(
+                    height: 118,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(9),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              child: Icon(icon, size: 13, color: accentColor),
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: kNotesText,
+                                  fontSize: 12.2,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.05,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: Text(
+                            body.trim().isEmpty ? 'Sem conteúdo' : body.trim(),
+                            maxLines: 5,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: kNotesMutedText,
+                              fontSize: 10.8,
+                              height: 1.14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: -4,
+              child: PinBadge(isActive: isPinned, onTap: onTogglePinned),
+            ),
+            Positioned(
+              right: 6,
+              bottom: 6,
+              child: GlassCircleButton(
+                diameter: buttonSize,
+                onTap: onDelete,
+                tooltip: 'Excluir',
+                fillColor: Colors.white.withValues(alpha: 0.24),
+                borderColor: Colors.white.withValues(alpha: 0.68),
+                borderWidth: 0.75,
+                blurSigma: 12,
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  size: iconSize,
+                  color: kNotesPlum.withValues(alpha: 0.86),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

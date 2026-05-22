@@ -299,29 +299,7 @@ class _CharacterCardState extends State<CharacterCard>
   }
 
   Future<void> _confirmDelete() async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Excluir personagem?'),
-          content: Text('Isso vai excluir "${widget.data.name}".'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldDelete == true) {
-      widget.onDelete?.call();
-    }
+    widget.onDelete?.call();
   }
 
   void _cycleDateType() {

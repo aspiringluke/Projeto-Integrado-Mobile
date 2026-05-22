@@ -13,6 +13,7 @@ class CharacterAvatarTile extends StatelessWidget {
   final ProjectImageData profileImage;
   final bool isExpanded;
   final VoidCallback? onTap;
+  final bool showExpandHint;
 
   const CharacterAvatarTile({
     super.key,
@@ -21,6 +22,7 @@ class CharacterAvatarTile extends StatelessWidget {
     required this.profileImage,
     required this.isExpanded,
     this.onTap,
+    this.showExpandHint = true,
   });
 
   @override
@@ -126,7 +128,7 @@ class CharacterAvatarTile extends StatelessWidget {
                   ),
                 ),
               ),
-              if (profileImage.bytes != null)
+              if (profileImage.bytes != null && showExpandHint)
                 Positioned(
                   right: 8,
                   top: 8,

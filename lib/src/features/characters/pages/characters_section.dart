@@ -4,6 +4,9 @@ import '../models/characters_models.dart';
 import '../widgets/character_card.dart';
 import '../widgets/character_card_visuals.dart';
 import '../widgets/character_notebook_page.dart';
+import '../widgets/character_profile_viewer_dialog.dart';
+import '../../../shared/widgets/buttons/glass_circle_button.dart';
+import '../../../shared/widgets/view_options_bar.dart';
 
 class CharactersSection extends StatelessWidget {
   final List<CharacterListItem> characters;
@@ -49,6 +52,23 @@ class CharactersSection extends StatelessWidget {
     onCharacterViewed(character);
   }
 
+  Future<void> _openCharacterProfileViewer(
+    BuildContext context,
+    CharacterListItem character,
+  ) async {
+    if (character.data.profileImage.bytes == null) {
+      return;
+    }
+
+    onCharacterViewed(character);
+    await showCharacterProfileViewerDialog(
+      context,
+      characterName: character.data.name,
+      profileImage: character.data.profileImage,
+    );
+    onCharacterViewed(character);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (characters.isEmpty) {
@@ -73,70 +93,16 @@ class CharactersSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Visualização',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Color(0xFF544959),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              if (showAvatarGrid) ...[
-                PopupMenuButton<int>(
-                  tooltip: 'Configuração da grade',
-                  initialValue: avatarGridColumns,
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 3, child: Text('3 colunas')),
-                    PopupMenuItem(value: 4, child: Text('4 colunas')),
-                    PopupMenuItem(value: 5, child: Text('5 colunas')),
-                  ],
-                  onSelected: onChangeAvatarGridColumns,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.grid_view,
-                        color: Color(0xFF544959),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 82),
-                        child: Text(
-                          '$avatarGridColumns colunas',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF544959),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-              IconButton(
-                onPressed: onToggleDisplayMode,
-                icon: Icon(
-                  showAvatarGrid ? Icons.view_list : Icons.grid_view,
-                  color: const Color(0xFF544959),
-                ),
-                tooltip: showAvatarGrid ? 'Exibir em lista' : 'Exibir em grade',
-              ),
-              Text(
-                showAvatarGrid ? 'Fotos' : 'Lista',
-                style: const TextStyle(color: Color(0xFF544959), fontSize: 14),
-              ),
-            ],
+          child: ViewOptionsBar(
+            title: 'Visualização',
+            modeIcon: showAvatarGrid
+                ? Icons.grid_view_rounded
+                : Icons.view_list_rounded,
+            modeLabel: showAvatarGrid ? 'Grade' : 'Lista',
+            toggleTooltip: showAvatarGrid
+                ? 'Exibir em lista'
+                : 'Exibir em grade',
+            onToggleMode: onToggleDisplayMode,
           ),
         ),
         Expanded(
@@ -172,7 +138,7 @@ class CharactersSection extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 160),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: avatarGridColumns,
+        crossAxisCount: 3,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
         childAspectRatio: 0.94,
@@ -198,141 +164,188 @@ class CharactersSection extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CharacterAvatarTile(
-                          accent: character.data.accent,
-                          avatarColor: character.data.avatarColor,
-                          profileImage: character.data.profileImage,
-                          isExpanded: false,
-                          onTap: null,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  character.data.accent.withValues(alpha: 0.08),
-                                  Colors.transparent,
-                                  character.data.avatarColor.withValues(
-                                    alpha: 0.06,
-                                  ),
-                                ],
-                                stops: const [0.0, 0.48, 1.0],
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: CharacterAvatarTile(
+                                accent: character.data.accent,
+                                avatarColor: character.data.avatarColor,
+                                profileImage: character.data.profileImage,
+                                isExpanded: false,
+                                onTap: null,
+                                showExpandHint: false,
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-                      if (avatarGridColumns == 3)
-                        Positioned(
-                          left: 10,
-                          right: 10,
-                          bottom: 10,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  character.data.accent.withValues(alpha: 0.72),
-                                  character.data.avatarColor.withValues(
-                                    alpha: 0.28,
-                                  ),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.24),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.16),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      shape: BoxShape.circle,
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        character.data.accent.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        Colors.transparent,
+                                        character.data.avatarColor.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                      ],
+                                      stops: const [0.0, 0.48, 1.0],
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      character.data.name.split(' ').first,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 10,
+                              right: 10,
+                              bottom: 10,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      character.data.accent.withValues(
+                                        alpha: 0.72,
                                       ),
+                                      character.data.avatarColor.withValues(
+                                        alpha: 0.28,
+                                      ),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.24),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.16,
+                                      ),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
                                     ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          character.data.name.split(' ').first,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      top: -4,
+                      child: CharacterPinBadge(
+                        isActive: character.isPinned,
+                        onTap: () => onTogglePinned(character),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (character.data.profileImage.bytes != null) ...[
+                            GlassCircleButton(
+                              diameter: 26,
+                              onTap: () => _openCharacterProfileViewer(
+                                context,
+                                character,
+                              ),
+                              tooltip: 'Ver imagem',
+                              fillColor: Colors.white.withValues(alpha: 0.16),
+                              borderColor: Colors.white.withValues(alpha: 0.74),
+                              borderWidth: 0.8,
+                              blurSigma: 12,
+                              child: Icon(
+                                Icons.open_in_full_rounded,
+                                size: 13,
+                                color: Colors.white.withValues(alpha: 0.96),
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.28),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () => onTogglePinned(character),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.84),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.14),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
+                            const SizedBox(width: 5),
+                          ],
+                          GlassCircleButton(
+                            diameter: 26,
+                            onTap: () => onCharacterDeleted(character),
+                            tooltip: 'Excluir personagem',
+                            fillColor: Colors.white.withValues(alpha: 0.16),
+                            borderColor: Colors.white.withValues(alpha: 0.74),
+                            borderWidth: 0.8,
+                            blurSigma: 12,
                             child: Icon(
-                              character.isPinned
-                                  ? Icons.push_pin
-                                  : Icons.push_pin_outlined,
-                              size: 18,
-                              color: character.isPinned
-                                  ? const Color(0xFF7C4E63)
-                                  : const Color(0xFF544959),
+                              Icons.delete_outline_rounded,
+                              size: 13,
+                              color: Colors.white.withValues(alpha: 0.96),
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.28),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

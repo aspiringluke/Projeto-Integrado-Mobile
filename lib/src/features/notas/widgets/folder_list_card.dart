@@ -22,6 +22,7 @@ class FolderListCard extends StatefulWidget {
   final bool selectionMode;
   final bool isSelected;
   final bool isPinned;
+  final bool showActions;
   final List<String> summaryTags;
   final int noteCount;
   final ValueChanged<int>? onAcceptNote;
@@ -40,6 +41,7 @@ class FolderListCard extends StatefulWidget {
     this.selectionMode = false,
     this.isSelected = false,
     this.isPinned = false,
+    this.showActions = true,
     this.summaryTags = const <String>[],
     this.noteCount = 0,
     this.onAcceptNote,
@@ -235,14 +237,21 @@ class _FolderListCardState extends State<FolderListCard> {
                                     : 'Selecionar',
                                 onTap: widget.onToggleSelection,
                               )
-                            else
+                            else if (widget.showActions)
                               NotesActionIconButton(
                                 icon: Icons.drive_file_rename_outline_rounded,
                                 tooltip: 'Renomear pasta',
                                 onTap: widget.onRename,
+                              )
+                            else
+                              const Icon(
+                                Icons.drag_indicator_rounded,
+                                color: kNotesMutedText,
+                                size: 20,
                               ),
-                            const SizedBox(width: 6),
-                            if (!widget.selectionMode)
+                            if (!widget.selectionMode && widget.showActions)
+                              const SizedBox(width: 6),
+                            if (!widget.selectionMode && widget.showActions)
                               NotesActionIconButton(
                                 icon: Icons.delete_outline_rounded,
                                 tooltip: widget.folder.isProjectRoot

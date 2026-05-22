@@ -10,6 +10,7 @@ class _ProjectHeader extends StatelessWidget {
   final FocusNode titleFocusNode;
   final Radius bottomRadius;
   final VoidCallback onOpenProject;
+  final VoidCallback? onOpenCoverImageViewer;
   final VoidCallback onToggleExpand;
   final VoidCallback? onDelete;
 
@@ -23,6 +24,7 @@ class _ProjectHeader extends StatelessWidget {
     required this.titleFocusNode,
     required this.bottomRadius,
     required this.onOpenProject,
+    required this.onOpenCoverImageViewer,
     required this.onToggleExpand,
     required this.onDelete,
   });
@@ -112,6 +114,35 @@ class _ProjectHeader extends StatelessWidget {
                 ),
               ),
             ),
+            if (onOpenCoverImageViewer != null)
+              Positioned(
+                left: 10,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: GlassCircleButton(
+                    diameter: 30,
+                    onTap: onOpenCoverImageViewer,
+                    tooltip: 'Ver imagem',
+                    fillColor: Colors.white.withValues(alpha: 0.14),
+                    borderColor: Colors.white.withValues(alpha: 0.72),
+                    borderWidth: 0.8,
+                    blurSigma: 12,
+                    child: Icon(
+                      Icons.open_in_full_rounded,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      size: 15,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.24),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               left: 0,
               right: 0,

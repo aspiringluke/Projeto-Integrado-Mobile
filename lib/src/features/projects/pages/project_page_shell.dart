@@ -430,6 +430,30 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Future<void> _deleteCharacter(CharacterListItem character) async {
     final characterId = character.id;
+    final linkedNotes = await _notesLinkedToCharacter(character);
+    if (!mounted) {
+      return;
+    }
+
+    final deletionAction = await showDeleteCharacterConfirmation(
+      context,
+      characterName: character.data.name,
+      linkedNoteCount: linkedNotes.length,
+    );
+    if (!mounted || deletionAction == null) {
+      return;
+    }
+
+    if (deletionAction ==
+        CharacterLinkedNotesDeletionAction.deleteLinkedNotes) {
+      await _deleteCharacterLinkedNotes(linkedNotes);
+    } else {
+      await _markCharacterNotesAsFormerlyLinked(character, linkedNotes);
+    }
+    if (!mounted) {
+      return;
+    }
+
     if (characterId == null) {
       setState(() {
         _characters.remove(character);
@@ -468,6 +492,65 @@ class _ProjectPageState extends State<ProjectPage> {
     unawaited(_persistCharacterOrdering());
     unawaited(_flushProjectDraft());
   }
+
+  Future<List<Note>> _notesLinkedToCharacter(
+    CharacterListItem character,
+  ) async {
+    final result = await NoteRepository().listAllNotes();
+    if (!result.$1) {
+      return const <Note>[];
+    }
+
+    final projectTitle = _normalizeDeletionLabel(_projectDraft.title);
+    final characterName = _normalizeDeletionLabel(character.data.name);
+    return (result.$2 ?? const <Note>[])
+        .where((note) {
+          final link = note.metadata.linkTarget;
+          return _normalizeDeletionLabel(link.projectTitle) == projectTitle &&
+              _normalizeDeletionLabel(link.characterName) == characterName;
+        })
+        .toList(growable: false);
+  }
+
+  Future<void> _markCharacterNotesAsFormerlyLinked(
+    CharacterListItem character,
+    List<Note> notes,
+  ) async {
+    final repository = NoteRepository();
+    for (final note in notes) {
+      final noteId = note.id;
+      if (noteId == null) continue;
+
+      final link = note.metadata.linkTarget;
+      await repository.saveNote(
+        id: noteId,
+        titulo: note.title,
+        descricao: note.text,
+        idPasta: note.idPasta,
+        color: note.color,
+        metadata: note.metadata.copyWith(
+          linkTarget: NoteLinkTarget(
+            projectTitle: link.projectTitle,
+            characterName:
+                'Anteriormente vinculado à ${character.data.name.trim()}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteCharacterLinkedNotes(List<Note> notes) async {
+    final repository = NoteRepository();
+    for (final note in notes) {
+      final noteId = note.id;
+      if (noteId == null) continue;
+
+      await repository.deleteNote(noteId);
+    }
+  }
+
+  String _normalizeDeletionLabel(String? value) =>
+      (value ?? '').trim().toLowerCase();
 
   void _setAvatarGridColumns(int columnCount) {
     if (columnCount < 2 || columnCount > 6) {
@@ -633,6 +716,20 @@ class _ProjectPageState extends State<ProjectPage> {
     unawaited(_persistProjectViewSettings());
   }
 
+  Future<void> _openCoverImageViewer() async {
+    final coverImage = _projectDraft.coverImage;
+    if (coverImage.bytes == null) {
+      return;
+    }
+
+    await showProjectImageViewerDialog(
+      context,
+      title: _projectDraft.title,
+      subtitle: 'Imagem do projeto',
+      image: coverImage,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final resolvedCoverColor = _projectDraft.coverColor;
@@ -743,6 +840,32 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
           ),
         ),
+        if (coverImage.bytes != null)
+          Positioned(
+            left: 16,
+            bottom: 12,
+            child: GlassCircleButton(
+              diameter: 34,
+              onTap: _openCoverImageViewer,
+              tooltip: 'Ver imagem',
+              fillColor: Colors.white.withValues(alpha: 0.14),
+              borderColor: Colors.white.withValues(alpha: 0.72),
+              borderWidth: 0.8,
+              blurSigma: 12,
+              child: Icon(
+                Icons.open_in_full_rounded,
+                size: 17,
+                color: Colors.white.withValues(alpha: 0.96),
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.28),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
     return PopScope<void>(
