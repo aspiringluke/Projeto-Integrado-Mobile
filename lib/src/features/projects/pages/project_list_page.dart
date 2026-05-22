@@ -67,7 +67,11 @@ class _ProjectListPageState extends State<ProjectListPage> {
       _selectionMode = true;
       _selectedProjectIds
         ..clear()
-        ..addAll(widget.controller.projects.map((project) => project.id).whereType<int>());
+        ..addAll(
+          widget.controller.projects
+              .map((project) => project.id)
+              .whereType<int>(),
+        );
     });
   }
 
@@ -191,7 +195,9 @@ class _ProjectListPageState extends State<ProjectListPage> {
         0,
         (sum, impact) => sum + impact.folderNoteCount,
       ),
-      projectFolderCount: impacts.where((impact) => impact.hasProjectFolder).length,
+      projectFolderCount: impacts
+          .where((impact) => impact.hasProjectFolder)
+          .length,
     );
     if (!mounted || folderAction == null) return;
 
@@ -245,7 +251,9 @@ class _ProjectListPageState extends State<ProjectListPage> {
         final projects = controller.projects;
         final availableTags = controller.availableTags;
         final canReorder =
-            isMobileReorderEnabled && _displayMode == _ProjectDisplayMode.list;
+            isMobileReorderEnabled &&
+            _displayMode == _ProjectDisplayMode.list &&
+            !_isSelectionMode;
 
         Widget buildProjectCard(BuildContext context, int index) {
           final project = projects[index];
@@ -341,8 +349,7 @@ class _ProjectListPageState extends State<ProjectListPage> {
                               project: projects[index],
                               selectionMode: _isSelectionMode,
                               isSelected: _isProjectSelected(projects[index]),
-                              onTap: () =>
-                                  _isSelectionMode
+                              onTap: () => _isSelectionMode
                                   ? _toggleProjectSelection(projects[index])
                                   : unawaited(_openProject(projects[index])),
                               onLongPress: () =>
@@ -408,16 +415,17 @@ class _ProjectListPageState extends State<ProjectListPage> {
                     children: [
                       Expanded(
                         child: ViewOptionsBar(
-                title: 'Visualização',
-                modeIcon: _displayMode == _ProjectDisplayMode.grid
-                    ? Icons.grid_view_rounded
-                    : Icons.view_list_rounded,
-                modeLabel: _displayMode == _ProjectDisplayMode.grid
-                    ? 'Grade'
-                    : 'Lista',
-                toggleTooltip: _displayMode == _ProjectDisplayMode.grid
-                    ? 'Exibir em lista'
-                    : 'Exibir em grade',
+                          title: 'Visualização',
+                          modeIcon: _displayMode == _ProjectDisplayMode.grid
+                              ? Icons.grid_view_rounded
+                              : Icons.view_list_rounded,
+                          modeLabel: _displayMode == _ProjectDisplayMode.grid
+                              ? 'Grade'
+                              : 'Lista',
+                          toggleTooltip:
+                              _displayMode == _ProjectDisplayMode.grid
+                              ? 'Exibir em lista'
+                              : 'Exibir em grade',
                           onToggleMode: _toggleDisplayMode,
                         ),
                       ),
@@ -466,6 +474,102 @@ class _ProjectListPageState extends State<ProjectListPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class _ProjectSelectionWrapper extends StatelessWidget {
+  final Widget child;
+  final bool selectionMode;
+  final bool selected;
+  final Color accentColor;
+  final VoidCallback onToggleSelection;
+
+  const _ProjectSelectionWrapper({
+    required this.child,
+    required this.selectionMode,
+    required this.selected,
+    required this.accentColor,
+    required this.onToggleSelection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onLongPress: onToggleSelection,
+      child: Stack(
+        children: [
+          child,
+          if (selectionMode)
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onToggleSelection,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(32, 10, 16, 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: selected
+                          ? Border.all(
+                              color: accentColor.withValues(alpha: 0.72),
+                              width: 2,
+                            )
+                          : null,
+                      color: selected
+                          ? accentColor.withValues(alpha: 0.08)
+                          : Colors.transparent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (selectionMode)
+            Positioned(
+              top: 14,
+              right: 24,
+              child: _SelectionBadge(
+                selected: selected,
+                accentColor: accentColor,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectionBadge extends StatelessWidget {
+  final bool selected;
+  final Color accentColor;
+
+  const _SelectionBadge({required this.selected, required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.72),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.86)),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(
+        selected
+            ? Icons.check_circle_rounded
+            : Icons.radio_button_unchecked_rounded,
+        size: 18,
+        color: selected ? accentColor : const Color(0xFF544959),
+      ),
     );
   }
 }

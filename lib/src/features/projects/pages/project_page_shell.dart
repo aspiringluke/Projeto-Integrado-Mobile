@@ -493,6 +493,94 @@ class _ProjectPageState extends State<ProjectPage> {
     unawaited(_flushProjectDraft());
   }
 
+  Future<void> _deleteCharacters(List<CharacterListItem> characters) async {
+    if (characters.isEmpty) return;
+
+    final linkedNotesByCharacter = <CharacterListItem, List<Note>>{};
+    for (final character in characters) {
+      linkedNotesByCharacter[character] = await _notesLinkedToCharacter(
+        character,
+      );
+    }
+    if (!mounted) return;
+
+    final linkedNoteIds = <int>{};
+    for (final notes in linkedNotesByCharacter.values) {
+      linkedNoteIds.addAll(notes.map((note) => note.id).whereType<int>());
+    }
+
+    final deletionAction = await showDeleteCharactersConfirmation(
+      context,
+      characterCount: characters.length,
+      linkedNoteCount: linkedNoteIds.length,
+    );
+    if (!mounted || deletionAction == null) {
+      return;
+    }
+
+    if (deletionAction ==
+        CharacterLinkedNotesDeletionAction.deleteLinkedNotes) {
+      await _deleteCharacterLinkedNotes(
+        linkedNotesByCharacter.values
+            .expand((notes) => notes)
+            .toList(growable: false),
+      );
+    } else {
+      for (final entry in linkedNotesByCharacter.entries) {
+        await _markCharacterNotesAsFormerlyLinked(entry.key, entry.value);
+      }
+    }
+    if (!mounted) return;
+
+    final deletedIds = <int>{};
+    for (final character in characters) {
+      final characterId = character.id;
+      if (characterId == null) {
+        deletedIds.addAll(
+          _characters
+              .where((item) => identical(item, character))
+              .map((item) => item.id)
+              .whereType<int>(),
+        );
+        continue;
+      }
+
+      final result = await _characterRepository.deleteCharacter(characterId);
+      if (!mounted) return;
+      if (!result.$1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.$2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        continue;
+      }
+      deletedIds.add(characterId);
+      StoryRegistry.instance.removeCharacter(
+        projectTitle: _projectDraft.title,
+        name: character.data.name,
+      );
+    }
+
+    setState(() {
+      _characters.removeWhere(
+        (item) => item.id != null && deletedIds.contains(item.id),
+      );
+      if (_projectDraft.featuredCharacterIds.any(deletedIds.contains)) {
+        _projectDraft = _projectDraft.copyWith(
+          featuredCharacterIds: _projectDraft.featuredCharacterIds
+              .where((id) => !deletedIds.contains(id))
+              .toList(growable: false),
+        );
+        _hasPendingProjectChanges = true;
+      }
+    });
+
+    unawaited(_persistCharacterOrdering());
+    unawaited(_flushProjectDraft());
+  }
+
   Future<List<Note>> _notesLinkedToCharacter(
     CharacterListItem character,
   ) async {
@@ -541,9 +629,10 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Future<void> _deleteCharacterLinkedNotes(List<Note> notes) async {
     final repository = NoteRepository();
+    final deletedNoteIds = <int>{};
     for (final note in notes) {
       final noteId = note.id;
-      if (noteId == null) continue;
+      if (noteId == null || !deletedNoteIds.add(noteId)) continue;
 
       await repository.deleteNote(noteId);
     }
@@ -680,6 +769,8 @@ class _ProjectPageState extends State<ProjectPage> {
           unawaited(_updateCharacter(character, updatedData)),
       onCharacterViewed: (character) => unawaited(_touchCharacter(character)),
       onCharacterDeleted: (character) => unawaited(_deleteCharacter(character)),
+      onCharactersDeleted: (characters) =>
+          unawaited(_deleteCharacters(characters)),
     );
   }
 

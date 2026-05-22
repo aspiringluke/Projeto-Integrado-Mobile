@@ -119,7 +119,9 @@ class MultiSelectIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tint = destructive ? const Color(0xFFE05E8A) : const Color(0xFF544959);
+    final tint = destructive
+        ? const Color(0xFFE05E8A)
+        : const Color(0xFF544959);
 
     return Tooltip(
       message: tooltip,
@@ -152,4 +154,3 @@ class MultiSelectIconButton extends StatelessWidget {
     );
   }
 }
-
