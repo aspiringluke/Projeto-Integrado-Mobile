@@ -27,6 +27,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
       ),
     );
     _viewModel.addListener(_onViewModelChanged);
+    _viewModel.carregarConversas();
   }
 
   @override
@@ -78,6 +79,60 @@ class _ChatbotPageState extends State<ChatbotPage> {
                 titleLetterSpacing: 1.2,
                 onBackPressed: () => Navigator.of(context).pop(),
               ),
+              Padding(
+  padding: const EdgeInsets.only(
+    right: 12,
+    top: 8,
+  ),
+  child: Align(
+    alignment: Alignment.centerRight,
+    child: IconButton(
+      icon: const Icon(Icons.history),
+      onPressed: () async {
+
+        await _viewModel.carregarConversas();
+
+        showModalBottomSheet(
+          context: context,
+          builder: (_) {
+
+            return ListView.builder(
+              itemCount:
+                  _viewModel.conversas.length,
+
+              itemBuilder:
+                  (context,index){
+
+                final conversa =
+                    _viewModel.conversas[index];
+
+                return ListTile(
+                  leading:
+                      const Icon(Icons.chat),
+
+                  title: Text(
+                    conversa["titulo"]
+                    ?? "Sem título",
+                  ),
+
+                  onTap: () async {
+
+                    Navigator.pop(context);
+
+                    await _viewModel
+                        .abrirConversa(
+                      conversa["idConversa"],
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    ),
+  ),
+),
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
