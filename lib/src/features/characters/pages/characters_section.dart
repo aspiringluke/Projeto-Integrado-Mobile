@@ -115,6 +115,7 @@ class _CharactersSectionState extends State<CharactersSection> {
       MaterialPageRoute<void>(
         builder: (_) => CharacterNotebookPage(
           data: character.data,
+          availableCharacters: widget.characters,
           onChanged: (updatedData) =>
               widget.onCharacterEdited(character, updatedData),
         ),

@@ -84,7 +84,6 @@ class _ProjectInfoButton extends StatelessWidget {
 
   static const double _thumbnailSize = 44;
   static const double _thumbnailGap = 6;
-  static const double _comfortableTrailingSpace = 6;
 
   @override
   Widget build(BuildContext context) {
@@ -98,56 +97,40 @@ class _ProjectInfoButton extends StatelessWidget {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.hasBoundedWidth
-            ? constraints.maxWidth
-            : double.infinity;
-        final fitCount = availableWidth.isFinite
-            ? ((availableWidth + _thumbnailGap - _comfortableTrailingSpace) /
-                      (_thumbnailSize + _thumbnailGap))
-                  .floor()
-                  .clamp(1, projectShowcaseCharacterLimit)
-            : projectShowcaseCharacterLimit;
-        final visibleCharacters = characters
-            .take(fitCount)
-            .toList(growable: false);
+    final visibleCharacters = characters
+        .take(projectShowcaseCharacterLimit)
+        .toList(growable: false);
 
-        return SizedBox(
-          height: 52,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < visibleCharacters.length; index++)
-                Padding(
-                  padding: EdgeInsets.only(
-                    right: index == visibleCharacters.length - 1
-                        ? 0
-                        : _thumbnailGap,
-                  ),
-                  child: Tooltip(
-                    message: visibleCharacters[index].data.name.trim().isEmpty
-                        ? 'Abrir personagem'
-                        : visibleCharacters[index].data.name,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: onCharacterTap == null
-                            ? null
-                            : () => onCharacterTap!(visibleCharacters[index]),
-                        child: _ProjectCharacterThumbnail(
-                          character: visibleCharacters[index],
-                          size: _thumbnailSize,
-                        ),
-                      ),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: _thumbnailGap,
+          runSpacing: 8,
+          children: [
+            for (final character in visibleCharacters)
+              Tooltip(
+                message: character.data.name.trim().isEmpty
+                    ? 'Abrir personagem'
+                    : character.data.name,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onCharacterTap == null
+                        ? null
+                        : () => onCharacterTap!(character),
+                    child: _ProjectCharacterThumbnail(
+                      character: character,
+                      size: _thumbnailSize,
                     ),
                   ),
                 ),
-            ],
-          ),
-        );
-      },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../projects/models/project_image_data.dart';
 import '../../projects/models/project_tag_data.dart';
@@ -28,12 +30,19 @@ part 'character_notebook_parts/character_notebook_editor_widgets.dart';
 part 'character_notebook_parts/character_notebook_relevance.dart';
 part 'character_notebook_parts/character_notebook_relevance_model.dart';
 part 'character_notebook_parts/character_notebook_navigation.dart';
+part 'character_notebook_parts/character_notebook_history.dart';
 
 class CharacterNotebookPage extends StatefulWidget {
   final CharacterCardData data;
+  final List<CharacterListItem> availableCharacters;
   final ValueChanged<CharacterCardData>? onChanged;
 
-  const CharacterNotebookPage({super.key, required this.data, this.onChanged});
+  const CharacterNotebookPage({
+    super.key,
+    required this.data,
+    this.availableCharacters = const <CharacterListItem>[],
+    this.onChanged,
+  });
 
   @override
   State<CharacterNotebookPage> createState() => _CharacterNotebookPageState();
@@ -73,6 +82,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   late TextEditingController _titlesController;
   late TextEditingController _heightController;
   late TextEditingController _weightController;
+  late TextEditingController _historySearchController;
   late ScrollController _synopsisScrollController;
   late final ValueNotifier<CharacterCardData> _headerDraftNotifier;
   late Map<_TagKind, TagController> _tagControllers;
@@ -96,6 +106,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   String _selectedRelevanceTag = '';
   String? _selectedPsychTraitId;
   String? _selectedPsychFacetId;
+  late _CharacterHistoryDraft _historyDraft;
+  String _historySearchQuery = '';
+  final Set<String> _collapsedHistoryYears = <String>{};
 
   @override
   void initState() {
@@ -125,6 +138,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _weightController = TextEditingController(
       text: formatWeightEditorValue(_draft.weightKg, _weightUnit),
     );
+    _historySearchController = TextEditingController();
     _synopsisScrollController = ScrollController();
     _tagControllers = <_TagKind, TagController>{
       for (final kind in _TagKind.values)
@@ -166,6 +180,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     if (seededPsychValues.length != _draft.notebookComplexityValues.length) {
       _draft = _draft.copyWith(notebookComplexityValues: seededPsychValues);
     }
+    _historyDraft = _decodeCharacterHistory(_draft.notebookComplexityValues);
     _selectedPsychTraitId = _psychBigFiveCatalog.first.id;
     _selectedPsychFacetId = _psychBigFiveCatalog.first.facets.first.id;
   }
@@ -183,6 +198,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     _titlesController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _historySearchController.dispose();
     _synopsisScrollController.dispose();
     for (final controller in _tagControllers.values) {
       controller.dispose();
@@ -210,6 +226,10 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     }
     _headerDraftNotifier.value = next;
     _hasPendingParentSync = true;
+  }
+
+  void _rebuildNotebook() {
+    setState(() {});
   }
 
   void _flushDraftToParent() {
@@ -376,11 +396,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     return switch (_activeTab) {
       _NotebookTab.geral => _buildGeneralTab(),
       _NotebookTab.psique => _buildPsychologyWorkbench(),
-      _NotebookTab.historia => _buildPlaceholderTab(
-        title: 'História',
-        subtitle: 'Linha do tempo, origem e viradas importantes.',
-        icon: Icons.history_edu_rounded,
-      ),
+      _NotebookTab.historia => _buildHistoryTab(),
       _NotebookTab.notas => _buildPlaceholderTab(
         title: 'Notas',
         subtitle: 'Observações rápidas, rastros e pendências.',

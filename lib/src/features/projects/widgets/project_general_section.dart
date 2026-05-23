@@ -586,7 +586,7 @@ class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
         CreateProjectDialogInfoSurface(
           child: Text(
             isAutomatic
-                ? 'O cartão usa os 3 personagens de maior relevância.'
+                ? 'O cartão usa os $projectShowcaseCharacterLimit personagens de maior relevância.'
                 : 'O cartão usa os personagens escolhidos abaixo.',
             style: const TextStyle(color: Color(0xFF6A6167), fontSize: 12),
           ),

@@ -426,7 +426,7 @@ class _ProjectDetails extends StatelessWidget {
           ],
           const SizedBox(height: 7),
           Text(
-            'Os 3 personagens de maior relevância são automaticamente exibidos, ou você pode escolher manualmente na',
+            'Os $projectShowcaseCharacterLimit personagens de maior relevância são automaticamente exibidos, ou você pode escolher manualmente na',
             style: TextStyle(
               color: const Color(0xFF655862),
               fontSize: 12,
@@ -479,6 +479,7 @@ class _ProjectDetails extends StatelessWidget {
       MaterialPageRoute<void>(
         builder: (_) => CharacterNotebookPage(
           data: character.data,
+          availableCharacters: displayedCharacters,
           onChanged: (updatedData) async {
             character.data = updatedData;
             character.lastModified = DateTime.now();
