@@ -107,6 +107,7 @@ Exemplo com arquivo:
 
 ```bash
 flutter [run | build apk] -- dart-define-from-file=[config.json | .env]
+```
 ---
 
 ## 🗂 Estrutura das Pastas
