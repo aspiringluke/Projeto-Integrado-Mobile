@@ -275,6 +275,31 @@ class FolderController extends ChangeNotifier {
     return result;
   }
 
+  Future<(bool, Folder?, String?)> ensureCharacterRootFolder({
+    required String characterName,
+    required Color color,
+    String? projectTitle,
+  }) async {
+    _setError(null);
+    final folder = await repository.ensureCharacterRootFolder(
+      characterName: characterName,
+      color: color,
+      projectTitle: projectTitle,
+    );
+    if (folder?.id == null) {
+      const message = 'Falha ao preparar pasta do personagem';
+      _setError(message);
+      return (false, null, message);
+    }
+
+    StoryRegistry.instance.registerFolder(
+      id: folder!.id!,
+      title: folder.title,
+      accentColor: folder.color,
+    );
+    return (true, folder, null);
+  }
+
   NoteMetadata _normalizeFolderMetadata(NoteMetadata metadata) {
     return metadata.copyWith(linkTarget: const NoteLinkTarget());
   }

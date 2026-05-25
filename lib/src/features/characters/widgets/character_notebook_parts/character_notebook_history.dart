@@ -8,19 +8,25 @@ enum _HistoryEmotionWheel { arousalValence, plutchik }
 
 class _HistoryMilestoneDetails {
   final String emotionId;
+  final List<String> emotionIds;
   final String markdown;
   final int? month;
   final int? day;
 
   const _HistoryMilestoneDetails({
     required this.emotionId,
+    this.emotionIds = const <String>[],
     this.markdown = '',
     this.month,
     this.day,
   });
 
+  List<String> get resolvedEmotionIds =>
+      emotionIds.isEmpty ? [emotionId] : emotionIds;
+
   _HistoryMilestoneDetails copyWith({
     String? emotionId,
+    List<String>? emotionIds,
     String? markdown,
     int? month,
     bool clearMonth = false,
@@ -29,6 +35,7 @@ class _HistoryMilestoneDetails {
   }) {
     return _HistoryMilestoneDetails(
       emotionId: emotionId ?? this.emotionId,
+      emotionIds: emotionIds ?? this.emotionIds,
       markdown: markdown ?? this.markdown,
       month: clearMonth ? null : month ?? this.month,
       day: clearDay ? null : day ?? this.day,
@@ -38,6 +45,7 @@ class _HistoryMilestoneDetails {
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'emotionId': emotionId,
+      'emotionIds': emotionIds,
       'markdown': markdown,
       'month': month,
       'day': day,
@@ -50,12 +58,14 @@ class _HistoryMilestoneDetails {
   ) {
     final catalog = _historyEmotionCatalog(wheel);
     final rawEmotionId = json['emotionId'] as String?;
+    final emotionIds = _readHistoryEmotionIds(
+      json['emotionIds'],
+      rawEmotionId,
+      wheel,
+    );
     return _HistoryMilestoneDetails(
-      emotionId:
-          rawEmotionId != null &&
-              catalog.any((emotion) => emotion.id == rawEmotionId)
-          ? rawEmotionId
-          : catalog.first.id,
+      emotionId: emotionIds.isEmpty ? catalog.first.id : emotionIds.first,
+      emotionIds: emotionIds,
       markdown: json['markdown'] as String? ?? '',
       month: _readHistoryInt(json['month']),
       day: _readHistoryInt(json['day']),
@@ -114,17 +124,43 @@ class _CharacterHistoryDraft {
     final emotionWheel = _historyEmotionWheelFromName(
       json['emotionWheel'] as String?,
     );
+    var birthDetails = _readHistoryMilestoneDetails(
+      json['birthDetails'],
+      emotionWheel,
+    );
+    var deathDetails = _readHistoryMilestoneDetails(
+      json['deathDetails'],
+      emotionWheel,
+    );
+    var deathAge = _readHistoryDouble(json['deathAge']);
+
+    final rawMilestones = json['milestones'];
+    if (rawMilestones is List) {
+      for (final rawMilestone in rawMilestones.whereType<Map>()) {
+        final milestone = rawMilestone.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+        final type = _historyTimelineItemTypeFromName(
+          milestone['type'] as String?,
+        );
+        final details = _readHistoryMilestoneDetails(
+          milestone['details'],
+          emotionWheel,
+        );
+        if (type == _HistoryTimelineItemType.birth) {
+          birthDetails = details;
+        } else if (type == _HistoryTimelineItemType.death && deathAge == null) {
+          deathAge = _readHistoryDouble(milestone['ageOffset']);
+          deathDetails = details;
+        }
+      }
+    }
+
     return _CharacterHistoryDraft(
-      deathAge: _readHistoryDouble(json['deathAge']),
+      deathAge: deathAge,
       emotionWheel: emotionWheel,
-      birthDetails: _readHistoryMilestoneDetails(
-        json['birthDetails'],
-        emotionWheel,
-      ),
-      deathDetails: _readHistoryMilestoneDetails(
-        json['deathDetails'],
-        emotionWheel,
-      ),
+      birthDetails: birthDetails,
+      deathDetails: deathDetails,
       events: rawEvents is List
           ? rawEvents
                 .whereType<Map>()
@@ -146,7 +182,7 @@ class _CharacterHistoryEvent {
   final int? month;
   final int? day;
   final _HistoryEmotionWheel emotionWheel;
-  final String emotionId;
+  final List<String> emotionIds;
   final List<int> presentCharacterIds;
   final String markdown;
 
@@ -157,10 +193,14 @@ class _CharacterHistoryEvent {
     this.month,
     this.day,
     required this.emotionWheel,
-    required this.emotionId,
+    required this.emotionIds,
     this.presentCharacterIds = const <int>[],
     required this.markdown,
   });
+
+  String get emotionId => emotionIds.isEmpty
+      ? _historyEmotionCatalog(emotionWheel).first.id
+      : emotionIds.first;
 
   _CharacterHistoryEvent copyWith({
     String? id,
@@ -171,7 +211,7 @@ class _CharacterHistoryEvent {
     int? day,
     bool clearDay = false,
     _HistoryEmotionWheel? emotionWheel,
-    String? emotionId,
+    List<String>? emotionIds,
     List<int>? presentCharacterIds,
     String? markdown,
   }) {
@@ -182,7 +222,7 @@ class _CharacterHistoryEvent {
       month: clearMonth ? null : month ?? this.month,
       day: clearDay ? null : day ?? this.day,
       emotionWheel: emotionWheel ?? this.emotionWheel,
-      emotionId: emotionId ?? this.emotionId,
+      emotionIds: emotionIds ?? this.emotionIds,
       presentCharacterIds: presentCharacterIds ?? this.presentCharacterIds,
       markdown: markdown ?? this.markdown,
     );
@@ -197,12 +237,21 @@ class _CharacterHistoryEvent {
       'day': day,
       'emotionWheel': emotionWheel.name,
       'emotionId': emotionId,
+      'emotionIds': emotionIds,
       'presentCharacterIds': presentCharacterIds,
       'markdown': markdown,
     };
   }
 
   factory _CharacterHistoryEvent.fromJson(Map<String, Object?> json) {
+    final emotionWheel = _historyEmotionWheelFromName(
+      json['emotionWheel'] as String?,
+    );
+    final emotionIds = _readHistoryEmotionIds(
+      json['emotionIds'],
+      json['emotionId'] as String?,
+      emotionWheel,
+    );
     return _CharacterHistoryEvent(
       id: (json['id'] as String?)?.trim().isNotEmpty == true
           ? json['id'] as String
@@ -211,10 +260,8 @@ class _CharacterHistoryEvent {
       ageOffset: _readHistoryDouble(json['ageOffset']) ?? 0,
       month: _readHistoryInt(json['month']),
       day: _readHistoryInt(json['day']),
-      emotionWheel: _historyEmotionWheelFromName(
-        json['emotionWheel'] as String?,
-      ),
-      emotionId: json['emotionId'] as String? ?? 'calma',
+      emotionWheel: emotionWheel,
+      emotionIds: emotionIds,
       presentCharacterIds: _readHistoryIntList(json['presentCharacterIds']),
       markdown: json['markdown'] as String? ?? '',
     );
@@ -270,12 +317,20 @@ class _HistoryMonthDay {
 extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
   Widget _buildHistoryTab() {
     final query = _historySearchQuery.trim();
+    final emotionFilterIds = Set<String>.from(_historyEmotionFilterIds);
+    final isFiltering = query.isNotEmpty || emotionFilterIds.isNotEmpty;
     final events = _sortedHistoryEvents(
       _historyDraft.events
           .where((event) => _matchesHistorySearch(event, query))
+          .where(
+            (event) => _matchesHistoryEmotionFilter(event, emotionFilterIds),
+          )
           .toList(growable: false),
     );
-    final timelineItems = _buildHistoryTimelineItems(events);
+    final timelineItems = _buildHistoryTimelineItems(
+      events,
+      includeMilestones: !isFiltering,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 18),
@@ -293,13 +348,15 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
           _HistorySearchField(
             controller: _historySearchController,
             accentColor: _draft.accent,
+            activeFilterCount: emotionFilterIds.length,
+            onFilterTap: _openHistoryEmotionFilter,
             onChanged: (value) {
               _historySearchQuery = value;
               _rebuildNotebook();
             },
           ),
           const SizedBox(height: 12),
-          if (events.isEmpty && query.isNotEmpty)
+          if (events.isEmpty && isFiltering)
             _HistoryEmptySearchResult(accentColor: _draft.accent)
           else
             _HistoryTimeline(
@@ -342,6 +399,49 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
     _rebuildNotebook();
   }
 
+  Future<void> _openHistoryEmotionFilter() async {
+    final tempSelectedIds = Set<String>.from(_historyEmotionFilterIds);
+    await showProjectDismissibleSheet<void>(
+      context: context,
+      title: 'Filtrar emocoes',
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            void applySelection() {
+              _historyEmotionFilterIds
+                ..clear()
+                ..addAll(tempSelectedIds);
+              _rebuildNotebook();
+            }
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _HistoryEmotionFilterField(
+                  accentColor: _draft.accent,
+                  selectedEmotionIds: tempSelectedIds,
+                  onToggle: (id) {
+                    setModalState(() {
+                      if (!tempSelectedIds.remove(id)) {
+                        tempSelectedIds.add(id);
+                      }
+                    });
+                    applySelection();
+                  },
+                  onClear: () {
+                    setModalState(tempSelectedIds.clear);
+                    applySelection();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _createHistoryEvent([double? ageOffset]) async {
     final events = _sortedHistoryEvents(_historyDraft.events);
     final lastAge = events.isEmpty ? 0.0 : events.last.ageOffset;
@@ -350,7 +450,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
       title: 'Novo evento',
       ageOffset: ageOffset ?? lastAge + 1,
       emotionWheel: _historyEmotionWheel,
-      emotionId: _historyEmotionCatalog(_historyEmotionWheel).first.id,
+      emotionIds: [_historyEmotionCatalog(_historyEmotionWheel).first.id],
       markdown: '',
     );
 
@@ -461,6 +561,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
+                    style: _historyTextButtonStyle(_draft.accent),
                     onPressed: () {
                       Navigator.of(
                         context,
@@ -495,12 +596,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
     final markdownController = TextEditingController(text: event.markdown);
     final editorScrollController = ScrollController();
     final emotionWheel = _historyEmotionWheel;
-    var emotionId =
-        _historyEmotionCatalog(
-          emotionWheel,
-        ).any((emotion) => emotion.id == event.emotionId)
-        ? event.emotionId
-        : _historyEmotionCatalog(emotionWheel).first.id;
+    var emotionIds = _validHistoryEmotionIds(event.emotionIds, emotionWheel);
     var presentCharacterIds = event.presentCharacterIds.toList(growable: true);
     String? ageError;
 
@@ -516,6 +612,15 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: _HistorySheetCloseButton(
+                          accentColor: _draft.accent,
+                          tooltip: 'Fechar edicao de evento',
+                          onTap: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Expanded(
@@ -581,8 +686,19 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                       const SizedBox(height: 12),
                       _HistoryEmotionPicker(
                         accentColor: _draft.accent,
-                        selectedEmotionId: emotionId,
-                        onSelected: (id) => setModalState(() => emotionId = id),
+                        selectedEmotionIds: emotionIds,
+                        onToggle: (id) {
+                          setModalState(() {
+                            if (!emotionIds.remove(id)) {
+                              emotionIds = [...emotionIds, id];
+                            }
+                            if (emotionIds.isEmpty) {
+                              emotionIds = [
+                                _historyEmotionCatalog(emotionWheel).first.id,
+                              ];
+                            }
+                          });
+                        },
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -601,6 +717,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                             (stored) => stored.id == event.id,
                           )) ...[
                             IconButton.filledTonal(
+                              style: _historyIconButtonStyle(_draft.accent),
                               tooltip: 'Excluir evento',
                               onPressed: () => Navigator.of(
                                 context,
@@ -611,6 +728,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                           ],
                           Expanded(
                             child: OutlinedButton(
+                              style: _historyOutlinedButtonStyle(_draft.accent),
                               onPressed: () => Navigator.of(context).pop(),
                               child: const Text('Cancelar'),
                             ),
@@ -618,6 +736,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                           const SizedBox(width: 8),
                           Expanded(
                             child: FilledButton.icon(
+                              style: _historyFilledButtonStyle(_draft.accent),
                               onPressed: () {
                                 final parsedAge = _parseHistoryNumber(
                                   ageController.text,
@@ -642,7 +761,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                                       day: selectedDate?.day,
                                       clearDay: selectedDate == null,
                                       emotionWheel: emotionWheel,
-                                      emotionId: emotionId,
+                                      emotionIds: emotionIds,
                                       presentCharacterIds: presentCharacterIds,
                                       markdown: markdownController.text,
                                     ),
@@ -694,9 +813,9 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
 
   Future<void> _openHistoryEventViewer(_CharacterHistoryEvent event) async {
     final scrollController = ScrollController();
-    final emotion = _resolveHistoryEmotion(
+    final emotions = _resolveHistoryEmotions(
       _historyEmotionWheel,
-      event.emotionId,
+      event.emotionIds,
     );
     var shouldOpenEditor = false;
     final relativeEvents = _sortedHistoryEvents(
@@ -732,7 +851,8 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                         ),
                         color: _draft.accent,
                       ),
-                      _HistoryEmotionPill(emotion: emotion),
+                      for (final emotion in emotions)
+                        _HistoryEmotionPill(emotion: emotion),
                     ],
                   ),
                   if (event.presentCharacterIds.isNotEmpty) ...[
@@ -755,14 +875,11 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                   ),
                   if (relativeEvent != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 7),
-                      child: Text(
-                        _relativeHistoryEventText(event, relativeEvent),
-                        style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.58),
-                          fontSize: 11.5,
-                          height: 1.3,
-                        ),
+                      padding: const EdgeInsets.only(top: 8),
+                      child: _HistoryRelativeComparisonResult(
+                        accentColor: _draft.accent,
+                        currentEvent: event,
+                        relativeEvent: relativeEvent,
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -777,6 +894,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                   Row(
                     children: [
                       IconButton.filledTonal(
+                        style: _historyIconButtonStyle(_draft.accent),
                         tooltip: 'Excluir evento',
                         onPressed: () {
                           _deleteHistoryEvent(event);
@@ -787,6 +905,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                       const SizedBox(width: 8),
                       Expanded(
                         child: FilledButton.icon(
+                          style: _historyFilledButtonStyle(_draft.accent),
                           onPressed: () {
                             shouldOpenEditor = true;
                             Navigator.of(context).pop();
@@ -814,12 +933,8 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
     }
   }
 
-  Future<void> _openHistoryMilestoneViewer(
-    _HistoryTimelineItemType milestoneType,
-  ) async {
-    if (milestoneType == _HistoryTimelineItemType.event) return;
-    final item = _historyMilestoneTimelineItem(milestoneType);
-    if (item == null) return;
+  Future<void> _openHistoryMilestoneViewer(_HistoryTimelineItem item) async {
+    if (item.type == _HistoryTimelineItemType.event) return;
     final scrollController = ScrollController();
     var shouldOpenEditor = false;
 
@@ -858,13 +973,14 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
+                style: _historyFilledButtonStyle(_draft.accent),
                 onPressed: () {
                   shouldOpenEditor = true;
                   Navigator.of(context).pop();
                 },
                 icon: const Icon(Icons.edit_rounded, size: 18),
                 label: Text(
-                  milestoneType == _HistoryTimelineItemType.birth
+                  item.type == _HistoryTimelineItemType.birth
                       ? 'Editar nascimento'
                       : 'Editar morte',
                 ),
@@ -876,7 +992,7 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
       if (mounted && shouldOpenEditor) {
         await Future<void>.delayed(Duration.zero);
         if (mounted) {
-          await _openHistoryMilestoneEditor(milestoneType);
+          await _openHistoryMilestoneEditor(item);
         }
       }
     } finally {
@@ -884,10 +1000,8 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
     }
   }
 
-  Future<void> _openHistoryMilestoneEditor(
-    _HistoryTimelineItemType milestoneType,
-  ) async {
-    switch (milestoneType) {
+  Future<void> _openHistoryMilestoneEditor(_HistoryTimelineItem item) async {
+    switch (item.type) {
       case _HistoryTimelineItemType.birth:
         await _editBirthEventDetails();
         break;
@@ -899,37 +1013,16 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
     }
   }
 
-  _HistoryTimelineItem? _historyMilestoneTimelineItem(
-    _HistoryTimelineItemType milestoneType,
-  ) {
-    return switch (milestoneType) {
-      _HistoryTimelineItemType.birth => _HistoryTimelineItem.birth(
-        _birthday,
-        _historyDraft.birthDetails,
-      ),
-      _HistoryTimelineItemType.death =>
-        _historyDraft.deathAge == null
-            ? null
-            : _HistoryTimelineItem.death(
-                _historyDraft.deathAge!,
-                _historyDraft.deathDetails,
-              ),
-      _HistoryTimelineItemType.event => null,
-    };
-  }
-
   Future<void> _editBirthEventDetails() async {
     final markdownController = TextEditingController(
       text: _historyDraft.birthDetails.markdown,
     );
     final editorScrollController = ScrollController();
     final emotionWheel = _historyEmotionWheel;
-    var emotionId =
-        _historyEmotionCatalog(
-          emotionWheel,
-        ).any((emotion) => emotion.id == _historyDraft.birthDetails.emotionId)
-        ? _historyDraft.birthDetails.emotionId
-        : _historyEmotionCatalog(emotionWheel).first.id;
+    var emotionIds = _validHistoryEmotionIds(
+      _historyDraft.birthDetails.resolvedEmotionIds,
+      emotionWheel,
+    );
 
     try {
       final details =
@@ -954,8 +1047,19 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                       const SizedBox(height: 12),
                       _HistoryEmotionPicker(
                         accentColor: _draft.accent,
-                        selectedEmotionId: emotionId,
-                        onSelected: (id) => setModalState(() => emotionId = id),
+                        selectedEmotionIds: emotionIds,
+                        onToggle: (id) {
+                          setModalState(() {
+                            if (!emotionIds.remove(id)) {
+                              emotionIds = [...emotionIds, id];
+                            }
+                            if (emotionIds.isEmpty) {
+                              emotionIds = [
+                                _historyEmotionCatalog(emotionWheel).first.id,
+                              ];
+                            }
+                          });
+                        },
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -969,10 +1073,12 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
                       ),
                       const SizedBox(height: 12),
                       FilledButton.icon(
+                        style: _historyFilledButtonStyle(_draft.accent),
                         onPressed: () {
                           Navigator.of(context).pop(
                             _HistoryMilestoneDetails(
-                              emotionId: emotionId,
+                              emotionId: emotionIds.first,
+                              emotionIds: emotionIds,
                               markdown: markdownController.text,
                             ),
                           );
@@ -1014,114 +1120,136 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
             month: _historyDraft.deathDetails.month!,
             day: _historyDraft.deathDetails.day!,
           );
-    var emotionId =
-        _historyEmotionCatalog(
-          emotionWheel,
-        ).any((emotion) => emotion.id == _historyDraft.deathDetails.emotionId)
-        ? _historyDraft.deathDetails.emotionId
-        : _historyEmotionCatalog(emotionWheel).first.id;
+    var emotionIds = _validHistoryEmotionIds(
+      _historyDraft.deathDetails.resolvedEmotionIds,
+      emotionWheel,
+    );
     String? errorText;
+    final lastEventAge = _historyDraft.events.isEmpty
+        ? 0.0
+        : _historyDraft.events.map((event) => event.ageOffset).reduce(max);
 
     try {
-      final selected =
-          await showProjectDismissibleSheet<_HistoryDeathEditorResult>(
-            context: context,
-            title: 'Morte',
-            builder: (context) {
-              return StatefulBuilder(
-                builder: (context, setModalState) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+      final selected = await showProjectDismissibleSheet<_HistoryDeathEditorResult>(
+        context: context,
+        title: 'Morte',
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _HistoryTextInput(
+                    controller: deathController,
+                    label: 'Ano da morte *',
+                    hintText: 'Ex.: 84',
+                    accentColor: _draft.accent,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    errorText: errorText,
+                  ),
+                  const SizedBox(height: 12),
+                  _HistoryDateSelectorButton(
+                    accentColor: _draft.accent,
+                    label: 'Mes e dia',
+                    value: selectedDate,
+                    onTap: () async {
+                      final picked = await _selectHistoryMonthDay(
+                        initialMonth: selectedDate?.month,
+                        initialDay: selectedDate?.day,
+                      );
+                      if (picked == null) return;
+                      setModalState(() => selectedDate = picked);
+                    },
+                    onClear: selectedDate == null
+                        ? null
+                        : () => setModalState(() => selectedDate = null),
+                  ),
+                  const SizedBox(height: 12),
+                  _HistoryEmotionPicker(
+                    accentColor: _draft.accent,
+                    selectedEmotionIds: emotionIds,
+                    onToggle: (id) {
+                      setModalState(() {
+                        if (!emotionIds.remove(id)) {
+                          emotionIds = [...emotionIds, id];
+                        }
+                        if (emotionIds.isEmpty) {
+                          emotionIds = [
+                            _historyEmotionCatalog(emotionWheel).first.id,
+                          ];
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 260,
+                    child: _HistoryMarkdownEditor(
+                      controller: markdownController,
+                      scrollController: editorScrollController,
+                      accentColor: _draft.accent,
+                      onChanged: () {},
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      _HistoryTextInput(
-                        controller: deathController,
-                        label: 'Ano da morte *',
-                        hintText: 'Ex.: 84',
-                        accentColor: _draft.accent,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        errorText: errorText,
-                      ),
-                      const SizedBox(height: 12),
-                      _HistoryDateSelectorButton(
-                        accentColor: _draft.accent,
-                        label: 'Mes e dia',
-                        value: selectedDate,
-                        onTap: () async {
-                          final picked = await _selectHistoryMonthDay(
-                            initialMonth: selectedDate?.month,
-                            initialDay: selectedDate?.day,
-                          );
-                          if (picked == null) return;
-                          setModalState(() => selectedDate = picked);
-                        },
-                        onClear: selectedDate == null
-                            ? null
-                            : () => setModalState(() => selectedDate = null),
-                      ),
-                      const SizedBox(height: 12),
-                      _HistoryEmotionPicker(
-                        accentColor: _draft.accent,
-                        selectedEmotionId: emotionId,
-                        onSelected: (id) => setModalState(() => emotionId = id),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 260,
-                        child: _HistoryMarkdownEditor(
-                          controller: markdownController,
-                          scrollController: editorScrollController,
-                          accentColor: _draft.accent,
-                          onChanged: () {},
+                      Expanded(
+                        child: OutlinedButton(
+                          style: _historyOutlinedButtonStyle(_draft.accent),
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).pop(const _HistoryDeathEditorResult.clear()),
+                          child: const Text('Remover'),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(
-                                context,
-                              ).pop(const _HistoryDeathEditorResult.clear()),
-                              child: const Text('Remover'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: () {
-                                final text = deathController.text.trim();
-                                final parsed = _parseHistoryNumber(text);
-                                if (parsed == null || parsed <= 0) {
-                                  setModalState(() => errorText = 'Invalido');
-                                  return;
-                                }
-                                Navigator.of(context).pop(
-                                  _HistoryDeathEditorResult.apply(
-                                    parsed,
-                                    _HistoryMilestoneDetails(
-                                      emotionId: emotionId,
-                                      markdown: markdownController.text,
-                                      month: selectedDate?.month,
-                                      day: selectedDate?.day,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.check_rounded, size: 18),
-                              label: const Text('Aplicar'),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: _historyFilledButtonStyle(_draft.accent),
+                          onPressed: () {
+                            final parsed = _parseHistoryNumber(
+                              deathController.text.trim(),
+                            );
+                            if (parsed == null || parsed <= 0) {
+                              setModalState(() => errorText = 'Invalido');
+                              return;
+                            }
+                            if (parsed < lastEventAge) {
+                              setModalState(
+                                () => errorText =
+                                    'Deve ser no ano ${_formatHistoryNumber(lastEventAge)} ou depois',
+                              );
+                              return;
+                            }
+                            Navigator.of(context).pop(
+                              _HistoryDeathEditorResult.apply(
+                                parsed,
+                                _HistoryMilestoneDetails(
+                                  emotionId: emotionIds.first,
+                                  emotionIds: emotionIds,
+                                  markdown: markdownController.text,
+                                  month: selectedDate?.month,
+                                  day: selectedDate?.day,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.check_rounded, size: 18),
+                          label: const Text('Aplicar'),
+                        ),
                       ),
                     ],
-                  );
-                },
+                  ),
+                ],
               );
             },
           );
+        },
+      );
 
       if (!mounted || selected == null) return;
       _setHistoryDraft(
@@ -1140,23 +1268,21 @@ extension _CharacterNotebookHistoryState on _CharacterNotebookPageState {
   }
 
   List<_HistoryTimelineItem> _buildHistoryTimelineItems(
-    List<_CharacterHistoryEvent> events,
-  ) {
+    List<_CharacterHistoryEvent> events, {
+    bool includeMilestones = true,
+  }) {
     final items = <_HistoryTimelineItem>[
-      _HistoryTimelineItem.birth(_birthday, _historyDraft.birthDetails),
+      if (includeMilestones)
+        _HistoryTimelineItem.birth(_birthday, _historyDraft.birthDetails),
       for (final event in events) _HistoryTimelineItem.event(event),
-      if (_historyDraft.deathAge != null)
+      if (includeMilestones && _historyDraft.deathAge != null)
         _HistoryTimelineItem.death(
           _historyDraft.deathAge!,
           _historyDraft.deathDetails,
         ),
     ];
 
-    items.sort((a, b) {
-      final compareAge = a.ageOffset.compareTo(b.ageOffset);
-      if (compareAge != 0) return compareAge;
-      return a.order.compareTo(b.order);
-    });
+    items.sort(_compareTimelineItems);
     return items;
   }
 }
@@ -1237,12 +1363,14 @@ class _HistoryOverviewCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               IconButton.filledTonal(
+                style: _historyIconButtonStyle(accentColor),
                 tooltip: 'Adicionar evento',
                 onPressed: onAddEvent,
                 icon: const Icon(Icons.add_rounded, size: 18),
               ),
               const SizedBox(width: 6),
               IconButton.filledTonal(
+                style: _historyIconButtonStyle(accentColor),
                 tooltip: 'Definir morte',
                 onPressed: onEditDeathAge,
                 icon: const _HistorySkullIcon(size: 17),
@@ -1338,11 +1466,15 @@ class _HistoryMetricChip extends StatelessWidget {
 class _HistorySearchField extends StatelessWidget {
   final TextEditingController controller;
   final Color accentColor;
+  final int activeFilterCount;
+  final VoidCallback onFilterTap;
   final ValueChanged<String> onChanged;
 
   const _HistorySearchField({
     required this.controller,
     required this.accentColor,
+    required this.activeFilterCount,
+    required this.onFilterTap,
     required this.onChanged,
   });
 
@@ -1360,16 +1492,33 @@ class _HistorySearchField extends StatelessWidget {
             size: 18,
             color: _darkenCharacterDialogColor(accentColor, 0.14),
           ),
-          suffixIcon: controller.text.isEmpty
-              ? null
-              : IconButton(
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (controller.text.isNotEmpty)
+                IconButton(
                   tooltip: 'Limpar busca',
+                  visualDensity: VisualDensity.compact,
                   icon: const Icon(Icons.close_rounded, size: 17),
                   onPressed: () {
                     controller.clear();
                     onChanged('');
                   },
                 ),
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: _HistoryFilterButton(
+                  accentColor: accentColor,
+                  activeCount: activeFilterCount,
+                  onTap: onFilterTap,
+                ),
+              ),
+            ],
+          ),
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 42,
+            minHeight: 36,
+          ),
           filled: true,
           fillColor: Colors.white.withValues(alpha: 0.68),
           isDense: true,
@@ -1390,6 +1539,138 @@ class _HistorySearchField extends StatelessWidget {
             borderSide: BorderSide(color: accentColor, width: 1.1),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HistoryFilterButton extends StatelessWidget {
+  final Color accentColor;
+  final int activeCount;
+  final VoidCallback onTap;
+
+  const _HistoryFilterButton({
+    required this.accentColor,
+    required this.activeCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _darkenCharacterDialogColor(accentColor, 0.16);
+    return Tooltip(
+      message: 'Filtrar por emocao',
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: activeCount > 0
+                        ? accentColor.withValues(alpha: 0.16)
+                        : Colors.white.withValues(alpha: 0.42),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: activeCount > 0
+                          ? accentColor.withValues(alpha: 0.28)
+                          : accentColor.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Icon(Icons.filter_alt_rounded, size: 16, color: color),
+                ),
+              ),
+              if (activeCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -4,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      activeCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryEmotionFilterField extends StatelessWidget {
+  final Color accentColor;
+  final Set<String> selectedEmotionIds;
+  final ValueChanged<String> onToggle;
+  final VoidCallback onClear;
+
+  const _HistoryEmotionFilterField({
+    required this.accentColor,
+    required this.selectedEmotionIds,
+    required this.onToggle,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _HistoryEmotionSearchSuggestions(
+            accentColor: accentColor,
+            selectedEmotionIds: selectedEmotionIds,
+            onToggle: onToggle,
+            compact: true,
+            hintText:
+                'Experimente pesquisar pelas emocoes primarias (alegria, antecipacao, confianca, medo, surpresa, tristeza, aversao, raiva)',
+          ),
+          if (selectedEmotionIds.isNotEmpty)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                style: _historyTextButtonStyle(accentColor),
+                onPressed: onClear,
+                child: const Text('Limpar'),
+              ),
+            ),
+          if (selectedEmotionIds.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _HistoryEmotionPillWrap(
+              emotions: _resolveHistoryEmotions(
+                _historyEmotionWheel,
+                selectedEmotionIds.toList(growable: false),
+              ),
+              compact: true,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1433,8 +1714,8 @@ class _HistoryTimeline extends StatelessWidget {
   final ValueChanged<_CharacterHistoryEvent> onEditEvent;
   final ValueChanged<_CharacterHistoryEvent> onDeleteEvent;
   final ValueChanged<double> onAddEventAtYear;
-  final ValueChanged<_HistoryTimelineItemType> onViewMilestone;
-  final ValueChanged<_HistoryTimelineItemType> onEditMilestone;
+  final ValueChanged<_HistoryTimelineItem> onViewMilestone;
+  final ValueChanged<_HistoryTimelineItem> onEditMilestone;
   final ValueChanged<String> onToggleYear;
 
   const _HistoryTimeline({
@@ -1474,7 +1755,13 @@ class _HistoryTimeline extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var index = 0; index < groups.length; index += 1)
+          for (var index = 0; index < groups.length; index += 1) ...[
+            if (index > 0)
+              _HistoryTimelineIntervalArrow(
+                accentColor: accentColor,
+                previous: groups[index - 1].items.last,
+                next: groups[index].items.first,
+              ),
             _HistoryTimelineGroupRow(
               accentColor: accentColor,
               avatarColor: avatarColor,
@@ -1492,6 +1779,7 @@ class _HistoryTimeline extends StatelessWidget {
               onEditMilestone: onEditMilestone,
               onToggle: () => onToggleYear(groups[index].yearKey),
             ),
+          ],
         ],
       ),
     );
@@ -1511,8 +1799,8 @@ class _HistoryTimelineGroupRow extends StatelessWidget {
   final ValueChanged<_CharacterHistoryEvent> onEditEvent;
   final ValueChanged<_CharacterHistoryEvent> onDeleteEvent;
   final ValueChanged<double> onAddEventAtYear;
-  final ValueChanged<_HistoryTimelineItemType> onViewMilestone;
-  final ValueChanged<_HistoryTimelineItemType> onEditMilestone;
+  final ValueChanged<_HistoryTimelineItem> onViewMilestone;
+  final ValueChanged<_HistoryTimelineItem> onEditMilestone;
   final VoidCallback onToggle;
 
   const _HistoryTimelineGroupRow({
@@ -1732,6 +2020,57 @@ class _HistoryYearCountBadge extends StatelessWidget {
   }
 }
 
+class _HistoryTimelineIntervalArrow extends StatelessWidget {
+  final Color accentColor;
+  final _HistoryTimelineItem previous;
+  final _HistoryTimelineItem next;
+  final bool compact;
+
+  const _HistoryTimelineIntervalArrow({
+    required this.accentColor,
+    required this.previous,
+    required this.next,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _darkenCharacterDialogColor(accentColor, 0.18);
+    final text = _historyIntervalLabel(previous, next);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(compact ? 34 : 64, 4, 0, compact ? 8 : 10),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+              border: Border.all(color: accentColor.withValues(alpha: 0.16)),
+            ),
+            child: Icon(Icons.arrow_downward_rounded, size: 14, color: color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.black.withValues(alpha: 0.56),
+                fontSize: compact ? 10.8 : 11.5,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ParallelTimelineItems extends StatelessWidget {
   final Color accentColor;
   final Color avatarColor;
@@ -1741,8 +2080,8 @@ class _ParallelTimelineItems extends StatelessWidget {
   final ValueChanged<_CharacterHistoryEvent> onViewEvent;
   final ValueChanged<_CharacterHistoryEvent> onEditEvent;
   final ValueChanged<_CharacterHistoryEvent> onDeleteEvent;
-  final ValueChanged<_HistoryTimelineItemType> onViewMilestone;
-  final ValueChanged<_HistoryTimelineItemType> onEditMilestone;
+  final ValueChanged<_HistoryTimelineItem> onViewMilestone;
+  final ValueChanged<_HistoryTimelineItem> onEditMilestone;
 
   const _ParallelTimelineItems({
     required this.accentColor,
@@ -1761,52 +2100,51 @@ class _ParallelTimelineItems extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final twoColumns = items.length > 1 && constraints.maxWidth >= 560;
-        final cardWidth = twoColumns
-            ? (constraints.maxWidth - 10) / 2
-            : constraints.maxWidth;
-
-        return Wrap(
-          spacing: 10,
-          runSpacing: 10,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final item in items)
-              SizedBox(
-                width: cardWidth,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 17),
-                      child: _ParallelTimelineNode(
-                        color: _timelineItemColor(
-                          item,
-                          avatarColor,
-                          emotionWheel,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: _HistoryTimelineCard(
-                        accentColor: accentColor,
-                        item: item,
-                        color: _timelineItemColor(
-                          item,
-                          avatarColor,
-                          emotionWheel,
-                        ),
-                        emotionWheel: emotionWheel,
-                        availableCharacters: availableCharacters,
-                        onViewEvent: onViewEvent,
-                        onEditEvent: onEditEvent,
-                        onDeleteEvent: onDeleteEvent,
-                        onViewMilestone: onViewMilestone,
-                        onEditMilestone: onEditMilestone,
-                      ),
-                    ),
-                  ],
+            for (var index = 0; index < items.length; index += 1) ...[
+              if (index > 0)
+                _HistoryTimelineIntervalArrow(
+                  accentColor: accentColor,
+                  previous: items[index - 1],
+                  next: items[index],
+                  compact: true,
                 ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 17),
+                    child: _ParallelTimelineNode(
+                      color: _timelineItemColor(
+                        items[index],
+                        avatarColor,
+                        emotionWheel,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _HistoryTimelineCard(
+                      accentColor: accentColor,
+                      item: items[index],
+                      color: _timelineItemColor(
+                        items[index],
+                        avatarColor,
+                        emotionWheel,
+                      ),
+                      emotionWheel: emotionWheel,
+                      availableCharacters: availableCharacters,
+                      onViewEvent: onViewEvent,
+                      onEditEvent: onEditEvent,
+                      onDeleteEvent: onDeleteEvent,
+                      onViewMilestone: onViewMilestone,
+                      onEditMilestone: onEditMilestone,
+                    ),
+                  ),
+                ],
               ),
+            ],
           ],
         );
       },
@@ -1859,8 +2197,8 @@ class _HistoryTimelineCard extends StatelessWidget {
   final ValueChanged<_CharacterHistoryEvent> onViewEvent;
   final ValueChanged<_CharacterHistoryEvent> onEditEvent;
   final ValueChanged<_CharacterHistoryEvent> onDeleteEvent;
-  final ValueChanged<_HistoryTimelineItemType> onViewMilestone;
-  final ValueChanged<_HistoryTimelineItemType> onEditMilestone;
+  final ValueChanged<_HistoryTimelineItem> onViewMilestone;
+  final ValueChanged<_HistoryTimelineItem> onEditMilestone;
 
   const _HistoryTimelineCard({
     required this.accentColor,
@@ -1878,7 +2216,7 @@ class _HistoryTimelineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final event = item.event;
-    final emotion = _resolveHistoryEmotion(emotionWheel, item.emotionId);
+    final emotions = _resolveHistoryEmotions(emotionWheel, item.emotionIds);
     final monthDay = _historyMonthDayLabel(item);
 
     return Material(
@@ -1886,7 +2224,7 @@ class _HistoryTimelineCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: event == null
-            ? () => onViewMilestone(item.type)
+            ? () => onViewMilestone(item)
             : () => onViewEvent(event),
         child: Ink(
           padding: const EdgeInsets.all(10),
@@ -1941,10 +2279,11 @@ class _HistoryTimelineCard extends StatelessWidget {
                                 label: monthDay,
                                 color: color,
                               ),
-                            _HistoryEmotionPill(
-                              emotion: emotion,
-                              compact: true,
-                            ),
+                            for (final emotion in emotions)
+                              _HistoryEmotionPill(
+                                emotion: emotion,
+                                compact: true,
+                              ),
                           ],
                         ),
                       ],
@@ -1972,7 +2311,7 @@ class _HistoryTimelineCard extends StatelessWidget {
                           ? 'Editar nascimento'
                           : 'Editar morte',
                       color: color,
-                      onTap: () => onEditMilestone(item.type),
+                      onTap: () => onEditMilestone(item),
                     ),
                   ],
                 ],
@@ -2020,6 +2359,40 @@ class _HistoryIconAction extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 15, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistorySheetCloseButton extends StatelessWidget {
+  final Color accentColor;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _HistorySheetCloseButton({
+    required this.accentColor,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _darkenCharacterDialogColor(accentColor, 0.2);
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            border: Border.all(color: accentColor.withValues(alpha: 0.16)),
+          ),
+          child: Icon(Icons.close_rounded, size: 18, color: color),
         ),
       ),
     );
@@ -2199,6 +2572,25 @@ class _HistoryEmotionPill extends StatelessWidget {
   }
 }
 
+class _HistoryEmotionPillWrap extends StatelessWidget {
+  final List<_HistoryEmotionDefinition> emotions;
+  final bool compact;
+
+  const _HistoryEmotionPillWrap({required this.emotions, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final emotion in emotions)
+          _HistoryEmotionPill(emotion: emotion, compact: compact),
+      ],
+    );
+  }
+}
+
 class _HistorySmallLabelChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -2304,49 +2696,107 @@ class _HistoryRelativeMemoryPicker extends StatelessWidget {
         : null;
 
     if (events.isEmpty) {
-      return Text(
-        'Crie outro evento para comparar no tempo.',
-        style: TextStyle(
-          color: Colors.black.withValues(alpha: 0.5),
-          fontSize: 11.5,
-          fontStyle: FontStyle.italic,
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _historyTimelineBackgroundColor.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+        ),
+        child: Text(
+          'Crie outro evento para comparar datas na linha do tempo.',
+          style: TextStyle(
+            color: Colors.black.withValues(alpha: 0.56),
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+            height: 1.25,
+          ),
         ),
       );
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _historyTimelineBackgroundColor.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.compare_arrows_rounded,
+                  size: 17,
+                  color: _darkenCharacterDialogColor(accentColor, 0.16),
+                ),
+              ),
+              const SizedBox(width: 9),
+              const Expanded(
+                child: Text(
+                  'Comparar datas',
+                  style: TextStyle(
+                    color: Color(0xFF2C262C),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              if (selectedValue != null)
+                TextButton(
+                  style: _historyTextButtonStyle(accentColor),
+                  onPressed: () => onChanged(null),
+                  child: const Text('Limpar'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          DropdownButtonFormField<String>(
             initialValue: selectedValue,
             isExpanded: true,
+            iconEnabledColor: _darkenCharacterDialogColor(accentColor, 0.16),
+            dropdownColor: const Color(0xFFFFF8FC),
             decoration: InputDecoration(
-              labelText: 'Comparar com evento',
+              helperText: 'Escolha um evento de referencia.',
+              helperStyle: TextStyle(
+                color: Colors.black.withValues(alpha: 0.45),
+                fontSize: 10.5,
+                height: 1.15,
+              ),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.68),
+              fillColor: Colors.white.withValues(alpha: 0.74),
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
-                vertical: 10,
+                vertical: 12,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                  color: accentColor.withValues(alpha: 0.12),
+                  color: accentColor.withValues(alpha: 0.14),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                  color: accentColor.withValues(alpha: 0.12),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: accentColor, width: 1.1),
+                borderSide: BorderSide(color: accentColor, width: 1.2),
               ),
             ),
-            hint: const Text('Selecione outro evento'),
+            hint: const Text('Selecionar evento'),
             items: [
               for (final event in events)
                 DropdownMenuItem<String>(
@@ -2360,17 +2810,66 @@ class _HistoryRelativeMemoryPicker extends StatelessWidget {
             ],
             onChanged: onChanged,
           ),
-        ),
-        if (selectedValue != null) ...[
-          const SizedBox(width: 8),
-          _HistoryIconAction(
-            icon: Icons.close_rounded,
-            tooltip: 'Remover comparacao',
-            color: accentColor,
-            onTap: () => onChanged(null),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryRelativeComparisonResult extends StatelessWidget {
+  final Color accentColor;
+  final _CharacterHistoryEvent currentEvent;
+  final _CharacterHistoryEvent relativeEvent;
+
+  const _HistoryRelativeComparisonResult({
+    required this.accentColor,
+    required this.currentEvent,
+    required this.relativeEvent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _darkenCharacterDialogColor(accentColor, 0.16);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.timeline_rounded, size: 18, color: color),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _relativeHistoryEventText(currentEvent, relativeEvent),
+                  style: const TextStyle(
+                    color: Color(0xFF2C262C),
+                    fontSize: 14,
+                    height: 1.25,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '${_historyDateLabel(_HistoryTimelineItem.event(currentEvent))} comparado com ${_historyDateLabel(_HistoryTimelineItem.event(relativeEvent))}.',
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.54),
+                    fontSize: 11.5,
+                    height: 1.25,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -2713,82 +3212,232 @@ class _HistoryCharacterPresenceChip extends StatelessWidget {
 
 class _HistoryEmotionPicker extends StatelessWidget {
   final Color accentColor;
-  final String selectedEmotionId;
-  final ValueChanged<String> onSelected;
+  final List<String> selectedEmotionIds;
+  final ValueChanged<String> onToggle;
 
   const _HistoryEmotionPicker({
     required this.accentColor,
-    required this.selectedEmotionId,
-    required this.onSelected,
+    required this.selectedEmotionIds,
+    required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    final selectedEmotion = _resolveHistoryEmotion(
+    final selectedEmotions = _resolveHistoryEmotions(
       _historyEmotionWheel,
-      selectedEmotionId,
+      selectedEmotionIds,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _HistoryPlutchikPicker(
+        _HistoryEmotionSearchSuggestions(
           accentColor: accentColor,
-          selectedEmotionId: selectedEmotion.id,
-          onSelected: onSelected,
+          selectedEmotionIds: selectedEmotions
+              .map((emotion) => emotion.id)
+              .toSet(),
+          onToggle: onToggle,
         ),
         const SizedBox(height: 8),
-        _HistoryEmotionTag(emotion: selectedEmotion),
+        _HistoryPlutchikPicker(
+          accentColor: accentColor,
+          selectedEmotionIds: selectedEmotions
+              .map((emotion) => emotion.id)
+              .toSet(),
+          onSelected: onToggle,
+        ),
+        const SizedBox(height: 8),
+        _HistoryEmotionPillWrap(emotions: selectedEmotions),
       ],
     );
   }
 }
 
-class _HistoryEmotionTag extends StatelessWidget {
-  final _HistoryEmotionDefinition emotion;
+class _HistoryEmotionSearchSuggestions extends StatefulWidget {
+  final Color accentColor;
+  final Set<String> selectedEmotionIds;
+  final ValueChanged<String> onToggle;
+  final bool compact;
+  final String? hintText;
 
-  const _HistoryEmotionTag({required this.emotion});
+  const _HistoryEmotionSearchSuggestions({
+    required this.accentColor,
+    required this.selectedEmotionIds,
+    required this.onToggle,
+    this.compact = false,
+    this.hintText,
+  });
+
+  @override
+  State<_HistoryEmotionSearchSuggestions> createState() =>
+      _HistoryEmotionSearchSuggestionsState();
+}
+
+class _HistoryEmotionSearchSuggestionsState
+    extends State<_HistoryEmotionSearchSuggestions> {
+  late final TextEditingController _controller;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: emotion.color.withValues(alpha: 0.13),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: emotion.color.withValues(alpha: 0.22)),
+    final matches = _query.trim().isEmpty
+        ? const <_HistoryEmotionDefinition>[]
+        : _searchHistoryEmotions(_query);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _controller,
+          minLines: _query.trim().isEmpty ? (widget.compact ? 3 : 2) : 1,
+          maxLines: null,
+          onChanged: (value) => setState(() => _query = value),
+          style: const TextStyle(
+            color: Color(0xFF2C262C),
+            fontSize: 13,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            hintText:
+                widget.hintText ??
+                'Experimente pesquisar pelas emocoes primarias (alegria, antecipacao, confianca, medo, surpresa, tristeza, aversao, raiva)',
+            hintMaxLines: 4,
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              size: 17,
+              color: _darkenCharacterDialogColor(widget.accentColor, 0.14),
+            ),
+            suffixIcon: _query.trim().isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Limpar pesquisa',
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    onPressed: () {
+                      _controller.clear();
+                      setState(() => _query = '');
+                    },
+                  ),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.66),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 9,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(
+                color: widget.accentColor.withValues(alpha: 0.12),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(
+                color: widget.accentColor.withValues(alpha: 0.12),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide(color: widget.accentColor, width: 1.1),
+            ),
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 9,
-              height: 9,
-              decoration: BoxDecoration(
-                color: emotion.color,
-                shape: BoxShape.circle,
-              ),
+        if (matches.isNotEmpty) ...[
+          SizedBox(height: widget.compact ? 6 : 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final emotion in matches.take(widget.compact ? 5 : 8))
+                _HistoryEmotionSuggestionChip(
+                  emotion: emotion,
+                  selected: widget.selectedEmotionIds.contains(emotion.id),
+                  onTap: () => widget.onToggle(emotion.id),
+                ),
+            ],
+          ),
+        ],
+        if (_query.trim().isNotEmpty && matches.isEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Nenhuma emocao encontrada.',
+            style: TextStyle(
+              color: Colors.black.withValues(alpha: 0.48),
+              fontSize: 11.5,
+              fontStyle: FontStyle.italic,
             ),
-            const SizedBox(width: 7),
-            Text(
-              emotion.label,
-              style: TextStyle(
-                color: _darkenCharacterDialogColor(emotion.color, 0.28),
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-              ),
+          ),
+        ],
+        if (matches.isNotEmpty) SizedBox(height: widget.compact ? 6 : 8),
+      ],
+    );
+  }
+}
+
+class _HistoryEmotionSuggestionChip extends StatelessWidget {
+  final _HistoryEmotionDefinition emotion;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _HistoryEmotionSuggestionChip({
+    required this.emotion,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = _darkenCharacterDialogColor(emotion.color, 0.28);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(8, 5, 9, 5),
+          decoration: BoxDecoration(
+            color: selected
+                ? emotion.color.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.58),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? emotion.color.withValues(alpha: 0.34)
+                  : emotion.color.withValues(alpha: 0.16),
             ),
-            const SizedBox(width: 6),
-            Text(
-              emotion.description,
-              style: TextStyle(
-                color: Colors.black.withValues(alpha: 0.54),
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                selected ? Icons.check_rounded : Icons.add_rounded,
+                size: 13,
+                color: textColor,
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Text(
+                emotion.label,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2797,12 +3446,12 @@ class _HistoryEmotionTag extends StatelessWidget {
 
 class _HistoryPlutchikPicker extends StatelessWidget {
   final Color accentColor;
-  final String selectedEmotionId;
+  final Set<String> selectedEmotionIds;
   final ValueChanged<String> onSelected;
 
   const _HistoryPlutchikPicker({
     required this.accentColor,
-    required this.selectedEmotionId,
+    required this.selectedEmotionIds,
     required this.onSelected,
   });
 
@@ -2831,7 +3480,7 @@ class _HistoryPlutchikPicker extends StatelessWidget {
                 child: CustomPaint(
                   painter: _PlutchikWheelPainter(
                     accentColor: accentColor,
-                    selectedEmotionId: selectedEmotionId,
+                    selectedEmotionIds: selectedEmotionIds,
                   ),
                 ),
               );
@@ -2845,11 +3494,11 @@ class _HistoryPlutchikPicker extends StatelessWidget {
 
 class _PlutchikWheelPainter extends CustomPainter {
   final Color accentColor;
-  final String selectedEmotionId;
+  final Set<String> selectedEmotionIds;
 
   const _PlutchikWheelPainter({
     required this.accentColor,
-    required this.selectedEmotionId,
+    required this.selectedEmotionIds,
   });
 
   @override
@@ -2883,13 +3532,27 @@ class _PlutchikWheelPainter extends CustomPainter {
           ..strokeWidth = 0.8,
       );
       final dyad = _plutchikDyadAt(index);
-      if (dyad.id == selectedEmotionId) {
+      if (selectedEmotionIds.contains(dyad.id)) {
         canvas.drawPath(
           path,
           Paint()
             ..color = _darkenCharacterDialogColor(dyadColor, 0.16)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.2,
+        );
+        final markerOffset =
+            center +
+            Offset(cos(boundaryAngle), sin(boundaryAngle)) *
+                ((dyadInnerRadius + dyadOuterRadius) / 2);
+        canvas.drawCircle(
+          markerOffset,
+          4.2,
+          Paint()..color = Colors.white.withValues(alpha: 0.9),
+        );
+        canvas.drawCircle(
+          markerOffset,
+          2.5,
+          Paint()..color = _darkenCharacterDialogColor(dyadColor, 0.18),
         );
       }
     }
@@ -2917,7 +3580,7 @@ class _PlutchikWheelPainter extends CustomPainter {
           sweep: sectorSweep - gap * 2,
           tipFactor: intensity == 1 ? 0.78 : 0.96,
         );
-        final selected = emotion.id == selectedEmotionId;
+        final selected = selectedEmotionIds.contains(emotion.id);
         final fillStrength = switch (intensity) {
           1 => 0.34,
           2 => 0.62,
@@ -2947,6 +3610,23 @@ class _PlutchikWheelPainter extends CustomPainter {
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2.4,
           );
+          final markerOffset =
+              center +
+              Offset(
+                    cos(startAngle + (sectorSweep - gap * 2) / 2),
+                    sin(startAngle + (sectorSweep - gap * 2) / 2),
+                  ) *
+                  ((inner + outer) / 2);
+          canvas.drawCircle(
+            markerOffset,
+            4.2,
+            Paint()..color = Colors.white.withValues(alpha: 0.9),
+          );
+          canvas.drawCircle(
+            markerOffset,
+            2.5,
+            Paint()..color = _darkenCharacterDialogColor(emotion.color, 0.18),
+          );
         }
       }
     }
@@ -2969,7 +3649,8 @@ class _PlutchikWheelPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _PlutchikWheelPainter oldDelegate) {
     return oldDelegate.accentColor != accentColor ||
-        oldDelegate.selectedEmotionId != selectedEmotionId;
+        oldDelegate.selectedEmotionIds.length != selectedEmotionIds.length ||
+        !oldDelegate.selectedEmotionIds.containsAll(selectedEmotionIds);
   }
 }
 
@@ -3128,6 +3809,48 @@ BoxDecoration _historyEditorDecoration(Color accentColor) {
   );
 }
 
+ButtonStyle _historyFilledButtonStyle(Color accentColor) {
+  final color = _darkenCharacterDialogColor(accentColor, 0.12);
+  return FilledButton.styleFrom(
+    backgroundColor: color,
+    foregroundColor: Colors.white,
+    disabledBackgroundColor: color.withValues(alpha: 0.34),
+    disabledForegroundColor: Colors.white.withValues(alpha: 0.72),
+    minimumSize: const Size(0, 44),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  );
+}
+
+ButtonStyle _historyOutlinedButtonStyle(Color accentColor) {
+  final color = _darkenCharacterDialogColor(accentColor, 0.14);
+  return OutlinedButton.styleFrom(
+    backgroundColor: _historyTimelineBackgroundColor.withValues(alpha: 0.7),
+    foregroundColor: color,
+    side: BorderSide(color: accentColor.withValues(alpha: 0.26)),
+    minimumSize: const Size(0, 44),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  );
+}
+
+ButtonStyle _historyTextButtonStyle(Color accentColor) {
+  return TextButton.styleFrom(
+    foregroundColor: _darkenCharacterDialogColor(accentColor, 0.12),
+    textStyle: const TextStyle(fontWeight: FontWeight.w800),
+  );
+}
+
+ButtonStyle _historyIconButtonStyle(Color accentColor) {
+  final color = _darkenCharacterDialogColor(accentColor, 0.16);
+  return IconButton.styleFrom(
+    backgroundColor: accentColor.withValues(alpha: 0.13),
+    foregroundColor: color,
+    disabledBackgroundColor: accentColor.withValues(alpha: 0.06),
+    disabledForegroundColor: color.withValues(alpha: 0.44),
+  );
+}
+
 class _HistoryTimelineItem {
   final _HistoryTimelineItemType type;
   final double ageOffset;
@@ -3182,15 +3905,22 @@ class _HistoryTimelineItem {
   String get emotionId =>
       event?.emotionId ?? milestoneDetails?.emotionId ?? 'calma';
 
+  List<String> get emotionIds =>
+      event?.emotionIds ?? milestoneDetails?.resolvedEmotionIds ?? ['calma'];
+
   int? get month {
     if (event != null) return event!.month;
-    if (type == _HistoryTimelineItemType.birth) return birthDate?.month;
+    if (type == _HistoryTimelineItemType.birth) {
+      return milestoneDetails?.month ?? birthDate?.month;
+    }
     return milestoneDetails?.month;
   }
 
   int? get day {
     if (event != null) return event!.day;
-    if (type == _HistoryTimelineItemType.birth) return birthDate?.day;
+    if (type == _HistoryTimelineItemType.birth) {
+      return milestoneDetails?.day ?? birthDate?.day;
+    }
     return milestoneDetails?.day;
   }
 
@@ -3255,6 +3985,12 @@ List<_HistoryTimelineGroup> _groupTimelineItems(
 }
 
 int _compareTimelineItems(_HistoryTimelineItem a, _HistoryTimelineItem b) {
+  final ageCompare = a.ageOffset.compareTo(b.ageOffset);
+  if (ageCompare != 0) return ageCompare;
+  final monthCompare = (a.month ?? 0).compareTo(b.month ?? 0);
+  if (monthCompare != 0) return monthCompare;
+  final dayCompare = (a.day ?? 0).compareTo(b.day ?? 0);
+  if (dayCompare != 0) return dayCompare;
   final orderCompare = a.order.compareTo(b.order);
   if (orderCompare != 0) return orderCompare;
   return a.title.toLowerCase().compareTo(b.title.toLowerCase());
@@ -3288,10 +4024,43 @@ Color _timelineItemColor(
   return _resolveHistoryEmotion(emotionWheel, item.emotionId).color;
 }
 
+List<String> _readHistoryEmotionIds(
+  Object? rawEmotionIds,
+  String? rawEmotionId,
+  _HistoryEmotionWheel wheel,
+) {
+  final catalog = _historyEmotionCatalog(wheel);
+  final ids = <String>[];
+  if (rawEmotionIds is List) {
+    for (final value in rawEmotionIds) {
+      final id = value?.toString();
+      if (id != null &&
+          catalog.any((emotion) => emotion.id == id) &&
+          !ids.contains(id)) {
+        ids.add(id);
+      }
+    }
+  }
+  if (ids.isEmpty &&
+      rawEmotionId != null &&
+      catalog.any((emotion) => emotion.id == rawEmotionId)) {
+    ids.add(rawEmotionId);
+  }
+  if (ids.isEmpty) ids.add(catalog.first.id);
+  return ids;
+}
+
+List<String> _validHistoryEmotionIds(
+  List<String> emotionIds,
+  _HistoryEmotionWheel wheel,
+) {
+  return _readHistoryEmotionIds(emotionIds, null, wheel);
+}
+
 _CharacterHistoryDraft _decodeCharacterHistory(Map<String, String> values) {
   final raw = values[_historyStorageKey];
   if (raw == null || raw.trim().isEmpty) {
-    return const _CharacterHistoryDraft();
+    return _defaultCharacterHistoryDraft();
   }
 
   try {
@@ -3305,9 +4074,13 @@ _CharacterHistoryDraft _decodeCharacterHistory(Map<String, String> values) {
       );
     }
   } catch (_) {
-    return const _CharacterHistoryDraft();
+    return _defaultCharacterHistoryDraft();
   }
 
+  return _defaultCharacterHistoryDraft();
+}
+
+_CharacterHistoryDraft _defaultCharacterHistoryDraft() {
   return const _CharacterHistoryDraft();
 }
 
@@ -3329,6 +4102,13 @@ _HistoryEmotionWheel _historyEmotionWheelFromName(String? value) {
     if (wheel.name == value) return wheel;
   }
   return _historyEmotionWheel;
+}
+
+_HistoryTimelineItemType _historyTimelineItemTypeFromName(String? value) {
+  for (final type in _HistoryTimelineItemType.values) {
+    if (type.name == value) return type;
+  }
+  return _HistoryTimelineItemType.event;
 }
 
 _HistoryMilestoneDetails _readHistoryMilestoneDetails(
@@ -3373,6 +4153,118 @@ bool _matchesHistorySearch(_CharacterHistoryEvent event, String query) {
     _historyAgeLabel(event.ageOffset),
     _formatHistoryMonthDay(event.month, event.day),
   ].any((value) => value.toLowerCase().contains(normalizedQuery));
+}
+
+bool _matchesHistoryEmotionFilter(
+  _CharacterHistoryEvent event,
+  Set<String> emotionIds,
+) {
+  return emotionIds.isEmpty ||
+      event.emotionIds.any((emotionId) => emotionIds.contains(emotionId));
+}
+
+List<_HistoryEmotionDefinition> _searchHistoryEmotions(String query) {
+  final normalizedQuery = _normalizeHistoryText(query);
+  if (normalizedQuery.isEmpty) return const <_HistoryEmotionDefinition>[];
+
+  final catalog = _historyEmotionCatalog(_historyEmotionWheel);
+  final matches = <_HistoryEmotionDefinition>[];
+  final anchor = _historyEmotionSearchAnchor(normalizedQuery, catalog);
+  if (anchor != null) {
+    for (final emotion in _hierarchicalHistoryEmotionSuggestions(anchor)) {
+      _addHistoryEmotionSuggestion(matches, emotion);
+    }
+  }
+
+  for (final emotion in catalog.where((emotion) {
+    return [
+      emotion.label,
+      emotion.description,
+      emotion.id,
+    ].any((value) => _normalizeHistoryText(value).contains(normalizedQuery));
+  })) {
+    _addHistoryEmotionSuggestion(matches, emotion);
+  }
+
+  return matches;
+}
+
+_HistoryEmotionDefinition? _historyEmotionSearchAnchor(
+  String normalizedQuery,
+  List<_HistoryEmotionDefinition> catalog,
+) {
+  _HistoryEmotionDefinition? findMatch(bool Function(String value) matches) {
+    for (final emotion in catalog) {
+      if ([
+        emotion.label,
+        emotion.id,
+      ].any((value) => matches(_normalizeHistoryText(value)))) {
+        return emotion;
+      }
+    }
+    return null;
+  }
+
+  return findMatch((value) => value == normalizedQuery) ??
+      findMatch((value) => value.startsWith(normalizedQuery)) ??
+      findMatch((value) => value.contains(normalizedQuery));
+}
+
+List<_HistoryEmotionDefinition> _hierarchicalHistoryEmotionSuggestions(
+  _HistoryEmotionDefinition anchor,
+) {
+  final index = anchor.plutchikIndex;
+  final intensity = anchor.plutchikIntensity;
+  if (index == null || intensity == null) {
+    return [anchor];
+  }
+
+  final suggestions = <_HistoryEmotionDefinition>[];
+  void add(_HistoryEmotionDefinition emotion) {
+    _addHistoryEmotionSuggestion(suggestions, emotion);
+  }
+
+  final broad = _plutchikEmotionAt(index, 1);
+  final middle = _plutchikEmotionAt(index, 2);
+  final intense = _plutchikEmotionAt(index, 3);
+  final dyad = _plutchikDyadAt((index + 1) % 8);
+
+  if (intensity == 3) {
+    add(intense);
+    add(middle);
+    add(broad);
+    add(dyad);
+  } else if (intensity == 2) {
+    add(broad);
+    add(dyad);
+    add(middle);
+  } else {
+    add(broad);
+    add(dyad);
+  }
+
+  return suggestions;
+}
+
+void _addHistoryEmotionSuggestion(
+  List<_HistoryEmotionDefinition> suggestions,
+  _HistoryEmotionDefinition emotion,
+) {
+  if (!suggestions.any((stored) => stored.id == emotion.id)) {
+    suggestions.add(emotion);
+  }
+}
+
+String _normalizeHistoryText(String value) {
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp('[áàâãä]'), 'a')
+      .replaceAll(RegExp('[éèêë]'), 'e')
+      .replaceAll(RegExp('[íìîï]'), 'i')
+      .replaceAll(RegExp('[óòôõö]'), 'o')
+      .replaceAll(RegExp('[úùûü]'), 'u')
+      .replaceAll('ç', 'c');
 }
 
 double? _readHistoryDouble(Object? value) {
@@ -3425,6 +4317,73 @@ String _historyDateLabel(_HistoryTimelineItem item) {
 
 String _historyMonthDayLabel(_HistoryTimelineItem item) {
   return _formatHistoryMonthDay(item.month, item.day);
+}
+
+String _historyIntervalLabel(
+  _HistoryTimelineItem previous,
+  _HistoryTimelineItem next,
+) {
+  final duration = _historyIntervalDurationLabel(previous, next);
+  return '$duration antes de "${next.title}".';
+}
+
+String _historyIntervalDurationLabel(
+  _HistoryTimelineItem previous,
+  _HistoryTimelineItem next,
+) {
+  final previousDate = _historyTimelinePseudoDate(previous);
+  final nextDate = _historyTimelinePseudoDate(next);
+  if (previousDate == null || nextDate == null) {
+    final years = (next.ageOffset - previous.ageOffset).clamp(
+      0,
+      double.infinity,
+    );
+    if (years == 0) return 'no mesmo ano';
+    return _historyDurationPartsText([
+      _historyDurationPart(years.toDouble(), 'ano'),
+    ]);
+  }
+
+  if (!nextDate.isAfter(previousDate)) return 'no mesmo dia';
+
+  var years = nextDate.year - previousDate.year;
+  var months = nextDate.month - previousDate.month;
+  var days = nextDate.day - previousDate.day;
+
+  if (days < 0) {
+    months -= 1;
+    final previousMonth = DateTime(nextDate.year, nextDate.month, 0);
+    days += daysInMonth(previousMonth.month);
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  final parts = <String>[
+    if (years > 0) _historyDurationPart(years.toDouble(), 'ano'),
+    if (months > 0) _historyDurationPart(months.toDouble(), 'mes'),
+    if (days > 0) _historyDurationPart(days.toDouble(), 'dia'),
+  ];
+  return parts.isEmpty ? 'no mesmo dia' : _historyDurationPartsText(parts);
+}
+
+DateTime? _historyTimelinePseudoDate(_HistoryTimelineItem item) {
+  if (item.month == null || item.day == null) return null;
+  if (item.ageOffset != item.ageOffset.roundToDouble()) return null;
+  return DateTime(2000 + item.ageOffset.toInt(), item.month!, item.day!);
+}
+
+String _historyDurationPart(double value, String singular) {
+  final label = _formatHistoryNumber(value);
+  final plural = singular == 'mes' ? 'meses' : '${singular}s';
+  return value == 1 ? '$label $singular' : '$label $plural';
+}
+
+String _historyDurationPartsText(List<String> parts) {
+  if (parts.length <= 1) return parts.first;
+  if (parts.length == 2) return '${parts.first} e ${parts.last}';
+  return '${parts.sublist(0, parts.length - 1).join(', ')} e ${parts.last}';
 }
 
 _CharacterHistoryEvent? _historyEventById(
@@ -3560,6 +4519,25 @@ _HistoryEmotionDefinition _resolveHistoryEmotion(
     (emotion) => emotion.id == id,
     orElse: () => catalog.first,
   );
+}
+
+List<_HistoryEmotionDefinition> _resolveHistoryEmotions(
+  _HistoryEmotionWheel wheel,
+  List<String> ids,
+) {
+  final catalog = _historyEmotionCatalog(wheel);
+  final resolved = <_HistoryEmotionDefinition>[];
+  for (final id in ids) {
+    final emotion = catalog.firstWhere(
+      (emotion) => emotion.id == id,
+      orElse: () => catalog.first,
+    );
+    if (!resolved.any((stored) => stored.id == emotion.id)) {
+      resolved.add(emotion);
+    }
+  }
+  if (resolved.isEmpty) resolved.add(catalog.first);
+  return resolved;
 }
 
 List<_HistoryEmotionDefinition> _historyEmotionCatalog(

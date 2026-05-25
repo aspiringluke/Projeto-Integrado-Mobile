@@ -116,6 +116,7 @@ class _CharactersSectionState extends State<CharactersSection> {
         builder: (_) => CharacterNotebookPage(
           data: character.data,
           availableCharacters: widget.characters,
+          projectTitle: character.projectTitle,
           onChanged: (updatedData) =>
               widget.onCharacterEdited(character, updatedData),
         ),

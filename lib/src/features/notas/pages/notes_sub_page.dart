@@ -28,8 +28,9 @@ part 'notes_sub_page_parts/notes_sub_page_breadcrumb.dart';
 
 class NotesSubPage extends StatefulWidget {
   final NotesSubPageController? controller;
+  final NotesCharacterContext? characterContext;
 
-  const NotesSubPage({super.key, this.controller});
+  const NotesSubPage({super.key, this.controller, this.characterContext});
 
   @override
   State<NotesSubPage> createState() => NotesSubPageState();
@@ -61,6 +62,12 @@ class NotesSubPageState extends State<NotesSubPage>
   bool _showContentDivider = false;
 
   Future<void> _bootstrap() async {
+    final characterContext = widget.characterContext;
+    if (characterContext != null) {
+      await _bootstrapCharacterFolder(characterContext);
+      return;
+    }
+
     final foldersResult = await _folderController.loadFolders(
       parentFolderId: null,
     );
@@ -79,6 +86,47 @@ class NotesSubPageState extends State<NotesSubPage>
       _activeFolderTitle = null;
       _activeFolderParentId = null;
       _activeFolderPath = const [];
+    });
+
+    await _refreshVisibleStats();
+  }
+
+  Future<void> _bootstrapCharacterFolder(
+    NotesCharacterContext characterContext,
+  ) async {
+    final ensured = await _folderController.ensureCharacterRootFolder(
+      characterName: characterContext.characterName,
+      projectTitle: characterContext.projectTitle,
+      color: characterContext.accentColor,
+    );
+    if (!mounted) return;
+
+    if (!ensured.$1 || ensured.$2?.id == null) {
+      _showSnack(ensured.$3 ?? 'Falha ao preparar pasta do personagem');
+      return;
+    }
+
+    final folder = ensured.$2!;
+    final folderId = folder.id!;
+    final foldersResult = await _folderController.loadFolders(
+      parentFolderId: folderId,
+    );
+    final notesResult = await _noteController.loadNotes(folderId: folderId);
+    final folderPath = await _buildFolderTrail(folder);
+    if (!mounted) return;
+
+    if (!foldersResult.$1) {
+      _showSnack(foldersResult.$2 ?? 'Falha ao carregar pastas');
+    }
+    if (!notesResult.$1) {
+      _showSnack(notesResult.$2 ?? 'Falha ao carregar notas');
+    }
+
+    setState(() {
+      _activeFolderId = folderId;
+      _activeFolderTitle = folder.title;
+      _activeFolderParentId = folder.parentFolderId;
+      _activeFolderPath = folderPath;
     });
 
     await _refreshVisibleStats();
@@ -266,16 +314,16 @@ class NotesSubPageState extends State<NotesSubPage>
       hasChildren: hasChildrenResult.$2,
       noteCount: countsResult.$2,
       stats: statsResult.$2!,
-      preserveFolder: folder.isProjectRoot,
+      preserveFolder: folder.isProtectedRoot,
     );
     if (!mounted || !shouldDelete) return;
 
-    final result = folder.isProjectRoot
+    final result = folder.isProtectedRoot
         ? await _folderController.deleteFolderContents(folderId)
         : await _folderController.deleteFolder(folderId);
     if (result.$1) {
       _showSnack(
-        folder.isProjectRoot ? 'Conteúdo da pasta apagado' : 'Pasta excluída',
+        folder.isProtectedRoot ? 'Conteúdo da pasta apagado' : 'Pasta excluída',
       );
       await _refreshVisibleStats();
       return;
@@ -428,7 +476,7 @@ class NotesSubPageState extends State<NotesSubPage>
     for (final folder in selectedFolders) {
       final folderId = folder.id;
       if (folderId == null) continue;
-      if (folder.isProjectRoot) {
+      if (folder.isProtectedRoot) {
         await _folderController.deleteFolderContents(folderId);
       } else {
         await _folderController.deleteFolder(folderId);

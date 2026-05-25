@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../../shared/widgets/anchored_info_bubble.dart';
 import '../../projects/models/project_image_data.dart';
 import '../../projects/models/project_tag_data.dart';
 import '../../projects/widgets/project_color_editor.dart';
@@ -14,6 +15,7 @@ import '../../projects/utils/project_image_picker.dart';
 import '../../projects/utils/project_image_picker_result.dart';
 import '../../projects/widgets/project_bottom_sheet_frame.dart';
 import '../../projects/widgets/project_image_transform_view.dart';
+import '../../notas/pages/notes_sub_page.dart';
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../../../shared/widgets/main_header.dart';
 import '../../tags/controllers/tag_controller.dart';
@@ -35,12 +37,14 @@ part 'character_notebook_parts/character_notebook_history.dart';
 class CharacterNotebookPage extends StatefulWidget {
   final CharacterCardData data;
   final List<CharacterListItem> availableCharacters;
+  final String? projectTitle;
   final ValueChanged<CharacterCardData>? onChanged;
 
   const CharacterNotebookPage({
     super.key,
     required this.data,
     this.availableCharacters = const <CharacterListItem>[],
+    this.projectTitle,
     this.onChanged,
   });
 
@@ -108,6 +112,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   String? _selectedPsychFacetId;
   late _CharacterHistoryDraft _historyDraft;
   String _historySearchQuery = '';
+  final Set<String> _historyEmotionFilterIds = <String>{};
   final Set<String> _collapsedHistoryYears = <String>{};
 
   @override
@@ -397,16 +402,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       _NotebookTab.geral => _buildGeneralTab(),
       _NotebookTab.psique => _buildPsychologyWorkbench(),
       _NotebookTab.historia => _buildHistoryTab(),
-      _NotebookTab.notas => _buildPlaceholderTab(
-        title: 'Notas',
-        subtitle: 'Observações rápidas, rastros e pendências.',
-        icon: Icons.sticky_note_2_rounded,
-      ),
-      _NotebookTab.design => _buildPlaceholderTab(
-        title: 'Design',
-        subtitle: 'Paleta, referências visuais e direção estética.',
-        icon: Icons.palette_outlined,
-      ),
+      _NotebookTab.notas => _buildCharacterNotesTab(),
+      _NotebookTab.design => _buildDesignTab(),
     };
   }
 
@@ -770,19 +767,216 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     );
   }
 
-  Widget _buildPlaceholderTab({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
-    return Center(
-      child: _PlaceholderPageCard(
+  Widget _buildCharacterNotesTab() {
+    final characterName = _draft.name.trim().isEmpty
+        ? 'Personagem sem nome'
+        : _draft.name.trim();
+
+    return NotesSubPage(
+      key: ValueKey(
+        'character-notes-${_resolvedProjectTitle ?? ''}-$characterName',
+      ),
+      characterContext: NotesCharacterContext(
+        characterName: characterName,
+        projectTitle: _resolvedProjectTitle,
         accentColor: _draft.accent,
-        title: title,
-        subtitle: subtitle,
-        icon: icon,
       ),
     );
+  }
+
+  Widget _buildDesignTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _CollapsibleSection(
+            accentColor: _draft.accent,
+            leadingIconColor: _draft.avatarColor,
+            title: 'Design',
+            subtitle: 'Direção visual, silhueta, trajes e referências.',
+            fields: const [
+              'Direção visual',
+              'Silhueta',
+              'Trajes',
+              'Referências',
+            ],
+            icon: Icons.palette_outlined,
+            child: Column(
+              children: [
+                _buildStoredNotebookTextCard(
+                  storageKey: 'design::visual_direction',
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'Direção visual',
+                  placeholder:
+                      'Cores, textura, leitura visual e clima estético do personagem.',
+                ),
+                const SizedBox(height: 10),
+                _buildStoredNotebookTextCard(
+                  storageKey: 'design::silhouette',
+                  icon: Icons.accessibility_new_rounded,
+                  label: 'Silhueta',
+                  placeholder:
+                      'Forma geral, postura, proporções, gestual e presença em cena.',
+                ),
+                const SizedBox(height: 10),
+                _buildStoredNotebookTextCard(
+                  storageKey: 'design::costume',
+                  icon: Icons.checkroom_rounded,
+                  label: 'Trajes e acessórios',
+                  placeholder:
+                      'Roupas recorrentes, materiais, objetos, marcas e variações.',
+                ),
+                const SizedBox(height: 10),
+                _buildStoredNotebookTextCard(
+                  storageKey: 'design::references',
+                  icon: Icons.collections_bookmark_rounded,
+                  label: 'Referências',
+                  placeholder:
+                      'Obras, pessoas, épocas, imagens ou conceitos para consultar.',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoredNotebookTextCard({
+    required String storageKey,
+    required IconData icon,
+    required String label,
+    required String placeholder,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.54),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _draft.accent.withValues(alpha: 0.16),
+          width: 0.8,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: _draft.accent.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 15, color: const Color(0xFF544959)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF2C262C),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: ValueKey(storageKey),
+            initialValue: _notebookValue(storageKey),
+            minLines: 3,
+            maxLines: 6,
+            onChanged: (value) =>
+                _setNotebookValue(storageKey, value, rebuild: false),
+            style: const TextStyle(
+              color: Color(0xFF544959),
+              fontSize: 12.5,
+              height: 1.35,
+            ),
+            decoration: InputDecoration(
+              hintText: placeholder,
+              hintStyle: const TextStyle(
+                color: Color(0xFF8F8990),
+                fontSize: 11,
+                height: 1.35,
+                fontStyle: FontStyle.italic,
+              ),
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.72),
+              contentPadding: const EdgeInsets.all(12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  width: 0.7,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  width: 0.7,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: _draft.accent, width: 1.1),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _notebookValue(String key) {
+    return _draft.notebookComplexityValues[key] ?? '';
+  }
+
+  void _setNotebookValue(String key, String value, {bool rebuild = true}) {
+    final nextValues = Map<String, String>.from(
+      _draft.notebookComplexityValues,
+    );
+    final trimmedValue = value.trim();
+    if (trimmedValue.isEmpty) {
+      nextValues.remove(key);
+    } else {
+      nextValues[key] = value;
+    }
+    _updateDraft(
+      _draft.copyWith(notebookComplexityValues: nextValues),
+      rebuild: rebuild,
+    );
+  }
+
+  String? get _resolvedProjectTitle {
+    final explicit = widget.projectTitle?.trim();
+    if (explicit != null && explicit.isNotEmpty) {
+      return explicit;
+    }
+
+    final characterName = _draft.name.trim().toLowerCase();
+    if (characterName.isEmpty) {
+      return null;
+    }
+
+    for (final character in widget.availableCharacters) {
+      if (character.data.name.trim().toLowerCase() == characterName) {
+        final projectTitle = character.projectTitle?.trim();
+        if (projectTitle != null && projectTitle.isNotEmpty) {
+          return projectTitle;
+        }
+      }
+    }
+
+    return null;
   }
 
   Widget _buildPsychologyWorkbench() {
@@ -894,6 +1088,29 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
                 buildBigFiveChart(),
                 const SizedBox(height: 10),
                 buildFacetChart(),
+                const SizedBox(height: 10),
+                _PsychPreferenceMatrixCard(
+                  accentColor: _draft.accent,
+                  avatarColor: _draft.avatarColor,
+                  items: _preferenceItems,
+                  onUpsertItem: _upsertPreferenceItemWithRebuild,
+                  onDeleteItem: _deletePreferenceItem,
+                ),
+                const SizedBox(height: 10),
+                _CharacterRelationshipDiagramCard(
+                  accentColor: _draft.accent,
+                  avatarColor: _draft.avatarColor,
+                  characterName: _draft.name.trim().isEmpty
+                      ? 'Personagem'
+                      : _draft.name.trim(),
+                  characters: _availableRelationshipCharacters,
+                  typeFor: _relationshipType,
+                  intensityFor: _relationshipIntensity,
+                  notesFor: _relationshipNotes,
+                  onTypeChanged: _setRelationshipType,
+                  onIntensityChanged: _setRelationshipIntensity,
+                  onNotesChanged: _setRelationshipNotes,
+                ),
               ],
             );
 
@@ -1003,6 +1220,174 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   String _psychFacetStorageKey(String traitId, String facetId) {
     return '$traitId::$facetId';
+  }
+
+  List<_PreferenceMatrixItem> get _preferenceItems {
+    final raw = _draft.notebookComplexityValues[_preferenceItemsStorageKey];
+    if (raw == null || raw.trim().isEmpty) {
+      return _migratedLegacyPreferenceItems();
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        return _migratedLegacyPreferenceItems();
+      }
+      return decoded
+          .whereType<Map>()
+          .map(
+            (entry) => _PreferenceMatrixItem.fromJson(
+              Map<String, Object?>.from(entry),
+            ),
+          )
+          .where((item) => item.label.trim().isNotEmpty)
+          .toList(growable: false);
+    } catch (_) {
+      return _migratedLegacyPreferenceItems();
+    }
+  }
+
+  List<_PreferenceMatrixItem> _migratedLegacyPreferenceItems() {
+    final items = <_PreferenceMatrixItem>[];
+    for (final level in _preferenceLevels) {
+      for (final category in _preferenceCategories) {
+        final value = _draft
+            .notebookComplexityValues['preference::${level.id}::${category.id}'];
+        if (value == null || value.trim().isEmpty) {
+          continue;
+        }
+        final parts = value
+            .split(RegExp(r'[,;\n]'))
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty);
+        for (final part in parts) {
+          items.add(
+            _PreferenceMatrixItem(
+              id: 'legacy-${items.length}-${level.id}-${category.id}',
+              label: part,
+              levelId: level.id,
+              categoryId: category.id,
+            ),
+          );
+        }
+      }
+    }
+    return items;
+  }
+
+  void _upsertPreferenceItemWithRebuild(
+    _PreferenceMatrixItem item, {
+    bool rebuild = true,
+  }) {
+    final nextItems = [..._preferenceItems];
+    final index = nextItems.indexWhere((entry) => entry.id == item.id);
+    if (index == -1) {
+      nextItems.add(item);
+    } else {
+      nextItems[index] = item;
+    }
+    _storePreferenceItems(nextItems, rebuild: rebuild);
+  }
+
+  void _deletePreferenceItem(String itemId) {
+    _storePreferenceItems(
+      _preferenceItems
+          .where((item) => item.id != itemId)
+          .toList(growable: false),
+    );
+  }
+
+  void _storePreferenceItems(
+    List<_PreferenceMatrixItem> items, {
+    bool rebuild = true,
+  }) {
+    final nextValues = Map<String, String>.from(
+      _draft.notebookComplexityValues,
+    );
+    nextValues[_preferenceItemsStorageKey] = jsonEncode(
+      items.map((item) => item.toJson()).toList(growable: false),
+    );
+    for (final level in _preferenceLevels) {
+      for (final category in _preferenceCategories) {
+        nextValues.remove('preference::${level.id}::${category.id}');
+      }
+    }
+    _updateDraft(
+      _draft.copyWith(notebookComplexityValues: nextValues),
+      rebuild: rebuild,
+    );
+  }
+
+  String get _preferenceItemsStorageKey => 'preferences::items';
+
+  List<CharacterListItem> get _availableRelationshipCharacters {
+    final currentName = _draft.name.trim().toLowerCase();
+    return widget.availableCharacters
+        .where((character) {
+          final targetName = character.data.name.trim().toLowerCase();
+          return targetName.isNotEmpty && targetName != currentName;
+        })
+        .toList(growable: false);
+  }
+
+  String _relationshipType(CharacterListItem character) {
+    return _draft.notebookComplexityValues[_relationshipStorageKey(
+          character,
+          'type',
+        )] ??
+        'neutra';
+  }
+
+  double _relationshipIntensity(CharacterListItem character) {
+    final storedValue =
+        _draft.notebookComplexityValues[_relationshipStorageKey(
+          character,
+          'intensity',
+        )];
+    return (double.tryParse(storedValue ?? '') ?? 5)
+        .clamp(0.0, 10.0)
+        .toDouble();
+  }
+
+  String _relationshipNotes(CharacterListItem character) {
+    return _draft.notebookComplexityValues[_relationshipStorageKey(
+          character,
+          'notes',
+        )] ??
+        '';
+  }
+
+  void _setRelationshipType(CharacterListItem character, String typeId) {
+    _setNotebookValue(
+      _relationshipStorageKey(character, 'type'),
+      typeId,
+      rebuild: true,
+    );
+  }
+
+  void _setRelationshipIntensity(
+    CharacterListItem character,
+    double intensity,
+  ) {
+    _setNotebookValue(
+      _relationshipStorageKey(character, 'intensity'),
+      intensity.clamp(0.0, 10.0).toStringAsFixed(1),
+      rebuild: true,
+    );
+  }
+
+  void _setRelationshipNotes(CharacterListItem character, String notes) {
+    _setNotebookValue(
+      _relationshipStorageKey(character, 'notes'),
+      notes,
+      rebuild: false,
+    );
+  }
+
+  String _relationshipStorageKey(CharacterListItem character, String field) {
+    final identity =
+        '${character.projectId}:${character.id ?? character.data.name}:${character.data.name}';
+    return 'relationship::${base64Url.encode(utf8.encode(identity))}::$field';
   }
 
   Widget _buildIdentitySynopsisPanel() {

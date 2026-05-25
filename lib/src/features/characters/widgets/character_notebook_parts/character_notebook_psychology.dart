@@ -274,7 +274,7 @@ class _PsychRadarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.white.withValues(alpha: 0.62),
@@ -1344,5 +1344,3826 @@ IconData _psychTraitIconFor(String traitId) {
       return Icons.auto_awesome_rounded;
     default:
       return Icons.psychology_rounded;
+  }
+}
+
+class _PreferenceLevelDefinition {
+  final String id;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const _PreferenceLevelDefinition({
+    required this.id,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+}
+
+class _PreferenceCategoryDefinition {
+  final String id;
+  final String label;
+  final String description;
+  final Color color;
+  final IconData icon;
+
+  const _PreferenceCategoryDefinition({
+    required this.id,
+    required this.label,
+    required this.description,
+    required this.color,
+    required this.icon,
+  });
+}
+
+const List<_PreferenceLevelDefinition> _preferenceLevels =
+    <_PreferenceLevelDefinition>[
+      _PreferenceLevelDefinition(
+        id: 'favoritos',
+        label: 'Favoritos',
+        color: Color(0xFFC9413E),
+        icon: Icons.star_rounded,
+      ),
+      _PreferenceLevelDefinition(
+        id: 'ama',
+        label: 'Ama',
+        color: Color(0xFFE5792E),
+        icon: Icons.star_rounded,
+      ),
+      _PreferenceLevelDefinition(
+        id: 'gosta',
+        label: 'Gosta',
+        color: Color(0xFFF0A94B),
+        icon: Icons.stars_rounded,
+      ),
+      _PreferenceLevelDefinition(
+        id: 'tolera',
+        label: 'Tolera',
+        color: Color(0xFFE4C84A),
+        icon: Icons.star_half_rounded,
+      ),
+      _PreferenceLevelDefinition(
+        id: 'odeia',
+        label: 'Odeia',
+        color: Color(0xFF5E9D78),
+        icon: Icons.star_border_rounded,
+      ),
+    ];
+
+const List<_PreferenceCategoryDefinition>
+_preferenceCategories = <_PreferenceCategoryDefinition>[
+  _PreferenceCategoryDefinition(
+    id: 'gastronomia',
+    label: 'Gastronomia',
+    description: 'Comidas, bebidas, temperos e iguarias em geral.',
+    color: Color(0xFFB47B38),
+    icon: Icons.restaurant_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'artes_midia',
+    label: 'Artes e mídia',
+    description:
+        'Música, literatura, cinema, pintura e outras expressões culturais.',
+    color: Color(0xFF8B5FBF),
+    icon: Icons.movie_filter_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'sensacoes',
+    label: 'Sensações',
+    description:
+        'Percepções subjetivas evocadas por cheiros, sons, climas, atmosferas, etc.',
+    color: Color(0xFF4F8FB8),
+    icon: Icons.spa_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'atividades',
+    label: 'Atividades',
+    description:
+        'Basicamente qualquer verbo que não seja um fenômeno da natureza e que seja realizável pelo personagem.',
+    color: Color(0xFFC65B6A),
+    icon: Icons.directions_run_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'estetica',
+    label: 'Estética',
+    description:
+        'Aspecto visual de objetos, moda, arquitetura, design e formas materiais.',
+    color: Color(0xFFD35E9F),
+    icon: Icons.palette_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'comportamento',
+    label: 'Comportamento',
+    description: 'Atitudes, hábitos e modos de agir das pessoas.',
+    color: Color(0xFF6F6AB8),
+    icon: Icons.forum_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'natureza',
+    label: 'Natureza',
+    description: 'Animais, plantas, paisagens e fenômenos naturais.',
+    color: Color(0xFF5E9D78),
+    icon: Icons.local_florist_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'criacoes',
+    label: 'Criações',
+    description:
+        'Invenções, tecnologias, veículos, áreas de conhecimento e sistemas.',
+    color: Color(0xFF5B8A8E),
+    icon: Icons.construction_rounded,
+  ),
+  _PreferenceCategoryDefinition(
+    id: 'miscelanea',
+    label: 'Miscelânea',
+    description: 'Itens soltos que não se encaixam nas categorias acima.',
+    color: Color(0xFF7E6676),
+    icon: Icons.category_rounded,
+  ),
+];
+
+// ignore: unused_element
+class _LegacyPsychPreferenceMatrixCard extends StatelessWidget {
+  final Color accentColor;
+  final Color avatarColor;
+  final String Function(String levelId, String categoryId) valueFor;
+  final void Function(String levelId, String categoryId, String value)
+  onChanged;
+
+  const _LegacyPsychPreferenceMatrixCard({
+    required this.accentColor,
+    required this.avatarColor,
+    required this.valueFor,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.62),
+        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PsychSectionTitle(
+            accentColor: accentColor,
+            icon: Icons.favorite_border_rounded,
+            title: 'Gostos e aversões',
+            subtitle: 'organizado por predileção e categoria',
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 160,
+            child: CustomPaint(
+              painter: _PreferenceHeatmapPainter(
+                accentColor: accentColor,
+                values: {
+                  for (final level in _preferenceLevels)
+                    for (final category in _preferenceCategories)
+                      '${level.id}::${category.id}': valueFor(
+                        level.id,
+                        category.id,
+                      ),
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final category in _preferenceCategories)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: SizedBox(
+                      width: 172,
+                      child: _PreferenceCategoryColumn(
+                        accentColor: accentColor,
+                        category: category,
+                        valueFor: valueFor,
+                        onChanged: onChanged,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceCategoryColumn extends StatelessWidget {
+  final Color accentColor;
+  final _PreferenceCategoryDefinition category;
+  final String Function(String levelId, String categoryId) valueFor;
+  final void Function(String levelId, String categoryId, String value)
+  onChanged;
+
+  const _PreferenceCategoryColumn({
+    required this.accentColor,
+    required this.category,
+    required this.valueFor,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.46),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: category.color.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(category.icon, size: 14, color: category.color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  category.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF2B262C),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final level in _preferenceLevels) ...[
+            TextFormField(
+              key: ValueKey('preference-${level.id}-${category.id}'),
+              initialValue: valueFor(level.id, category.id),
+              minLines: 1,
+              maxLines: 2,
+              onChanged: (value) => onChanged(level.id, category.id, value),
+              style: const TextStyle(
+                color: Color(0xFF514752),
+                fontSize: 10.6,
+                height: 1.2,
+              ),
+              decoration: InputDecoration(
+                labelText: level.label,
+                labelStyle: TextStyle(
+                  color: level.color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+                isDense: true,
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.74),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: level.color.withValues(alpha: 0.18),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: level.color.withValues(alpha: 0.14),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceHeatmapPainter extends CustomPainter {
+  final Color accentColor;
+  final Map<String, String> values;
+
+  const _PreferenceHeatmapPainter({
+    required this.accentColor,
+    required this.values,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const leftPad = 58.0;
+    const topPad = 20.0;
+    final cellWidth = (size.width - leftPad - 4) / _preferenceCategories.length;
+    final cellHeight = (size.height - topPad - 4) / _preferenceLevels.length;
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    for (var row = 0; row < _preferenceLevels.length; row += 1) {
+      final level = _preferenceLevels[row];
+      textPainter.text = TextSpan(
+        text: level.label,
+        style: const TextStyle(
+          color: Color(0xFF4C414A),
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
+        ),
+      );
+      textPainter.layout(maxWidth: leftPad - 8);
+      textPainter.paint(
+        canvas,
+        Offset(0, topPad + row * cellHeight + (cellHeight - 10) / 2),
+      );
+
+      for (var column = 0; column < _preferenceCategories.length; column += 1) {
+        final category = _preferenceCategories[column];
+        final hasValue =
+            values['${level.id}::${category.id}']?.trim().isNotEmpty == true;
+        final rect = Rect.fromLTWH(
+          leftPad + column * cellWidth,
+          topPad + row * cellHeight,
+          max(2, cellWidth - 3),
+          max(2, cellHeight - 3),
+        );
+        final paint = Paint()
+          ..color = hasValue
+              ? level.color.withValues(alpha: 0.72)
+              : accentColor.withValues(alpha: 0.08);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, const Radius.circular(5)),
+          paint,
+        );
+      }
+    }
+
+    for (var column = 0; column < _preferenceCategories.length; column += 1) {
+      final label = _preferenceCategories[column].label.split(' ').first;
+      textPainter.text = TextSpan(
+        text: label,
+        style: const TextStyle(
+          color: Color(0xFF6B6068),
+          fontSize: 8.2,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+      textPainter.layout(maxWidth: cellWidth);
+      textPainter.paint(canvas, Offset(leftPad + column * cellWidth, 3));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PreferenceHeatmapPainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.accentColor != accentColor;
+  }
+}
+
+class _PreferenceMatrixItem {
+  final String id;
+  final String label;
+  final String opinion;
+  final String levelId;
+  final String categoryId;
+
+  const _PreferenceMatrixItem({
+    required this.id,
+    required this.label,
+    this.opinion = '',
+    required this.levelId,
+    required this.categoryId,
+  });
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'id': id,
+    'label': label,
+    'opinion': opinion,
+    'levelId': levelId,
+    'categoryId': categoryId,
+  };
+
+  factory _PreferenceMatrixItem.fromJson(Map<String, Object?> json) {
+    return _PreferenceMatrixItem(
+      id: json['id'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      opinion: json['opinion'] as String? ?? '',
+      levelId: json['levelId'] as String? ?? _preferenceLevels.first.id,
+      categoryId:
+          json['categoryId'] as String? ?? _preferenceCategories.first.id,
+    );
+  }
+
+  _PreferenceMatrixItem copyWith({
+    String? id,
+    String? label,
+    String? opinion,
+    String? levelId,
+    String? categoryId,
+  }) {
+    return _PreferenceMatrixItem(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      opinion: opinion ?? this.opinion,
+      levelId: levelId ?? this.levelId,
+      categoryId: categoryId ?? this.categoryId,
+    );
+  }
+}
+
+class _PsychPreferenceMatrixCard extends StatelessWidget {
+  final Color accentColor;
+  final Color avatarColor;
+  final List<_PreferenceMatrixItem> items;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
+  final ValueChanged<String> onDeleteItem;
+
+  const _PsychPreferenceMatrixCard({
+    required this.accentColor,
+    required this.avatarColor,
+    required this.items,
+    required this.onUpsertItem,
+    required this.onDeleteItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.62),
+        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PsychSectionTitle(
+            accentColor: accentColor,
+            icon: Icons.favorite_border_rounded,
+            title: 'Gostos e aversões',
+            subtitle:
+                'Nomeie um conceito, organize-o por predileção e categoria e atribua à ele um comentário diegético.',
+            subtitleMaxLines: 3,
+          ),
+          const SizedBox(height: 10),
+          _PreferenceMatrixComposer(
+            accentColor: accentColor,
+            onAddItem: onUpsertItem,
+          ),
+          const SizedBox(height: 12),
+          _PreferenceMatrixGrid(
+            accentColor: accentColor,
+            avatarColor: avatarColor,
+            items: items,
+            onUpsertItem: onUpsertItem,
+            onDeleteItem: onDeleteItem,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceMatrixComposer extends StatefulWidget {
+  final Color accentColor;
+  final ValueChanged<_PreferenceMatrixItem> onAddItem;
+
+  const _PreferenceMatrixComposer({
+    required this.accentColor,
+    required this.onAddItem,
+  });
+
+  @override
+  State<_PreferenceMatrixComposer> createState() =>
+      _PreferenceMatrixComposerState();
+}
+
+class _PreferenceMatrixComposerState extends State<_PreferenceMatrixComposer> {
+  late final TextEditingController _controller;
+  late final TextEditingController _commentController;
+  String _selectedLevelId = _preferenceLevels[2].id;
+  String _selectedCategoryId = _preferenceCategories.first.id;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+    _commentController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  void _addItem() {
+    final label = _controller.text.trim();
+    if (label.isEmpty) return;
+
+    widget.onAddItem(
+      _PreferenceMatrixItem(
+        id: 'pref-${DateTime.now().microsecondsSinceEpoch}',
+        label: label,
+        opinion: _commentController.text.trim(),
+        levelId: _selectedLevelId,
+        categoryId: _selectedCategoryId,
+      ),
+    );
+    _controller.clear();
+    _commentController.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: widget.accentColor.withValues(alpha: 0.14)),
+    );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(11),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.68),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: widget.accentColor.withValues(alpha: 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              TextField(
+                controller: _controller,
+                minLines: 1,
+                maxLines: 1,
+                onSubmitted: (_) => _addItem(),
+                style: const TextStyle(
+                  color: Color(0xFF514752),
+                  fontSize: 12,
+                  height: 1.25,
+                  fontWeight: FontWeight.w700,
+                ),
+                decoration: InputDecoration(
+                  hintText:
+                      'Nome do item. Qualquer conceito serve. "Arroz" para gastronomia ou "Pessoas que andam devagar" para comportamento, por exemplo...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF8F8990),
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.68),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 13,
+                  ),
+                  border: inputBorder,
+                  enabledBorder: inputBorder,
+                  focusedBorder: inputBorder.copyWith(
+                    borderSide: BorderSide(
+                      color: widget.accentColor,
+                      width: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _commentController,
+                minLines: 2,
+                maxLines: 4,
+                style: const TextStyle(
+                  color: Color(0xFF514752),
+                  fontSize: 11.2,
+                  height: 1.25,
+                ),
+                decoration: InputDecoration(
+                  hintText:
+                      'Um comentário diegético do personagem sobre isso. Como se ele tivesse sido perguntado sobre e respondesse isso, ignorando complexidade contextual.',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF8F8990),
+                    fontSize: 10.8,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.58),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 12,
+                  ),
+                  border: inputBorder,
+                  enabledBorder: inputBorder,
+                  focusedBorder: inputBorder.copyWith(
+                    borderSide: BorderSide(
+                      color: widget.accentColor,
+                      width: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 9),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PreferenceDropdown<String>(
+                      value: _selectedLevelId,
+                      items: [
+                        for (final level in _preferenceLevels)
+                          DropdownMenuItem<String>(
+                            value: level.id,
+                            child: Row(
+                              children: [
+                                _PreferenceLevelIcon(
+                                  level: level,
+                                  color: const Color(0xFF625862),
+                                  size: 13,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text(level.label)),
+                              ],
+                            ),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() => _selectedLevelId = value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _PreferenceCategoryDropdown(
+                      value: _selectedCategoryId,
+                      accentColor: widget.accentColor,
+                      onChanged: (value) =>
+                          setState(() => _selectedCategoryId = value),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: FilledButton(
+                      onPressed: _addItem,
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        backgroundColor: widget.accentColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                      ),
+                      child: const Icon(Icons.add_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceDropdown<T> extends StatelessWidget {
+  final T value;
+  final IconData? icon;
+  final Widget? leading;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  const _PreferenceDropdown({
+    required this.value,
+    this.icon,
+    this.leading,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final leadingWidget =
+        leading ??
+        (icon == null
+            ? null
+            : Icon(icon, size: 14, color: const Color(0xFF625862)));
+
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.only(left: 10, right: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.78)),
+      ),
+      child: Row(
+        children: [
+          if (leadingWidget != null) ...[
+            leadingWidget,
+            const SizedBox(width: 6),
+          ],
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                isDense: true,
+                borderRadius: BorderRadius.circular(12),
+                items: items,
+                onChanged: onChanged,
+                style: const TextStyle(
+                  color: Color(0xFF2B262C),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceLevelIcon extends StatelessWidget {
+  final _PreferenceLevelDefinition level;
+  final Color color;
+  final double size;
+
+  const _PreferenceLevelIcon({
+    required this.level,
+    required this.color,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (level.id != 'favoritos') {
+      return Icon(level.icon, size: size, color: color);
+    }
+
+    return SizedBox(
+      width: size * 2.15,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 0,
+            top: size * 0.12,
+            child: Icon(Icons.star_rounded, size: size * 0.72, color: color),
+          ),
+          Positioned(
+            left: size * 0.65,
+            top: 0,
+            child: Icon(Icons.star_rounded, size: size, color: color),
+          ),
+          Positioned(
+            right: 0,
+            top: size * 0.12,
+            child: Icon(Icons.star_rounded, size: size * 0.72, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceCategoryDropdown extends StatefulWidget {
+  final String value;
+  final Color accentColor;
+  final ValueChanged<String> onChanged;
+
+  const _PreferenceCategoryDropdown({
+    required this.value,
+    required this.accentColor,
+    required this.onChanged,
+  });
+
+  @override
+  State<_PreferenceCategoryDropdown> createState() =>
+      _PreferenceCategoryDropdownState();
+}
+
+class _PreferenceCategoryDropdownState
+    extends State<_PreferenceCategoryDropdown> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _detailsEntry;
+
+  @override
+  void dispose() {
+    _detailsEntry?.remove();
+    super.dispose();
+  }
+
+  void _hideDetails() {
+    _detailsEntry?.remove();
+    _detailsEntry = null;
+    if (mounted) setState(() {});
+  }
+
+  void _toggleDetails() {
+    if (_detailsEntry != null) {
+      _hideDetails();
+      return;
+    }
+
+    final category = _preferenceCategoryFor(widget.value);
+    _detailsEntry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _hideDetails,
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              targetAnchor: Alignment.bottomRight,
+              followerAnchor: Alignment.topRight,
+              offset: const Offset(0, 6),
+              child: UnconstrainedBox(
+                alignment: Alignment.topRight,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: 248,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Color.alphaBlend(
+                            category.color.withValues(alpha: 0.06),
+                            Colors.white.withValues(alpha: 0.72),
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.82),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: category.color.withValues(alpha: 0.16),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              category.icon,
+                              size: 15,
+                              color: category.color,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                category.description,
+                                style: const TextStyle(
+                                  color: Color(0xFF514752),
+                                  fontSize: 11,
+                                  height: 1.28,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    Overlay.of(context).insert(_detailsEntry!);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final category = _preferenceCategoryFor(widget.value);
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.only(left: 10, right: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: category.color.withValues(alpha: 0.14)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: widget.value,
+                  isExpanded: true,
+                  isDense: true,
+                  borderRadius: BorderRadius.circular(12),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 17),
+                  items: [
+                    for (final item in _preferenceCategories)
+                      DropdownMenuItem<String>(
+                        value: item.id,
+                        child: Row(
+                          children: [
+                            Icon(item.icon, size: 13, color: item.color),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(item.label)),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onChanged: (nextValue) {
+                    if (nextValue == null) return;
+                    _hideDetails();
+                    widget.onChanged(nextValue);
+                  },
+                  style: const TextStyle(
+                    color: Color(0xFF2B262C),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 3),
+            Tooltip(
+              message: 'Detalhes da categoria',
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _toggleDetails,
+                  borderRadius: BorderRadius.circular(10),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 130),
+                    width: 30,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: _detailsEntry == null
+                          ? Colors.white.withValues(alpha: 0.42)
+                          : category.color.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _detailsEntry == null
+                            ? Colors.white.withValues(alpha: 0.58)
+                            : category.color.withValues(alpha: 0.22),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      size: 15,
+                      color: category.color,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _PreferenceOrganizationMode { predilection, category }
+
+class _PreferenceMatrixGrid extends StatefulWidget {
+  final Color accentColor;
+  final Color avatarColor;
+  final List<_PreferenceMatrixItem> items;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
+  final ValueChanged<String> onDeleteItem;
+
+  const _PreferenceMatrixGrid({
+    required this.accentColor,
+    required this.avatarColor,
+    required this.items,
+    required this.onUpsertItem,
+    required this.onDeleteItem,
+  });
+
+  @override
+  State<_PreferenceMatrixGrid> createState() => _PreferenceMatrixGridState();
+}
+
+class _PreferenceMatrixGridState extends State<_PreferenceMatrixGrid> {
+  _PreferenceOrganizationMode _organizationMode =
+      _PreferenceOrganizationMode.predilection;
+  final Set<String> _selectedCategoryFilterIds = <String>{};
+  final Set<String> _selectedLevelFilterIds = <String>{};
+
+  List<_PreferenceMatrixItem> get _filteredItems {
+    return widget.items
+        .where((item) {
+          final categoryMatches =
+              _selectedCategoryFilterIds.isEmpty ||
+              _selectedCategoryFilterIds.contains(item.categoryId);
+          final levelMatches =
+              _selectedLevelFilterIds.isEmpty ||
+              _selectedLevelFilterIds.contains(item.levelId);
+          return categoryMatches && levelMatches;
+        })
+        .toList(growable: false);
+  }
+
+  void _toggleCategoryFilter(String categoryId) {
+    setState(() {
+      if (!_selectedCategoryFilterIds.add(categoryId)) {
+        _selectedCategoryFilterIds.remove(categoryId);
+      }
+    });
+  }
+
+  void _toggleLevelFilter(String levelId) {
+    setState(() {
+      if (!_selectedLevelFilterIds.add(levelId)) {
+        _selectedLevelFilterIds.remove(levelId);
+      }
+    });
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedCategoryFilterIds.clear();
+      _selectedLevelFilterIds.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredItems = _filteredItems;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PreferenceOrganizationToolbar(
+          accentColor: widget.accentColor,
+          mode: _organizationMode,
+          selectedCategoryIds: _selectedCategoryFilterIds,
+          selectedLevelIds: _selectedLevelFilterIds,
+          onModeChanged: (mode) => setState(() => _organizationMode = mode),
+          onCategoryFilterToggled: _toggleCategoryFilter,
+          onLevelFilterToggled: _toggleLevelFilter,
+          onClearFilters:
+              _selectedCategoryFilterIds.isEmpty &&
+                  _selectedLevelFilterIds.isEmpty
+              ? null
+              : _clearFilters,
+        ),
+        const SizedBox(height: 8),
+        _PreferenceVerticalOverview(
+          accentColor: widget.accentColor,
+          avatarColor: widget.avatarColor,
+          items: filteredItems,
+          organizationMode: _organizationMode,
+          onUpsertItem: widget.onUpsertItem,
+          onDeleteItem: widget.onDeleteItem,
+        ),
+      ],
+    );
+  }
+}
+
+class _PreferenceOrganizationToolbar extends StatefulWidget {
+  final Color accentColor;
+  final _PreferenceOrganizationMode mode;
+  final Set<String> selectedCategoryIds;
+  final Set<String> selectedLevelIds;
+  final ValueChanged<_PreferenceOrganizationMode> onModeChanged;
+  final ValueChanged<String> onCategoryFilterToggled;
+  final ValueChanged<String> onLevelFilterToggled;
+  final VoidCallback? onClearFilters;
+
+  const _PreferenceOrganizationToolbar({
+    required this.accentColor,
+    required this.mode,
+    required this.selectedCategoryIds,
+    required this.selectedLevelIds,
+    required this.onModeChanged,
+    required this.onCategoryFilterToggled,
+    required this.onLevelFilterToggled,
+    required this.onClearFilters,
+  });
+
+  @override
+  State<_PreferenceOrganizationToolbar> createState() =>
+      _PreferenceOrganizationToolbarState();
+}
+
+class _PreferenceOrganizationToolbarState
+    extends State<_PreferenceOrganizationToolbar> {
+  bool _filtersExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedFilterCount =
+        widget.selectedCategoryIds.length + widget.selectedLevelIds.length;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.66)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _PreferenceModeButton(
+                      label: 'Predileção',
+                      icon: Icons.swap_vert_rounded,
+                      selected:
+                          widget.mode ==
+                          _PreferenceOrganizationMode.predilection,
+                      accentColor: widget.accentColor,
+                      onTap: () => widget.onModeChanged(
+                        _PreferenceOrganizationMode.predilection,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _PreferenceModeButton(
+                      label: 'Categoria',
+                      icon: Icons.category_rounded,
+                      selected:
+                          widget.mode == _PreferenceOrganizationMode.category,
+                      accentColor: widget.accentColor,
+                      onTap: () => widget.onModeChanged(
+                        _PreferenceOrganizationMode.category,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () =>
+                      setState(() => _filtersExpanded = !_filtersExpanded),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 34,
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    decoration: BoxDecoration(
+                      color: selectedFilterCount == 0
+                          ? Colors.white.withValues(alpha: 0.4)
+                          : widget.accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selectedFilterCount == 0
+                            ? Colors.white.withValues(alpha: 0.58)
+                            : widget.accentColor.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.filter_alt_outlined,
+                          size: 15,
+                          color: Color(0xFF625862),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            selectedFilterCount == 0
+                                ? 'Filtros'
+                                : 'Filtros ($selectedFilterCount)',
+                            style: const TextStyle(
+                              color: Color(0xFF514752),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        if (widget.onClearFilters != null)
+                          IconButton(
+                            onPressed: widget.onClearFilters,
+                            tooltip: 'Limpar filtros',
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 28,
+                              minHeight: 28,
+                            ),
+                            icon: const Icon(Icons.close_rounded, size: 16),
+                            color: const Color(0xFF625862),
+                          ),
+                        AnimatedRotation(
+                          duration: const Duration(milliseconds: 150),
+                          turns: _filtersExpanded ? 0.5 : 0,
+                          child: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 18,
+                            color: Color(0xFF625862),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: 7),
+                  child: Column(
+                    children: [
+                      _PreferenceFilterSection(
+                        title: 'Predileção',
+                        icon: Icons.star_rounded,
+                        accentColor: widget.accentColor,
+                        children: [
+                          for (final level in _preferenceLevels)
+                            _PreferenceFilterChip(
+                              label: level.label,
+                              icon: level.icon,
+                              leading: _PreferenceLevelIcon(
+                                level: level,
+                                color: level.color,
+                                size: 11,
+                              ),
+                              color: level.color,
+                              selected: widget.selectedLevelIds.contains(
+                                level.id,
+                              ),
+                              tooltip: 'Exibir ${level.label}',
+                              onTap: () =>
+                                  widget.onLevelFilterToggled(level.id),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      _PreferenceFilterSection(
+                        title: 'Categoria',
+                        icon: Icons.category_rounded,
+                        accentColor: widget.accentColor,
+                        children: [
+                          for (final category in _preferenceCategories)
+                            _PreferenceFilterChip(
+                              label: category.label,
+                              icon: category.icon,
+                              color: category.color,
+                              selected: widget.selectedCategoryIds.contains(
+                                category.id,
+                              ),
+                              tooltip: category.description,
+                              onTap: () =>
+                                  widget.onCategoryFilterToggled(category.id),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                crossFadeState: _filtersExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 160),
+                sizeCurve: Curves.easeOutCubic,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceFilterSection extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color accentColor;
+  final List<Widget> children;
+
+  const _PreferenceFilterSection({
+    required this.title,
+    required this.icon,
+    required this.accentColor,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.56)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 13, color: accentColor),
+              const SizedBox(width: 5),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF514752),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            alignment: WrapAlignment.center,
+            runAlignment: WrapAlignment.center,
+            spacing: 5,
+            runSpacing: 5,
+            children: children,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceModeButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  const _PreferenceModeButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          decoration: BoxDecoration(
+            color: selected
+                ? accentColor.withValues(alpha: 0.16)
+                : Colors.white.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? accentColor.withValues(alpha: 0.26)
+                  : Colors.white.withValues(alpha: 0.58),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? accentColor : const Color(0xFF625862),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: selected ? accentColor : const Color(0xFF514752),
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceFilterChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Widget? leading;
+  final Color color;
+  final bool selected;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _PreferenceFilterChip({
+    required this.label,
+    required this.icon,
+    this.leading,
+    required this.color,
+    required this.selected,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 130),
+            constraints: const BoxConstraints(minWidth: 74),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: selected
+                  ? color.withValues(alpha: 0.22)
+                  : Colors.white.withValues(alpha: 0.54),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? color.withValues(alpha: 0.32)
+                    : Colors.white.withValues(alpha: 0.68),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                leading ?? Icon(icon, size: 11, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected
+                        ? _darkenCharacterDialogColor(color, 0.18)
+                        : const Color(0xFF514752),
+                    fontSize: 9.7,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceVerticalOverview extends StatelessWidget {
+  final Color accentColor;
+  final Color avatarColor;
+  final List<_PreferenceMatrixItem> items;
+  final _PreferenceOrganizationMode organizationMode;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
+  final ValueChanged<String> onDeleteItem;
+
+  const _PreferenceVerticalOverview({
+    required this.accentColor,
+    required this.avatarColor,
+    required this.items,
+    required this.organizationMode,
+    required this.onUpsertItem,
+    required this.onDeleteItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          avatarColor.withValues(alpha: 0.08),
+          Colors.white.withValues(alpha: 0.58),
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (organizationMode == _PreferenceOrganizationMode.predilection)
+            for (final level in _preferenceLevels) ...[
+              _PreferenceTierRow(
+                level: level,
+                items: items
+                    .where((item) => item.levelId == level.id)
+                    .toList(growable: false),
+                onUpsertItem: onUpsertItem,
+                onDeleteItem: onDeleteItem,
+              ),
+              const SizedBox(height: 6),
+            ]
+          else
+            for (final category in _preferenceCategories) ...[
+              _PreferenceCategoryTierRow(
+                category: category,
+                items: items
+                    .where((item) => item.categoryId == category.id)
+                    .toList(growable: false),
+                onUpsertItem: onUpsertItem,
+                onDeleteItem: onDeleteItem,
+              ),
+              const SizedBox(height: 6),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceTierRow extends StatelessWidget {
+  final _PreferenceLevelDefinition level;
+  final List<_PreferenceMatrixItem> items;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
+  final ValueChanged<String> onDeleteItem;
+
+  const _PreferenceTierRow({
+    required this.level,
+    required this.items,
+    required this.onUpsertItem,
+    required this.onDeleteItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sortedItems = items.toList(growable: false)
+      ..sort((left, right) {
+        final categoryCompare = _preferenceCategoryIndex(
+          left.categoryId,
+        ).compareTo(_preferenceCategoryIndex(right.categoryId));
+        if (categoryCompare != 0) return categoryCompare;
+        return left.label.toLowerCase().compareTo(right.label.toLowerCase());
+      });
+
+    return DragTarget<_PreferenceMatrixItem>(
+      onWillAcceptWithDetails: (details) => details.data.levelId != level.id,
+      onAcceptWithDetails: (details) {
+        onUpsertItem(details.data.copyWith(levelId: level.id), rebuild: true);
+      },
+      builder: (context, candidateItems, rejectedItems) {
+        final isHovering = candidateItems.isNotEmpty;
+        final fillAlpha = isHovering
+            ? 0.32
+            : (0.14 + sortedItems.length * 0.025).clamp(0.14, 0.28);
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 130),
+              constraints: const BoxConstraints(minHeight: 54),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: isHovering ? 0.54 : 0.42),
+                    Color.alphaBlend(
+                      level.color.withValues(alpha: isHovering ? 0.1 : 0.05),
+                      Colors.white.withValues(alpha: 0.28),
+                    ),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isHovering
+                      ? level.color.withValues(alpha: 0.34)
+                      : Colors.white.withValues(alpha: 0.5),
+                  width: 0.85,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: level.color.withValues(
+                      alpha: isHovering ? 0.13 : 0.06,
+                    ),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 130),
+                      width: 72,
+                      constraints: const BoxConstraints(minHeight: 54),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: level.color.withValues(alpha: fillAlpha),
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(14),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _preferenceLevelShortLabel(level.id),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _darkenCharacterDialogColor(
+                                level.color,
+                                0.25,
+                              ),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          _PreferenceLevelIcon(
+                            level: level,
+                            color: level.color,
+                            size: 13,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${sortedItems.length}',
+                            style: TextStyle(
+                              color: _darkenCharacterDialogColor(
+                                level.color,
+                                0.18,
+                              ),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(7),
+                        child: sortedItems.isEmpty
+                            ? Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Sem itens',
+                                  style: TextStyle(
+                                    color: Colors.black.withValues(alpha: 0.38),
+                                    fontSize: 10.5,
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            : Wrap(
+                                spacing: 5,
+                                runSpacing: 5,
+                                children: [
+                                  for (final item in sortedItems)
+                                    _PreferenceTierItemChip(
+                                      item: item,
+                                      color: level.color,
+                                      onUpsertItem: onUpsertItem,
+                                      onDelete: () => onDeleteItem(item.id),
+                                    ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PreferenceCategoryTierRow extends StatelessWidget {
+  final _PreferenceCategoryDefinition category;
+  final List<_PreferenceMatrixItem> items;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
+  final ValueChanged<String> onDeleteItem;
+
+  const _PreferenceCategoryTierRow({
+    required this.category,
+    required this.items,
+    required this.onUpsertItem,
+    required this.onDeleteItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sortedItems = items.toList(growable: false)
+      ..sort((left, right) {
+        final levelCompare = _preferenceLevelIndex(
+          left.levelId,
+        ).compareTo(_preferenceLevelIndex(right.levelId));
+        if (levelCompare != 0) return levelCompare;
+        return left.label.toLowerCase().compareTo(right.label.toLowerCase());
+      });
+
+    return DragTarget<_PreferenceMatrixItem>(
+      onWillAcceptWithDetails: (details) =>
+          details.data.categoryId != category.id,
+      onAcceptWithDetails: (details) {
+        onUpsertItem(
+          details.data.copyWith(categoryId: category.id),
+          rebuild: true,
+        );
+      },
+      builder: (context, candidateItems, rejectedItems) {
+        final isHovering = candidateItems.isNotEmpty;
+        final fillAlpha = isHovering
+            ? 0.32
+            : (0.12 + sortedItems.length * 0.025).clamp(0.12, 0.26);
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 130),
+              constraints: const BoxConstraints(minHeight: 54),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: isHovering ? 0.54 : 0.42),
+                    Color.alphaBlend(
+                      category.color.withValues(alpha: isHovering ? 0.1 : 0.05),
+                      Colors.white.withValues(alpha: 0.28),
+                    ),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isHovering
+                      ? category.color.withValues(alpha: 0.34)
+                      : Colors.white.withValues(alpha: 0.5),
+                  width: 0.85,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: category.color.withValues(
+                      alpha: isHovering ? 0.13 : 0.06,
+                    ),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Tooltip(
+                      message: category.description,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 130),
+                        width: 96,
+                        constraints: const BoxConstraints(minHeight: 54),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: category.color.withValues(alpha: fillAlpha),
+                          borderRadius: const BorderRadius.horizontal(
+                            left: Radius.circular(14),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              category.icon,
+                              size: 15,
+                              color: category.color,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              category.label,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _darkenCharacterDialogColor(
+                                  category.color,
+                                  0.25,
+                                ),
+                                fontSize: 10,
+                                height: 1.05,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${sortedItems.length}',
+                              style: TextStyle(
+                                color: _darkenCharacterDialogColor(
+                                  category.color,
+                                  0.16,
+                                ),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(7),
+                        child: sortedItems.isEmpty
+                            ? Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Sem itens',
+                                  style: TextStyle(
+                                    color: Colors.black.withValues(alpha: 0.38),
+                                    fontSize: 10.5,
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            : Wrap(
+                                spacing: 5,
+                                runSpacing: 5,
+                                children: [
+                                  for (final item in sortedItems)
+                                    _PreferenceTierItemChip(
+                                      item: item,
+                                      color: _preferenceLevelFor(
+                                        item.levelId,
+                                      ).color,
+                                      leadingLevel: _preferenceLevelFor(
+                                        item.levelId,
+                                      ),
+                                      onUpsertItem: onUpsertItem,
+                                      onDelete: () => onDeleteItem(item.id),
+                                    ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PreferenceTierItemChip extends StatelessWidget {
+  final _PreferenceMatrixItem item;
+  final Color color;
+  final _PreferenceLevelDefinition? leadingLevel;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
+  final VoidCallback onDelete;
+
+  const _PreferenceTierItemChip({
+    required this.item,
+    required this.color,
+    this.leadingLevel,
+    required this.onUpsertItem,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedLevel = leadingLevel;
+
+    return Draggable<_PreferenceMatrixItem>(
+      data: item,
+      feedback: Material(
+        color: Colors.transparent,
+        child: _PreferenceTierItemChipSurface(
+          item: item,
+          color: color,
+          leadingLevel: resolvedLevel,
+          elevated: true,
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.34,
+        child: _PreferenceTierItemChipSurface(
+          item: item,
+          color: color,
+          leadingLevel: resolvedLevel,
+        ),
+      ),
+      child: Builder(
+        builder: (chipContext) {
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showPreferenceItemTooltipBubble(
+                context: chipContext,
+                item: item,
+                color: color,
+                onUpsertItem: onUpsertItem,
+                onDelete: onDelete,
+              ),
+              borderRadius: BorderRadius.circular(10),
+              child: _PreferenceTierItemChipSurface(
+                item: item,
+                color: color,
+                leadingLevel: resolvedLevel,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PreferenceTierItemChipSurface extends StatelessWidget {
+  final _PreferenceMatrixItem item;
+  final Color color;
+  final _PreferenceLevelDefinition? leadingLevel;
+  final bool elevated;
+
+  const _PreferenceTierItemChipSurface({
+    required this.item,
+    required this.color,
+    required this.leadingLevel,
+    this.elevated = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final category = _preferenceCategoryFor(item.categoryId);
+    final opinion = item.opinion.trim();
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 150),
+      padding: const EdgeInsets.fromLTRB(7, 5, 8, 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: elevated ? 0.92 : 0.72),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: elevated ? 0.18 : 0.08),
+            blurRadius: elevated ? 16 : 10,
+            offset: Offset(0, elevated ? 6 : 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (leadingLevel == null)
+            Icon(category.icon, size: 12, color: category.color)
+          else
+            _PreferenceLevelIcon(level: leadingLevel!, color: color, size: 12),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              item.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF3F3740),
+                fontSize: 10.3,
+                height: 1.08,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          if (opinion.isNotEmpty) ...[
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 10,
+              color: color.withValues(alpha: 0.72),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _showPreferenceItemTooltipBubble({
+  required BuildContext context,
+  required _PreferenceMatrixItem item,
+  required Color color,
+  required void Function(_PreferenceMatrixItem item, {bool rebuild})
+  onUpsertItem,
+  required VoidCallback onDelete,
+}) {
+  final renderObject = context.findRenderObject();
+  if (renderObject is! RenderBox || !renderObject.hasSize) {
+    return Future<void>.value();
+  }
+
+  final anchorRect =
+      renderObject.localToGlobal(Offset.zero) & renderObject.size;
+  final category = _preferenceCategoryFor(item.categoryId);
+  final level = _preferenceLevelFor(item.levelId);
+  final comment = item.opinion.trim();
+  final commentText = comment.isEmpty ? 'Sem comentario.' : '"$comment"';
+  final estimatedHeight = comment.isEmpty
+      ? 126.0
+      : comment.length > 90
+      ? 190.0
+      : 146.0;
+
+  return showAnchoredInfoBubbleDialog(
+    context: context,
+    anchorRect: anchorRect,
+    width: 280,
+    estimatedHeight: estimatedHeight,
+    child: Builder(
+      builder: (bubbleContext) {
+        return ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 260),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: category.color.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.72),
+                        ),
+                      ),
+                      child: Icon(
+                        category.icon,
+                        size: 15,
+                        color: category.color,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.label,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF2B262C),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              height: 1.08,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${level.label} - ${category.label}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _darkenCharacterDialogColor(color, 0.16),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(bubbleContext).pop();
+                        _showPreferenceItemEditorDialog(
+                          context: context,
+                          item: item,
+                          accentColor: color,
+                          onUpsertItem: onUpsertItem,
+                        );
+                      },
+                      tooltip: 'Editar item',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.edit_outlined, size: 17),
+                      color: color,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(bubbleContext).pop();
+                        onDelete();
+                      },
+                      tooltip: 'Excluir item',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 17),
+                      color: const Color(0xFF8A5364),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: color.withValues(alpha: 0.1)),
+                  ),
+                  child: Text(
+                    commentText,
+                    style: const TextStyle(
+                      color: Color(0xFF514752),
+                      fontSize: 11.5,
+                      height: 1.32,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  category.description,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.48),
+                    fontSize: 10.3,
+                    height: 1.24,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+    bubbleBuilder:
+        (
+          context, {
+          required showAbove,
+          required pointerLeft,
+          required arrowSize,
+          required child,
+        }) {
+          return AnchoredInfoBubbleFrame(
+            showAbove: showAbove,
+            pointerLeft: pointerLeft,
+            arrowSize: arrowSize,
+            borderRadius: BorderRadius.circular(17),
+            blurSigma: 14,
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.76),
+                  Color.alphaBlend(
+                    color.withValues(alpha: 0.06),
+                    Colors.white.withValues(alpha: 0.52),
+                  ),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.72),
+                width: 0.85,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.18),
+                  blurRadius: 22,
+                  offset: const Offset(0, 9),
+                ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.34),
+                  blurRadius: 10,
+                  offset: const Offset(-2, -2),
+                ),
+              ],
+            ),
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.36),
+                width: 0.7,
+              ),
+            ),
+            arrowColor: Colors.white.withValues(alpha: 0.68),
+            child: child,
+          );
+        },
+  );
+}
+
+Future<void> _showPreferenceItemEditorDialog({
+  required BuildContext context,
+  required _PreferenceMatrixItem item,
+  required Color accentColor,
+  required void Function(_PreferenceMatrixItem item, {bool rebuild})
+  onUpsertItem,
+}) {
+  final titleController = TextEditingController(text: item.label);
+  final commentController = TextEditingController(text: item.opinion);
+  var levelId = item.levelId;
+  var categoryId = item.categoryId;
+
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Editar item',
+    barrierColor: Colors.black.withValues(alpha: 0.12),
+    transitionDuration: const Duration(milliseconds: 150),
+    pageBuilder: (dialogContext, animation, secondaryAnimation) {
+      final inputBorder = OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: accentColor.withValues(alpha: 0.14)),
+      );
+
+      return SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: StatefulBuilder(
+              builder: (context, setDialogState) {
+                void save() {
+                  final label = titleController.text.trim();
+                  if (label.isEmpty) return;
+                  onUpsertItem(
+                    item.copyWith(
+                      label: label,
+                      opinion: commentController.text.trim(),
+                      levelId: levelId,
+                      categoryId: categoryId,
+                    ),
+                    rebuild: true,
+                  );
+                  Navigator.of(dialogContext).pop();
+                }
+
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        padding: const EdgeInsets.all(13),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.78),
+                              Color.alphaBlend(
+                                accentColor.withValues(alpha: 0.07),
+                                Colors.white.withValues(alpha: 0.54),
+                              ),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.76),
+                            width: 0.85,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.18),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 17,
+                                  color: accentColor,
+                                ),
+                                const SizedBox(width: 7),
+                                const Expanded(
+                                  child: Text(
+                                    'Editar gosto',
+                                    style: TextStyle(
+                                      color: Color(0xFF2B262C),
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(),
+                                  tooltip: 'Fechar',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 18,
+                                  ),
+                                  color: const Color(0xFF625862),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: titleController,
+                              minLines: 1,
+                              maxLines: 1,
+                              onSubmitted: (_) => save(),
+                              style: const TextStyle(
+                                color: Color(0xFF514752),
+                                fontSize: 12.2,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Nome do item',
+                                isDense: true,
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.62),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                                border: inputBorder,
+                                enabledBorder: inputBorder,
+                                focusedBorder: inputBorder.copyWith(
+                                  borderSide: BorderSide(
+                                    color: accentColor,
+                                    width: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _PreferenceDropdown<String>(
+                                    value: levelId,
+                                    items: [
+                                      for (final level in _preferenceLevels)
+                                        DropdownMenuItem<String>(
+                                          value: level.id,
+                                          child: Row(
+                                            children: [
+                                              _PreferenceLevelIcon(
+                                                level: level,
+                                                color: const Color(0xFF625862),
+                                                size: 13,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(level.label),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      setDialogState(() => levelId = value);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _PreferenceDropdown<String>(
+                                    value: categoryId,
+                                    items: [
+                                      for (final category
+                                          in _preferenceCategories)
+                                        DropdownMenuItem<String>(
+                                          value: category.id,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                category.icon,
+                                                size: 13,
+                                                color: category.color,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(category.label),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      setDialogState(() => categoryId = value);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: commentController,
+                              minLines: 2,
+                              maxLines: 5,
+                              style: const TextStyle(
+                                color: Color(0xFF514752),
+                                fontSize: 11.4,
+                                height: 1.3,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Comentario do personagem',
+                                isDense: true,
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.58),
+                                contentPadding: const EdgeInsets.all(10),
+                                border: inputBorder,
+                                enabledBorder: inputBorder,
+                                focusedBorder: inputBorder.copyWith(
+                                  borderSide: BorderSide(
+                                    color: accentColor,
+                                    width: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: FilledButton.icon(
+                                onPressed: save,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: accentColor,
+                                  foregroundColor: Colors.white,
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.check_rounded, size: 17),
+                                label: const Text('Salvar'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.98, end: 1).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          ),
+          child: child,
+        ),
+      );
+    },
+  ).whenComplete(() {
+    titleController.dispose();
+    commentController.dispose();
+  });
+}
+
+// ignore: unused_element
+Future<void> _showPreferenceItemBubble({
+  required BuildContext context,
+  required _PreferenceMatrixItem item,
+  required Color color,
+  required VoidCallback onDelete,
+}) {
+  final category = _preferenceCategoryFor(item.categoryId);
+  final level = _preferenceLevels.firstWhere(
+    (level) => level.id == item.levelId,
+    orElse: () => _preferenceLevels[2],
+  );
+  final comment = item.opinion.trim();
+
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Fechar',
+    barrierColor: Colors.black.withValues(alpha: 0.12),
+    transitionDuration: const Duration(milliseconds: 150),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.56),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      width: 0.85,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.16),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.72),
+                                ),
+                              ),
+                              child: Icon(
+                                category.icon,
+                                size: 17,
+                                color: color,
+                              ),
+                            ),
+                            const SizedBox(width: 9),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.label,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFF2B262C),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      height: 1.05,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${level.label} · ${category.label}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: _darkenCharacterDialogColor(
+                                        color,
+                                        0.16,
+                                      ),
+                                      fontSize: 10.8,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              tooltip: 'Fechar',
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              color: const Color(0xFF625862),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.48),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: color.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          child: Text(
+                            comment.isEmpty ? 'Sem comentário.' : comment,
+                            style: TextStyle(
+                              color: const Color(0xFF514752),
+                              fontSize: 12,
+                              height: 1.35,
+                              fontStyle: comment.isEmpty
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                category.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.black.withValues(alpha: 0.48),
+                                  fontSize: 10.5,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                onDelete();
+                              },
+                              tooltip: 'Excluir item',
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                              ),
+                              color: const Color(0xFF8A5364),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.98, end: 1).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          ),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+// ignore: unused_element
+class _PreferenceOverviewRow extends StatelessWidget {
+  final _PreferenceCategoryDefinition category;
+  final List<_PreferenceMatrixItem> items;
+
+  const _PreferenceOverviewRow({required this.category, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 104,
+            child: Row(
+              children: [
+                Icon(category.icon, size: 13, color: const Color(0xFF625862)),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    category.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF3F3740),
+                      fontSize: 10.2,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (final level in _preferenceLevels)
+            Expanded(
+              child: _PreferenceOverviewCountCell(
+                level: level,
+                category: category,
+                count: items.where((item) => item.levelId == level.id).length,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceOverviewCountCell extends StatelessWidget {
+  final _PreferenceLevelDefinition level;
+  final _PreferenceCategoryDefinition category;
+  final int count;
+
+  const _PreferenceOverviewCountCell({
+    required this.level,
+    required this.category,
+    required this.count,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasItems = count > 0;
+
+    return Tooltip(
+      message: '${category.label} / ${level.label}: $count',
+      child: Container(
+        height: 24,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: level.color.withValues(alpha: hasItems ? 0.46 : 0.08),
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(
+            color: level.color.withValues(alpha: hasItems ? 0.28 : 0.1),
+          ),
+        ),
+        child: Text(
+          count == 0 ? '' : '$count',
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _darkenCharacterDialogColor(level.color, 0.25),
+            fontSize: 10.2,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceEmptyState extends StatelessWidget {
+  final Color accentColor;
+
+  const _PreferenceEmptyState({required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.46),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accentColor.withValues(alpha: 0.1)),
+      ),
+      child: Text(
+        'Nenhum item criado.',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.black.withValues(alpha: 0.5),
+          fontSize: 11.5,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceItemEditorCard extends StatefulWidget {
+  final Color accentColor;
+  final _PreferenceMatrixItem item;
+  final void Function(_PreferenceMatrixItem item, {bool rebuild}) onChanged;
+  final VoidCallback onDelete;
+
+  const _PreferenceItemEditorCard({
+    required this.accentColor,
+    required this.item,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  @override
+  State<_PreferenceItemEditorCard> createState() =>
+      _PreferenceItemEditorCardState();
+}
+
+class _PreferenceItemEditorCardState extends State<_PreferenceItemEditorCard> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _opinionController;
+  late String _levelId;
+  late String _categoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.item.label);
+    _opinionController = TextEditingController(text: widget.item.opinion);
+    _levelId = widget.item.levelId;
+    _categoryId = widget.item.categoryId;
+  }
+
+  @override
+  void didUpdateWidget(covariant _PreferenceItemEditorCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.id != widget.item.id) {
+      _syncText(_titleController, widget.item.label);
+      _syncText(_opinionController, widget.item.opinion);
+      _levelId = widget.item.levelId;
+      _categoryId = widget.item.categoryId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _opinionController.dispose();
+    super.dispose();
+  }
+
+  void _syncText(TextEditingController controller, String value) {
+    if (controller.text == value) return;
+    controller.text = value;
+  }
+
+  void _emit({bool rebuild = false}) {
+    widget.onChanged(
+      widget.item.copyWith(
+        label: _titleController.text,
+        opinion: _opinionController.text,
+        levelId: _levelId,
+        categoryId: _categoryId,
+      ),
+      rebuild: rebuild,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final level = _preferenceLevels.firstWhere(
+      (entry) => entry.id == _levelId,
+      orElse: () => _preferenceLevels[2],
+    );
+    final category = _preferenceCategories.firstWhere(
+      (entry) => entry.id == _categoryId,
+      orElse: () => _preferenceCategories.first,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.52),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: level.color.withValues(alpha: 0.16)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: level.color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(category.icon, size: 15, color: level.color),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _titleController,
+                  onChanged: (_) => _emit(),
+                  style: const TextStyle(
+                    color: Color(0xFF2B262C),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    hintText: 'Item',
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: widget.onDelete,
+                tooltip: 'Excluir item',
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                color: const Color(0xFF7E6676),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _PreferenceDropdown<String>(
+                  value: _levelId,
+                  items: [
+                    for (final item in _preferenceLevels)
+                      DropdownMenuItem<String>(
+                        value: item.id,
+                        child: Row(
+                          children: [
+                            _PreferenceLevelIcon(
+                              level: item,
+                              color: const Color(0xFF625862),
+                              size: 13,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(item.label)),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => _levelId = value);
+                    _emit(rebuild: true);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _PreferenceDropdown<String>(
+                  value: _categoryId,
+                  icon: category.icon,
+                  items: [
+                    for (final item in _preferenceCategories)
+                      DropdownMenuItem<String>(
+                        value: item.id,
+                        child: Text(item.label),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => _categoryId = value);
+                    _emit(rebuild: true);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _opinionController,
+            minLines: 2,
+            maxLines: 5,
+            onChanged: (_) => _emit(),
+            style: const TextStyle(
+              color: Color(0xFF514752),
+              fontSize: 11.4,
+              height: 1.3,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Articule a opinião do personagem sobre este item.',
+              hintStyle: const TextStyle(
+                color: Color(0xFF8F8990),
+                fontSize: 10.8,
+                fontStyle: FontStyle.italic,
+              ),
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.72),
+              contentPadding: const EdgeInsets.all(10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: widget.accentColor.withValues(alpha: 0.12),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: widget.accentColor.withValues(alpha: 0.12),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: widget.accentColor, width: 1.1),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceCategoryHeader extends StatelessWidget {
+  final _PreferenceCategoryDefinition category;
+  final double width;
+  final Color accentColor;
+
+  const _PreferenceCategoryHeader({
+    required this.category,
+    required this.width,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      constraints: const BoxConstraints(minHeight: 42),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: accentColor.withValues(alpha: 0.08)),
+          bottom: BorderSide(color: accentColor.withValues(alpha: 0.1)),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(category.icon, size: 13, color: accentColor),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              category.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF2B262C),
+                fontSize: 10.2,
+                height: 1.05,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceLevelHeader extends StatelessWidget {
+  final _PreferenceLevelDefinition level;
+  final double width;
+
+  const _PreferenceLevelHeader({required this.level, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      constraints: const BoxConstraints(minHeight: 54),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      decoration: BoxDecoration(
+        color: level.color.withValues(alpha: 0.1),
+        border: Border(
+          top: BorderSide(color: level.color.withValues(alpha: 0.08)),
+          bottom: BorderSide(color: level.color.withValues(alpha: 0.1)),
+        ),
+      ),
+      child: RotatedBox(
+        quarterTurns: 3,
+        child: Text(
+          level.label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: _darkenCharacterDialogColor(level.color, 0.2),
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceMatrixCell extends StatelessWidget {
+  final double width;
+  final _PreferenceLevelDefinition level;
+  final List<_PreferenceMatrixItem> items;
+  final ValueChanged<String> onDeleteItem;
+
+  const _PreferenceMatrixCell({
+    required this.width,
+    required this.level,
+    required this.items,
+    required this.onDeleteItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasItems = items.isNotEmpty;
+
+    return Container(
+      width: width,
+      constraints: const BoxConstraints(minHeight: 54),
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: hasItems
+            ? level.color.withValues(alpha: 0.09)
+            : Colors.white.withValues(alpha: 0.32),
+        border: Border(
+          left: BorderSide(color: level.color.withValues(alpha: 0.06)),
+          top: BorderSide(color: level.color.withValues(alpha: 0.05)),
+          bottom: BorderSide(color: level.color.withValues(alpha: 0.08)),
+        ),
+      ),
+      child: hasItems
+          ? SingleChildScrollView(
+              child: Wrap(
+                spacing: 5,
+                runSpacing: 5,
+                children: [
+                  for (final item in items)
+                    _PreferenceItemChip(
+                      item: item,
+                      color: level.color,
+                      onDelete: () => onDeleteItem(item.id),
+                    ),
+                ],
+              ),
+            )
+          : Center(
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: level.color.withValues(alpha: 0.13),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+// ignore: unused_element
+class _PreferenceItemChip extends StatelessWidget {
+  final _PreferenceMatrixItem item;
+  final Color color;
+  final VoidCallback onDelete;
+
+  const _PreferenceItemChip({
+    required this.item,
+    required this.color,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 112),
+      padding: const EdgeInsets.fromLTRB(8, 5, 4, 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              item.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF3F3740),
+                fontSize: 10.3,
+                height: 1.1,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 3),
+          InkWell(
+            onTap: onDelete,
+            borderRadius: BorderRadius.circular(999),
+            child: Icon(
+              Icons.close_rounded,
+              size: 13,
+              color: color.withValues(alpha: 0.78),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _preferenceLevelShortLabel(String levelId) {
+  switch (levelId) {
+    case 'favoritos':
+      return 'Fav.';
+    case 'ama':
+      return 'Ama';
+    case 'gosta':
+      return 'Gosta';
+    case 'tolera':
+      return 'Tol.';
+    case 'odeia':
+      return 'Odeia';
+    default:
+      return levelId;
+  }
+}
+
+int _preferenceLevelIndex(String levelId) {
+  final index = _preferenceLevels.indexWhere((level) => level.id == levelId);
+  return index == -1 ? _preferenceLevels.length : index;
+}
+
+_PreferenceLevelDefinition _preferenceLevelFor(String levelId) {
+  return _preferenceLevels.firstWhere(
+    (level) => level.id == levelId,
+    orElse: () => _preferenceLevels[2],
+  );
+}
+
+int _preferenceCategoryIndex(String categoryId) {
+  final index = _preferenceCategories.indexWhere(
+    (category) => category.id == categoryId,
+  );
+  return index == -1 ? _preferenceCategories.length : index;
+}
+
+_PreferenceCategoryDefinition _preferenceCategoryFor(String categoryId) {
+  return _preferenceCategories.firstWhere(
+    (category) => category.id == categoryId,
+    orElse: () => _preferenceCategories.last,
+  );
+}
+
+class _RelationshipTypeDefinition {
+  final String id;
+  final String label;
+  final Color color;
+
+  const _RelationshipTypeDefinition({
+    required this.id,
+    required this.label,
+    required this.color,
+  });
+}
+
+const List<_RelationshipTypeDefinition> _relationshipTypes =
+    <_RelationshipTypeDefinition>[
+      _RelationshipTypeDefinition(
+        id: 'aliada',
+        label: 'Aliada',
+        color: Color(0xFF5E9D78),
+      ),
+      _RelationshipTypeDefinition(
+        id: 'afeto',
+        label: 'Afeto',
+        color: Color(0xFFE07388),
+      ),
+      _RelationshipTypeDefinition(
+        id: 'conflito',
+        label: 'Conflito',
+        color: Color(0xFFC65B6A),
+      ),
+      _RelationshipTypeDefinition(
+        id: 'familia',
+        label: 'Família',
+        color: Color(0xFFB47B38),
+      ),
+      _RelationshipTypeDefinition(
+        id: 'neutra',
+        label: 'Neutra',
+        color: Color(0xFF7E6676),
+      ),
+    ];
+
+class _CharacterRelationshipDiagramCard extends StatelessWidget {
+  final Color accentColor;
+  final Color avatarColor;
+  final String characterName;
+  final List<CharacterListItem> characters;
+  final String Function(CharacterListItem character) typeFor;
+  final double Function(CharacterListItem character) intensityFor;
+  final String Function(CharacterListItem character) notesFor;
+  final void Function(CharacterListItem character, String typeId) onTypeChanged;
+  final void Function(CharacterListItem character, double intensity)
+  onIntensityChanged;
+  final void Function(CharacterListItem character, String notes) onNotesChanged;
+
+  const _CharacterRelationshipDiagramCard({
+    required this.accentColor,
+    required this.avatarColor,
+    required this.characterName,
+    required this.characters,
+    required this.typeFor,
+    required this.intensityFor,
+    required this.notesFor,
+    required this.onTypeChanged,
+    required this.onIntensityChanged,
+    required this.onNotesChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.62),
+        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PsychSectionTitle(
+            accentColor: accentColor,
+            icon: Icons.hub_rounded,
+            title: 'Relações',
+            subtitle: 'diagrama entre personagens existentes',
+          ),
+          const SizedBox(height: 10),
+          if (characters.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                'Crie mais personagens neste projeto para montar o diagrama.',
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.52),
+                  fontSize: 11.5,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: 230,
+              child: CustomPaint(
+                painter: _RelationshipDiagramPainter(
+                  accentColor: accentColor,
+                  avatarColor: avatarColor,
+                  characterName: characterName,
+                  characters: characters,
+                  typeFor: typeFor,
+                  intensityFor: intensityFor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final character in characters) ...[
+              _RelationshipEditorRow(
+                accentColor: accentColor,
+                character: character,
+                selectedTypeId: typeFor(character),
+                intensity: intensityFor(character),
+                notes: notesFor(character),
+                onTypeChanged: (typeId) => onTypeChanged(character, typeId),
+                onIntensityChanged: (value) =>
+                    onIntensityChanged(character, value),
+                onNotesChanged: (value) => onNotesChanged(character, value),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RelationshipEditorRow extends StatelessWidget {
+  final Color accentColor;
+  final CharacterListItem character;
+  final String selectedTypeId;
+  final double intensity;
+  final String notes;
+  final ValueChanged<String> onTypeChanged;
+  final ValueChanged<double> onIntensityChanged;
+  final ValueChanged<String> onNotesChanged;
+
+  const _RelationshipEditorRow({
+    required this.accentColor,
+    required this.character,
+    required this.selectedTypeId,
+    required this.intensity,
+    required this.notes,
+    required this.onTypeChanged,
+    required this.onIntensityChanged,
+    required this.onNotesChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedType = _relationshipTypes.firstWhere(
+      (type) => type.id == selectedTypeId,
+      orElse: () => _relationshipTypes.last,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.46),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: selectedType.color.withValues(alpha: 0.16)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: character.data.avatarColor.withValues(
+                  alpha: 0.18,
+                ),
+                child: Icon(
+                  character.data.icon,
+                  size: 14,
+                  color: character.data.avatarColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  character.data.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF2B262C),
+                    fontSize: 12.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedType.id,
+                  isDense: true,
+                  borderRadius: BorderRadius.circular(12),
+                  items: [
+                    for (final type in _relationshipTypes)
+                      DropdownMenuItem<String>(
+                        value: type.id,
+                        child: Text(type.label),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) onTypeChanged(value);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Text(
+                'Intensidade',
+                style: TextStyle(
+                  color: Color(0xFF625862),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Expanded(
+                child: Slider(
+                  value: intensity.clamp(0.0, 10.0).toDouble(),
+                  min: 0,
+                  max: 10,
+                  divisions: 10,
+                  activeColor: selectedType.color,
+                  onChanged: onIntensityChanged,
+                ),
+              ),
+              SizedBox(
+                width: 24,
+                child: Text(
+                  intensity.toStringAsFixed(0),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Color(0xFF2B262C),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          TextFormField(
+            key: ValueKey('relationship-notes-${character.id}'),
+            initialValue: notes,
+            minLines: 1,
+            maxLines: 3,
+            onChanged: onNotesChanged,
+            style: const TextStyle(
+              color: Color(0xFF514752),
+              fontSize: 11,
+              height: 1.25,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Notas da relação',
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.7),
+              contentPadding: const EdgeInsets.all(9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: accentColor.withValues(alpha: 0.12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelationshipDiagramPainter extends CustomPainter {
+  final Color accentColor;
+  final Color avatarColor;
+  final String characterName;
+  final List<CharacterListItem> characters;
+  final String Function(CharacterListItem character) typeFor;
+  final double Function(CharacterListItem character) intensityFor;
+
+  const _RelationshipDiagramPainter({
+    required this.accentColor,
+    required this.avatarColor,
+    required this.characterName,
+    required this.characters,
+    required this.typeFor,
+    required this.intensityFor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) * 0.34;
+    final textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+
+    for (var index = 0; index < characters.length; index += 1) {
+      final character = characters[index];
+      final angle = -pi / 2 + (2 * pi * index / characters.length);
+      final point = center + Offset(cos(angle), sin(angle)) * radius;
+      final type = _relationshipTypes.firstWhere(
+        (item) => item.id == typeFor(character),
+        orElse: () => _relationshipTypes.last,
+      );
+      final intensity = intensityFor(character).clamp(0.0, 10.0);
+      canvas.drawLine(
+        center,
+        point,
+        Paint()
+          ..color = type.color.withValues(alpha: 0.18 + intensity * 0.055)
+          ..strokeWidth = 1.2 + intensity * 0.24
+          ..strokeCap = StrokeCap.round,
+      );
+      _drawNode(
+        canvas: canvas,
+        center: point,
+        radius: 25,
+        color: type.color,
+        label: character.data.name,
+        textPainter: textPainter,
+      );
+    }
+
+    _drawNode(
+      canvas: canvas,
+      center: center,
+      radius: 34,
+      color: Color.alphaBlend(accentColor.withValues(alpha: 0.45), avatarColor),
+      label: characterName,
+      textPainter: textPainter,
+      emphasized: true,
+    );
+  }
+
+  void _drawNode({
+    required Canvas canvas,
+    required Offset center,
+    required double radius,
+    required Color color,
+    required String label,
+    required TextPainter textPainter,
+    bool emphasized = false,
+  }) {
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()..color = Colors.white.withValues(alpha: 0.82),
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = emphasized ? 2.2 : 1.4
+        ..color = color.withValues(alpha: 0.72),
+    );
+    textPainter.text = TextSpan(
+      text: label.split(' ').first,
+      style: TextStyle(
+        color: const Color(0xFF2B262C),
+        fontSize: emphasized ? 11 : 9.5,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+    textPainter.layout(maxWidth: radius * 1.65);
+    textPainter.paint(
+      canvas,
+      center - Offset(textPainter.width / 2, textPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RelationshipDiagramPainter oldDelegate) {
+    return true;
+  }
+}
+
+class _PsychSectionTitle extends StatelessWidget {
+  final Color accentColor;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final int subtitleMaxLines;
+
+  const _PsychSectionTitle({
+    required this.accentColor,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.subtitleMaxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.13),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 15, color: accentColor),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF2B262C),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                subtitle,
+                maxLines: subtitleMaxLines,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.52),
+                  fontSize: 10.5,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

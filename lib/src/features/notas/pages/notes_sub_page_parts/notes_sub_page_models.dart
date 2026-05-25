@@ -6,6 +6,18 @@ enum _NotesDisplayMode { list, grid }
 
 enum _SelectionKind { note, folder }
 
+class NotesCharacterContext {
+  final String characterName;
+  final String? projectTitle;
+  final Color accentColor;
+
+  const NotesCharacterContext({
+    required this.characterName,
+    required this.accentColor,
+    this.projectTitle,
+  });
+}
+
 abstract class _NotesSubPageActions {
   Future<void> createNoteFromFab();
   Future<void> createFolderFromFab();

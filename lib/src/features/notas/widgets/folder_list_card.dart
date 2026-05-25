@@ -254,7 +254,7 @@ class _FolderListCardState extends State<FolderListCard> {
                             if (!widget.selectionMode && widget.showActions)
                               NotesActionIconButton(
                                 icon: Icons.delete_outline_rounded,
-                                tooltip: widget.folder.isProjectRoot
+                                tooltip: widget.folder.isProtectedRoot
                                     ? 'Apagar conteúdo da pasta'
                                     : 'Excluir pasta',
                                 onTap: widget.onDelete,

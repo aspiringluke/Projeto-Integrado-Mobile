@@ -87,11 +87,13 @@ class NoteController extends ChangeNotifier {
 
     _setError(null);
     final metadata = await _resolveDraftMetadata(folderId ?? _currentFolderId);
-    final targetFolderId = await _resolveTargetFolderId(
-      metadata.linkTarget.projectTitle,
-      fallbackFolderId: folderId ?? _currentFolderId,
-      fallbackColor: color,
-    );
+    final targetFolderId = metadata.linkTarget.characterName != null
+        ? folderId ?? _currentFolderId
+        : await _resolveTargetFolderId(
+            metadata.linkTarget.projectTitle,
+            fallbackFolderId: folderId ?? _currentFolderId,
+            fallbackColor: color,
+          );
 
     final result = await repository.createNewNote(
       title.trim(),
@@ -115,11 +117,13 @@ class NoteController extends ChangeNotifier {
   }) async {
     _setError(null);
     final metadata = await _resolveDraftMetadata(folderId ?? _currentFolderId);
-    final targetFolderId = await _resolveTargetFolderId(
-      metadata.linkTarget.projectTitle,
-      fallbackFolderId: folderId ?? _currentFolderId,
-      fallbackColor: color,
-    );
+    final targetFolderId = metadata.linkTarget.characterName != null
+        ? folderId ?? _currentFolderId
+        : await _resolveTargetFolderId(
+            metadata.linkTarget.projectTitle,
+            fallbackFolderId: folderId ?? _currentFolderId,
+            fallbackColor: color,
+          );
     final result = await repository.createNewNoteWithId(
       'Sem título',
       '',
@@ -238,17 +242,72 @@ class NoteController extends ChangeNotifier {
   }
 
   Future<NoteMetadata> _resolveDraftMetadata(int? folderId) async {
-    final projectTitle = await _resolveProjectTitleFromFolder(folderId);
-    if (projectTitle == null || projectTitle.isEmpty) {
+    final linkTarget = await _resolveLinkTargetFromFolder(folderId);
+    if ((linkTarget.projectTitle == null || linkTarget.projectTitle!.isEmpty) &&
+        (linkTarget.characterName == null ||
+            linkTarget.characterName!.isEmpty)) {
       return NoteMetadata.empty();
     }
 
     return NoteMetadata(
       tagGroups: const <NoteTagGroup>[],
-      linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+      linkTarget: linkTarget,
     );
   }
 
+  Future<NoteLinkTarget> _resolveLinkTargetFromFolder(int? folderId) async {
+    if (folderId == null) return const NoteLinkTarget();
+
+    Folder? current;
+    int? currentId = folderId;
+    final knownProjectTitles = StoryRegistry.instance.projects
+        .map((project) => project.title.trim().toLowerCase())
+        .where((title) => title.isNotEmpty)
+        .toSet();
+
+    while (currentId != null) {
+      final result = await folderRepository.getFolder(currentId);
+      if (!result.$1 || result.$2 == null) {
+        return const NoteLinkTarget();
+      }
+
+      current = result.$2!;
+      final characterRootName = current.metadata.characterRootName?.trim();
+      if (characterRootName != null && characterRootName.isNotEmpty) {
+        return NoteLinkTarget(
+          projectTitle: current.metadata.linkTarget.projectTitle?.trim(),
+          characterName: characterRootName,
+        );
+      }
+
+      final currentTitle = current.title.trim();
+      final normalizedTitle = currentTitle.toLowerCase();
+      final projectRootTitle = current.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
+      final isKnownProjectRoot =
+          (projectRootTitle != null &&
+              projectRootTitle.isNotEmpty &&
+              knownProjectTitles.contains(projectRootTitle)) ||
+          (current.parentFolderId == null &&
+              knownProjectTitles.contains(normalizedTitle));
+      if (normalizedTitle.isNotEmpty &&
+          normalizedTitle != 'sem vÃ­nculo' &&
+          isKnownProjectRoot) {
+        return NoteLinkTarget(projectTitle: currentTitle);
+      }
+      currentId = current.parentFolderId;
+    }
+
+    final rootTitle = current?.title.trim() ?? '';
+    if (rootTitle.isEmpty || rootTitle.toLowerCase() == 'sem vÃ­nculo') {
+      return const NoteLinkTarget();
+    }
+
+    return NoteLinkTarget(projectTitle: rootTitle);
+  }
+
+  // ignore: unused_element
   Future<String?> _resolveProjectTitleFromFolder(int? folderId) async {
     if (folderId == null) return null;
 

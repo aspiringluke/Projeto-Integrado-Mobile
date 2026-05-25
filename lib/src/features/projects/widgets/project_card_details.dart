@@ -480,6 +480,7 @@ class _ProjectDetails extends StatelessWidget {
         builder: (_) => CharacterNotebookPage(
           data: character.data,
           availableCharacters: displayedCharacters,
+          projectTitle: character.projectTitle ?? projectTitle,
           onChanged: (updatedData) async {
             character.data = updatedData;
             character.lastModified = DateTime.now();

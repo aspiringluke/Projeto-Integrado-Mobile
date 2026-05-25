@@ -74,12 +74,14 @@ class NoteMetadata {
   final List<NoteTagGroup> tagGroups;
   final NoteLinkTarget linkTarget;
   final String? projectRootTitle;
+  final String? characterRootName;
   final bool pinned;
 
   const NoteMetadata({
     required this.tagGroups,
     required this.linkTarget,
     this.projectRootTitle,
+    this.characterRootName,
     this.pinned = false,
   });
 
@@ -97,6 +99,8 @@ class NoteMetadata {
     'linkTarget': linkTarget.toJson(),
     if (projectRootTitle != null && projectRootTitle!.trim().isNotEmpty)
       'projectRootTitle': projectRootTitle,
+    if (characterRootName != null && characterRootName!.trim().isNotEmpty)
+      'characterRootName': characterRootName,
     if (pinned) 'pinned': true,
   };
 
@@ -135,16 +139,23 @@ class NoteMetadata {
       final projectRootTitle = rawProjectRootTitle is String
           ? rawProjectRootTitle.trim()
           : null;
+      final rawCharacterRootName = map['characterRootName'];
+      final characterRootName = rawCharacterRootName is String
+          ? rawCharacterRootName.trim()
+          : null;
 
       final pinned = map['pinned'] == true;
 
       return NoteMetadata(
         tagGroups: tagGroups,
         linkTarget: linkTarget,
-        projectRootTitle:
-            projectRootTitle == null || projectRootTitle.isEmpty
+        projectRootTitle: projectRootTitle == null || projectRootTitle.isEmpty
             ? null
             : projectRootTitle,
+        characterRootName:
+            characterRootName == null || characterRootName.isEmpty
+            ? null
+            : characterRootName,
         pinned: pinned,
       );
     } catch (_) {
@@ -156,15 +167,19 @@ class NoteMetadata {
     List<NoteTagGroup>? tagGroups,
     NoteLinkTarget? linkTarget,
     String? projectRootTitle,
+    String? characterRootName,
     bool? pinned,
   }) {
     return NoteMetadata(
       tagGroups: tagGroups ?? this.tagGroups,
       linkTarget: linkTarget ?? this.linkTarget,
       projectRootTitle: projectRootTitle ?? this.projectRootTitle,
+      characterRootName: characterRootName ?? this.characterRootName,
       pinned: pinned ?? this.pinned,
     );
   }
 
   bool get isProjectRoot => projectRootTitle?.trim().isNotEmpty == true;
+  bool get isCharacterRoot => characterRootName?.trim().isNotEmpty == true;
+  bool get isProtectedRoot => isProjectRoot || isCharacterRoot;
 }
