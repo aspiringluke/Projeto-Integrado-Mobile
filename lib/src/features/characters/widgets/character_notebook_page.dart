@@ -110,6 +110,8 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   String _selectedRelevanceTag = '';
   String? _selectedPsychTraitId;
   String? _selectedPsychFacetId;
+  final Set<_PsychWorkbenchSection> _expandedPsychSections =
+      <_PsychWorkbenchSection>{..._PsychWorkbenchSection.values};
   late _CharacterHistoryDraft _historyDraft;
   String _historySearchQuery = '';
   final Set<String> _historyEmotionFilterIds = <String>{};
@@ -1000,6 +1002,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             selectedNodeId: _selectedPsychTraitId,
             selectedNodeScale: 1.12,
             onNodeSelected: _selectPsychTrait,
+            showHeader: false,
           ),
           const SizedBox(height: 8),
           Container(
@@ -1058,6 +1061,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         selectedFacetId: selectedFacet.id,
         onFacetSelected: _selectPsychFacet,
         onFacetChanged: _setPsychFacetValue,
+        showHeader: false,
       );
     }
 
@@ -1085,31 +1089,44 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
             final charts = Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                buildBigFiveChart(),
-                const SizedBox(height: 10),
-                buildFacetChart(),
-                const SizedBox(height: 10),
-                _PsychPreferenceMatrixCard(
+                _PsychCollapsibleWorkbenchSection(
                   accentColor: _draft.accent,
-                  avatarColor: _draft.avatarColor,
-                  items: _preferenceItems,
-                  onUpsertItem: _upsertPreferenceItemWithRebuild,
-                  onDeleteItem: _deletePreferenceItem,
+                  icon: Icons.radar_rounded,
+                  title: 'Big Five',
+                  subtitle: '${selectedTrait.label}: facetas e radar',
+                  expanded: _expandedPsychSections.contains(
+                    _PsychWorkbenchSection.bigFive,
+                  ),
+                  onTap: () =>
+                      _togglePsychSection(_PsychWorkbenchSection.bigFive),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      buildBigFiveChart(),
+                      const SizedBox(height: 10),
+                      buildFacetChart(),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 10),
-                _CharacterRelationshipDiagramCard(
+                _PsychCollapsibleWorkbenchSection(
                   accentColor: _draft.accent,
-                  avatarColor: _draft.avatarColor,
-                  characterName: _draft.name.trim().isEmpty
-                      ? 'Personagem'
-                      : _draft.name.trim(),
-                  characters: _availableRelationshipCharacters,
-                  typeFor: _relationshipType,
-                  intensityFor: _relationshipIntensity,
-                  notesFor: _relationshipNotes,
-                  onTypeChanged: _setRelationshipType,
-                  onIntensityChanged: _setRelationshipIntensity,
-                  onNotesChanged: _setRelationshipNotes,
+                  icon: Icons.favorite_border_rounded,
+                  title: 'Gostos e aversões',
+                  subtitle: 'Preferências, filtros e organização',
+                  expanded: _expandedPsychSections.contains(
+                    _PsychWorkbenchSection.preferences,
+                  ),
+                  onTap: () =>
+                      _togglePsychSection(_PsychWorkbenchSection.preferences),
+                  child: _PsychPreferenceMatrixCard(
+                    accentColor: _draft.accent,
+                    avatarColor: _draft.avatarColor,
+                    items: _preferenceItems,
+                    onUpsertItem: _upsertPreferenceItemWithRebuild,
+                    onDeleteItem: _deletePreferenceItem,
+                    showHeader: false,
+                  ),
                 ),
               ],
             );
@@ -1222,6 +1239,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     return '$traitId::$facetId';
   }
 
+  void _togglePsychSection(_PsychWorkbenchSection section) {
+    setState(() {
+      if (!_expandedPsychSections.remove(section)) {
+        _expandedPsychSections.add(section);
+      }
+    });
+  }
+
   List<_PreferenceMatrixItem> get _preferenceItems {
     final raw = _draft.notebookComplexityValues[_preferenceItemsStorageKey];
     if (raw == null || raw.trim().isEmpty) {
@@ -1320,16 +1345,41 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
   String get _preferenceItemsStorageKey => 'preferences::items';
 
+  // ignore: unused_element
   List<CharacterListItem> get _availableRelationshipCharacters {
     final currentName = _draft.name.trim().toLowerCase();
-    return widget.availableCharacters
-        .where((character) {
-          final targetName = character.data.name.trim().toLowerCase();
-          return targetName.isNotEmpty && targetName != currentName;
-        })
+    final characters = widget.availableCharacters.toList(growable: true);
+    final hasCurrent = characters.any(
+      (character) =>
+          currentName.isNotEmpty &&
+          character.data.name.trim().toLowerCase() == currentName,
+    );
+
+    if (!hasCurrent) {
+      final now = DateTime.now();
+      final syntheticData = _draft.name.trim().isEmpty
+          ? _draft.copyWith(name: 'Personagem')
+          : _draft;
+      characters.insert(
+        0,
+        CharacterListItem(
+          projectId: -1,
+          projectTitle: _resolvedProjectTitle,
+          data: syntheticData,
+          unpinnedIndex: 0,
+          createdAt: now,
+          lastModified: now,
+          lastAccessed: now,
+        ),
+      );
+    }
+
+    return characters
+        .where((character) => character.data.name.trim().isNotEmpty)
         .toList(growable: false);
   }
 
+  // ignore: unused_element
   String _relationshipType(CharacterListItem character) {
     return _draft.notebookComplexityValues[_relationshipStorageKey(
           character,
@@ -1338,6 +1388,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         'neutra';
   }
 
+  // ignore: unused_element
   double _relationshipIntensity(CharacterListItem character) {
     final storedValue =
         _draft.notebookComplexityValues[_relationshipStorageKey(
@@ -1349,6 +1400,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         .toDouble();
   }
 
+  // ignore: unused_element
   String _relationshipNotes(CharacterListItem character) {
     return _draft.notebookComplexityValues[_relationshipStorageKey(
           character,
@@ -1357,6 +1409,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         '';
   }
 
+  // ignore: unused_element
   void _setRelationshipType(CharacterListItem character, String typeId) {
     _setNotebookValue(
       _relationshipStorageKey(character, 'type'),
@@ -1365,6 +1418,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     );
   }
 
+  // ignore: unused_element
   void _setRelationshipIntensity(
     CharacterListItem character,
     double intensity,
@@ -1376,6 +1430,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     );
   }
 
+  // ignore: unused_element
   void _setRelationshipNotes(CharacterListItem character, String notes) {
     _setNotebookValue(
       _relationshipStorageKey(character, 'notes'),

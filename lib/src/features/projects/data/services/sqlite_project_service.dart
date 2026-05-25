@@ -259,7 +259,7 @@ class SqliteProjectService implements IProjectService {
         );
       }
       conn.execute('COMMIT');
-      return (true, 'OrdenaÃ§Ã£o dos projetos atualizada');
+      return (true, 'Ordenação dos projetos atualizada');
     } catch (error) {
       try {
         conn.execute('ROLLBACK');

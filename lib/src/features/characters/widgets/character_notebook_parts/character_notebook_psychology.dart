@@ -1,5 +1,7 @@
 part of '../character_notebook_page.dart';
 
+enum _PsychWorkbenchSection { bigFive, preferences }
+
 class _PsychRadarNodeDefinition {
   final String id;
   final String label;
@@ -14,6 +16,105 @@ class _PsychRadarNodeDefinition {
     required this.description,
     required this.color,
   });
+}
+
+class _PsychCollapsibleWorkbenchSection extends StatelessWidget {
+  final Color accentColor;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool expanded;
+  final VoidCallback onTap;
+  final Widget child;
+
+  const _PsychCollapsibleWorkbenchSection({
+    required this.accentColor,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.expanded,
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: expanded ? 0.18 : 0.44),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 16, color: accentColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF2B262C),
+                                fontSize: 12.8,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.48),
+                                fontSize: 10.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AnimatedRotation(
+                        duration: const Duration(milliseconds: 160),
+                        turns: expanded ? 0.5 : 0,
+                        child: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 20,
+                          color: Color(0xFF625862),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              child: expanded
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                      child: child,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 const List<_PsychTraitDefinition> _psychBigFiveTraits = <_PsychTraitDefinition>[
@@ -258,6 +359,7 @@ class _PsychRadarCard extends StatelessWidget {
   final String? selectedNodeId;
   final double selectedNodeScale;
   final ValueChanged<String> onNodeSelected;
+  final bool showHeader;
 
   const _PsychRadarCard({
     required this.accentColor,
@@ -269,6 +371,7 @@ class _PsychRadarCard extends StatelessWidget {
     required this.selectedNodeId,
     required this.selectedNodeScale,
     required this.onNodeSelected,
+    this.showHeader = true,
   });
 
   @override
@@ -293,48 +396,50 @@ class _PsychRadarCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.radar_rounded,
-                size: 17,
-                color: _darkenCharacterDialogColor(accentColor, 0.16),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF2B262C),
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+          if (showHeader) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.radar_rounded,
+                  size: 17,
+                  color: _darkenCharacterDialogColor(accentColor, 0.16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
+                        title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.52),
-                          fontSize: 10.5,
-                          height: 1.25,
+                        style: const TextStyle(
+                          color: Color(0xFF2B262C),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.black.withValues(alpha: 0.52),
+                            fontSize: 10.5,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           LayoutBuilder(
             builder: (context, constraints) {
               final chartSide = constraints.maxWidth.isFinite
@@ -404,6 +509,7 @@ class _PsychFacetBarCard extends StatelessWidget {
   final ValueChanged<String> onFacetSelected;
   final void Function(String traitId, String facetId, double value)
   onFacetChanged;
+  final bool showHeader;
 
   const _PsychFacetBarCard({
     required this.accentColor,
@@ -412,6 +518,7 @@ class _PsychFacetBarCard extends StatelessWidget {
     required this.selectedFacetId,
     required this.onFacetSelected,
     required this.onFacetChanged,
+    this.showHeader = true,
   });
 
   @override
@@ -443,40 +550,42 @@ class _PsychFacetBarCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+          if (showHeader) ...[
+            Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.stacked_bar_chart_rounded,
+                    size: 14,
+                    color: _darkenCharacterDialogColor(accentColor, 0.18),
+                  ),
                 ),
-                child: Icon(
-                  Icons.stacked_bar_chart_rounded,
-                  size: 14,
-                  color: _darkenCharacterDialogColor(accentColor, 0.18),
-                ),
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trait.label,
-                      style: const TextStyle(
-                        color: Color(0xFF2B262C),
-                        fontSize: 13.2,
-                        fontWeight: FontWeight.w800,
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        trait.label,
+                        style: const TextStyle(
+                          color: Color(0xFF2B262C),
+                          fontSize: 13.2,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
+              ],
+            ),
+            const SizedBox(height: 6),
+          ],
           Text(
             trait.description,
             style: TextStyle(
@@ -1794,6 +1903,7 @@ class _PsychPreferenceMatrixCard extends StatelessWidget {
   final List<_PreferenceMatrixItem> items;
   final void Function(_PreferenceMatrixItem item, {bool rebuild}) onUpsertItem;
   final ValueChanged<String> onDeleteItem;
+  final bool showHeader;
 
   const _PsychPreferenceMatrixCard({
     required this.accentColor,
@@ -1801,6 +1911,7 @@ class _PsychPreferenceMatrixCard extends StatelessWidget {
     required this.items,
     required this.onUpsertItem,
     required this.onDeleteItem,
+    this.showHeader = true,
   });
 
   @override
@@ -1822,15 +1933,17 @@ class _PsychPreferenceMatrixCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _PsychSectionTitle(
-            accentColor: accentColor,
-            icon: Icons.favorite_border_rounded,
-            title: 'Gostos e aversões',
-            subtitle:
-                'Nomeie um conceito, organize-o por predileção e categoria e atribua à ele um comentário diegético.',
-            subtitleMaxLines: 3,
-          ),
-          const SizedBox(height: 10),
+          if (showHeader) ...[
+            _PsychSectionTitle(
+              accentColor: accentColor,
+              icon: Icons.favorite_border_rounded,
+              title: 'Gostos e aversões',
+              subtitle:
+                  'Nomeie um conceito, organize-o por predileção e categoria e atribua à ele um comentário diegético.',
+              subtitleMaxLines: 3,
+            ),
+            const SizedBox(height: 10),
+          ],
           _PreferenceMatrixComposer(
             accentColor: accentColor,
             onAddItem: onUpsertItem,
@@ -1861,6 +1974,66 @@ class _PreferenceMatrixComposer extends StatefulWidget {
   @override
   State<_PreferenceMatrixComposer> createState() =>
       _PreferenceMatrixComposerState();
+}
+
+class _PreferenceItemNameTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final TextStyle style;
+  final String hintText;
+  final TextStyle hintStyle;
+  final Color fillColor;
+  final InputBorder border;
+  final InputBorder focusedBorder;
+
+  const _PreferenceItemNameTextField({
+    required this.controller,
+    required this.style,
+    required this.hintText,
+    required this.border,
+    required this.focusedBorder,
+    required this.fillColor,
+    this.onChanged,
+    this.onSubmitted,
+    this.hintStyle = const TextStyle(
+      color: Color(0xFF8F8990),
+      fontSize: 11,
+      fontStyle: FontStyle.italic,
+    ),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, child) {
+        return TextField(
+          controller: controller,
+          minLines: 1,
+          maxLines: null,
+          onChanged: onChanged,
+          onSubmitted: onSubmitted,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.done,
+          style: style,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: hintStyle,
+            isDense: true,
+            filled: fillColor != Colors.transparent,
+            fillColor: fillColor,
+            contentPadding: fillColor == Colors.transparent
+                ? EdgeInsets.zero
+                : const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            border: border,
+            enabledBorder: border,
+            focusedBorder: focusedBorder,
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _PreferenceMatrixComposerState extends State<_PreferenceMatrixComposer> {
@@ -1930,10 +2103,8 @@ class _PreferenceMatrixComposerState extends State<_PreferenceMatrixComposer> {
           ),
           child: Column(
             children: [
-              TextField(
+              _PreferenceItemNameTextField(
                 controller: _controller,
-                minLines: 1,
-                maxLines: 1,
                 onSubmitted: (_) => _addItem(),
                 style: const TextStyle(
                   color: Color(0xFF514752),
@@ -1941,29 +2112,17 @@ class _PreferenceMatrixComposerState extends State<_PreferenceMatrixComposer> {
                   height: 1.25,
                   fontWeight: FontWeight.w700,
                 ),
-                decoration: InputDecoration(
-                  hintText:
-                      'Nome do item. Qualquer conceito serve. "Arroz" para gastronomia ou "Pessoas que andam devagar" para comportamento, por exemplo...',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF8F8990),
-                    fontSize: 11,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  isDense: true,
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.68),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 13,
-                  ),
-                  border: inputBorder,
-                  enabledBorder: inputBorder,
-                  focusedBorder: inputBorder.copyWith(
-                    borderSide: BorderSide(
-                      color: widget.accentColor,
-                      width: 1.1,
-                    ),
-                  ),
+                hintText:
+                    'Nome do item. Qualquer conceito serve. "Arroz" para gastronomia ou "Pessoas que andam devagar" para comportamento, por exemplo...',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF8F8990),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+                fillColor: Colors.white.withValues(alpha: 0.68),
+                border: inputBorder,
+                focusedBorder: inputBorder.copyWith(
+                  borderSide: BorderSide(color: widget.accentColor, width: 1.1),
                 ),
               ),
               const SizedBox(height: 8),
@@ -3761,32 +3920,21 @@ Future<void> _showPreferenceItemEditorDialog({
                               ],
                             ),
                             const SizedBox(height: 8),
-                            TextField(
+                            _PreferenceItemNameTextField(
                               controller: titleController,
-                              minLines: 1,
-                              maxLines: 1,
                               onSubmitted: (_) => save(),
                               style: const TextStyle(
                                 color: Color(0xFF514752),
                                 fontSize: 12.2,
                                 fontWeight: FontWeight.w800,
                               ),
-                              decoration: InputDecoration(
-                                hintText: 'Nome do item',
-                                isDense: true,
-                                filled: true,
-                                fillColor: Colors.white.withValues(alpha: 0.62),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
-                                ),
-                                border: inputBorder,
-                                enabledBorder: inputBorder,
-                                focusedBorder: inputBorder.copyWith(
-                                  borderSide: BorderSide(
-                                    color: accentColor,
-                                    width: 1.1,
-                                  ),
+                              hintText: 'Nome do item',
+                              fillColor: Colors.white.withValues(alpha: 0.62),
+                              border: inputBorder,
+                              focusedBorder: inputBorder.copyWith(
+                                borderSide: BorderSide(
+                                  color: accentColor,
+                                  width: 1.1,
                                 ),
                               ),
                             ),
@@ -4337,7 +4485,7 @@ class _PreferenceItemEditorCardState extends State<_PreferenceItemEditorCard> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextField(
+                child: _PreferenceItemNameTextField(
                   controller: _titleController,
                   onChanged: (_) => _emit(),
                   style: const TextStyle(
@@ -4345,11 +4493,10 @@ class _PreferenceItemEditorCardState extends State<_PreferenceItemEditorCard> {
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    hintText: 'Item',
-                  ),
+                  hintText: 'Item',
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  fillColor: Colors.transparent,
                 ),
               ),
               IconButton(
@@ -4753,6 +4900,7 @@ const List<_RelationshipTypeDefinition> _relationshipTypes =
       ),
     ];
 
+// ignore: unused_element
 class _CharacterRelationshipDiagramCard extends StatelessWidget {
   final Color accentColor;
   final Color avatarColor;
@@ -4809,7 +4957,7 @@ class _CharacterRelationshipDiagramCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
-                'Crie mais personagens neste projeto para montar o diagrama.',
+                'Nomeie este personagem para montar o diagrama.',
                 style: TextStyle(
                   color: Colors.black.withValues(alpha: 0.52),
                   fontSize: 11.5,

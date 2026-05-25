@@ -114,6 +114,10 @@ class _ProjectPageState extends State<ProjectPage> {
   late ProjectRecord _projectDraft;
   late CharacterDisplayMode _characterDisplayMode;
   late int _avatarGridColumns;
+  late final TextEditingController _characterSearchController;
+  String _characterSearchQuery = '';
+  ContentFilterState _characterFilter = const ContentFilterState();
+  ContentSortState _characterSort = const ContentSortState();
   bool _isLoadingCharacters = false;
   String? _characterErrorMessage;
   int _characterLoadRequestToken = 0;
@@ -147,6 +151,7 @@ class _ProjectPageState extends State<ProjectPage> {
       lastAccessed: widget.lastAccessed ?? now,
     );
     _projectTitleNotifier = ValueNotifier<String>(_projectDraft.title);
+    _characterSearchController = TextEditingController();
     _lastPersistedProjectTitle = _projectDraft.title;
     _characterDisplayMode = _characterDisplayModeFromStorage(
       widget.initialCharacterDisplayMode,
@@ -161,6 +166,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
   @override
   void dispose() {
+    _characterSearchController.dispose();
     _projectTitleNotifier.dispose();
     super.dispose();
   }
@@ -758,12 +764,16 @@ class _ProjectPageState extends State<ProjectPage> {
       );
     }
 
+    final visibleCharacters = _visibleCharacters(_characters);
     return CharactersSection(
-      characters: _characters,
+      characters: visibleCharacters,
       showAvatarGrid: _characterDisplayMode == CharacterDisplayMode.avatars,
       avatarGridColumns: _avatarGridColumns,
       onToggleDisplayMode: _toggleCharacterDisplayMode,
       onChangeAvatarGridColumns: _setAvatarGridColumns,
+      emptyMessage: _characters.isEmpty
+          ? 'Nenhum personagem criado. Clique no "+" para criar um!'
+          : 'Nenhum personagem encontrado com os filtros atuais.',
       onTogglePinned: _togglePinnedCharacter,
       onCharacterEdited: (character, updatedData) =>
           unawaited(_updateCharacter(character, updatedData)),
@@ -772,6 +782,98 @@ class _ProjectPageState extends State<ProjectPage> {
       onCharactersDeleted: (characters) =>
           unawaited(_deleteCharacters(characters)),
     );
+  }
+
+  List<CharacterListItem> _visibleCharacters(
+    Iterable<CharacterListItem> characters,
+  ) {
+    final query = _characterSearchQuery.trim().toLowerCase();
+    final filtered = characters
+        .where((character) {
+          final tagMatches = _characterFilter.matchesTags(
+            _characterTagLabels(character),
+          );
+          if (!tagMatches) return false;
+          if (query.isEmpty) {
+            return true;
+          }
+          final data = character.data;
+          final haystack = <String>[
+            data.name,
+            data.alias,
+            data.synopsis,
+            data.motto,
+            data.genderTag,
+            data.sexualityTag,
+            data.ethnicityTag,
+            data.functionTag,
+            data.relevanceTag,
+          ].join(' ').toLowerCase();
+          return haystack.contains(query);
+        })
+        .toList(growable: false);
+
+    return filtered..sort((left, right) {
+      if (left.isPinned != right.isPinned) {
+        return left.isPinned ? -1 : 1;
+      }
+
+      final comparison = switch (_characterSort.mode) {
+        ContentSortMode.lastAccessed => right.lastAccessed.compareTo(
+          left.lastAccessed,
+        ),
+        ContentSortMode.lastModified => right.lastModified.compareTo(
+          left.lastModified,
+        ),
+        ContentSortMode.createdAt => right.createdAt.compareTo(left.createdAt),
+        ContentSortMode.title => left.data.name.toLowerCase().compareTo(
+          right.data.name.toLowerCase(),
+        ),
+        ContentSortMode.synopsisLength =>
+          right.data.synopsis.trim().length.compareTo(
+            left.data.synopsis.trim().length,
+          ),
+        ContentSortMode.characterCount => 0,
+      };
+      return _characterSort.reversed ? -comparison : comparison;
+    });
+  }
+
+  List<String> _characterTagLabels(CharacterListItem character) {
+    final data = character.data;
+    return [
+      data.genderTag,
+      data.sexualityTag,
+      data.ethnicityTag,
+      data.functionTag,
+      data.relevanceTag,
+    ].where((tag) => tag.trim().isNotEmpty).toList(growable: false);
+  }
+
+  void _onCharacterSearchChanged(String value) {
+    setState(() {
+      _characterSearchQuery = value;
+    });
+  }
+
+  Future<void> _openCharacterFilterMenu() async {
+    final result = await showContentFilterMenu(
+      context: context,
+      initial: _characterFilter,
+      availableTags: _characters.expand(_characterTagLabels),
+    );
+    if (!mounted || result == null) return;
+    setState(() => _characterFilter = result);
+  }
+
+  Future<void> _openCharacterSortMenu() async {
+    final result = await showContentSortMenu(
+      context: context,
+      initial: _characterSort,
+      includeCharacterCount: false,
+    );
+    if (!mounted || result == null) return;
+    setState(() => _characterSort = result);
   }
 
   Widget _buildSectionBody() {
@@ -1061,7 +1163,35 @@ class _ProjectPageState extends State<ProjectPage> {
                     );
                   },
                 ),
-                const FuncoesBusca(),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: _activeSection == ProjectSectionId.characters
+                      ? FuncoesBusca(
+                          key: const ValueKey('project-character-search'),
+                          controller: _characterSearchController,
+                          onChanged: _onCharacterSearchChanged,
+                          onFilterTap: () =>
+                              unawaited(_openCharacterFilterMenu()),
+                          onSortTap: () => unawaited(_openCharacterSortMenu()),
+                          filterActive: _characterFilter.isActive,
+                          sortActive: _characterSort.isActive,
+                          hintText: 'Pesquisar personagens',
+                        )
+                      : Container(
+                          key: ValueKey('project-search-collapsed'),
+                          height: 1,
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Color(0xD6FFFFFF),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
                 Expanded(child: _buildSectionBody()),
               ],
             ),

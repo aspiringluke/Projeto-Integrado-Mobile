@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/view_options_bar.dart';
+import '../../../shared/widgets/funcoes_busca.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/multi_select_action_bar.dart';
 import '../../../shared/widgets/pin_badge.dart';
@@ -19,9 +20,18 @@ enum _ProjectDisplayMode { list, grid }
 
 class ProjectListPage extends StatefulWidget {
   final ProjectListController controller;
+  final String searchQuery;
+  final ContentFilterState filterState;
+  final ContentSortState sortState;
   static const double _floatingActionButtonClearance = 112;
 
-  const ProjectListPage({super.key, required this.controller});
+  const ProjectListPage({
+    super.key,
+    required this.controller,
+    this.searchQuery = '',
+    this.filterState = const ContentFilterState(),
+    this.sortState = const ContentSortState(),
+  });
 
   @override
   State<ProjectListPage> createState() => _ProjectListPageState();
@@ -98,6 +108,54 @@ class _ProjectListPageState extends State<ProjectListPage> {
   bool _isProjectSelected(ProjectListItem project) {
     final projectId = project.id;
     return projectId != null && _selectedProjectIds.contains(projectId);
+  }
+
+  List<ProjectListItem> _visibleProjects(Iterable<ProjectListItem> projects) {
+    final query = widget.searchQuery.trim().toLowerCase();
+    final filtered = projects
+        .where((project) {
+          if (query.isEmpty) {
+            return widget.filterState.matchesTags(
+              project.tags.map((tag) => tag.label),
+            );
+          }
+          final haystack = <String>[
+            project.title,
+            project.synopsis,
+            ...project.tags.map((tag) => tag.label),
+          ].join(' ').toLowerCase();
+          return haystack.contains(query) &&
+              widget.filterState.matchesTags(
+                project.tags.map((tag) => tag.label),
+              );
+        })
+        .toList(growable: false);
+
+    return filtered.toList(growable: false)..sort((left, right) {
+      if (left.isPinned != right.isPinned) {
+        return left.isPinned ? -1 : 1;
+      }
+
+      final comparison = switch (widget.sortState.mode) {
+        ContentSortMode.lastAccessed => right.lastAccessed.compareTo(
+          left.lastAccessed,
+        ),
+        ContentSortMode.lastModified => right.lastModified.compareTo(
+          left.lastModified,
+        ),
+        ContentSortMode.createdAt => right.createdAt.compareTo(left.createdAt),
+        ContentSortMode.title => left.title.toLowerCase().compareTo(
+          right.title.toLowerCase(),
+        ),
+        ContentSortMode.synopsisLength =>
+          right.synopsis.trim().length.compareTo(left.synopsis.trim().length),
+        ContentSortMode.characterCount =>
+          widget.controller
+              .characterCountForProject(right)
+              .compareTo(widget.controller.characterCountForProject(left)),
+      };
+      return widget.sortState.reversed ? -comparison : comparison;
+    });
   }
 
   Future<void> _openProject(ProjectListItem project) async {
@@ -248,12 +306,17 @@ class _ProjectListPageState extends State<ProjectListPage> {
           );
         }
 
-        final projects = controller.projects;
+        final projects = _visibleProjects(controller.projects);
         final availableTags = controller.availableTags;
+        final hasActiveListTransform =
+            widget.searchQuery.trim().isNotEmpty ||
+            widget.filterState.isActive ||
+            widget.sortState.isActive;
         final canReorder =
             isMobileReorderEnabled &&
             _displayMode == _ProjectDisplayMode.list &&
-            !_isSelectionMode;
+            !_isSelectionMode &&
+            !hasActiveListTransform;
 
         Widget buildProjectCard(BuildContext context, int index) {
           final project = projects[index];
@@ -402,6 +465,23 @@ class _ProjectListPageState extends State<ProjectListPage> {
               );
             },
             itemBuilder: buildProjectCard,
+          );
+        }
+
+        if (projects.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'Nenhum projeto encontrado com os filtros atuais.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF544959),
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
           );
         }
 

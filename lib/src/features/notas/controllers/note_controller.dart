@@ -292,7 +292,7 @@ class NoteController extends ChangeNotifier {
           (current.parentFolderId == null &&
               knownProjectTitles.contains(normalizedTitle));
       if (normalizedTitle.isNotEmpty &&
-          normalizedTitle != 'sem vÃ­nculo' &&
+          normalizedTitle != 'sem vínculo' &&
           isKnownProjectRoot) {
         return NoteLinkTarget(projectTitle: currentTitle);
       }
@@ -300,7 +300,7 @@ class NoteController extends ChangeNotifier {
     }
 
     final rootTitle = current?.title.trim() ?? '';
-    if (rootTitle.isEmpty || rootTitle.toLowerCase() == 'sem vÃ­nculo') {
+    if (rootTitle.isEmpty || rootTitle.toLowerCase() == 'sem vínculo') {
       return const NoteLinkTarget();
     }
 

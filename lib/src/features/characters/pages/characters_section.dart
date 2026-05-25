@@ -24,6 +24,7 @@ class CharactersSection extends StatefulWidget {
   final int avatarGridColumns;
   final VoidCallback onToggleDisplayMode;
   final ValueChanged<int> onChangeAvatarGridColumns;
+  final String emptyMessage;
 
   const CharactersSection({
     super.key,
@@ -37,6 +38,8 @@ class CharactersSection extends StatefulWidget {
     required this.avatarGridColumns,
     required this.onToggleDisplayMode,
     required this.onChangeAvatarGridColumns,
+    this.emptyMessage =
+        'Nenhum personagem criado. Clique no "+" para criar um!',
   });
 
   @override
@@ -145,13 +148,13 @@ class _CharactersSectionState extends State<CharactersSection> {
   @override
   Widget build(BuildContext context) {
     if (widget.characters.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(32, 20, 32, 160),
+          padding: const EdgeInsets.fromLTRB(32, 20, 32, 160),
           child: Text(
-            'Nenhum personagem criado. Clique no "+" para criar um!',
+            widget.emptyMessage,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: Color(0xFF544959),
               fontSize: 16,
               fontStyle: FontStyle.italic,

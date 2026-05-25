@@ -226,10 +226,17 @@ class FolderRepository {
       return existing;
     }
 
+    // Find project folder if projectTitle is provided
+    int? projectFolderId;
+    if (projectTitle != null && projectTitle.trim().isNotEmpty) {
+      final projectFolder = await findRootFolderByTitle(projectTitle);
+      projectFolderId = projectFolder?.id;
+    }
+
     final created = await createNewFolder(
       normalizedName,
       color,
-      null,
+      projectFolderId,
       NoteMetadata(
         tagGroups: const <NoteTagGroup>[],
         linkTarget: NoteLinkTarget(

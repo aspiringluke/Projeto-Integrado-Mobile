@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../features/diagrams/pages/diagrams_sub_page.dart';
 import '../../features/notas/pages/notes_sub_page.dart';
+import '../../shared/widgets/funcoes_busca.dart';
 import '../../shared/widgets/buttons/ideas_toggle_button.dart';
 
 enum IdeasView { notes, diagrams }
@@ -43,8 +44,17 @@ class IdeasContentController {
 
 class IdeasContent extends StatefulWidget {
   final IdeasContentController? controller;
+  final String searchQuery;
+  final ContentFilterState filterState;
+  final ContentSortState sortState;
 
-  const IdeasContent({super.key, this.controller});
+  const IdeasContent({
+    super.key,
+    this.controller,
+    this.searchQuery = '',
+    this.filterState = const ContentFilterState(),
+    this.sortState = const ContentSortState(),
+  });
 
   @override
   State<IdeasContent> createState() => IdeasContentState();
@@ -190,7 +200,12 @@ class IdeasContentState extends State<IdeasContent>
                 );
               },
               child: _activeView == IdeasView.notes
-                  ? NotesSubPage(controller: _notesSubPageController)
+                  ? NotesSubPage(
+                      controller: _notesSubPageController,
+                      searchQuery: widget.searchQuery,
+                      filterState: widget.filterState,
+                      sortState: widget.sortState,
+                    )
                   : const DiagramsSubPage(key: ValueKey(IdeasView.diagrams)),
             ),
           ),

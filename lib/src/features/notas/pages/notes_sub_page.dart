@@ -19,6 +19,7 @@ import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_card_w
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/buttons/glass_circle_button.dart';
+import 'package:projeto_integrado_mobile/src/shared/widgets/funcoes_busca.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/multi_select_action_bar.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/pin_badge.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/view_options_bar.dart';
@@ -29,8 +30,18 @@ part 'notes_sub_page_parts/notes_sub_page_breadcrumb.dart';
 class NotesSubPage extends StatefulWidget {
   final NotesSubPageController? controller;
   final NotesCharacterContext? characterContext;
+  final String searchQuery;
+  final ContentFilterState filterState;
+  final ContentSortState sortState;
 
-  const NotesSubPage({super.key, this.controller, this.characterContext});
+  const NotesSubPage({
+    super.key,
+    this.controller,
+    this.characterContext,
+    this.searchQuery = '',
+    this.filterState = const ContentFilterState(),
+    this.sortState = const ContentSortState(),
+  });
 
   @override
   State<NotesSubPage> createState() => NotesSubPageState();
@@ -49,6 +60,7 @@ class NotesSubPageState extends State<NotesSubPage>
   int? _activeFolderId;
   String? _activeFolderTitle;
   int? _activeFolderParentId;
+  int? _navigationRootFolderId;
   List<Folder> _activeFolderPath = const [];
   _NotesContentScope _contentScope = _NotesContentScope.all;
   _NotesDisplayMode _displayMode = _NotesDisplayMode.list;
@@ -82,6 +94,7 @@ class NotesSubPageState extends State<NotesSubPage>
     }
 
     setState(() {
+      _navigationRootFolderId = null;
       _activeFolderId = null;
       _activeFolderTitle = null;
       _activeFolderParentId = null;
@@ -123,10 +136,11 @@ class NotesSubPageState extends State<NotesSubPage>
     }
 
     setState(() {
+      _navigationRootFolderId = folderId;
       _activeFolderId = folderId;
       _activeFolderTitle = folder.title;
       _activeFolderParentId = folder.parentFolderId;
-      _activeFolderPath = folderPath;
+      _activeFolderPath = _trimPathToNavigationRoot(folderPath);
     });
 
     await _refreshVisibleStats();
@@ -374,6 +388,10 @@ class NotesSubPageState extends State<NotesSubPage>
 
   Future<void> _moveDraggedItemToParent(NotesDragPayload payload) async {
     if (_activeFolderId == null) return;
+    if (_navigationRootFolderId != null &&
+        _activeFolderId == _navigationRootFolderId) {
+      return;
+    }
 
     if (payload.type == NotesDragType.note) {
       await _moveNoteToFolder(
@@ -620,14 +638,24 @@ class NotesSubPageState extends State<NotesSubPage>
       _activeFolderId = folderId;
       _activeFolderTitle = folder.title;
       _activeFolderParentId = folder.parentFolderId;
-      _activeFolderPath = folderPath;
+      _activeFolderPath = _trimPathToNavigationRoot(folderPath);
     });
 
     await _refreshVisibleStats();
   }
 
   Future<void> _backToParent() async {
+    if (_navigationRootFolderId != null &&
+        _activeFolderId == _navigationRootFolderId) {
+      return;
+    }
+
     final parentId = _activeFolderParentId;
+    if (_navigationRootFolderId != null && parentId == null) {
+      await _openNavigationRoot();
+      return;
+    }
+
     final notesResult = await _noteController.loadNotes(folderId: parentId);
     final foldersResult = await _folderController.loadFolders(
       parentFolderId: parentId,
@@ -664,7 +692,7 @@ class NotesSubPageState extends State<NotesSubPage>
       _activeFolderId = parentId;
       _activeFolderTitle = parentTitle;
       _activeFolderParentId = grandParentId;
-      _activeFolderPath = parentTrail;
+      _activeFolderPath = _trimPathToNavigationRoot(parentTrail);
     });
 
     await _refreshVisibleStats();
@@ -862,14 +890,38 @@ class NotesSubPageState extends State<NotesSubPage>
     if (_contentScope == _NotesContentScope.notes) {
       return const <Folder>[];
     }
-    return folders;
+    final query = widget.searchQuery.trim().toLowerCase();
+    return folders
+        .where((folder) {
+          final tagMatches = widget.filterState.matchesTags(
+            _folderTagLabels(folder),
+          );
+          if (!tagMatches) return false;
+          if (query.isEmpty) {
+            return true;
+          }
+          return folder.title.toLowerCase().contains(query);
+        })
+        .toList(growable: false);
   }
 
   List<Note> _visibleNotes(List<Note> notes) {
     if (_contentScope == _NotesContentScope.folders) {
       return const <Note>[];
     }
-    return notes;
+    final query = widget.searchQuery.trim().toLowerCase();
+    return notes
+        .where((note) {
+          final tagMatches = widget.filterState.matchesTags(
+            _noteTagLabels(note),
+          );
+          if (!tagMatches) return false;
+          if (query.isEmpty) {
+            return true;
+          }
+          return '${note.title} ${note.text}'.toLowerCase().contains(query);
+        })
+        .toList(growable: false);
   }
 
   List<Folder> _sortFolders(Iterable<Folder> folders) {
@@ -880,7 +932,23 @@ class NotesSubPageState extends State<NotesSubPage>
       if (leftPinned != rightPinned) {
         return leftPinned ? -1 : 1;
       }
-      return right.lastAccessed.compareTo(left.lastAccessed);
+      final comparison = switch (widget.sortState.mode) {
+        ContentSortMode.lastAccessed => right.lastAccessed.compareTo(
+          left.lastAccessed,
+        ),
+        ContentSortMode.lastModified => right.lastModified.compareTo(
+          left.lastModified,
+        ),
+        ContentSortMode.createdAt => right.createdAt.compareTo(left.createdAt),
+        ContentSortMode.title => left.title.toLowerCase().compareTo(
+          right.title.toLowerCase(),
+        ),
+        ContentSortMode.synopsisLength => _folderSynopsisLength(
+          right,
+        ).compareTo(_folderSynopsisLength(left)),
+        ContentSortMode.characterCount => 0,
+      };
+      return widget.sortState.reversed ? -comparison : comparison;
     });
     return sorted;
   }
@@ -893,9 +961,54 @@ class NotesSubPageState extends State<NotesSubPage>
       if (leftPinned != rightPinned) {
         return leftPinned ? -1 : 1;
       }
-      return right.lastAccessed.compareTo(left.lastAccessed);
+      final comparison = switch (widget.sortState.mode) {
+        ContentSortMode.lastAccessed => right.lastAccessed.compareTo(
+          left.lastAccessed,
+        ),
+        ContentSortMode.lastModified => right.lastModified.compareTo(
+          left.lastModified,
+        ),
+        ContentSortMode.createdAt => right.createdAt.compareTo(left.createdAt),
+        ContentSortMode.title => left.title.toLowerCase().compareTo(
+          right.title.toLowerCase(),
+        ),
+        ContentSortMode.synopsisLength => right.text.trim().length.compareTo(
+          left.text.trim().length,
+        ),
+        ContentSortMode.characterCount => 0,
+      };
+      return widget.sortState.reversed ? -comparison : comparison;
     });
     return sorted;
+  }
+
+  List<String> _noteTagLabels(Note note) {
+    return [
+      for (final group in note.metadata.tagGroups)
+        for (final tag in group.tags) tag.label,
+      if (note.metadata.linkTarget.projectTitle?.trim().isNotEmpty == true)
+        note.metadata.linkTarget.projectTitle!.trim(),
+      if (note.metadata.linkTarget.characterName?.trim().isNotEmpty == true)
+        note.metadata.linkTarget.characterName!.trim(),
+    ];
+  }
+
+  List<String> _folderTagLabels(Folder folder) {
+    return [
+      for (final group in folder.metadata.tagGroups)
+        for (final tag in group.tags) tag.label,
+      if (folder.metadata.projectRootTitle?.trim().isNotEmpty == true)
+        folder.metadata.projectRootTitle!.trim(),
+      if (folder.metadata.characterRootName?.trim().isNotEmpty == true)
+        folder.metadata.characterRootName!.trim(),
+    ];
+  }
+
+  int _folderSynopsisLength(Folder folder) {
+    final folderId = folder.id;
+    if (folderId == null) return 0;
+    return (_folderPreviewById[folderId]?.items ?? const <FolderPreviewItem>[])
+        .fold<int>(0, (sum, item) => sum + item.title.trim().length);
   }
 
   Future<List<Folder>> _buildFolderTrail(Folder folder) async {
@@ -914,6 +1027,33 @@ class NotesSubPageState extends State<NotesSubPage>
     }
 
     return trail.reversed.toList(growable: false);
+  }
+
+  List<Folder> _trimPathToNavigationRoot(List<Folder> path) {
+    final rootId = _navigationRootFolderId;
+    if (rootId == null) {
+      return path;
+    }
+
+    final rootIndex = path.indexWhere((folder) => folder.id == rootId);
+    if (rootIndex == -1) {
+      return path;
+    }
+    return path.sublist(rootIndex);
+  }
+
+  Future<void> _openNavigationRoot() async {
+    final rootId = _navigationRootFolderId;
+    if (rootId == null) {
+      await _bootstrap();
+      return;
+    }
+
+    final result = await _folderController.getFolder(rootId);
+    if (!mounted || !result.$1 || result.$2 == null) {
+      return;
+    }
+    await _openFolder(result.$2!);
   }
 
   void _showSnack(String message) {
@@ -1178,6 +1318,8 @@ class NotesSubPageState extends State<NotesSubPage>
         final isLoading =
             _folderController.isLoading || _noteController.isLoading;
         final isInsideFolder = _activeFolderId != null;
+        final canGoToParent =
+            isInsideFolder && _activeFolderId != _navigationRootFolderId;
         final breadcrumb = _activeFolderPath.isEmpty
             ? const <Folder>[]
             : _activeFolderPath;
@@ -1240,7 +1382,8 @@ class NotesSubPageState extends State<NotesSubPage>
                                       color: Colors.transparent,
                                       child: InkWell(
                                         customBorder: const CircleBorder(),
-                                        onTap: () => unawaited(_bootstrap()),
+                                        onTap: () =>
+                                            unawaited(_openNavigationRoot()),
                                         child: const Icon(
                                           Icons.auto_stories_outlined,
                                           color: kNotesPlum,
@@ -1253,7 +1396,8 @@ class NotesSubPageState extends State<NotesSubPage>
                                   Expanded(
                                     child: _NotesBreadcrumb(
                                       segments: breadcrumb,
-                                      onHomeTap: () => unawaited(_bootstrap()),
+                                      onHomeTap: () =>
+                                          unawaited(_openNavigationRoot()),
                                       onFolderTap: (folder) =>
                                           unawaited(_openFolder(folder)),
                                     ),
@@ -1339,9 +1483,9 @@ class NotesSubPageState extends State<NotesSubPage>
                                 onToggleMode: _toggleDisplayMode,
                                 accentColor: kNotesPink,
                               ),
-                              if (isInsideFolder || _isSelectionMode) ...[
+                              if (canGoToParent || _isSelectionMode) ...[
                                 const SizedBox(height: 10),
-                                if (isInsideFolder)
+                                if (canGoToParent)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: DragTarget<NotesDragPayload>(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -27,6 +28,14 @@ class _ShellPageState extends State<ShellPage> {
   late final ProjectListController _projectListController;
   final IdeasContentController _ideasContentController =
       IdeasContentController();
+  late final TextEditingController _projectSearchController;
+  late final TextEditingController _ideasSearchController;
+  String _projectSearchQuery = '';
+  String _ideasSearchQuery = '';
+  ContentFilterState _projectFilter = const ContentFilterState();
+  ContentFilterState _ideasFilter = const ContentFilterState();
+  ContentSortState _projectSort = const ContentSortState();
+  ContentSortState _ideasSort = const ContentSortState();
   bool _showIdeasQuickActions = false;
 
   @override
@@ -35,10 +44,14 @@ class _ShellPageState extends State<ShellPage> {
     _activeTab = widget.initialTab;
     _toIdeas = _activeTab == NavTab.ideas;
     _projectListController = ProjectListController();
+    _projectSearchController = TextEditingController();
+    _ideasSearchController = TextEditingController();
   }
 
   @override
   void dispose() {
+    _projectSearchController.dispose();
+    _ideasSearchController.dispose();
     _projectListController.dispose();
     super.dispose();
   }
@@ -89,6 +102,54 @@ class _ShellPageState extends State<ShellPage> {
     await _ideasContentController.onCreateFolderRequested();
     if (!mounted) return;
     setState(() => _showIdeasQuickActions = false);
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      if (_activeTab == NavTab.projects) {
+        _projectSearchQuery = value;
+      } else {
+        _ideasSearchQuery = value;
+      }
+    });
+  }
+
+  Future<void> _openActiveFilterMenu() async {
+    final isProjects = _activeTab == NavTab.projects;
+    final result = await showContentFilterMenu(
+      context: context,
+      initial: isProjects ? _projectFilter : _ideasFilter,
+      availableTags: isProjects
+          ? _projectListController.availableTags.map((tag) => tag.label)
+          : const <String>[],
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      if (isProjects) {
+        _projectFilter = result;
+      } else {
+        _ideasFilter = result;
+      }
+    });
+  }
+
+  Future<void> _openActiveSortMenu() async {
+    final isProjects = _activeTab == NavTab.projects;
+    final result = await showContentSortMenu(
+      context: context,
+      initial: isProjects ? _projectSort : _ideasSort,
+      includeCharacterCount: isProjects,
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      if (isProjects) {
+        _projectSort = result;
+      } else {
+        _ideasSort = result;
+      }
+    });
   }
 
   Widget _buildFloatingActionArea() {
@@ -194,13 +255,35 @@ class _ShellPageState extends State<ShellPage> {
           Column(
             children: [
               const MainHeader(asSliver: false),
-              const FuncoesBusca(),
+              FuncoesBusca(
+                controller: _activeTab == NavTab.projects
+                    ? _projectSearchController
+                    : _ideasSearchController,
+                onChanged: _onSearchChanged,
+                onFilterTap: () => unawaited(_openActiveFilterMenu()),
+                onSortTap: () => unawaited(_openActiveSortMenu()),
+                filterActive: _activeTab == NavTab.projects
+                    ? _projectFilter.isActive
+                    : _ideasFilter.isActive,
+                sortActive: (_activeTab == NavTab.projects
+                    ? _projectSort.isActive
+                    : _ideasSort.isActive),
+                hintText: _activeTab == NavTab.projects
+                    ? 'Pesquisar projetos'
+                    : 'Pesquisar ideias',
+              ),
               Expanded(
                 child: _AnimatedTabContent(
                   activeTab: _activeTab,
                   toIdeas: _toIdeas,
                   projectListController: _projectListController,
                   ideasContentController: _ideasContentController,
+                  projectSearchQuery: _projectSearchQuery,
+                  projectFilter: _projectFilter,
+                  projectSort: _projectSort,
+                  ideasSearchQuery: _ideasSearchQuery,
+                  ideasFilter: _ideasFilter,
+                  ideasSort: _ideasSort,
                 ),
               ),
             ],
@@ -282,12 +365,24 @@ class _AnimatedTabContent extends StatelessWidget {
   final bool toIdeas;
   final ProjectListController projectListController;
   final IdeasContentController ideasContentController;
+  final String projectSearchQuery;
+  final ContentFilterState projectFilter;
+  final ContentSortState projectSort;
+  final String ideasSearchQuery;
+  final ContentFilterState ideasFilter;
+  final ContentSortState ideasSort;
 
   const _AnimatedTabContent({
     required this.activeTab,
     required this.toIdeas,
     required this.projectListController,
     required this.ideasContentController,
+    required this.projectSearchQuery,
+    required this.projectFilter,
+    required this.projectSort,
+    required this.ideasSearchQuery,
+    required this.ideasFilter,
+    required this.ideasSort,
   });
 
   @override
@@ -340,8 +435,18 @@ class _AnimatedTabContent extends StatelessWidget {
       child: KeyedSubtree(
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
-            ? ProjectListPage(controller: projectListController)
-            : IdeasContent(controller: ideasContentController),
+            ? ProjectListPage(
+                controller: projectListController,
+                searchQuery: projectSearchQuery,
+                filterState: projectFilter,
+                sortState: projectSort,
+              )
+            : IdeasContent(
+                controller: ideasContentController,
+                searchQuery: ideasSearchQuery,
+                filterState: ideasFilter,
+                sortState: ideasSort,
+              ),
       ),
     );
   }
