@@ -164,4 +164,13 @@ class ChatbotViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+void novaConversa() {
+
+  conversaId = null;
+
+  mensagens.clear();
+
+  notifyListeners();
+
+}
 }

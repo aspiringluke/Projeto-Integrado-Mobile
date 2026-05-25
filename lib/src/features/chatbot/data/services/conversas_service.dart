@@ -69,6 +69,23 @@ class ConversasService {
 
     conn.close();
   }
+  Future excluirConversa(
+  id,
+) async {
+
+  final conn =
+      await getConnection();
+
+  conn.execute(
+    '''
+    DELETE FROM Conversa
+    WHERE idConversa = ?
+    ''',
+    [id],
+  );
+
+  conn.close();
+}
 
   Future<List<Map<String,dynamic>>>
   listarConversas()

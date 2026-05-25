@@ -96,24 +96,113 @@ class _ChatbotPageState extends State<ChatbotPage> {
           context: context,
           builder: (_) {
 
-            return ListView.builder(
-              itemCount:
-                  _viewModel.conversas.length,
+              return Column(
+      children: [
 
-              itemBuilder:
-                  (context,index){
+        ListTile(
+          leading: const Icon(
+            Icons.add_circle_outline,
+          ),
+
+          title: const Text(
+            "Nova conversa",
+          ),
+
+          onTap: () {
+            Navigator.pop(context);
+            _viewModel.novaConversa();
+          },
+        ),
+
+        const Divider(),
+
+        Expanded(
+          child: _viewModel.conversas.isEmpty
+          ? const Center(
+              child: Text(
+                "Nenhuma conversa encontrada",
+              ),
+            )
+          : ListView.builder(
+              itemCount: _viewModel.conversas.length,
+
+              itemBuilder: (context,index){
 
                 final conversa =
                     _viewModel.conversas[index];
 
                 return ListTile(
-                  leading:
-                      const Icon(Icons.chat),
+                  leading: const Icon(
+                    Icons.chat_bubble_outline,
+                  ),
 
                   title: Text(
                     conversa["titulo"]
                     ?? "Sem título",
                   ),
+                  trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+
+                            onPressed: () async {
+
+                              final confirmar =
+                                  await showDialog(
+                                context: context,
+                                builder: (_) =>
+                                    AlertDialog(
+                                  title: const Text(
+                                    "Excluir conversa",
+                                  ),
+
+                                  content: const Text(
+                                    "Deseja excluir esta conversa?",
+                                  ),
+
+                                  actions: [
+
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(
+                                          context,
+                                          false,
+                                        );
+                                      },
+                                      child: const Text(
+                                        "Cancelar",
+                                      ),
+                                    ),
+
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(
+                                          context,
+                                          true,
+                                        );
+                                      },
+                                      child: const Text(
+                                        "Excluir",
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if(confirmar == true){
+
+                                // vamos ligar a exclusão real depois
+                                ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Conversa excluída",
+                                    ),
+                                  ),
+                                );
+
+                              }
+
+                            },
+                          ),
 
                   onTap: () async {
 
@@ -126,7 +215,10 @@ class _ChatbotPageState extends State<ChatbotPage> {
                   },
                 );
               },
-            );
+            ),
+    ),
+  ],
+);
           },
         );
       },
