@@ -14,7 +14,8 @@ class ChatbotPage extends StatefulWidget {
 }
 
 class _ChatbotPageState extends State<ChatbotPage> {
-  final TextEditingController _controller = TextEditingController();
+  final ChatMentionAutocompleteTextController _controller =
+      ChatMentionAutocompleteTextController();
   final ScrollController _scrollController = ScrollController();
   late final ChatbotViewModel _viewModel;
 
@@ -22,9 +23,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
   void initState() {
     super.initState();
     _viewModel = ChatbotViewModel(
-      repository: ChatbotRepository(
-        service: ChatbotService(),
-      ),
+      repository: ChatbotRepository(service: ChatbotService()),
     );
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.carregarConversas();
@@ -80,155 +79,138 @@ class _ChatbotPageState extends State<ChatbotPage> {
                 onBackPressed: () => Navigator.of(context).pop(),
               ),
               Padding(
-  padding: const EdgeInsets.only(
-    right: 12,
-    top: 8,
-  ),
-  child: Align(
-    alignment: Alignment.centerRight,
-    child: IconButton(
-      icon: const Icon(Icons.history),
-      onPressed: () async {
+                padding: const EdgeInsets.only(right: 12, top: 8),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.history),
+                    onPressed: () async {
+                      await _viewModel.carregarConversas();
 
-        await _viewModel.carregarConversas();
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (_) {
+                          return Column(
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.add_circle_outline),
 
-        showModalBottomSheet(
-          context: context,
-          builder: (_) {
+                                title: const Text("Nova conversa"),
 
-              return Column(
-      children: [
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _viewModel.novaConversa();
+                                },
+                              ),
 
-        ListTile(
-          leading: const Icon(
-            Icons.add_circle_outline,
-          ),
+                              const Divider(),
 
-          title: const Text(
-            "Nova conversa",
-          ),
+                              Expanded(
+                                child: _viewModel.conversas.isEmpty
+                                    ? const Center(
+                                        child: Text(
+                                          "Nenhuma conversa encontrada",
+                                        ),
+                                      )
+                                    : ListView.builder(
+                                        itemCount: _viewModel.conversas.length,
 
-          onTap: () {
-            Navigator.pop(context);
-            _viewModel.novaConversa();
-          },
-        ),
+                                        itemBuilder: (context, index) {
+                                          final conversa =
+                                              _viewModel.conversas[index];
 
-        const Divider(),
+                                          return ListTile(
+                                            leading: const Icon(
+                                              Icons.chat_bubble_outline,
+                                            ),
 
-        Expanded(
-          child: _viewModel.conversas.isEmpty
-          ? const Center(
-              child: Text(
-                "Nenhuma conversa encontrada",
+                                            title: Text(
+                                              conversa["titulo"] ??
+                                                  "Sem título",
+                                            ),
+                                            trailing: IconButton(
+                                              icon: const Icon(
+                                                Icons.delete_outline,
+                                              ),
+
+                                              onPressed: () async {
+                                                final confirmar = await showDialog(
+                                                  context: context,
+                                                  builder: (_) => AlertDialog(
+                                                    title: const Text(
+                                                      "Excluir conversa",
+                                                    ),
+
+                                                    content: const Text(
+                                                      "Deseja excluir esta conversa?",
+                                                    ),
+
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.pop(
+                                                            context,
+                                                            false,
+                                                          );
+                                                        },
+                                                        child: const Text(
+                                                          "Cancelar",
+                                                        ),
+                                                      ),
+
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.pop(
+                                                            context,
+                                                            true,
+                                                          );
+                                                        },
+                                                        child: const Text(
+                                                          "Excluir",
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+
+                                                if (confirmar == true) {
+                                                  await _viewModel
+                                                      .excluirConversa(
+                                                        conversa["idConversa"],
+                                                      );
+
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        "Conversa excluída",
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            ),
+
+                                            onTap: () async {
+                                              Navigator.pop(context);
+
+                                              await _viewModel.abrirConversa(
+                                                conversa["idConversa"],
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
               ),
-            )
-          : ListView.builder(
-              itemCount: _viewModel.conversas.length,
-
-              itemBuilder: (context,index){
-
-                final conversa =
-                    _viewModel.conversas[index];
-
-                return ListTile(
-                  leading: const Icon(
-                    Icons.chat_bubble_outline,
-                  ),
-
-                  title: Text(
-                    conversa["titulo"]
-                    ?? "Sem título",
-                  ),
-                  trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-
-                            onPressed: () async {
-
-                              final confirmar =
-                                  await showDialog(
-                                context: context,
-                                builder: (_) =>
-                                    AlertDialog(
-                                  title: const Text(
-                                    "Excluir conversa",
-                                  ),
-
-                                  content: const Text(
-                                    "Deseja excluir esta conversa?",
-                                  ),
-
-                                  actions: [
-
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(
-                                          context,
-                                          false,
-                                        );
-                                      },
-                                      child: const Text(
-                                        "Cancelar",
-                                      ),
-                                    ),
-
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(
-                                          context,
-                                          true,
-                                        );
-                                      },
-                                      child: const Text(
-                                        "Excluir",
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if(confirmar == true){
-
-                                await _viewModel
-                                    .excluirConversa(
-                                  conversa["idConversa"],
-                                );
-
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Conversa excluída",
-                                    ),
-                                  ),
-                                );
-
-                              }
-
-                            },
-                          ),
-
-                  onTap: () async {
-
-                    Navigator.pop(context);
-
-                    await _viewModel
-                        .abrirConversa(
-                      conversa["idConversa"],
-                    );
-                  },
-                );
-              },
-            ),
-    ),
-  ],
-);
-          },
-        );
-      },
-    ),
-  ),
-),
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),

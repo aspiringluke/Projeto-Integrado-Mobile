@@ -7,6 +7,7 @@ import '../../characters/data/repositories/character_repository.dart';
 import '../../characters/models/characters_models.dart';
 import '../../notas/data/repositories/folder_repository.dart';
 import '../../notas/data/repositories/note_repository.dart';
+import '../../notas/models/folder.dart';
 import '../../notas/models/note.dart';
 import '../../notas/models/note_metadata.dart';
 import '../../shared/story_registry.dart';
@@ -347,7 +348,14 @@ class ProjectListController extends ChangeNotifier {
 
     await _markProjectNotesAsFormerlyLinked(project.title);
     if (releaseProjectFolder) {
-      await _releaseProjectFolder(project, deleteFolder: deleteProjectFolder);
+      final folderReleased = await _releaseProjectFolder(
+        project,
+        deleteFolder: deleteProjectFolder,
+      );
+      if (!folderReleased) {
+        notifyListeners();
+        return;
+      }
     }
 
     final result = await _projectRepository.deleteProject(projectId);
@@ -400,14 +408,17 @@ class ProjectListController extends ChangeNotifier {
     }
   }
 
-  Future<void> _releaseProjectFolder(
+  Future<bool> _releaseProjectFolder(
     ProjectListItem project, {
     required bool deleteFolder,
   }) async {
     final folderRepository = FolderRepository();
     final folder = await folderRepository.findRootFolderByTitle(project.title);
     final folderId = folder?.id;
-    if (folder == null || folderId == null) return;
+    if (folder == null || folderId == null) return true;
+    final deletedRefs = deleteFolder
+        ? await _collectFolderTreeMentionRefs(folderRepository, folderId)
+        : (folderIds: <int>{}, noteIds: <int>{});
 
     final metadata = NoteMetadata(
       tagGroups: folder.metadata.tagGroups,
@@ -420,7 +431,62 @@ class ProjectListController extends ChangeNotifier {
     );
 
     if (deleteFolder) {
-      await folderRepository.deleteFolder(folderId);
+      final deleteResult = await folderRepository
+          .deleteFolderIgnoringProtection(folderId);
+      if (!deleteResult.$1) {
+        _setError(deleteResult.$2);
+        return false;
+      }
+      _removeDeletedFolderMentions(deletedRefs);
+    }
+
+    return true;
+  }
+
+  Future<({Set<int> folderIds, Set<int> noteIds})>
+  _collectFolderTreeMentionRefs(
+    FolderRepository folderRepository,
+    int rootFolderId,
+  ) async {
+    final folderIds = <int>{};
+
+    Future<void> visit(int folderId) async {
+      if (!folderIds.add(folderId)) return;
+
+      final children = await folderRepository.listFolders(folderId);
+      if (!children.$1) return;
+
+      for (final child in children.$2 ?? const <Folder>[]) {
+        final childId = child.id;
+        if (childId != null && childId > 0) {
+          await visit(childId);
+        }
+      }
+    }
+
+    await visit(rootFolderId);
+
+    final notesResult = await _noteRepository.listAllNotes();
+    final noteIds = notesResult.$1
+        ? (notesResult.$2 ?? const <Note>[])
+              .where((note) => note.idPasta != null)
+              .where((note) => folderIds.contains(note.idPasta))
+              .map((note) => note.id)
+              .whereType<int>()
+              .toSet()
+        : <int>{};
+
+    return (folderIds: folderIds, noteIds: noteIds);
+  }
+
+  void _removeDeletedFolderMentions(
+    ({Set<int> folderIds, Set<int> noteIds}) deletedRefs,
+  ) {
+    for (final folderId in deletedRefs.folderIds) {
+      StoryRegistry.instance.removeFolder(folderId);
+    }
+    for (final noteId in deletedRefs.noteIds) {
+      StoryRegistry.instance.removeNote(noteId);
     }
   }
 
@@ -608,7 +674,7 @@ class ProjectListController extends ChangeNotifier {
     await folderRepository.updateFolderMetadata(
       folder.id!,
       folder.metadata
-          .copyWith(projectRootTitle: normalizedNewTitle)
+          .copyWith(projectRootTitle: normalizedNewTitle, protectedFolder: true)
           .toJsonString(),
     );
   }

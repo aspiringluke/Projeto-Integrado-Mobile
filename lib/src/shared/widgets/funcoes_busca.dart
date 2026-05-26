@@ -1028,6 +1028,8 @@ class _SearchField extends StatelessWidget {
           TextField(
             controller: controller,
             onChanged: onChanged,
+            readOnly: onChanged == null,
+            enableInteractiveSelection: onChanged != null,
             cursorColor: const Color(0xFF6E6870),
             decoration: InputDecoration(
               hintText: hintText,

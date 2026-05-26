@@ -87,13 +87,7 @@ class NoteController extends ChangeNotifier {
 
     _setError(null);
     final metadata = await _resolveDraftMetadata(folderId ?? _currentFolderId);
-    final targetFolderId = metadata.linkTarget.characterName != null
-        ? folderId ?? _currentFolderId
-        : await _resolveTargetFolderId(
-            metadata.linkTarget.projectTitle,
-            fallbackFolderId: folderId ?? _currentFolderId,
-            fallbackColor: color,
-          );
+    final targetFolderId = folderId ?? _currentFolderId;
 
     final result = await repository.createNewNote(
       title.trim(),
@@ -117,13 +111,7 @@ class NoteController extends ChangeNotifier {
   }) async {
     _setError(null);
     final metadata = await _resolveDraftMetadata(folderId ?? _currentFolderId);
-    final targetFolderId = metadata.linkTarget.characterName != null
-        ? folderId ?? _currentFolderId
-        : await _resolveTargetFolderId(
-            metadata.linkTarget.projectTitle,
-            fallbackFolderId: folderId ?? _currentFolderId,
-            fallbackColor: color,
-          );
+    final targetFolderId = folderId ?? _currentFolderId;
     final result = await repository.createNewNoteWithId(
       'Sem título',
       '',
@@ -350,40 +338,5 @@ class NoteController extends ChangeNotifier {
     }
 
     return rootTitle;
-  }
-
-  Future<int?> _resolveTargetFolderId(
-    String? projectTitle, {
-    required int? fallbackFolderId,
-    required Color fallbackColor,
-  }) async {
-    final normalizedProjectTitle = projectTitle?.trim();
-    if (normalizedProjectTitle == null || normalizedProjectTitle.isEmpty) {
-      return fallbackFolderId;
-    }
-
-    var accentColor = fallbackColor;
-    for (final project in StoryRegistry.instance.projects) {
-      if (project.title.trim().toLowerCase() ==
-          normalizedProjectTitle.toLowerCase()) {
-        accentColor = project.accentColor;
-        break;
-      }
-    }
-
-    final folder = await folderRepository.ensureRootFolder(
-      title: normalizedProjectTitle,
-      color: accentColor,
-    );
-    if (folder?.id == null || folder!.id! <= 0) {
-      return fallbackFolderId;
-    }
-
-    StoryRegistry.instance.registerFolder(
-      id: folder.id!,
-      title: folder.title,
-      accentColor: folder.color,
-    );
-    return folder.id;
   }
 }

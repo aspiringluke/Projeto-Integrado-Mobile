@@ -67,6 +67,10 @@ class FolderRepository {
     return _deleteFolderWithProtection(id);
   }
 
+  Future<(bool, String)> deleteFolderIgnoringProtection(int id) {
+    return service.deleteFolder(id);
+  }
+
   Future<(bool, String)> deleteFolderContents(int id) {
     return service.deleteFolderContents(id);
   }
@@ -165,12 +169,13 @@ class FolderRepository {
     final existing = await findRootFolderByTitle(title);
     if (existing != null) {
       if (existing.id != null &&
-          existing.metadata.projectRootTitle?.trim().toLowerCase() !=
-              title.trim().toLowerCase()) {
+          (existing.metadata.projectRootTitle?.trim().toLowerCase() !=
+                  title.trim().toLowerCase() ||
+              !existing.metadata.protectedFolder)) {
         await updateFolderMetadata(
           existing.id!,
           existing.metadata
-              .copyWith(projectRootTitle: title.trim())
+              .copyWith(projectRootTitle: title.trim(), protectedFolder: true)
               .toJsonString(),
         );
       }
@@ -186,6 +191,7 @@ class FolderRepository {
         tagGroups: const <NoteTagGroup>[],
         linkTarget: const NoteLinkTarget(),
         projectRootTitle: title.trim(),
+        protectedFolder: true,
       ),
     );
     if (!created.$1 || created.$2 == null) {
@@ -231,6 +237,7 @@ class FolderRepository {
         metadata: NoteMetadata(
           tagGroups: const <NoteTagGroup>[],
           linkTarget: NoteLinkTarget(projectTitle: normalizedProjectTitle),
+          protectedFolder: true,
         ),
       );
       charactersFolderId = ensuredCharactersFolder?.id;
@@ -257,6 +264,7 @@ class FolderRepository {
       if (existingId != null) {
         final metadata = existing.metadata.copyWith(
           characterRootName: normalizedName,
+          protectedFolder: true,
           linkTarget: NoteLinkTarget(
             projectTitle:
                 normalizedProjectTitle == null || normalizedProjectTitle.isEmpty
@@ -289,6 +297,7 @@ class FolderRepository {
           characterName: normalizedName,
         ),
         characterRootName: normalizedName,
+        protectedFolder: true,
       ),
     );
     if (!created.$1 || created.$2 == null) {
@@ -311,6 +320,7 @@ class FolderRepository {
       metadata: NoteMetadata(
         tagGroups: const <NoteTagGroup>[],
         linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        protectedFolder: true,
       ),
     );
     await _ensureChildFolder(
@@ -320,6 +330,7 @@ class FolderRepository {
       metadata: NoteMetadata(
         tagGroups: const <NoteTagGroup>[],
         linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        protectedFolder: true,
       ),
     );
     await _ensureChildFolder(
@@ -329,6 +340,7 @@ class FolderRepository {
       metadata: NoteMetadata(
         tagGroups: const <NoteTagGroup>[],
         linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        protectedFolder: true,
       ),
     );
   }

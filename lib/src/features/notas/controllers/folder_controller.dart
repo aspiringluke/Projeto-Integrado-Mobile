@@ -331,10 +331,14 @@ class FolderController extends ChangeNotifier {
       final currentProjectRootTitle = folder.metadata.projectRootTitle
           ?.trim()
           .toLowerCase();
-      if (currentProjectRootTitle == normalizedTitle) continue;
+      if (currentProjectRootTitle == normalizedTitle &&
+          folder.metadata.protectedFolder) {
+        continue;
+      }
 
       final updatedMetadata = folder.metadata.copyWith(
         projectRootTitle: folder.title.trim(),
+        protectedFolder: true,
       );
       final updateResult = await repository.updateFolderMetadata(
         folderId,

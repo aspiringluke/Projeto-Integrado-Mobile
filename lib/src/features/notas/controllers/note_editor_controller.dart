@@ -237,12 +237,7 @@ class NoteEditorController extends ChangeNotifier {
       _metadata = _metadata.copyWith(linkTarget: resolvedLinkTarget);
     }
 
-    final targetFolderId = _metadata.linkTarget.characterName != null
-        ? _folderId
-        : await _resolveTargetFolderId(
-            _metadata.linkTarget.projectTitle,
-            fallbackFolderId: _folderId,
-          );
+    final targetFolderId = _folderId;
     _folderId = targetFolderId;
 
     final result = await repository.saveNote(
@@ -357,39 +352,5 @@ class NoteEditorController extends ChangeNotifier {
     }
 
     return NoteLinkTarget(projectTitle: rootTitle);
-  }
-
-  Future<int?> _resolveTargetFolderId(
-    String? projectTitle, {
-    required int? fallbackFolderId,
-  }) async {
-    final normalizedProjectTitle = projectTitle?.trim();
-    if (normalizedProjectTitle == null || normalizedProjectTitle.isEmpty) {
-      return fallbackFolderId;
-    }
-
-    var accentColor = _color;
-    for (final project in StoryRegistry.instance.projects) {
-      if (project.title.trim().toLowerCase() ==
-          normalizedProjectTitle.toLowerCase()) {
-        accentColor = project.accentColor;
-        break;
-      }
-    }
-
-    final folder = await folderRepository.ensureRootFolder(
-      title: normalizedProjectTitle,
-      color: accentColor,
-    );
-    if (folder?.id == null || folder!.id! <= 0) {
-      return fallbackFolderId;
-    }
-
-    StoryRegistry.instance.registerFolder(
-      id: folder.id!,
-      title: folder.title,
-      accentColor: folder.color,
-    );
-    return folder.id;
   }
 }

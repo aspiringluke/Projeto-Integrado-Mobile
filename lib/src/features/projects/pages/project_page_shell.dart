@@ -1243,30 +1243,30 @@ class _ProjectPageState extends State<ProjectPage> {
                   duration: const Duration(milliseconds: 180),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
-                  child: _activeSection == ProjectSectionId.characters
-                      ? FuncoesBusca(
-                          key: const ValueKey('project-character-search'),
-                          controller: _characterSearchController,
-                          onChanged: _onCharacterSearchChanged,
-                          onFilterTap: () =>
-                              unawaited(_openCharacterFilterMenu()),
-                          onSortTap: () => unawaited(_openCharacterSortMenu()),
-                          filterActive: _characterFilter.isActive,
-                          sortActive: _characterSort.isActive,
-                          hintText: 'Pesquisar personagens',
-                        )
-                      : Container(
-                          key: ValueKey('project-search-collapsed'),
-                          height: 1,
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Color(0xD6FFFFFF),
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        ),
+                  child: FuncoesBusca(
+                    key: ValueKey('project-search-${_activeSection.name}'),
+                    controller: _activeSection == ProjectSectionId.characters
+                        ? _characterSearchController
+                        : null,
+                    onChanged: _activeSection == ProjectSectionId.characters
+                        ? _onCharacterSearchChanged
+                        : null,
+                    onFilterTap: _activeSection == ProjectSectionId.characters
+                        ? () => unawaited(_openCharacterFilterMenu())
+                        : null,
+                    onSortTap: _activeSection == ProjectSectionId.characters
+                        ? () => unawaited(_openCharacterSortMenu())
+                        : null,
+                    filterActive: _activeSection == ProjectSectionId.characters
+                        ? _characterFilter.isActive
+                        : false,
+                    sortActive: _activeSection == ProjectSectionId.characters
+                        ? _characterSort.isActive
+                        : false,
+                    hintText: _activeSection == ProjectSectionId.characters
+                        ? 'Pesquisar personagens'
+                        : 'Pesquisar',
+                  ),
                 ),
                 Expanded(child: _buildSectionBody()),
               ],
