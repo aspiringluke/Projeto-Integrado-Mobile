@@ -395,117 +395,49 @@ class _FolderPreviewLine extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    const titleStyle = TextStyle(
+    final titleStyle = TextStyle(
       fontSize: 11.1,
       height: 1.0,
       fontWeight: FontWeight.w500,
+      color: previewColor,
     );
-    const gapWidth = 4.0;
-    const separatorWidth = 10.0;
-    const iconWidth = 12.0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        var estimatedWidth = 0.0;
-        for (var index = 0; index < items.length; index += 1) {
-          final item = items[index];
-          final painter = TextPainter(
-            text: TextSpan(text: item.title.trim(), style: titleStyle),
-            maxLines: 1,
-            textDirection: Directionality.of(context),
-          )..layout();
-          estimatedWidth += painter.width + iconWidth + gapWidth;
-          if (index < items.length - 1) {
-            estimatedWidth += separatorWidth;
-          }
-        }
-
-        final shouldShowEllipsis = estimatedWidth > constraints.maxWidth;
-        final textStyle = titleStyle.copyWith(color: previewColor);
-
-        Widget buildItem(FolderPreviewItem item) {
-          final title = item.title.trim();
-          final icon = item.kind == FolderPreviewItemKind.folder
-              ? Icons.folder_outlined
-              : Icons.description_outlined;
-
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 12, color: previewColor),
-              const SizedBox(width: gapWidth),
-              Text(
-                title,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.clip,
-                style: textStyle,
-              ),
-            ],
-          );
-        }
-
-        Widget buildSeparator() {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              '·',
-              style: TextStyle(
-                color: previewColor.withValues(alpha: 0.64),
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                height: 1,
-              ),
+    final spans = <InlineSpan>[];
+    for (var index = 0; index < items.length; index += 1) {
+      final item = items[index];
+      if (index > 0) {
+        spans.add(
+          TextSpan(
+            text: '  ·  ',
+            style: titleStyle.copyWith(
+              color: previewColor.withValues(alpha: 0.64),
+              fontWeight: FontWeight.w800,
             ),
-          );
-        }
-
-        return SizedBox(
-          height: 18,
-          child: Row(
-            children: [
-              Expanded(
-                child: ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (bounds) {
-                    return LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        previewColor,
-                        previewColor,
-                        previewColor.withValues(alpha: 0.0),
-                      ],
-                      stops: const [0.0, 0.84, 1.0],
-                    ).createShader(bounds);
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var index = 0; index < items.length; index += 1) ...[
-                        if (index > 0) buildSeparator(),
-                        Flexible(child: buildItem(items[index])),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              if (shouldShowEllipsis) ...[
-                const SizedBox(width: 4),
-                Text(
-                  '...',
-                  style: TextStyle(
-                    color: previewColor.withValues(alpha: 0.72),
-                    fontSize: 11.1,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
-                  ),
-                ),
-              ],
-            ],
           ),
         );
-      },
+      }
+
+      final icon = item.kind == FolderPreviewItemKind.folder
+          ? Icons.folder_outlined
+          : Icons.description_outlined;
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Icon(icon, size: 12, color: previewColor),
+        ),
+      );
+      spans.add(const TextSpan(text: ' '));
+      spans.add(TextSpan(text: item.title.trim(), style: titleStyle));
+    }
+
+    return SizedBox(
+      height: 18,
+      child: Text.rich(
+        TextSpan(children: spans),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+      ),
     );
   }
 }
