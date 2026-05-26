@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
@@ -22,7 +21,6 @@ class ChatMentionGhost {
 
 class ChatMentionAutocompleteTextController extends TextEditingController {
   ChatMentionGhost? _ghost;
-  TapGestureRecognizer? ghostTapRecognizer;
 
   void updateGhost(ChatMentionGhost? ghost) {
     if (_sameGhost(_ghost, ghost)) return;
@@ -91,7 +89,6 @@ class ChatMentionAutocompleteTextController extends TextEditingController {
           TextSpan(
             text: ghost.suffix,
             style: ghostStyle,
-            recognizer: ghostTapRecognizer,
           ),
         if (suffix.isNotEmpty) TextSpan(text: suffix),
       ],
@@ -117,7 +114,6 @@ class _ChatComposerBarState extends State<ChatComposerBar> {
   static final RegExp _mentionBoundaryPattern = RegExp(r'[A-Za-z0-9_.%+-]');
   static final RegExp _mentionStopPattern = RegExp(r'[\s\r\n]');
 
-  late final TapGestureRecognizer _ghostTapRecognizer;
   final FocusNode _focusNode = FocusNode();
   String? _mentionQuery;
   List<MentionTargetRef> _mentionOptions = const <MentionTargetRef>[];
@@ -126,8 +122,6 @@ class _ChatComposerBarState extends State<ChatComposerBar> {
   @override
   void initState() {
     super.initState();
-    _ghostTapRecognizer = TapGestureRecognizer()..onTap = _acceptGhost;
-    widget.controller.ghostTapRecognizer = _ghostTapRecognizer;
     widget.controller.addListener(_handleControllerChanged);
     _focusNode.addListener(_syncMentionState);
   }
@@ -137,8 +131,6 @@ class _ChatComposerBarState extends State<ChatComposerBar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_handleControllerChanged);
-      oldWidget.controller.ghostTapRecognizer = null;
-      widget.controller.ghostTapRecognizer = _ghostTapRecognizer;
       widget.controller.addListener(_handleControllerChanged);
       _syncMentionState();
     }
@@ -147,9 +139,7 @@ class _ChatComposerBarState extends State<ChatComposerBar> {
   @override
   void dispose() {
     widget.controller.removeListener(_handleControllerChanged);
-    widget.controller.ghostTapRecognizer = null;
     _focusNode.dispose();
-    _ghostTapRecognizer.dispose();
     super.dispose();
   }
 
@@ -310,10 +300,6 @@ class _ChatComposerBarState extends State<ChatComposerBar> {
       text: updatedText,
       selection: TextSelection.collapsed(offset: atIndex + insertText.length),
     );
-  }
-
-  void _acceptGhost() {
-    widget.controller.acceptGhostSuggestion();
   }
 
   bool _acceptMentionSuggestion() {
