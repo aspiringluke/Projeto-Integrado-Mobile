@@ -7,10 +7,8 @@ import 'package:projeto_integrado_mobile/src/features/notas/controllers/note_edi
 import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/folder_repository.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/note_repository.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_folder_service.dart';
-import 'package:projeto_integrado_mobile/src/features/notas/data/services/i_note_service.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/content_stats.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
-import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 import 'services/fake_note_service.dart';
