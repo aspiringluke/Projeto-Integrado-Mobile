@@ -94,6 +94,16 @@ class FakeNoteService implements INoteService {
   }
 
   @override
+  Future<(bool, List<({Color color, int id, String title})>?, String?)>
+  listNoteRegistryRefs() async {
+    final refs = _notes.values
+        .where((note) => note.id != null)
+        .map((note) => (id: note.id!, title: note.title, color: note.color))
+        .toList(growable: false);
+    return (true, refs, null);
+  }
+
+  @override
   Future<(bool, String)> deleteNote(int id) async {
     if (!_notes.containsKey(id)) {
       return (false, 'Nota não encontrada');
