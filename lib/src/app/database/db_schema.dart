@@ -90,6 +90,11 @@ CREATE TABLE IF NOT EXISTS notas_has_tags (
     FOREIGN KEY (notas_idNotas) REFERENCES Nota(idNota),
     FOREIGN KEY (tag_idTag) REFERENCES Tags(idTag)
 );
+CREATE TABLE IF NOT EXISTS Conversa (
+    idConversa INTEGER PRIMARY KEY AUTOINCREMENT,
+    mensagens TEXT,
+    titulo TEXT
+);
 """;
 
 void initializeSchema(CommonDatabase conn) {
@@ -215,7 +220,15 @@ void initializeSchema(CommonDatabase conn) {
   _ensureTimestampColumns(conn, 'Projeto');
   _ensureTimestampColumns(conn, 'Personagem');
   _ensureIndexes(conn);
+
+  _ensureColumn(
+  conn,
+  tableName: 'Conversa',
+  columnName: 'titulo',
+  definition: 'TEXT',
+);
 }
+
 
 void _ensureColumn(
   CommonDatabase conn, {
