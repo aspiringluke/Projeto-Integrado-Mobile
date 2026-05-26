@@ -189,9 +189,13 @@ class _ChatbotPageState extends State<ChatbotPage> {
 
                               if(confirmar == true){
 
-                                // vamos ligar a exclusão real depois
+                                await _viewModel
+                                    .excluirConversa(
+                                  conversa["idConversa"],
+                                );
+
                                 ScaffoldMessenger.of(context)
-                                .showSnackBar(
+                                    .showSnackBar(
                                   const SnackBar(
                                     content: Text(
                                       "Conversa excluída",

@@ -29,6 +29,16 @@ class ConversasRepository {
       mensagens,
     );
   }
+  Future excluirConversa(
+  id,
+){
+
+  return service
+  .excluirConversa(
+    id,
+  );
+
+}
 
   Future listarConversas() {
 

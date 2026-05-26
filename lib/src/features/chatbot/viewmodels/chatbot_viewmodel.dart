@@ -173,4 +173,21 @@ void novaConversa() {
   notifyListeners();
 
 }
+Future excluirConversa(
+  int id,
+) async {
+
+  await conversasRepository
+      .excluirConversa(
+    id,
+  );
+
+  conversas.removeWhere(
+    (c) =>
+      c["idConversa"] == id,
+  );
+
+  notifyListeners();
+
+}
 }
