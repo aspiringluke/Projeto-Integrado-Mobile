@@ -23,6 +23,7 @@ import 'package:projeto_integrado_mobile/src/shared/widgets/funcoes_busca.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/multi_select_action_bar.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/pin_badge.dart';
 import 'package:projeto_integrado_mobile/src/shared/widgets/view_options_bar.dart';
+import 'package:projeto_integrado_mobile/src/shared/utils/text_normalization.dart';
 
 part 'notes_sub_page_parts/notes_sub_page_models.dart';
 part 'notes_sub_page_parts/notes_sub_page_breadcrumb.dart';
@@ -890,7 +891,7 @@ class NotesSubPageState extends State<NotesSubPage>
     if (_contentScope == _NotesContentScope.notes) {
       return const <Folder>[];
     }
-    final query = widget.searchQuery.trim().toLowerCase();
+    final query = normalizeSearchText(widget.searchQuery);
     return folders
         .where((folder) {
           final tagMatches = widget.filterState.matchesTags(
@@ -900,7 +901,7 @@ class NotesSubPageState extends State<NotesSubPage>
           if (query.isEmpty) {
             return true;
           }
-          return folder.title.toLowerCase().contains(query);
+          return normalizeSearchText(folder.title).contains(query);
         })
         .toList(growable: false);
   }
@@ -909,7 +910,7 @@ class NotesSubPageState extends State<NotesSubPage>
     if (_contentScope == _NotesContentScope.folders) {
       return const <Note>[];
     }
-    final query = widget.searchQuery.trim().toLowerCase();
+    final query = normalizeSearchText(widget.searchQuery);
     return notes
         .where((note) {
           final tagMatches = widget.filterState.matchesTags(
@@ -919,7 +920,9 @@ class NotesSubPageState extends State<NotesSubPage>
           if (query.isEmpty) {
             return true;
           }
-          return '${note.title} ${note.text}'.toLowerCase().contains(query);
+          return normalizeSearchText(
+            '${note.title} ${note.text}',
+          ).contains(query);
         })
         .toList(growable: false);
   }
@@ -1468,7 +1471,7 @@ class NotesSubPageState extends State<NotesSubPage>
                               ),
                               const SizedBox(height: 10),
                               ViewOptionsBar(
-                                title: 'VisualizaÃ§Ã£o',
+                                title: 'Visualização',
                                 modeIcon: _displayMode == _NotesDisplayMode.grid
                                     ? Icons.grid_view_rounded
                                     : Icons.view_list_rounded,

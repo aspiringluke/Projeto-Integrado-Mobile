@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../../characters/models/characters_models.dart';
-import '../../tags/controllers/tag_controller.dart';
+import '../../notas/models/note_metadata.dart';
+import '../../notas/widgets/folder_color_picker.dart';
+import '../../notas/widgets/notes_visuals.dart';
+import '../../tags/controllers/tag_group_controller.dart';
 import '../models/create_project_dialog_image_viewport_presets.dart';
 import '../models/project_image_data.dart';
 import '../models/project_record.dart';
@@ -53,12 +56,14 @@ class ProjectGeneralSection extends StatefulWidget {
 class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
   late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
-  late final TextEditingController _newTagController;
+  late final TextEditingController _groupTitleController;
   late final ScrollController _scrollController;
   late final ScrollController _synopsisScrollController;
-  late TagController _tagController;
+  late TagGroupController _tagGroupController;
+  late Color _draftGroupColor;
   ProjectGeneralColorTarget _activeColorTarget =
       ProjectGeneralColorTarget.accent;
+  bool _composerExpanded = false;
   final Set<_ProjectGeneralPanel> _expandedPanels = {
     _ProjectGeneralPanel.geral,
     _ProjectGeneralPanel.tags,
@@ -77,13 +82,14 @@ class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
     super.initState();
     _titleController = TextEditingController(text: widget.project.title);
     _synopsisController = TextEditingController(text: widget.project.synopsis);
-    _newTagController = TextEditingController();
+    _groupTitleController = TextEditingController();
     _scrollController = ScrollController();
     _synopsisScrollController = ScrollController();
-    _tagController = _buildTagController();
+    _draftGroupColor = FolderColorPicker.colors.first;
+    _tagGroupController = _buildTagGroupController();
     _titleController.addListener(_syncTextDraft);
     _synopsisController.addListener(_syncTextDraft);
-    _tagController.addListener(_syncTagsDraft);
+    _tagGroupController.addListener(_syncTagsDraft);
   }
 
   @override
@@ -92,36 +98,59 @@ class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
     if (oldWidget.project.id != widget.project.id) {
       _titleController.text = widget.project.title;
       _synopsisController.text = widget.project.synopsis;
-      _tagController.removeListener(_syncTagsDraft);
-      _tagController.dispose();
-      _tagController = _buildTagController()..addListener(_syncTagsDraft);
+      _tagGroupController.removeListener(_syncTagsDraft);
+      _tagGroupController.dispose();
+      _tagGroupController = _buildTagGroupController()
+        ..addListener(_syncTagsDraft);
     }
   }
 
   @override
   void dispose() {
-    _tagController.removeListener(_syncTagsDraft);
-    _tagController.dispose();
+    _tagGroupController.removeListener(_syncTagsDraft);
+    _tagGroupController.dispose();
     _titleController.removeListener(_syncTextDraft);
     _synopsisController.removeListener(_syncTextDraft);
     _titleController.dispose();
     _synopsisController.dispose();
-    _newTagController.dispose();
+    _groupTitleController.dispose();
     _scrollController.dispose();
     _synopsisScrollController.dispose();
     super.dispose();
   }
 
-  TagController _buildTagController() {
-    final knownTags = <ProjectTagData>[
-      ...widget.availableTags,
-      ...widget.project.tags,
-    ];
+  TagGroupController _buildTagGroupController() {
+    final groups = <String, _ProjectTagGroupDraft>{};
+    final groupTitlesById = <int, String>{
+      for (final tag in widget.availableTags)
+        if (tag.groupId != null && tag.groupTitle?.trim().isNotEmpty == true)
+          tag.groupId!: tag.groupTitle!.trim(),
+    };
+    for (final tag in widget.project.tags) {
+      final title = tag.groupTitle?.trim().isNotEmpty == true
+          ? tag.groupTitle!.trim()
+          : tag.groupId != null
+          ? groupTitlesById[tag.groupId!]
+          : null;
+      final groupTitle = title ?? 'Sem classificação';
+      final group = groups.putIfAbsent(
+        groupTitle,
+        () => _ProjectTagGroupDraft(title: groupTitle, color: tag.color),
+      );
+      group.tags.add(NoteTagItem(label: tag.label));
+      group.color = tag.color;
+    }
 
-    return TagController(
-      knownTags: knownTags,
-      selectedTagLabels: widget.project.tags.map((tag) => tag.normalizedLabel),
-      groupTitle: 'Projetos',
+    return TagGroupController(
+      groups: groups.values
+          .map(
+            (group) => NoteTagGroup(
+              title: group.title,
+              color: group.color,
+              tags: List<NoteTagItem>.unmodifiable(group.tags),
+            ),
+          )
+          .toList(growable: false),
     );
   }
 
@@ -142,17 +171,24 @@ class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
   void _syncTagsDraft() {
     if (!mounted) return;
     setState(() {});
-    widget.onChanged(
-      widget.project.copyWith(tags: _tagController.selectedTags),
-    );
+    widget.onChanged(widget.project.copyWith(tags: _flattenProjectTags()));
   }
 
-  void _addTagFromInput() {
-    final didAdd = _tagController.addTagFromInput(_newTagController.text);
-    if (didAdd) {
-      _newTagController.clear();
-      setState(() {});
+  List<ProjectTagData> _flattenProjectTags() {
+    final flattened = <ProjectTagData>[];
+    for (final group in _tagGroupController.groups) {
+      for (final tag in group.tags) {
+        flattened.add(
+          ProjectTagData(
+            label: tag.label,
+            color: group.color,
+            groupTitle: group.title,
+          ),
+        );
+      }
     }
+
+    return flattened;
   }
 
   void _updateCoverImage(ProjectImageData image) {
@@ -426,83 +462,127 @@ class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
   }
 
   Widget _buildTagsSection(ProjectRecord project) {
+    final groups = _tagGroupController.groups;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_tagController.knownTags.isEmpty)
+        if (groups.isEmpty)
           CreateProjectDialogInfoSurface(
             child: const Text(
-              'Nenhuma tag cadastrada ainda.',
+              'Nenhuma classificação criada ainda.',
               style: TextStyle(color: Color(0xFF6A6167), fontSize: 12),
             ),
           )
         else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final tag in _tagController.knownTags)
-                CreateProjectDialogSelectableTagChip(
-                  tag: tag,
-                  isSelected: _tagController.isSelected(tag),
-                  onTap: () => _tagController.toggle(tag),
+              for (var index = 0; index < groups.length; index += 1) ...[
+                _ProjectTagGroupCard(
+                  group: groups[index],
+                  onRemoveGroup: () => _tagGroupController.removeGroup(index),
+                  onEditGroup: () => _editTagGroup(index),
+                  onAddTag: (value) => _tagGroupController.addTagToGroup(
+                    groupIndex: index,
+                    tagLabel: value,
+                  ),
+                  onEditTag: ({required int tagIndex}) =>
+                      _editTag(groupIndex: index, tagIndex: tagIndex),
+                  onRemoveTag: ({required int tagIndex}) =>
+                      _tagGroupController.removeTagFromGroup(
+                        groupIndex: index,
+                        tagIndex: tagIndex,
+                      ),
                 ),
+                if (index < groups.length - 1) const SizedBox(height: 10),
+              ],
             ],
           ),
         const SizedBox(height: 10),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _newTagController,
-                textInputAction: TextInputAction.done,
-                decoration: _buildInputDecoration(
-                  hintText: 'Nova tag',
-                  focusedColor: project.accentColor,
-                ),
-                onFieldSubmitted: (_) => _addTagFromInput(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 44,
-              child: FilledButton(
-                onPressed: _addTagFromInput,
-                style: FilledButton.styleFrom(
-                  backgroundColor: project.accentColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                ),
-                child: const Icon(Icons.add_rounded, size: 20),
-              ),
-            ),
-          ],
+        _CompactActionRow(
+          label: 'Nova classificação',
+          icon: Icons.add_rounded,
+          onTap: () => setState(() => _composerExpanded = !_composerExpanded),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            CreateProjectDialogDraftTagPreview(
-              label: _newTagController.text.trim().isEmpty
-                  ? 'Nova tag'
-                  : sanitizeProjectTagLabel(_newTagController.text),
-              color: _tagController.draftTagColor,
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 180),
+          firstChild: const SizedBox.shrink(),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: _ProjectTagGroupComposer(
+              titleController: _groupTitleController,
+              selectedColor: _draftGroupColor,
+              onSelectPresetColor: (color) =>
+                  setState(() => _draftGroupColor = color),
+              onCreate: _createGroup,
             ),
-            for (final color in projectTagPalette)
-              CreateProjectDialogTagColorSwatch(
-                color: color,
-                isSelected: color == _tagController.draftTagColor,
-                onTap: () => _tagController.setDraftTagColor(color),
-              ),
-          ],
+          ),
+          crossFadeState: _composerExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
         ),
       ],
+    );
+  }
+
+  void _createGroup() {
+    final title = _groupTitleController.text.trim();
+    if (title.isEmpty) return;
+
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _tagGroupController.addGroup(title: title, color: _draftGroupColor);
+      _groupTitleController.clear();
+      setState(() => _composerExpanded = false);
+    });
+  }
+
+  Future<void> _editTagGroup(int index) async {
+    if (index < 0 || index >= _tagGroupController.groups.length) return;
+
+    final group = _tagGroupController.groups[index];
+    final result = await showDialog<_ProjectTagGroupEditData>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.22),
+      builder: (dialogContext) => _ProjectTagGroupEditDialog(
+        initialTitle: group.title,
+        initialColor: group.color,
+      ),
+    );
+    if (!mounted || result == null) return;
+
+    _tagGroupController.updateGroup(
+      groupIndex: index,
+      title: result.title,
+      color: result.color,
+    );
+  }
+
+  Future<void> _editTag({
+    required int groupIndex,
+    required int tagIndex,
+  }) async {
+    if (groupIndex < 0 || groupIndex >= _tagGroupController.groups.length) {
+      return;
+    }
+    final group = _tagGroupController.groups[groupIndex];
+    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
+
+    final tag = group.tags[tagIndex];
+    final result = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.22),
+      builder: (dialogContext) =>
+          _ProjectTagEditDialog(initialLabel: tag.label),
+    );
+    if (!mounted || result == null) return;
+
+    _tagGroupController.updateTag(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+      label: result,
     );
   }
 
@@ -660,6 +740,814 @@ class _ProjectGeneralSectionState extends State<ProjectGeneralSection> {
       ),
       focusedErrorBorder: border.copyWith(
         borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),
+      ),
+    );
+  }
+}
+
+class _ProjectTagGroupDraft {
+  final String title;
+  Color color;
+  final List<NoteTagItem> tags = <NoteTagItem>[];
+
+  _ProjectTagGroupDraft({required this.title, required this.color});
+}
+
+class _ProjectTagGroupEditData {
+  final String title;
+  final Color color;
+
+  const _ProjectTagGroupEditData({required this.title, required this.color});
+}
+
+class _ProjectTagGroupComposer extends StatelessWidget {
+  final TextEditingController titleController;
+  final Color selectedColor;
+  final ValueChanged<Color> onSelectPresetColor;
+  final VoidCallback onCreate;
+
+  const _ProjectTagGroupComposer({
+    required this.titleController,
+    required this.selectedColor,
+    required this.onSelectPresetColor,
+    required this.onCreate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: _ProjectTagInputDecoration.build(
+                labelText: 'Nome da classificação',
+                prefixIcon: Icons.sell_outlined,
+                focusedColor: selectedColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: titleController,
+                    builder: (context, value, _) {
+                      final label = value.text.trim();
+                      return _ProjectTagPreviewChip(
+                        label: label.isEmpty
+                            ? 'Prévia da classificação'
+                            : label,
+                        color: selectedColor,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 112,
+                  child: _DialogActionButton(
+                    label: 'Criar',
+                    tint: selectedColor,
+                    textColor: Colors.white,
+                    onTap: onCreate,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Paleta padrão',
+              style: TextStyle(
+                color: Color(0xFF514752),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FolderColorPicker(
+              selected: selectedColor,
+              onSelect: onSelectPresetColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectTagGroupCard extends StatefulWidget {
+  final NoteTagGroup group;
+  final VoidCallback onRemoveGroup;
+  final VoidCallback onEditGroup;
+  final ValueChanged<String> onAddTag;
+  final void Function({required int tagIndex}) onEditTag;
+  final void Function({required int tagIndex}) onRemoveTag;
+
+  const _ProjectTagGroupCard({
+    required this.group,
+    required this.onRemoveGroup,
+    required this.onEditGroup,
+    required this.onAddTag,
+    required this.onEditTag,
+    required this.onRemoveTag,
+  });
+
+  @override
+  State<_ProjectTagGroupCard> createState() => _ProjectTagGroupCardState();
+}
+
+class _ProjectTagGroupCardState extends State<_ProjectTagGroupCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.36),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 5,
+              decoration: BoxDecoration(
+                color: widget.group.color,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(18),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: widget.group.color,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.group.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF3A3339),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: widget.onEditGroup,
+                      icon: const Icon(Icons.edit_outlined),
+                      color: const Color(0xFF7D7179),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    IconButton(
+                      onPressed: () =>
+                          setState(() => _isExpanded = !_isExpanded),
+                      icon: Icon(
+                        _isExpanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                      ),
+                      color: const Color(0xFF7D7179),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    IconButton(
+                      onPressed: widget.onRemoveGroup,
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      color: const Color(0xFFE05E8A),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (
+                      var tagIndex = 0;
+                      tagIndex < widget.group.tags.length;
+                      tagIndex += 1
+                    )
+                      _ProjectTagChip(
+                        label: widget.group.tags[tagIndex].label,
+                        color: widget.group.color,
+                        onEdit: () => widget.onEditTag(tagIndex: tagIndex),
+                        onRemove: () => widget.onRemoveTag(tagIndex: tagIndex),
+                      ),
+                  ],
+                ),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 180),
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: _InlineProjectTagInput(
+                      color: widget.group.color,
+                      onSubmit: widget.onAddTag,
+                    ),
+                  ),
+                  crossFadeState: _isExpanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectTagChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
+
+  const _ProjectTagChip({
+    required this.label,
+    required this.color,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 7, 8, 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(width: 4),
+          _ProjectTagChipButton(
+            icon: Icons.edit_outlined,
+            onTap: onEdit,
+            color: color,
+          ),
+          _ProjectTagChipButton(
+            icon: Icons.close_rounded,
+            onTap: onRemove,
+            color: const Color(0xFFE05E8A),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectTagChipButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _ProjectTagChipButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: Icon(icon, size: 14, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineProjectTagInput extends StatefulWidget {
+  final Color color;
+  final ValueChanged<String> onSubmit;
+
+  const _InlineProjectTagInput({required this.color, required this.onSubmit});
+
+  @override
+  State<_InlineProjectTagInput> createState() => _InlineProjectTagInputState();
+}
+
+class _InlineProjectTagInputState extends State<_InlineProjectTagInput> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _controller.text.trim();
+    if (value.isEmpty) return;
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onSubmit(value);
+      _controller.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _controller,
+            decoration: _ProjectTagInputDecoration.build(
+              labelText: 'Nova tag',
+              hintText: 'Adicionar tag a esta classificação',
+              prefixIcon: Icons.label_outline_rounded,
+              focusedColor: widget.color,
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 46,
+          height: 46,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: _submit,
+              child: Ink(
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: widget.color.withValues(alpha: 0.24),
+                  ),
+                ),
+                child: Icon(Icons.add_rounded, color: widget.color),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProjectTagGroupEditDialog extends StatefulWidget {
+  final String initialTitle;
+  final Color initialColor;
+
+  const _ProjectTagGroupEditDialog({
+    required this.initialTitle,
+    required this.initialColor,
+  });
+
+  @override
+  State<_ProjectTagGroupEditDialog> createState() =>
+      _ProjectTagGroupEditDialogState();
+}
+
+class _ProjectTagGroupEditDialogState
+    extends State<_ProjectTagGroupEditDialog> {
+  late final TextEditingController _titleController;
+  late Color _selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialTitle);
+    _selectedColor = widget.initialColor;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) return;
+    Navigator.of(
+      context,
+    ).pop(_ProjectTagGroupEditData(title: title, color: _selectedColor));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Editar classificação',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF3A3339),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _titleController,
+              decoration: _ProjectTagInputDecoration.build(
+                labelText: 'Nome da classificação',
+                prefixIcon: Icons.sell_outlined,
+                focusedColor: _selectedColor,
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 12),
+            _ProjectTagPreviewChip(
+              label: _titleController.text.trim().isEmpty
+                  ? 'Prévia da classificação'
+                  : _titleController.text.trim(),
+              color: _selectedColor,
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Paleta padrão',
+              style: TextStyle(
+                color: Color(0xFF514752),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FolderColorPicker(
+              selected: _selectedColor,
+              onSelect: (color) => setState(() => _selectedColor = color),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Cancelar',
+                    tint: Colors.white,
+                    textColor: const Color(0xFF514752),
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Salvar',
+                    tint: _selectedColor,
+                    textColor: Colors.white,
+                    onTap: _save,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectTagEditDialog extends StatefulWidget {
+  final String initialLabel;
+
+  const _ProjectTagEditDialog({required this.initialLabel});
+
+  @override
+  State<_ProjectTagEditDialog> createState() => _ProjectTagEditDialogState();
+}
+
+class _ProjectTagEditDialogState extends State<_ProjectTagEditDialog> {
+  late final TextEditingController _labelController;
+
+  @override
+  void initState() {
+    super.initState();
+    _labelController = TextEditingController(text: widget.initialLabel);
+  }
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final label = _labelController.text.trim();
+    if (label.isEmpty) return;
+    Navigator.of(context).pop(label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Editar tag',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF3A3339),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _labelController,
+              decoration: _ProjectTagInputDecoration.build(
+                labelText: 'Nome da tag',
+                prefixIcon: Icons.label_outline_rounded,
+                focusedColor: const Color(0xFFE85BB8),
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Cancelar',
+                    tint: Colors.white,
+                    textColor: const Color(0xFF514752),
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DialogActionButton(
+                    label: 'Salvar',
+                    tint: const Color(0xFFE85BB8),
+                    textColor: Colors.white,
+                    onTap: _save,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectTagPreviewChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _ProjectTagPreviewChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectTagInputDecoration {
+  static InputDecoration build({
+    required String labelText,
+    IconData? prefixIcon,
+    String? hintText,
+    required Color focusedColor,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+    );
+
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: prefixIcon == null ? null : Icon(prefixIcon),
+      hintStyle: const TextStyle(color: Color(0xFF8E838B), fontSize: 12.5),
+      filled: true,
+      fillColor: Colors.white.withValues(alpha: 0.56),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: BorderSide(color: focusedColor, width: 1.1),
+      ),
+      errorBorder: border.copyWith(
+        borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),
+      ),
+      focusedErrorBorder: border.copyWith(
+        borderSide: const BorderSide(color: Color(0xFFC96775), width: 1),
+      ),
+    );
+  }
+}
+
+class _CompactActionRow extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CompactActionRow({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.48),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: kNotesPink),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF7D7179),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogActionButton extends StatelessWidget {
+  final String label;
+  final Color tint;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  const _DialogActionButton({
+    required this.label,
+    required this.tint,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                tint.withValues(alpha: 0.98),
+                tint.withValues(alpha: 0.84),
+              ],
+            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
+            boxShadow: [
+              BoxShadow(
+                color: tint.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

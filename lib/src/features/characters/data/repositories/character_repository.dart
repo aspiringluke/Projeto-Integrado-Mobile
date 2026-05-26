@@ -1,17 +1,28 @@
 import 'package:projeto_integrado_mobile/src/features/characters/data/services/i_character_service.dart';
 import 'package:projeto_integrado_mobile/src/features/characters/data/services/sqlite_character_service.dart';
 import 'package:projeto_integrado_mobile/src/features/characters/models/characters_models.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/data/repositories/folder_repository.dart';
 
 class CharacterRepository {
   final ICharacterService service;
+  final FolderRepository folderRepository;
 
-  CharacterRepository({ICharacterService? service})
-    : service = service ?? SqliteCharacterService();
+  CharacterRepository({
+    ICharacterService? service,
+    FolderRepository? folderRepository,
+  }) : service = service ?? SqliteCharacterService(),
+       folderRepository = folderRepository ?? FolderRepository();
 
   Future<(bool, CharacterListItem?, String?)> createCharacter(
     CharacterListItem character,
-  ) {
-    return service.createCharacter(character);
+  ) async {
+    final result = await service.createCharacter(character);
+    final createdCharacter = result.$2;
+    if (result.$1 && createdCharacter != null) {
+      await _ensureCharacterFolder(createdCharacter);
+    }
+
+    return result;
   }
 
   Future<(bool, CharacterListItem?, String?)> getCharacter(int id) {
@@ -68,6 +79,20 @@ class CharacterRepository {
         unpinnedIndex: unpinnedIndex ?? character.unpinnedIndex,
         lastAccessed: lastAccessed ?? character.lastAccessed,
       ),
+    );
+  }
+
+  Future<void> _ensureCharacterFolder(CharacterListItem character) async {
+    final characterName = character.data.name.trim();
+    final projectTitle = character.projectTitle?.trim();
+    if (characterName.isEmpty || projectTitle == null || projectTitle.isEmpty) {
+      return;
+    }
+
+    await folderRepository.ensureCharacterRootFolder(
+      characterName: characterName,
+      projectTitle: projectTitle,
+      color: character.data.accent,
     );
   }
 }

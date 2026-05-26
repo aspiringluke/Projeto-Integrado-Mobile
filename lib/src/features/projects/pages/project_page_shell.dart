@@ -787,7 +787,7 @@ class _ProjectPageState extends State<ProjectPage> {
   List<CharacterListItem> _visibleCharacters(
     Iterable<CharacterListItem> characters,
   ) {
-    final query = _characterSearchQuery.trim().toLowerCase();
+    final query = normalizeSearchText(_characterSearchQuery);
     final filtered = characters
         .where((character) {
           final tagMatches = _characterFilter.matchesTags(
@@ -798,17 +798,19 @@ class _ProjectPageState extends State<ProjectPage> {
             return true;
           }
           final data = character.data;
-          final haystack = <String>[
-            data.name,
-            data.alias,
-            data.synopsis,
-            data.motto,
-            data.genderTag,
-            data.sexualityTag,
-            data.ethnicityTag,
-            data.functionTag,
-            data.relevanceTag,
-          ].join(' ').toLowerCase();
+          final haystack = normalizeSearchText(
+            <String>[
+              data.name,
+              data.alias,
+              data.synopsis,
+              data.motto,
+              data.genderTag,
+              data.sexualityTag,
+              data.ethnicityTag,
+              data.functionTag,
+              data.relevanceTag,
+            ].join(' '),
+          );
           return haystack.contains(query);
         })
         .toList(growable: false);
@@ -850,6 +852,80 @@ class _ProjectPageState extends State<ProjectPage> {
     ].where((tag) => tag.trim().isNotEmpty).toList(growable: false);
   }
 
+  List<TagFilterGroup> _buildCharacterTagGroups() {
+    final groups = <TagFilterGroup>[
+      _buildCharacterTagGroup(
+        title: 'Gênero',
+        icon: Icons.wc_rounded,
+        color: projectTagColorAt(0),
+        labels: _characters
+            .map((character) => character.data.genderTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Sexualidade',
+        icon: Icons.favorite_border_rounded,
+        color: projectTagColorAt(1),
+        labels: _characters
+            .map((character) => character.data.sexualityTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Etnia',
+        icon: Icons.groups_2_outlined,
+        color: projectTagColorAt(2),
+        labels: _characters
+            .map((character) => character.data.ethnicityTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Função',
+        icon: Icons.badge_outlined,
+        color: projectTagColorAt(3),
+        labels: _characters
+            .map((character) => character.data.functionTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Relevância',
+        icon: Icons.star_rounded,
+        color: projectTagColorAt(4),
+        labels: _characters
+            .map((character) => character.data.relevanceTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+    ];
+
+    return groups
+        .where((group) => group.tags.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  TagFilterGroup _buildCharacterTagGroup({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Iterable<String> labels,
+  }) {
+    final tagsByNormalized = <String, ProjectTagData>{};
+    for (final label in labels) {
+      final sanitized = sanitizeProjectTagLabel(label);
+      final normalized = normalizeSearchText(sanitized);
+      if (normalized.isEmpty) continue;
+      tagsByNormalized.putIfAbsent(
+        normalized,
+        () => ProjectTagData(label: sanitized, color: color, groupTitle: title),
+      );
+    }
+
+    return TagFilterGroup(
+      title: title,
+      color: color,
+      icon: icon,
+      tags: tagsByNormalized.values.toList(growable: false),
+    );
+  }
+
   void _onCharacterSearchChanged(String value) {
     setState(() {
       _characterSearchQuery = value;
@@ -860,7 +936,7 @@ class _ProjectPageState extends State<ProjectPage> {
     final result = await showContentFilterMenu(
       context: context,
       initial: _characterFilter,
-      availableTags: _characters.expand(_characterTagLabels),
+      availableTagGroups: _buildCharacterTagGroups(),
     );
     if (!mounted || result == null) return;
     setState(() => _characterFilter = result);

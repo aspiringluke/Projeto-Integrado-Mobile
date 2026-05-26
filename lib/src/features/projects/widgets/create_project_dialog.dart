@@ -49,11 +49,13 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _synopsisController;
-  late final TextEditingController _newTagController;
+  late final TextEditingController _groupTitleController;
   late final ScrollController _contentScrollController;
   late final ScrollController _synopsisScrollController;
   late final CreateProjectDialogController _dialogController;
   late final CreateProjectDialogImageController _imageController;
+  late Color _draftGroupColor;
+  bool _composerExpanded = false;
 
   static const double _synopsisMaxHeight = 196;
 
@@ -68,12 +70,13 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     super.initState();
     _titleController = TextEditingController();
     _synopsisController = TextEditingController();
-    _newTagController = TextEditingController();
+    _groupTitleController = TextEditingController();
     _contentScrollController = ScrollController();
     _synopsisScrollController = ScrollController();
     _dialogController = CreateProjectDialogController(
       availableTags: widget.availableTags,
     );
+    _draftGroupColor = const Color(0xFFE85BB8);
     _imageController = CreateProjectDialogImageController();
     _dialogController.addListener(_onDialogControllerChanged);
     _imageController.addListener(_onImageControllerChanged);
@@ -87,7 +90,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     _dialogController.dispose();
     _titleController.dispose();
     _synopsisController.dispose();
-    _newTagController.dispose();
+    _groupTitleController.dispose();
     _contentScrollController.dispose();
     _synopsisScrollController.dispose();
     super.dispose();
@@ -99,6 +102,66 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 
   void _onImageControllerChanged() {
     setState(() {});
+  }
+
+  void _createGroup() {
+    final title = _groupTitleController.text.trim();
+    if (title.isEmpty) return;
+
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _dialogController.addGroup(title: title, color: _draftGroupColor);
+      _groupTitleController.clear();
+      setState(() => _composerExpanded = false);
+    });
+  }
+
+  Future<void> _editGroup(int index) async {
+    final groups = _dialogController.tagGroups;
+    if (index < 0 || index >= groups.length) return;
+
+    final group = groups[index];
+    final result = await showDialog<CreateProjectTagGroupEditData>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.22),
+      builder: (dialogContext) => CreateProjectTagGroupEditDialog(
+        initialTitle: group.title,
+        initialColor: group.color,
+      ),
+    );
+    if (!mounted || result == null) return;
+
+    _dialogController.updateGroup(
+      groupIndex: index,
+      title: result.title,
+      color: result.color,
+    );
+  }
+
+  Future<void> _editTag({
+    required int groupIndex,
+    required int tagIndex,
+  }) async {
+    final groups = _dialogController.tagGroups;
+    if (groupIndex < 0 || groupIndex >= groups.length) return;
+    final group = groups[groupIndex];
+    if (tagIndex < 0 || tagIndex >= group.tags.length) return;
+
+    final tag = group.tags[tagIndex];
+    final result = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.22),
+      builder: (dialogContext) =>
+          CreateProjectTagEditDialog(initialLabel: tag.label),
+    );
+    if (!mounted || result == null) return;
+
+    _dialogController.updateTag(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+      label: result,
+    );
   }
 
   double _calculateSynopsisHeight(double maxWidth) {
@@ -123,19 +186,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
     return estimatedHeight.clamp(minimumHeight, _synopsisMaxHeight);
   }
 
-  void _addTagFromInput() {
-    final didAdd = _dialogController.addTagFromInput(_newTagController.text);
-    if (didAdd) {
-      _newTagController.clear();
-      setState(() {});
-    }
-  }
-
   void _submit() {
-    if (_newTagController.text.trim().isNotEmpty) {
-      _addTagFromInput();
-    }
-
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -144,7 +195,7 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
       CreateProjectTextDraft(
         title: _titleController.text.trim(),
         synopsis: _synopsisController.text.trim(),
-        tags: _dialogController.selectedTags,
+        tags: _dialogController.tags,
         coverColor: _dialogController.coverColor,
         accentColor: _dialogController.accentColor,
         coverImage: _imageController.coverImage,
@@ -254,9 +305,17 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
                           const SizedBox(height: 12),
                           CreateProjectDialogTagsSection(
                             controller: _dialogController,
-                            newTagController: _newTagController,
-                            onAddTag: _addTagFromInput,
-                            buildInputDecoration: _buildInputDecoration,
+                            groupTitleController: _groupTitleController,
+                            selectedColor: _draftGroupColor,
+                            composerExpanded: _composerExpanded,
+                            onToggleComposer: () => setState(
+                              () => _composerExpanded = !_composerExpanded,
+                            ),
+                            onSelectPresetColor: (color) =>
+                                setState(() => _draftGroupColor = color),
+                            onCreateGroup: _createGroup,
+                            onEditGroup: _editGroup,
+                            onEditTag: _editTag,
                           ),
                           const SizedBox(height: 10),
                           CreateProjectDialogColorSection(

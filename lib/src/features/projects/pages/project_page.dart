@@ -16,6 +16,7 @@ import '../../../features/shared/story_registry.dart';
 import '../../../shared/widgets/funcoes_busca.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/main_header.dart';
+import '../../../shared/utils/text_normalization.dart';
 import '../data/repositories/project_repository.dart';
 import '../models/project_image_data.dart';
 import '../models/project_record.dart';

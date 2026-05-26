@@ -3,6 +3,8 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import '../../shared/utils/text_normalization.dart';
+
 enum MentionTargetKind { project, character, note, folder }
 
 class RegisteredProjectRef {
@@ -794,7 +796,7 @@ class StoryRegistry extends ChangeNotifier {
 }
 
 String _normalizeStoryValue(String value) {
-  return value.trim().toLowerCase();
+  return normalizeSearchText(value);
 }
 
 bool _matchesAnyTitle(String candidate, Iterable<String> values) {

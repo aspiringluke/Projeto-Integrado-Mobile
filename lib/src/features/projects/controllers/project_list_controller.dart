@@ -10,7 +10,6 @@ import '../../notas/data/repositories/note_repository.dart';
 import '../../notas/models/note.dart';
 import '../../notas/models/note_metadata.dart';
 import '../../shared/story_registry.dart';
-import '../../tags/controllers/tag_controller.dart';
 import '../../tags/data/repositories/tag_group_repository.dart';
 import '../../tags/data/repositories/tag_repository.dart';
 import '../data/repositories/project_repository.dart';
@@ -19,6 +18,7 @@ import '../models/project_record.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
 import '../utils/project_character_showcase.dart';
+import '../../../shared/utils/text_normalization.dart';
 
 class ProjectListItem {
   final int? id;
@@ -61,14 +61,11 @@ class ProjectListItem {
 }
 
 class ProjectListController extends ChangeNotifier {
-  static const String _projectTagGroupTitle = 'Projetos';
-
   final ProjectRepository _projectRepository;
   final CharacterRepository _characterRepository;
   final NoteRepository _noteRepository;
   final TagRepository _tagRepository;
   final TagGroupRepository _tagGroupRepository;
-  int? _projectTagGroupId;
   final List<ProjectListItem> _projects = <ProjectListItem>[];
   final List<ProjectTagData> _availableTags = <ProjectTagData>[];
   final List<CharacterListItem> _allCharacters = <CharacterListItem>[];
@@ -201,19 +198,13 @@ class ProjectListController extends ChangeNotifier {
     }
 
     final oldTitle = project.title;
-    final resolvedTags = TagController.resolveProjectTagPool(
-      existingTags: _availableTags,
-      incomingTags: updated.tags,
-    );
-    _availableTags
-      ..clear()
-      ..addAll(resolvedTags.resolvedKnownTags);
+    _mergeAvailableTags(updated.tags);
 
     _projects[index] = ProjectListItem(
       id: updated.id ?? project.id,
       title: updated.title,
       synopsis: updated.synopsis,
-      tags: resolvedTags.resolvedIncomingTags,
+      tags: updated.tags,
       coverColor: updated.coverColor,
       accentColor: updated.accentColor,
       coverImage: updated.coverImage,
@@ -441,7 +432,7 @@ class ProjectListController extends ChangeNotifier {
   String _formerLinkLabel(String value) =>
       'Anteriormente vinculado à ${value.trim()}';
 
-  String _normalizeLabel(String? value) => (value ?? '').trim().toLowerCase();
+  String _normalizeLabel(String? value) => normalizeSearchText(value ?? '');
 
   Future<void> updateProjectContent(
     ProjectListItem project, {
@@ -522,47 +513,34 @@ class ProjectListController extends ChangeNotifier {
   }
 
   Future<void> _hydrateTagsFromStorage() async {
-    final groupId = await _ensureProjectTagGroupId();
-    final result = await _tagRepository.listTags(groupId: groupId);
-    if (!result.$1 || result.$2 == null || result.$2!.isEmpty) return;
+    final groupsResult = await _tagGroupRepository.listGroups();
+    if (!groupsResult.$1 || groupsResult.$2 == null) return;
 
-    final persisted = result.$2!
-        .map((tag) => ProjectTagData(label: tag.label, color: tag.color))
+    final groups = groupsResult.$2!;
+    final groupTitlesById = <int, String>{
+      for (final group in groups)
+        if (group.id != null) group.id!: group.title,
+    };
+
+    final tagsResult = await _tagRepository.listTags();
+    if (!tagsResult.$1 || tagsResult.$2 == null) return;
+
+    final persisted = tagsResult.$2!
+        .where((tag) => tag.label.trim().isNotEmpty)
+        .map(
+          (tag) => ProjectTagData(
+            label: tag.label,
+            color: tag.color,
+            groupId: tag.groupId,
+            groupTitle: tag.groupId == null
+                ? null
+                : groupTitlesById[tag.groupId!],
+          ),
+        )
         .toList(growable: false);
 
-    final resolution = TagController.resolveProjectTagPool(
-      existingTags: _availableTags,
-      incomingTags: persisted,
-    );
-    _availableTags
-      ..clear()
-      ..addAll(resolution.resolvedKnownTags);
+    _mergeAvailableTags(persisted);
     notifyListeners();
-  }
-
-  Future<int?> _ensureProjectTagGroupId() async {
-    if (_projectTagGroupId != null) return _projectTagGroupId;
-
-    final ensured = await _tagGroupRepository.ensureGroup(
-      title: _projectTagGroupTitle,
-      color: defaultProjectAccentColor,
-    );
-    if (ensured.$1 && ensured.$2?.id != null) {
-      _projectTagGroupId = ensured.$2!.id;
-    }
-
-    return _projectTagGroupId;
-  }
-
-  Future<void> _persistResolvedTags(Iterable<ProjectTagData> tags) async {
-    final groupId = await _ensureProjectTagGroupId();
-    for (final tag in tags) {
-      await _tagRepository.upsertTag(
-        label: tag.label,
-        color: tag.color,
-        groupId: groupId,
-      );
-    }
   }
 
   Future<void> _persistProjectOrdering() async {
@@ -687,16 +665,21 @@ class ProjectListController extends ChangeNotifier {
   }
 
   List<ProjectTagData> _resolveTags(Iterable<ProjectTagData> tags) {
-    final resolution = TagController.resolveProjectTagPool(
-      existingTags: _availableTags,
-      incomingTags: tags,
-    );
-
-    _availableTags
-      ..clear()
-      ..addAll(resolution.resolvedKnownTags);
-    unawaited(_persistResolvedTags(resolution.resolvedIncomingTags));
-    return resolution.resolvedIncomingTags;
+    final normalizedIncoming = tags
+        .map(
+          (tag) => ProjectTagData(
+            groupId: tag.groupId,
+            groupTitle: tag.groupTitle?.trim().isNotEmpty == true
+                ? tag.groupTitle!.trim()
+                : null,
+            label: tag.label,
+            color: tag.color,
+          ),
+        )
+        .where((tag) => tag.label.trim().isNotEmpty)
+        .toList(growable: false);
+    _mergeAvailableTags(normalizedIncoming);
+    return normalizedIncoming;
   }
 
   ProjectListItem _mapRecordToItem(ProjectRecord record) {
@@ -704,7 +687,11 @@ class ProjectListController extends ChangeNotifier {
       id: record.id,
       title: record.title,
       synopsis: record.synopsis,
-      tags: List<ProjectTagData>.unmodifiable(record.tags),
+      tags: List<ProjectTagData>.unmodifiable(
+        record.tags
+            .where((tag) => tag.label.trim().isNotEmpty)
+            .toList(growable: false),
+      ),
       coverColor: record.coverColor,
       accentColor: record.accentColor,
       coverImage: record.coverImage,
@@ -722,6 +709,26 @@ class ProjectListController extends ChangeNotifier {
         record.featuredCharacterIds,
       ),
     );
+  }
+
+  void _mergeAvailableTags(Iterable<ProjectTagData> tags) {
+    final merged = <String, ProjectTagData>{
+      for (final tag in _availableTags) _projectTagKey(tag): tag,
+    };
+
+    for (final tag in tags) {
+      merged[_projectTagKey(tag)] = tag;
+    }
+
+    _availableTags
+      ..clear()
+      ..addAll(merged.values);
+  }
+
+  String _projectTagKey(ProjectTagData tag) {
+    final groupKey =
+        tag.groupId?.toString() ?? normalizeSearchText(tag.groupTitle ?? '');
+    return '$groupKey|${tag.normalizedLabel}';
   }
 
   void _applyDisplayedCharacters(List<CharacterListItem> characters) {

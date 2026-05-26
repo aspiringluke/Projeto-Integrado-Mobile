@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../features/projects/controllers/project_list_controller.dart';
+import '../../features/projects/models/project_tag_data.dart';
 import './idea_list_page.dart';
 import '../../features/projects/pages/project_list_page.dart';
 import '../../features/projects/widgets/create_project_dialog.dart';
@@ -119,9 +120,9 @@ class _ShellPageState extends State<ShellPage> {
     final result = await showContentFilterMenu(
       context: context,
       initial: isProjects ? _projectFilter : _ideasFilter,
-      availableTags: isProjects
-          ? _projectListController.availableTags.map((tag) => tag.label)
-          : const <String>[],
+      availableTagGroups: isProjects
+          ? _buildProjectTagGroups(_projectListController.availableTags)
+          : const <TagFilterGroup>[],
     );
     if (!mounted || result == null) return;
 
@@ -132,6 +133,38 @@ class _ShellPageState extends State<ShellPage> {
         _ideasFilter = result;
       }
     });
+  }
+
+  List<TagFilterGroup> _buildProjectTagGroups(Iterable<ProjectTagData> tags) {
+    final groups = <String, _ProjectTagGroupDraft>{};
+
+    for (final tag in tags) {
+      final title = tag.groupTitle?.trim().isNotEmpty == true
+          ? tag.groupTitle!.trim()
+          : 'Tags';
+      final group = groups.putIfAbsent(
+        title,
+        () => _ProjectTagGroupDraft(
+          title: title,
+          color: tag.color,
+          tags: <ProjectTagData>[],
+        ),
+      );
+      group.tags.add(tag);
+      if (group.tags.length == 1) {
+        group.color = tag.color;
+      }
+    }
+
+    return groups.values
+        .map(
+          (group) => TagFilterGroup(
+            title: group.title,
+            color: group.color,
+            tags: List<ProjectTagData>.unmodifiable(group.tags),
+          ),
+        )
+        .toList(growable: false);
   }
 
   Future<void> _openActiveSortMenu() async {
@@ -292,6 +325,18 @@ class _ShellPageState extends State<ShellPage> {
       ),
     );
   }
+}
+
+class _ProjectTagGroupDraft {
+  final String title;
+  Color color;
+  final List<ProjectTagData> tags;
+
+  _ProjectTagGroupDraft({
+    required this.title,
+    required this.color,
+    required this.tags,
+  });
 }
 
 class _IdeasQuickActionButton extends StatelessWidget {

@@ -1,4 +1,4 @@
-﻿part of '../create_character_dialog.dart';
+part of '../create_character_dialog.dart';
 
 enum _CharacterTagKind { gender, sexuality, ethnicity, function }
 

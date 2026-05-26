@@ -174,6 +174,7 @@ class FolderRepository {
               .toJsonString(),
         );
       }
+      await _ensureDefaultProjectFolders(existing.id!, title.trim(), color);
       return existing;
     }
 
@@ -191,7 +192,11 @@ class FolderRepository {
       return null;
     }
 
-    return await findRootFolderByTitle(title);
+    final root = await findRootFolderByTitle(title);
+    if (root?.id != null) {
+      await _ensureDefaultProjectFolders(root!.id!, title.trim(), color);
+    }
+    return root;
   }
 
   Future<Folder?> ensureCharacterRootFolder({
@@ -204,43 +209,83 @@ class FolderRepository {
       return null;
     }
 
-    final existing = await findCharacterRootFolder(
-      characterName: normalizedName,
-      projectTitle: projectTitle,
-    );
+    int? projectFolderId;
+    final normalizedProjectTitle = projectTitle?.trim();
+    if (normalizedProjectTitle != null && normalizedProjectTitle.isNotEmpty) {
+      final ensuredProjectFolder = await ensureRootFolder(
+        title: normalizedProjectTitle,
+        color: color,
+      );
+      projectFolderId = ensuredProjectFolder?.id;
+      if (projectFolderId == null) {
+        return null;
+      }
+    }
+
+    int? charactersFolderId = projectFolderId;
+    if (projectFolderId != null) {
+      final ensuredCharactersFolder = await _ensureChildFolder(
+        parentFolderId: projectFolderId,
+        title: 'Personagens',
+        color: color,
+        metadata: NoteMetadata(
+          tagGroups: const <NoteTagGroup>[],
+          linkTarget: NoteLinkTarget(projectTitle: normalizedProjectTitle),
+        ),
+      );
+      charactersFolderId = ensuredCharactersFolder?.id;
+      if (charactersFolderId == null) {
+        return null;
+      }
+    }
+
+    final existing =
+        await _findCharacterFolderUnderParent(
+          parentFolderId: charactersFolderId,
+          characterName: normalizedName,
+        ) ??
+        await _findCharacterFolderUnderParent(
+          parentFolderId: projectFolderId,
+          characterName: normalizedName,
+        ) ??
+        await findCharacterRootFolder(
+          characterName: normalizedName,
+          projectTitle: normalizedProjectTitle,
+        );
     if (existing != null) {
       final existingId = existing.id;
       if (existingId != null) {
-        final normalizedProject = projectTitle?.trim();
         final metadata = existing.metadata.copyWith(
           characterRootName: normalizedName,
           linkTarget: NoteLinkTarget(
-            projectTitle: normalizedProject == null || normalizedProject.isEmpty
+            projectTitle:
+                normalizedProjectTitle == null || normalizedProjectTitle.isEmpty
                 ? existing.metadata.linkTarget.projectTitle
-                : normalizedProject,
+                : normalizedProjectTitle,
             characterName: normalizedName,
           ),
         );
         await updateFolderMetadata(existingId, metadata.toJsonString());
+        if (charactersFolderId != null &&
+            existing.parentFolderId != charactersFolderId) {
+          await moveFolderToFolder(existingId, charactersFolderId);
+        }
+        final refreshed = await getFolder(existingId);
+        if (refreshed.$1 && refreshed.$2 != null) {
+          return refreshed.$2;
+        }
       }
       return existing;
-    }
-
-    // Find project folder if projectTitle is provided
-    int? projectFolderId;
-    if (projectTitle != null && projectTitle.trim().isNotEmpty) {
-      final projectFolder = await findRootFolderByTitle(projectTitle);
-      projectFolderId = projectFolder?.id;
     }
 
     final created = await createNewFolder(
       normalizedName,
       color,
-      projectFolderId,
+      charactersFolderId,
       NoteMetadata(
         tagGroups: const <NoteTagGroup>[],
         linkTarget: NoteLinkTarget(
-          projectTitle: projectTitle?.trim(),
+          projectTitle: normalizedProjectTitle,
           characterName: normalizedName,
         ),
         characterRootName: normalizedName,
@@ -250,10 +295,118 @@ class FolderRepository {
       return null;
     }
 
-    return await findCharacterRootFolder(
-      characterName: normalizedName,
-      projectTitle: projectTitle,
+    final fetched = await getFolder(created.$2!);
+    return fetched.$2;
+  }
+
+  Future<void> _ensureDefaultProjectFolders(
+    int rootFolderId,
+    String projectTitle,
+    Color color,
+  ) async {
+    await _ensureChildFolder(
+      parentFolderId: rootFolderId,
+      title: 'Personagens',
+      color: color,
+      metadata: NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+      ),
     );
+    await _ensureChildFolder(
+      parentFolderId: rootFolderId,
+      title: 'Enredo',
+      color: color,
+      metadata: NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+      ),
+    );
+    await _ensureChildFolder(
+      parentFolderId: rootFolderId,
+      title: 'Mundo',
+      color: color,
+      metadata: NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+      ),
+    );
+  }
+
+  Future<Folder?> _ensureChildFolder({
+    required int parentFolderId,
+    required String title,
+    required Color color,
+    required NoteMetadata metadata,
+  }) async {
+    final existing = await _findFolderByTitleUnderParent(parentFolderId, title);
+    if (existing != null) {
+      if (existing.id != null) {
+        await updateFolderMetadata(existing.id!, metadata.toJsonString());
+      }
+      return existing;
+    }
+
+    final created = await createNewFolder(
+      title,
+      color,
+      parentFolderId,
+      metadata,
+    );
+    if (!created.$1 || created.$2 == null) {
+      return null;
+    }
+
+    final fetched = await getFolder(created.$2!);
+    return fetched.$2;
+  }
+
+  Future<Folder?> _findFolderByTitleUnderParent(
+    int parentFolderId,
+    String title,
+  ) async {
+    final result = await listFolders(parentFolderId);
+    if (!result.$1 || result.$2 == null) {
+      return null;
+    }
+
+    final normalizedTitle = title.trim().toLowerCase();
+    for (final folder in result.$2!) {
+      final folderTitle = folder.title.trim().toLowerCase();
+      if (folderTitle == normalizedTitle) {
+        return folder;
+      }
+    }
+
+    return null;
+  }
+
+  Future<Folder?> _findCharacterFolderUnderParent({
+    required int? parentFolderId,
+    required String characterName,
+  }) async {
+    if (parentFolderId == null) {
+      return null;
+    }
+
+    final result = await listFolders(parentFolderId);
+    if (!result.$1 || result.$2 == null) {
+      return null;
+    }
+
+    final normalizedName = characterName.trim().toLowerCase();
+    for (final folder in result.$2!) {
+      final folderTitle = folder.title.trim().toLowerCase();
+      final characterRootName = folder.metadata.characterRootName
+          ?.trim()
+          .toLowerCase();
+      if (folderTitle == normalizedName ||
+          characterRootName == normalizedName) {
+        return folder;
+      }
+    }
+
+    return null;
   }
 
   Future<(bool, String)> moveFolderToFolder(int id, int? parentFolderId) async {

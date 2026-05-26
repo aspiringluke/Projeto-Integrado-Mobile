@@ -18,6 +18,8 @@ import '../../projects/widgets/project_image_transform_view.dart';
 import '../../notas/pages/notes_sub_page.dart';
 import '../../../shared/widgets/synopsis_scroll_box.dart';
 import '../../../shared/widgets/main_header.dart';
+import '../../../shared/widgets/buttons/glass_circle_button.dart';
+import '../../shared/story_registry.dart';
 import '../../tags/controllers/tag_controller.dart';
 import '../models/characters_models.dart';
 import '../utils/characters_utils.dart';
@@ -89,10 +91,12 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
   late TextEditingController _historySearchController;
   late ScrollController _synopsisScrollController;
   late final ValueNotifier<CharacterCardData> _headerDraftNotifier;
+  late final NotesSubPageController _notesSubPageController;
   late Map<_TagKind, TagController> _tagControllers;
   late Map<_NotebookSection, GlobalKey> _sectionKeys;
   _NotebookTab _activeTab = _NotebookTab.geral;
   _CharacterColorTarget _activeColorTarget = _CharacterColorTarget.cover;
+  bool _showCharacterNotesQuickActions = false;
   bool _hasPendingParentSync = false;
   bool _didFlushParentSync = false;
 
@@ -147,6 +151,7 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     );
     _historySearchController = TextEditingController();
     _synopsisScrollController = ScrollController();
+    _notesSubPageController = NotesSubPageController();
     _tagControllers = <_TagKind, TagController>{
       for (final kind in _TagKind.values)
         kind: TagController(
@@ -218,6 +223,9 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
     setState(() {
       _activeTab = tab;
+      if (tab != _NotebookTab.notas) {
+        _showCharacterNotesQuickActions = false;
+      }
     });
   }
 
@@ -774,15 +782,121 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         ? 'Personagem sem nome'
         : _draft.name.trim();
 
-    return NotesSubPage(
+    final showQuickActions =
+        _activeTab == _NotebookTab.notas && _showCharacterNotesQuickActions;
+
+    return Stack(
       key: ValueKey(
         'character-notes-${_resolvedProjectTitle ?? ''}-$characterName',
       ),
-      characterContext: NotesCharacterContext(
-        characterName: characterName,
-        projectTitle: _resolvedProjectTitle,
-        accentColor: _draft.accent,
-      ),
+      fit: StackFit.expand,
+      children: [
+        NotesSubPage(
+          controller: _notesSubPageController,
+          characterContext: NotesCharacterContext(
+            characterName: characterName,
+            projectTitle: _resolvedProjectTitle,
+            accentColor: _draft.accent,
+          ),
+        ),
+        if (showQuickActions)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                setState(() => _showCharacterNotesQuickActions = false);
+              },
+              child: const SizedBox.expand(),
+            ),
+          ),
+        Positioned(
+          right: 18,
+          bottom: 18,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: showQuickActions
+                    ? Column(
+                        key: const ValueKey('character_notes_quick_actions'),
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _CharacterNotesQuickActionButton(
+                            icon: Icons.note_add_outlined,
+                            label: 'Nova nota',
+                            onTap: () async {
+                              setState(
+                                () => _showCharacterNotesQuickActions = false,
+                              );
+                              await _notesSubPageController.createNoteFromFab();
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          _CharacterNotesQuickActionButton(
+                            icon: Icons.create_new_folder_outlined,
+                            label: 'Nova pasta',
+                            onTap: () async {
+                              setState(
+                                () => _showCharacterNotesQuickActions = false,
+                              );
+                              await _notesSubPageController
+                                  .createFolderFromFab();
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      )
+                    : const SizedBox.shrink(
+                        key: ValueKey('character_notes_quick_actions_empty'),
+                      ),
+              ),
+              GlassCircleButton(
+                diameter: 56,
+                onTap: () {
+                  setState(() {
+                    _showCharacterNotesQuickActions =
+                        !_showCharacterNotesQuickActions;
+                  });
+                },
+                blurSigma: 10,
+                fillColor: const Color(0xFFF2D5E3).withValues(alpha: 0.58),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.88),
+                    const Color(0xFFF1D1E2).withValues(alpha: 0.92),
+                    const Color(0xFFE9B8D4).withValues(alpha: 0.98),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+                borderColor: Colors.white.withValues(alpha: 0.92),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFDF6EB8).withValues(alpha: 0.14),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                child: Icon(
+                  showQuickActions ? Icons.close_rounded : Icons.add_rounded,
+                  color: const Color(0xFF171419),
+                  size: 31,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -975,6 +1089,14 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
         if (projectTitle != null && projectTitle.isNotEmpty) {
           return projectTitle;
         }
+      }
+    }
+
+    for (final character in StoryRegistry.instance.characters) {
+      if (character.name.trim().toLowerCase() == characterName) {
+        return character.projectTitle.trim().isEmpty
+            ? null
+            : character.projectTitle.trim();
       }
     }
 
@@ -2603,6 +2725,15 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
     return _tagControllers[kind]?.colorForLabel(label);
   }
 
+  String _tagGroupStorageTitle(_TagKind kind) {
+    return switch (kind) {
+      _TagKind.gender => 'Personagem:Gênero',
+      _TagKind.sexuality => 'Personagem:Sexualidade',
+      _TagKind.ethnicity => 'Personagem:Etnia',
+      _TagKind.function => 'Personagem:Função',
+    };
+  }
+
   List<ProjectTagData> _seedTagsFor(_TagKind kind) {
     final labels = switch (kind) {
       _TagKind.gender => const ['Masculino', 'Feminino', 'N/A'],
@@ -2619,7 +2750,11 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
 
     return [
       for (final label in labels)
-        ProjectTagData(label: label, color: _tagCategoryColor(kind)),
+        ProjectTagData(
+          label: label,
+          color: _tagCategoryColor(kind),
+          groupTitle: _tagKindTitle(kind),
+        ),
     ];
   }
 
@@ -2631,13 +2766,70 @@ class _CharacterNotebookPageState extends State<CharacterNotebookPage> {
       _TagKind.function => projectTagColorAt(3),
     };
   }
+}
 
-  String _tagGroupStorageTitle(_TagKind kind) {
-    return switch (kind) {
-      _TagKind.gender => 'Personagem:Gênero',
-      _TagKind.sexuality => 'Personagem:Sexualidade',
-      _TagKind.ethnicity => 'Personagem:Etnia',
-      _TagKind.function => 'Personagem:Função',
-    };
+class _CharacterNotesQuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _CharacterNotesQuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.24),
+                    const Color(0xFFF2D5E3).withValues(alpha: 0.08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.74)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE9B8D4).withValues(alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 18, color: const Color(0xFF544959)),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Color(0xFF544959),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

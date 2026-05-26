@@ -45,7 +45,8 @@ class TagController extends ChangeNotifier {
 
   List<ProjectTagData> get knownTags =>
       List<ProjectTagData>.unmodifiable(_knownTags);
-  Set<String> get selectedTagLabels => Set<String>.unmodifiable(_selectedTagLabels);
+  Set<String> get selectedTagLabels =>
+      Set<String>.unmodifiable(_selectedTagLabels);
   Color get draftTagColor => _draftTagColor;
 
   List<ProjectTagData> get selectedTags => _knownTags
@@ -84,16 +85,15 @@ class TagController extends ChangeNotifier {
       return true;
     }
 
-    final newTag = ProjectTagData(label: sanitizedLabel, color: _draftTagColor);
+    final newTag = ProjectTagData(
+      label: sanitizedLabel,
+      color: _draftTagColor,
+      groupTitle: _groupTitle,
+    );
     _knownTags = <ProjectTagData>[..._knownTags, newTag];
     _selectedTagLabels.add(newTag.normalizedLabel);
     _draftTagColor = projectTagColorAt(_knownTags.length);
-    unawaited(
-      _persistTag(
-        label: newTag.label,
-        color: newTag.color,
-      ),
-    );
+    unawaited(_persistTag(label: newTag.label, color: newTag.color));
     notifyListeners();
     return true;
   }
@@ -119,18 +119,14 @@ class TagController extends ChangeNotifier {
     final tag = ProjectTagData(
       label: sanitizedLabel,
       color: newTagColor ?? _draftTagColor,
+      groupTitle: _groupTitle,
     );
     _knownTags = <ProjectTagData>[..._knownTags, tag];
     if (select) {
       _selectedTagLabels.add(tag.normalizedLabel);
     }
     _draftTagColor = projectTagColorAt(_knownTags.length);
-    unawaited(
-      _persistTag(
-        label: tag.label,
-        color: tag.color,
-      ),
-    );
+    unawaited(_persistTag(label: tag.label, color: tag.color));
     notifyListeners();
     return tag.label;
   }
@@ -159,7 +155,14 @@ class TagController extends ChangeNotifier {
     }
 
     final incoming = result.$2!
-        .map((tag) => ProjectTagData(label: tag.label, color: tag.color))
+        .map(
+          (tag) => ProjectTagData(
+            label: tag.label,
+            color: tag.color,
+            groupId: tag.groupId,
+            groupTitle: _groupTitle,
+          ),
+        )
         .toList(growable: false);
 
     final resolution = resolveProjectTagPool(
@@ -189,7 +192,10 @@ class TagController extends ChangeNotifier {
     return _resolvedGroupId;
   }
 
-  Future<void> _persistTag({required String label, required Color color}) async {
+  Future<void> _persistTag({
+    required String label,
+    required Color color,
+  }) async {
     await _tagRepository.upsertTag(
       label: label,
       color: color,
@@ -220,7 +226,12 @@ class TagController extends ChangeNotifier {
       }
 
       final sanitizedLabel = sanitizeTagLabel(tag.label);
-      final addedTag = ProjectTagData(label: sanitizedLabel, color: tag.color);
+      final addedTag = ProjectTagData(
+        label: sanitizedLabel,
+        color: tag.color,
+        groupId: tag.groupId,
+        groupTitle: tag.groupTitle,
+      );
       nextKnownTags.add(addedTag);
       resolvedIncoming.add(addedTag);
     }

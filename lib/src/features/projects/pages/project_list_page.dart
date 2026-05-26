@@ -8,6 +8,7 @@ import '../../../shared/widgets/funcoes_busca.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/multi_select_action_bar.dart';
 import '../../../shared/widgets/pin_badge.dart';
+import '../../../shared/utils/text_normalization.dart';
 import '../../notas/utils/notes_dialogs.dart';
 import '../controllers/project_list_controller.dart';
 import '../models/project_record.dart';
@@ -111,7 +112,7 @@ class _ProjectListPageState extends State<ProjectListPage> {
   }
 
   List<ProjectListItem> _visibleProjects(Iterable<ProjectListItem> projects) {
-    final query = widget.searchQuery.trim().toLowerCase();
+    final query = normalizeSearchText(widget.searchQuery);
     final filtered = projects
         .where((project) {
           if (query.isEmpty) {
@@ -119,11 +120,13 @@ class _ProjectListPageState extends State<ProjectListPage> {
               project.tags.map((tag) => tag.label),
             );
           }
-          final haystack = <String>[
-            project.title,
-            project.synopsis,
-            ...project.tags.map((tag) => tag.label),
-          ].join(' ').toLowerCase();
+          final haystack = normalizeSearchText(
+            <String>[
+              project.title,
+              project.synopsis,
+              ...project.tags.map((tag) => tag.label),
+            ].join(' '),
+          );
           return haystack.contains(query) &&
               widget.filterState.matchesTags(
                 project.tags.map((tag) => tag.label),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/utils/text_normalization.dart';
+
 class TagModel {
   final int? id;
   final String label;
@@ -15,12 +17,7 @@ class TagModel {
 
   String get normalizedLabel => normalizeTagLabel(label);
 
-  TagModel copyWith({
-    int? id,
-    String? label,
-    Color? color,
-    int? groupId,
-  }) {
+  TagModel copyWith({int? id, String? label, Color? color, int? groupId}) {
     return TagModel(
       id: id ?? this.id,
       label: label ?? this.label,
@@ -35,5 +32,5 @@ String sanitizeTagLabel(String label) {
 }
 
 String normalizeTagLabel(String label) {
-  return sanitizeTagLabel(label).toLowerCase();
+  return normalizeSearchText(sanitizeTagLabel(label));
 }
