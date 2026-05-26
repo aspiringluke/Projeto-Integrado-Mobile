@@ -148,6 +148,7 @@ class _BreadcrumbLabel extends StatelessWidget {
                   style: TextStyle(
                     color: baseColor,
                     fontSize: isCurrent ? 16 : 14.2,
+                    height: 1.05,
                     fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
