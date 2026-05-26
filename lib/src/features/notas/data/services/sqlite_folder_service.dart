@@ -9,7 +9,12 @@ import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata
 
 class SqliteFolderService implements IFolderService {
   @override
-  Future<(bool, int?, String?)> createNewFolder(String title, String color, int? parentFolderId, [NoteMetadata? metadata]) async {
+  Future<(bool, int?, String?)> createNewFolder(
+    String title,
+    String color,
+    int? parentFolderId, [
+    NoteMetadata? metadata,
+  ]) async {
     final conn = await getConnection();
     final now = _nowIso();
     try {
@@ -66,10 +71,10 @@ class SqliteFolderService implements IFolderService {
       final metadata = NoteMetadata.fromJsonString(
         folder.first["metadata"] as String?,
       );
-      if (metadata.isProjectRoot) {
+      if (metadata.isProtectedRoot) {
         return (
           false,
-          "Esta pasta de projeto não pode ser excluída. Apague o conteúdo da pasta em vez disso.",
+          "Esta pasta protegida não pode ser excluída. Apague o conteúdo da pasta em vez disso.",
         );
       }
 

@@ -1,11 +1,9 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../models/create_project_dialog_image_viewport_presets.dart';
 import '../models/project_image_data.dart';
 import '../utils/project_image_picker.dart';
+import '../utils/project_image_picker_result.dart';
 import '../widgets/project_image_transform_view.dart';
 import 'create_project_dialog_controller.dart';
 
@@ -14,12 +12,14 @@ class CreateProjectDialogImageController extends ChangeNotifier {
   String? _coverImageName;
   ProjectImageData _accentImage = const ProjectImageData();
   String? _accentImageName;
+  String? _imageErrorMessage;
   bool _isDisposed = false;
 
   ProjectImageData get coverImage => _coverImage;
   String? get coverImageName => _coverImageName;
   ProjectImageData get accentImage => _accentImage;
   String? get accentImageName => _accentImageName;
+  String? get imageErrorMessage => _imageErrorMessage;
 
   ProjectImageData imageForTarget(CreateProjectDialogColorTarget target) {
     return _isCoverTarget(target) ? _coverImage : _accentImage;
@@ -30,22 +30,30 @@ class CreateProjectDialogImageController extends ChangeNotifier {
   }
 
   Future<void> pickImage(CreateProjectDialogColorTarget target) async {
-    final result = await pickProjectImage();
+    ProjectImagePickResult? result;
+    try {
+      result = await pickProjectImage();
+    } on ProjectImagePickException catch (error) {
+      _imageErrorMessage = error.message;
+      _notifySafely();
+      return;
+    }
+
     if (result == null) {
       return;
     }
 
-    final imageSize = await _decodeImageSize(result.bytes);
     if (_isDisposed) {
       return;
     }
 
+    _imageErrorMessage = null;
     _setImageStateForTarget(
       target,
       image: ProjectImageData(
         bytes: result.bytes,
-        width: imageSize.width,
-        height: imageSize.height,
+        width: result.width,
+        height: result.height,
       ),
       imageName: result.name,
     );
@@ -158,16 +166,6 @@ class CreateProjectDialogImageController extends ChangeNotifier {
 
   bool _isCoverTarget(CreateProjectDialogColorTarget target) =>
       target == CreateProjectDialogColorTarget.cover;
-
-  Future<Size> _decodeImageSize(Uint8List bytes) async {
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    final image = frame.image;
-    final size = Size(image.width.toDouble(), image.height.toDouble());
-    image.dispose();
-    codec.dispose();
-    return size;
-  }
 
   void _notifySafely() {
     if (_isDisposed) return;

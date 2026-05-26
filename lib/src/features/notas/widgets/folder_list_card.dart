@@ -22,9 +22,9 @@ class FolderListCard extends StatefulWidget {
   final bool selectionMode;
   final bool isSelected;
   final bool isPinned;
+  final bool showActions;
   final List<String> summaryTags;
   final int noteCount;
-  final Future<int> Function(int folderId)? noteCountLoader;
   final ValueChanged<int>? onAcceptNote;
   final ValueChanged<int>? onAcceptFolder;
   final FolderPreviewData? preview;
@@ -41,9 +41,9 @@ class FolderListCard extends StatefulWidget {
     this.selectionMode = false,
     this.isSelected = false,
     this.isPinned = false,
+    this.showActions = true,
     this.summaryTags = const <String>[],
     this.noteCount = 0,
-    this.noteCountLoader,
     this.onAcceptNote,
     this.onAcceptFolder,
     this.preview,
@@ -237,17 +237,24 @@ class _FolderListCardState extends State<FolderListCard> {
                                     : 'Selecionar',
                                 onTap: widget.onToggleSelection,
                               )
-                            else
+                            else if (widget.showActions)
                               NotesActionIconButton(
                                 icon: Icons.drive_file_rename_outline_rounded,
                                 tooltip: 'Renomear pasta',
                                 onTap: widget.onRename,
+                              )
+                            else
+                              const Icon(
+                                Icons.drag_indicator_rounded,
+                                color: kNotesMutedText,
+                                size: 20,
                               ),
-                            const SizedBox(width: 6),
-                            if (!widget.selectionMode)
+                            if (!widget.selectionMode && widget.showActions)
+                              const SizedBox(width: 6),
+                            if (!widget.selectionMode && widget.showActions)
                               NotesActionIconButton(
                                 icon: Icons.delete_outline_rounded,
-                                tooltip: widget.folder.isProjectRoot
+                                tooltip: widget.folder.isProtectedRoot
                                     ? 'Apagar conteúdo da pasta'
                                     : 'Excluir pasta',
                                 onTap: widget.onDelete,
@@ -294,17 +301,7 @@ class _FolderListCardState extends State<FolderListCard> {
             );
           }
 
-          if (widget.noteCountLoader == null || widget.folder.id == null) {
-            return buildCard(widget.noteCount);
-          }
-
-          return FutureBuilder<int>(
-            future: widget.noteCountLoader!(widget.folder.id!),
-            builder: (context, snapshot) {
-              final resolvedCount = snapshot.data ?? widget.noteCount;
-              return buildCard(resolvedCount);
-            },
-          );
+          return buildCard(widget.noteCount);
         },
       ),
     );
@@ -322,6 +319,9 @@ class _FolderListCardState extends State<FolderListCard> {
             tint: group.color,
           ),
         );
+        if (chips.length >= 6) {
+          return chips;
+        }
       }
     }
 

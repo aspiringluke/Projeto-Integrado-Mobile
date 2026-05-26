@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:projeto_integrado_mobile/src/features/tags/controllers/tag_controller.dart';
+import 'package:projeto_integrado_mobile/src/features/notas/models/note_metadata.dart';
+import 'package:projeto_integrado_mobile/src/features/tags/controllers/tag_group_controller.dart';
 
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
@@ -8,25 +9,21 @@ import '../models/project_tag_data.dart';
 enum CreateProjectDialogColorTarget { cover, accent }
 
 class CreateProjectDialogController extends ChangeNotifier {
-  late final TagController _tagController;
+  late final TagGroupController _tagGroupController;
   HSLColor _coverColor = HSLColor.fromColor(defaultProjectCoverColor);
   HSLColor _accentColor = HSLColor.fromColor(defaultProjectAccentColor);
   CreateProjectDialogColorTarget _activeColorTarget =
       CreateProjectDialogColorTarget.accent;
 
-  CreateProjectDialogController({required List<ProjectTagData> availableTags})
-    {
-    _tagController = TagController(
-      knownTags: availableTags,
-      groupTitle: 'Projetos',
-    );
-    _tagController.addListener(_forwardTagChanges);
+  CreateProjectDialogController({required List<ProjectTagData> availableTags}) {
+    _tagGroupController = TagGroupController(groups: const <NoteTagGroup>[]);
+    _tagGroupController.addListener(_forwardTagChanges);
   }
 
   @override
   void dispose() {
-    _tagController.removeListener(_forwardTagChanges);
-    _tagController.dispose();
+    _tagGroupController.removeListener(_forwardTagChanges);
+    _tagGroupController.dispose();
     super.dispose();
   }
 
@@ -34,11 +31,7 @@ class CreateProjectDialogController extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<ProjectTagData> get knownTags => _tagController.knownTags;
-
-  Set<String> get selectedTagLabels => _tagController.selectedTagLabels;
-
-  Color get newTagColor => _tagController.draftTagColor;
+  List<NoteTagGroup> get tagGroups => _tagGroupController.groups;
 
   Color get coverColor => _coverColor.toColor();
 
@@ -52,20 +45,62 @@ class CreateProjectDialogController extends ChangeNotifier {
 
   CreateProjectDialogColorTarget get activeColorTarget => _activeColorTarget;
 
-  List<ProjectTagData> get selectedTags => _tagController.selectedTags;
+  List<ProjectTagData> get tags => _tagGroupController.groups
+      .expand(
+        (group) => group.tags.map(
+          (tag) => ProjectTagData(
+            label: tag.label,
+            color: group.color,
+            groupTitle: group.title,
+          ),
+        ),
+      )
+      .toList(growable: false);
 
-  bool isSelectedTag(ProjectTagData tag) => _tagController.isSelected(tag);
-
-  void toggleTag(ProjectTagData tag) {
-    _tagController.toggle(tag);
+  void addGroup({required String title, required Color color}) {
+    _tagGroupController.addGroup(title: title, color: color);
   }
 
-  bool addTagFromInput(String input) {
-    return _tagController.addTagFromInput(input);
+  void updateGroup({
+    required int groupIndex,
+    required String title,
+    required Color color,
+  }) {
+    _tagGroupController.updateGroup(
+      groupIndex: groupIndex,
+      title: title,
+      color: color,
+    );
   }
 
-  void setNewTagColor(Color color) {
-    _tagController.setDraftTagColor(color);
+  void removeGroup(int groupIndex) {
+    _tagGroupController.removeGroup(groupIndex);
+  }
+
+  void addTagToGroup({required int groupIndex, required String tagLabel}) {
+    _tagGroupController.addTagToGroup(
+      groupIndex: groupIndex,
+      tagLabel: tagLabel,
+    );
+  }
+
+  void removeTagFromGroup({required int groupIndex, required int tagIndex}) {
+    _tagGroupController.removeTagFromGroup(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+    );
+  }
+
+  void updateTag({
+    required int groupIndex,
+    required int tagIndex,
+    required String label,
+  }) {
+    _tagGroupController.updateTag(
+      groupIndex: groupIndex,
+      tagIndex: tagIndex,
+      label: label,
+    );
   }
 
   void setActiveColorTarget(CreateProjectDialogColorTarget target) {

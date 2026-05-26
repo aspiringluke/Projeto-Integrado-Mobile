@@ -16,6 +16,7 @@ class ProjectRecord {
   final int unpinnedIndex;
   final String characterDisplayMode;
   final int characterGridColumns;
+  final List<int> featuredCharacterIds;
   final DateTime createdAt;
   final DateTime lastModified;
   final DateTime lastAccessed;
@@ -33,6 +34,7 @@ class ProjectRecord {
     this.unpinnedIndex = 0,
     this.characterDisplayMode = 'list',
     this.characterGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
     required this.createdAt,
     required this.lastModified,
     required this.lastAccessed,
@@ -51,6 +53,7 @@ class ProjectRecord {
     int? unpinnedIndex,
     String? characterDisplayMode,
     int? characterGridColumns,
+    List<int>? featuredCharacterIds,
     DateTime? createdAt,
     DateTime? lastModified,
     DateTime? lastAccessed,
@@ -67,8 +70,8 @@ class ProjectRecord {
       isPinned: isPinned ?? this.isPinned,
       unpinnedIndex: unpinnedIndex ?? this.unpinnedIndex,
       characterDisplayMode: characterDisplayMode ?? this.characterDisplayMode,
-      characterGridColumns:
-          characterGridColumns ?? this.characterGridColumns,
+      characterGridColumns: characterGridColumns ?? this.characterGridColumns,
+      featuredCharacterIds: featuredCharacterIds ?? this.featuredCharacterIds,
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
       lastAccessed: lastAccessed ?? this.lastAccessed,

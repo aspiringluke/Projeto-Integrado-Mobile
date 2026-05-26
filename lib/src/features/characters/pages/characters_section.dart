@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import '../models/characters_models.dart';
 import '../widgets/character_card.dart';
 import '../widgets/character_card_visuals.dart';
+import '../widgets/character_notebook_page.dart';
+import '../widgets/character_profile_viewer_dialog.dart';
+import '../../../shared/widgets/buttons/glass_circle_button.dart';
+import '../../../shared/widgets/multi_select_action_bar.dart';
+import '../../../shared/widgets/view_options_bar.dart';
 
-class CharactersSection extends StatelessWidget {
+class CharactersSection extends StatefulWidget {
   final List<CharacterListItem> characters;
   final ValueChanged<CharacterListItem> onTogglePinned;
   final ValueChanged<CharacterListItem> onCharacterViewed;
@@ -13,10 +18,13 @@ class CharactersSection extends StatelessWidget {
     CharacterCardData updatedData,
   )
   onCharacterEdited;
+  final ValueChanged<CharacterListItem> onCharacterDeleted;
+  final ValueChanged<List<CharacterListItem>> onCharactersDeleted;
   final bool showAvatarGrid;
   final int avatarGridColumns;
   final VoidCallback onToggleDisplayMode;
   final ValueChanged<int> onChangeAvatarGridColumns;
+  final String emptyMessage;
 
   const CharactersSection({
     super.key,
@@ -24,22 +32,129 @@ class CharactersSection extends StatelessWidget {
     required this.onTogglePinned,
     required this.onCharacterViewed,
     required this.onCharacterEdited,
+    required this.onCharacterDeleted,
+    required this.onCharactersDeleted,
     required this.showAvatarGrid,
     required this.avatarGridColumns,
     required this.onToggleDisplayMode,
     required this.onChangeAvatarGridColumns,
+    this.emptyMessage =
+        'Nenhum personagem criado. Clique no "+" para criar um!',
   });
 
   @override
+  State<CharactersSection> createState() => _CharactersSectionState();
+}
+
+class _CharactersSectionState extends State<CharactersSection> {
+  bool _selectionMode = false;
+  final Set<int> _selectedCharacterIds = <int>{};
+
+  bool get _isSelectionMode => _selectionMode;
+
+  void _toggleSelectionMode() {
+    if (_selectionMode || _selectedCharacterIds.isNotEmpty) {
+      _clearSelection();
+      return;
+    }
+
+    setState(() {
+      _selectionMode = true;
+    });
+  }
+
+  void _selectAllCharacters() {
+    setState(() {
+      _selectionMode = true;
+      _selectedCharacterIds
+        ..clear()
+        ..addAll(
+          widget.characters.map((character) => character.id).whereType<int>(),
+        );
+    });
+  }
+
+  void _clearSelection() {
+    if (!_selectionMode && _selectedCharacterIds.isEmpty) return;
+    setState(() {
+      _selectionMode = false;
+      _selectedCharacterIds.clear();
+    });
+  }
+
+  void _toggleCharacterSelection(CharacterListItem character) {
+    final characterId = character.id;
+    if (characterId == null) return;
+
+    setState(() {
+      _selectionMode = true;
+      if (!_selectedCharacterIds.add(characterId)) {
+        _selectedCharacterIds.remove(characterId);
+      }
+    });
+  }
+
+  bool _isCharacterSelected(CharacterListItem character) {
+    final characterId = character.id;
+    return characterId != null && _selectedCharacterIds.contains(characterId);
+  }
+
+  void _deleteSelectedCharacters() {
+    final selectedCharacters = widget.characters
+        .where(_isCharacterSelected)
+        .toList(growable: false);
+    if (selectedCharacters.isEmpty) return;
+
+    widget.onCharactersDeleted(selectedCharacters);
+    _clearSelection();
+  }
+
+  Future<void> _openCharacterPage(
+    BuildContext context,
+    CharacterListItem character,
+  ) async {
+    widget.onCharacterViewed(character);
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CharacterNotebookPage(
+          data: character.data,
+          availableCharacters: widget.characters,
+          projectTitle: character.projectTitle,
+          onChanged: (updatedData) =>
+              widget.onCharacterEdited(character, updatedData),
+        ),
+      ),
+    );
+    widget.onCharacterViewed(character);
+  }
+
+  Future<void> _openCharacterProfileViewer(
+    BuildContext context,
+    CharacterListItem character,
+  ) async {
+    if (character.data.profileImage.bytes == null) {
+      return;
+    }
+
+    widget.onCharacterViewed(character);
+    await showCharacterProfileViewerDialog(
+      context,
+      characterName: character.data.name,
+      profileImage: character.data.profileImage,
+    );
+    widget.onCharacterViewed(character);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (characters.isEmpty) {
-      return const Center(
+    if (widget.characters.isEmpty) {
+      return Center(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(32, 20, 32, 160),
+          padding: const EdgeInsets.fromLTRB(32, 20, 32, 160),
           child: Text(
-            'Nenhum personagem criado. Clique no "+" para criar um!',
+            widget.emptyMessage,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: Color(0xFF544959),
               fontSize: 16,
               fontStyle: FontStyle.italic,
@@ -54,74 +169,64 @@ class CharactersSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-          child: Row(
+          child: Column(
             children: [
-              const Expanded(
-                child: Text(
-                  'Visualização',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Color(0xFF544959),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  Expanded(
+                    child: ViewOptionsBar(
+                      title: 'Visualização',
+                      modeIcon: widget.showAvatarGrid
+                          ? Icons.grid_view_rounded
+                          : Icons.view_list_rounded,
+                      modeLabel: widget.showAvatarGrid ? 'Grade' : 'Lista',
+                      toggleTooltip: widget.showAvatarGrid
+                          ? 'Exibir em lista'
+                          : 'Exibir em grade',
+                      onToggleMode: widget.onToggleDisplayMode,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  MultiSelectIconButton(
+                    icon: _isSelectionMode
+                        ? Icons.close_rounded
+                        : Icons.checklist_rounded,
+                    tooltip: _isSelectionMode
+                        ? 'Sair da seleção'
+                        : 'Selecionar',
+                    onTap: _toggleSelectionMode,
+                  ),
+                  const SizedBox(width: 8),
+                  MultiSelectIconButton(
+                    icon: Icons.select_all_rounded,
+                    tooltip: 'Selecionar tudo',
+                    onTap: _selectAllCharacters,
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              if (showAvatarGrid) ...[
-                PopupMenuButton<int>(
-                  tooltip: 'Configuração da grade',
-                  initialValue: avatarGridColumns,
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 3, child: Text('3 colunas')),
-                    PopupMenuItem(value: 4, child: Text('4 colunas')),
-                    PopupMenuItem(value: 5, child: Text('5 colunas')),
+              if (_isSelectionMode) ...[
+                const SizedBox(height: 10),
+                MultiSelectActionBar(
+                  label:
+                      '${_selectedCharacterIds.length} personagem(ns) selecionado(s)',
+                  onClear: _clearSelection,
+                  actions: [
+                    MultiSelectAction(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: 'Excluir selecionados',
+                      onTap: _deleteSelectedCharacters,
+                      destructive: true,
+                    ),
                   ],
-                  onSelected: onChangeAvatarGridColumns,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.grid_view,
-                        color: Color(0xFF544959),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 82),
-                        child: Text(
-                          '$avatarGridColumns colunas',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF544959),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                const SizedBox(width: 12),
               ],
-              IconButton(
-                onPressed: onToggleDisplayMode,
-                icon: Icon(
-                  showAvatarGrid ? Icons.view_list : Icons.grid_view,
-                  color: const Color(0xFF544959),
-                ),
-                tooltip: showAvatarGrid ? 'Exibir em lista' : 'Exibir em grade',
-              ),
-              Text(
-                showAvatarGrid ? 'Fotos' : 'Lista',
-                style: const TextStyle(color: Color(0xFF544959), fontSize: 14),
-              ),
             ],
           ),
         ),
         Expanded(
-          child: showAvatarGrid ? _buildAvatarGrid() : _buildCharacterList(),
+          child: widget.showAvatarGrid
+              ? _buildAvatarGrid()
+              : _buildCharacterList(),
         ),
       ],
     );
@@ -130,19 +235,29 @@ class CharactersSection extends StatelessWidget {
   Widget _buildCharacterList() {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 160),
-      itemCount: characters.length,
+      itemCount: widget.characters.length,
       itemBuilder: (context, index) {
-        final character = characters[index];
-        return CharacterCard(
+        final character = widget.characters[index];
+        final card = CharacterCard(
           key: ValueKey(character.id ?? character.data.seed),
           data: character.data,
           createdAt: character.createdAt,
           lastModified: character.lastModified,
           lastAccessed: character.lastAccessed,
           isPinned: character.isPinned,
-          onTogglePinned: () => onTogglePinned(character),
-          onViewed: () => onCharacterViewed(character),
-          onEdited: (updatedData) => onCharacterEdited(character, updatedData),
+          onTogglePinned: () => widget.onTogglePinned(character),
+          onViewed: () => widget.onCharacterViewed(character),
+          onEdited: (updatedData) =>
+              widget.onCharacterEdited(character, updatedData),
+          onDelete: () => widget.onCharacterDeleted(character),
+        );
+
+        return _CharacterSelectionWrapper(
+          selectionMode: _isSelectionMode,
+          selected: _isCharacterSelected(character),
+          accentColor: character.data.accent,
+          onToggleSelection: () => _toggleCharacterSelection(character),
+          child: card,
         );
       },
     );
@@ -152,164 +267,362 @@ class CharactersSection extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 160),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: avatarGridColumns,
+        crossAxisCount: 3,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
         childAspectRatio: 0.94,
       ),
-      itemCount: characters.length,
+      itemCount: widget.characters.length,
       itemBuilder: (context, index) {
-        final character = characters[index];
+        final character = widget.characters[index];
         return Tooltip(
           message: character.data.name,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+              onTap: () => _isSelectionMode
+                  ? _toggleCharacterSelection(character)
+                  : _openCharacterPage(context, character),
+              onLongPress: () => _toggleCharacterSelection(character),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CharacterAvatarTile(
-                      accent: character.data.accent,
-                      avatarColor: character.data.avatarColor,
-                      profileImage: character.data.profileImage,
-                      isExpanded: false,
-                      onTap: null,
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              character.data.accent.withValues(alpha: 0.08),
-                              Colors.transparent,
-                              character.data.avatarColor.withValues(
-                                alpha: 0.06,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: CharacterAvatarTile(
+                                accent: character.data.accent,
+                                avatarColor: character.data.avatarColor,
+                                profileImage: character.data.profileImage,
+                                isExpanded: false,
+                                onTap: null,
+                                showExpandHint: false,
                               ),
-                            ],
-                            stops: const [0.0, 0.48, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (avatarGridColumns == 3)
-                    Positioned(
-                      left: 10,
-                      right: 10,
-                      bottom: 10,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              character.data.accent.withValues(alpha: 0.72),
-                              character.data.avatarColor.withValues(
-                                alpha: 0.28,
-                              ),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.24),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.16),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
                             ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  character.data.name.split(' ').first,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.2,
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        character.data.accent.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        Colors.transparent,
+                                        character.data.avatarColor.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                      ],
+                                      stops: const [0.0, 0.48, 1.0],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () => onTogglePinned(character),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.84),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.14),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                            ),
+                            Positioned(
+                              left: 10,
+                              right: 10,
+                              bottom: 10,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      character.data.accent.withValues(
+                                        alpha: 0.72,
+                                      ),
+                                      character.data.avatarColor.withValues(
+                                        alpha: 0.28,
+                                      ),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.24),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.16,
+                                      ),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          character.data.name.split(' ').first,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          character.isPinned
-                              ? Icons.push_pin
-                              : Icons.push_pin_outlined,
-                          size: 18,
-                          color: character.isPinned
-                              ? const Color(0xFF7C4E63)
-                              : const Color(0xFF544959),
-                        ),
                       ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      left: 0,
+                      top: -4,
+                      child: CharacterPinBadge(
+                        isActive: character.isPinned,
+                        onTap: () => widget.onTogglePinned(character),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: _isSelectionMode
+                          ? _CharacterSelectionBadge(
+                              selected: _isCharacterSelected(character),
+                              accentColor: character.data.accent,
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (character.data.profileImage.bytes !=
+                                    null) ...[
+                                  GlassCircleButton(
+                                    diameter: 26,
+                                    onTap: () => _openCharacterProfileViewer(
+                                      context,
+                                      character,
+                                    ),
+                                    tooltip: 'Ver imagem',
+                                    fillColor: Colors.white.withValues(
+                                      alpha: 0.16,
+                                    ),
+                                    borderColor: Colors.white.withValues(
+                                      alpha: 0.74,
+                                    ),
+                                    borderWidth: 0.8,
+                                    blurSigma: 12,
+                                    child: Icon(
+                                      Icons.open_in_full_rounded,
+                                      size: 13,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.96,
+                                      ),
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.28,
+                                          ),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                ],
+                                GlassCircleButton(
+                                  diameter: 26,
+                                  onTap: () =>
+                                      widget.onCharacterDeleted(character),
+                                  tooltip: 'Excluir personagem',
+                                  fillColor: Colors.white.withValues(
+                                    alpha: 0.16,
+                                  ),
+                                  borderColor: Colors.white.withValues(
+                                    alpha: 0.74,
+                                  ),
+                                  borderWidth: 0.8,
+                                  blurSigma: 12,
+                                  child: Icon(
+                                    Icons.delete_outline_rounded,
+                                    size: 13,
+                                    color: Colors.white.withValues(alpha: 0.96),
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.28,
+                                        ),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                    if (_isSelectionMode && _isCharacterSelected(character))
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: character.data.accent.withValues(
+                                  alpha: 0.7,
+                                ),
+                                width: 2,
+                              ),
+                              color: character.data.accent.withValues(
+                                alpha: 0.08,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _CharacterSelectionWrapper extends StatelessWidget {
+  final Widget child;
+  final bool selectionMode;
+  final bool selected;
+  final Color accentColor;
+  final VoidCallback onToggleSelection;
+
+  const _CharacterSelectionWrapper({
+    required this.child,
+    required this.selectionMode,
+    required this.selected,
+    required this.accentColor,
+    required this.onToggleSelection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onLongPress: onToggleSelection,
+      child: Stack(
+        children: [
+          child,
+          if (selectionMode)
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onToggleSelection,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: selected
+                          ? Border.all(
+                              color: accentColor.withValues(alpha: 0.72),
+                              width: 2,
+                            )
+                          : null,
+                      color: selected
+                          ? accentColor.withValues(alpha: 0.08)
+                          : Colors.transparent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (selectionMode)
+            Positioned(
+              top: 5,
+              right: 10,
+              child: _CharacterSelectionBadge(
+                selected: selected,
+                accentColor: accentColor,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CharacterSelectionBadge extends StatelessWidget {
+  final bool selected;
+  final Color accentColor;
+
+  const _CharacterSelectionBadge({
+    required this.selected,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.72),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.86)),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(
+        selected
+            ? Icons.check_circle_rounded
+            : Icons.radio_button_unchecked_rounded,
+        size: 18,
+        color: selected ? accentColor : const Color(0xFF544959),
+      ),
     );
   }
 }

@@ -118,8 +118,18 @@ void initializeSchema(CommonDatabase conn) {
     columnName: 'metadata',
     definition: 'TEXT',
   );
-  _ensureColumn(conn, tableName: 'Projeto', columnName: 'titulo', definition: 'TEXT');
-  _ensureColumn(conn, tableName: 'Projeto', columnName: 'corCapa', definition: 'TEXT');
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'titulo',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'corCapa',
+    definition: 'TEXT',
+  );
   _ensureColumn(
     conn,
     tableName: 'Projeto',
@@ -168,7 +178,18 @@ void initializeSchema(CommonDatabase conn) {
     columnName: 'colunasGradePersonagens',
     definition: 'INTEGER DEFAULT 3',
   );
-  _ensureColumn(conn, tableName: 'Personagem', columnName: 'nome', definition: 'TEXT');
+  _ensureColumn(
+    conn,
+    tableName: 'Projeto',
+    columnName: 'personagensDestaqueJson',
+    definition: 'TEXT',
+  );
+  _ensureColumn(
+    conn,
+    tableName: 'Personagem',
+    columnName: 'nome',
+    definition: 'TEXT',
+  );
   _ensureColumn(
     conn,
     tableName: 'Personagem',
@@ -198,6 +219,7 @@ void initializeSchema(CommonDatabase conn) {
   _ensureTimestampColumns(conn, 'Pastas');
   _ensureTimestampColumns(conn, 'Projeto');
   _ensureTimestampColumns(conn, 'Personagem');
+  _ensureIndexes(conn);
 
   _ensureColumn(
   conn,
@@ -241,8 +263,21 @@ void _ensureTimestampColumns(CommonDatabase conn, String tableName) {
       """
         UPDATE $tableName
         SET $column = COALESCE($column, ?)
+        WHERE $column IS NULL
         """,
       [DateTime.now().toIso8601String()],
     );
+  }
+}
+
+void _ensureIndexes(CommonDatabase conn) {
+  for (final statement in const <String>[
+    'CREATE INDEX IF NOT EXISTS idx_nota_pasta ON Nota(pastas_idPasta)',
+    'CREATE INDEX IF NOT EXISTS idx_pastas_parent ON Pastas(pastas_idPasta)',
+    'CREATE INDEX IF NOT EXISTS idx_projeto_order ON Projeto(fixado, ordemNaoFixada, idProjeto)',
+    'CREATE INDEX IF NOT EXISTS idx_personagem_projeto_order ON Personagem(projeto_idProjeto, fixado, ordemNaoFixada)',
+    'CREATE INDEX IF NOT EXISTS idx_tags_group ON Tags(grupoTag_idGrupoTag)',
+  ]) {
+    conn.execute(statement);
   }
 }

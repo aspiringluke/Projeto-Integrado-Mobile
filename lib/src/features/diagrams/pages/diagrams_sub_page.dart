@@ -18,7 +18,7 @@ class DiagramsSubPage extends StatelessWidget {
         ),
         _DiagramGroupCard(
           title: 'Estrutura por atos',
-          subtitle: 'Setup, confronto e resolução',
+          subtitle: 'Preparação, confronto e resolução',
         ),
         _DiagramGroupCard(
           title: 'Fluxo de capítulos',

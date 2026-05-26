@@ -5,16 +5,19 @@ class _RelevanceScoreSummary extends StatelessWidget {
   final _RelevanceCategoryConfig category;
   final List<_RelevanceCategoryConfig> categories;
   final Color accentColor;
+  final ValueChanged<double>? onScoreChanged;
 
   const _RelevanceScoreSummary({
     required this.score,
     required this.category,
     required this.categories,
     required this.accentColor,
+    this.onScoreChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isInteractive = onScoreChanged != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -58,36 +61,49 @@ class _RelevanceScoreSummary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                _RelevanceSpectrumBar(score: score, categories: categories),
+                if (isInteractive)
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: category.color,
+                      inactiveTrackColor: category.color.withValues(
+                        alpha: 0.18,
+                      ),
+                      thumbColor: const Color(0xFF2C262C),
+                      overlayColor: category.color.withValues(alpha: 0.12),
+                      trackHeight: 9,
+                    ),
+                    child: Slider(
+                      value: score.clamp(0.0, 10.0).toDouble(),
+                      min: 0,
+                      max: 10,
+                      divisions: 100,
+                      label: score.toStringAsFixed(1),
+                      onChanged: onScoreChanged,
+                    ),
+                  )
+                else
+                  _RelevanceSpectrumBar(score: score, categories: categories),
                 const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        category.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.58),
-                          fontSize: 11.2,
-                          height: 1.2,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
+                Text(
+                  category.description,
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.58),
+                    fontSize: 11.2,
+                    height: 1.2,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${category.min.toStringAsFixed(1)}-${category.max.toStringAsFixed(1)}',
+                    style: TextStyle(
+                      color: _darkenCharacterDialogColor(category.color, 0.18),
+                      fontSize: 10.8,
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${category.min.toStringAsFixed(1)}-${category.max.toStringAsFixed(1)}',
-                      style: TextStyle(
-                        color: _darkenCharacterDialogColor(
-                          category.color,
-                          0.18,
-                        ),
-                        fontSize: 10.8,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -182,12 +198,130 @@ class _RelevanceFormulaNote extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
       ),
       child: Text(
-        'R usa a soma ponderada das notas. Os pesos sempre fecham 100%; ao ajustar um peso, os demais se redistribuem automaticamente.',
+        'Pense em conceitos capazes de fazer um personagem ser importante na sua história e atribua a eles um peso e um valor, determinando em que setores exatamente um personagem é importante. O modelo abaixo é uma base genérica.',
         style: TextStyle(
           color: Colors.black.withValues(alpha: 0.56),
           fontSize: 10.4,
           height: 1.22,
           fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+}
+
+class _RelevanceEditorToolbar extends StatelessWidget {
+  final _RelevanceEditorMode mode;
+  final ValueChanged<_RelevanceEditorMode> onModeChanged;
+  final VoidCallback onReset;
+
+  const _RelevanceEditorToolbar({
+    required this.mode,
+    required this.onModeChanged,
+    required this.onReset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _RelevanceModeToggle(mode: mode, onModeChanged: onModeChanged),
+        ),
+        const SizedBox(width: 8),
+        TextButton.icon(
+          onPressed: onReset,
+          icon: const Icon(Icons.restart_alt_rounded, size: 17),
+          label: const Text('Padrão'),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF514752),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RelevanceModeToggle extends StatelessWidget {
+  final _RelevanceEditorMode mode;
+  final ValueChanged<_RelevanceEditorMode> onModeChanged;
+
+  const _RelevanceModeToggle({required this.mode, required this.onModeChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.54),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.82)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _RelevanceModeToggleButton(
+              label: 'Simples',
+              selected: mode == _RelevanceEditorMode.simple,
+              onTap: () => onModeChanged(_RelevanceEditorMode.simple),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _RelevanceModeToggleButton(
+              label: 'Avançado',
+              selected: mode == _RelevanceEditorMode.advanced,
+              onTap: () => onModeChanged(_RelevanceEditorMode.advanced),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelevanceModeToggleButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RelevanceModeToggleButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFFDF6EB8);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.16)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            border: selected
+                ? Border.all(color: accent.withValues(alpha: 0.3))
+                : null,
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected
+                  ? _darkenCharacterDialogColor(accent, 0.18)
+                  : const Color(0xFF514752),
+              fontSize: 11.2,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ),
     );
@@ -226,7 +360,7 @@ class _AddRelevanceParameterButton extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Adicionar parametro',
+                'Adicionar parâmetro',
                 style: TextStyle(
                   color: _darkenCharacterDialogColor(projectPink, 0.18),
                   fontSize: 12,
@@ -275,9 +409,11 @@ class _RelevanceParameterControl extends StatefulWidget {
   final double value;
   final double weight;
   final bool canRemove;
+  final bool canResetToDefault;
   final bool isEditing;
   final VoidCallback onEdit;
   final VoidCallback onRemove;
+  final VoidCallback onResetToDefault;
   final ValueChanged<String> onNameChanged;
   final ValueChanged<String> onDescriptionChanged;
   final ValueChanged<double> onValueChanged;
@@ -288,9 +424,11 @@ class _RelevanceParameterControl extends StatefulWidget {
     required this.value,
     required this.weight,
     required this.canRemove,
+    required this.canResetToDefault,
     required this.isEditing,
     required this.onEdit,
     required this.onRemove,
+    required this.onResetToDefault,
     required this.onNameChanged,
     required this.onDescriptionChanged,
     required this.onValueChanged,
@@ -370,59 +508,64 @@ class _RelevanceParameterControlState
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: projectPink.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useStackedHeader = constraints.maxWidth < 340;
+          final symbolBadge = Container(
+            width: 32,
+            height: 24,
+            decoration: BoxDecoration(
+              color: projectPink.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                _relevanceMonogram(
+                  widget.parameter.name,
+                  fallback: widget.parameter.symbol,
                 ),
-                child: Center(
-                  child: Text(
-                    widget.parameter.symbol,
-                    style: TextStyle(
-                      color: _darkenCharacterDialogColor(projectPink, 0.18),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: TextStyle(
+                  color: _darkenCharacterDialogColor(projectPink, 0.18),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          );
+          final nameField = widget.isEditing
+              ? TextField(
+                  controller: _nameController,
+                  focusNode: _nameFocusNode,
+                  minLines: 1,
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: widget.isEditing
-                    ? TextField(
-                        controller: _nameController,
-                        focusNode: _nameFocusNode,
-                        maxLines: 1,
-                        style: const TextStyle(
-                          color: Color(0xFF3A3339),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        onChanged: widget.onNameChanged,
-                      )
-                    : Text(
-                        widget.parameter.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF3A3339),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-              ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: widget.onNameChanged,
+                )
+              : Text(
+                  widget.parameter.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF3A3339),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                );
+          final actions = Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 4,
+            children: [
               Text(
                 widget.value.toStringAsFixed(1),
                 style: const TextStyle(
@@ -431,7 +574,6 @@ class _RelevanceParameterControlState
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 4),
               _RelevanceParameterIconButton(
                 icon: widget.isEditing
                     ? Icons.check_rounded
@@ -439,90 +581,127 @@ class _RelevanceParameterControlState
                 onTap: widget.onEdit,
               ),
               _RelevanceParameterIconButton(
+                icon: Icons.restart_alt_rounded,
+                onTap: widget.canResetToDefault
+                    ? widget.onResetToDefault
+                    : null,
+              ),
+              _RelevanceParameterIconButton(
                 icon: Icons.delete_outline_rounded,
                 onTap: widget.canRemove ? widget.onRemove : null,
               ),
             ],
-          ),
-          const SizedBox(height: 4),
-          widget.isEditing
-              ? TextField(
-                  controller: _descriptionController,
-                  focusNode: _descriptionFocusNode,
-                  minLines: 2,
-                  maxLines: 3,
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.54),
-                    fontSize: 10.2,
-                    height: 1.22,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: widget.onDescriptionChanged,
-                )
-              : Text(
-                  widget.parameter.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.54),
-                    fontSize: 10.2,
-                    height: 1.22,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-          const SizedBox(height: 2),
-          SliderTheme(
-            data: sliderTheme,
-            child: Slider(
-              value: widget.value.clamp(0, 10),
-              min: 0,
-              max: 10,
-              divisions: 20,
-              onChanged: widget.onValueChanged,
-            ),
-          ),
-          Row(
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Peso',
-                style: TextStyle(
-                  color: Color(0xFF6A6167),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
+              if (useStackedHeader)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        symbolBadge,
+                        const SizedBox(width: 8),
+                        Expanded(child: nameField),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Align(alignment: Alignment.centerRight, child: actions),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    symbolBadge,
+                    const SizedBox(width: 8),
+                    Expanded(child: nameField),
+                    const SizedBox(width: 8),
+                    actions,
+                  ],
+                ),
+              const SizedBox(height: 4),
+              widget.isEditing
+                  ? TextField(
+                      controller: _descriptionController,
+                      focusNode: _descriptionFocusNode,
+                      minLines: 2,
+                      maxLines: 3,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.54),
+                        fontSize: 10.2,
+                        height: 1.22,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: widget.onDescriptionChanged,
+                    )
+                  : Text(
+                      widget.parameter.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.black.withValues(alpha: 0.54),
+                        fontSize: 10.2,
+                        height: 1.22,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+              const SizedBox(height: 2),
+              SliderTheme(
+                data: sliderTheme,
+                child: Slider(
+                  value: widget.value.clamp(0, 10),
+                  min: 0,
+                  max: 10,
+                  divisions: 20,
+                  onChanged: widget.onValueChanged,
                 ),
               ),
-              Expanded(
-                child: SliderTheme(
-                  data: sliderTheme,
-                  child: Slider(
-                    value: widget.weight.clamp(0, 1),
-                    min: 0,
-                    max: 1,
-                    divisions: 20,
-                    onChanged: widget.onWeightChanged,
+              Row(
+                children: [
+                  const Text(
+                    'Peso',
+                    style: TextStyle(
+                      color: Color(0xFF6A6167),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ),
-              SizedBox(
-                width: 38,
-                child: Text(
-                  '${(widget.weight * 100).toStringAsFixed(0)}%',
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: Color(0xFF6A6167),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: SliderTheme(
+                      data: sliderTheme,
+                      child: Slider(
+                        value: widget.weight.clamp(0, 1),
+                        min: 0,
+                        max: 1,
+                        divisions: 20,
+                        onChanged: widget.onWeightChanged,
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(
+                    width: 38,
+                    child: Text(
+                      '${(widget.weight * 100).toStringAsFixed(0)}%',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: Color(0xFF6A6167),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

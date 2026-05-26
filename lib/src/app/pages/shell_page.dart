@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import '../../features/projects/controllers/project_list_controller.dart';
+import '../../features/projects/models/project_tag_data.dart';
 import './idea_list_page.dart';
 import '../../features/projects/pages/project_list_page.dart';
 import '../../features/projects/widgets/create_project_dialog.dart';
@@ -25,8 +27,16 @@ class _ShellPageState extends State<ShellPage> {
   late NavTab _activeTab;
   late bool _toIdeas;
   late final ProjectListController _projectListController;
-  final GlobalKey<IdeasContentState> _ideasContentKey =
-      GlobalKey<IdeasContentState>();
+  final IdeasContentController _ideasContentController =
+      IdeasContentController();
+  late final TextEditingController _projectSearchController;
+  late final TextEditingController _ideasSearchController;
+  String _projectSearchQuery = '';
+  String _ideasSearchQuery = '';
+  ContentFilterState _projectFilter = const ContentFilterState();
+  ContentFilterState _ideasFilter = const ContentFilterState();
+  ContentSortState _projectSort = const ContentSortState();
+  ContentSortState _ideasSort = const ContentSortState();
   bool _showIdeasQuickActions = false;
 
   @override
@@ -35,10 +45,14 @@ class _ShellPageState extends State<ShellPage> {
     _activeTab = widget.initialTab;
     _toIdeas = _activeTab == NavTab.ideas;
     _projectListController = ProjectListController();
+    _projectSearchController = TextEditingController();
+    _ideasSearchController = TextEditingController();
   }
 
   @override
   void dispose() {
+    _projectSearchController.dispose();
+    _ideasSearchController.dispose();
     _projectListController.dispose();
     super.dispose();
   }
@@ -68,13 +82,11 @@ class _ShellPageState extends State<ShellPage> {
         coverColor: draft.coverColor,
         accentColor: draft.accentColor,
         coverImage: draft.coverImage,
-        accentImage: draft.accentImage,
       );
       return;
     }
 
-    final ideasState = _ideasContentKey.currentState;
-    if (ideasState == null || !ideasState.isNotesView) return;
+    if (!_ideasContentController.isNotesView) return;
 
     setState(() {
       _showIdeasQuickActions = !_showIdeasQuickActions;
@@ -82,15 +94,95 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Future<void> _onCreateNotePressed() async {
-    await _ideasContentKey.currentState?.onCreateNoteRequested();
+    await _ideasContentController.onCreateNoteRequested();
     if (!mounted) return;
     setState(() => _showIdeasQuickActions = false);
   }
 
   Future<void> _onCreateFolderPressed() async {
-    await _ideasContentKey.currentState?.onCreateFolderRequested();
+    await _ideasContentController.onCreateFolderRequested();
     if (!mounted) return;
     setState(() => _showIdeasQuickActions = false);
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      if (_activeTab == NavTab.projects) {
+        _projectSearchQuery = value;
+      } else {
+        _ideasSearchQuery = value;
+      }
+    });
+  }
+
+  Future<void> _openActiveFilterMenu() async {
+    final isProjects = _activeTab == NavTab.projects;
+    final result = await showContentFilterMenu(
+      context: context,
+      initial: isProjects ? _projectFilter : _ideasFilter,
+      availableTagGroups: isProjects
+          ? _buildProjectTagGroups(_projectListController.availableTags)
+          : const <TagFilterGroup>[],
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      if (isProjects) {
+        _projectFilter = result;
+      } else {
+        _ideasFilter = result;
+      }
+    });
+  }
+
+  List<TagFilterGroup> _buildProjectTagGroups(Iterable<ProjectTagData> tags) {
+    final groups = <String, _ProjectTagGroupDraft>{};
+
+    for (final tag in tags) {
+      final title = tag.groupTitle?.trim().isNotEmpty == true
+          ? tag.groupTitle!.trim()
+          : 'Tags';
+      final group = groups.putIfAbsent(
+        title,
+        () => _ProjectTagGroupDraft(
+          title: title,
+          color: tag.color,
+          tags: <ProjectTagData>[],
+        ),
+      );
+      group.tags.add(tag);
+      if (group.tags.length == 1) {
+        group.color = tag.color;
+      }
+    }
+
+    return groups.values
+        .map(
+          (group) => TagFilterGroup(
+            title: group.title,
+            color: group.color,
+            tags: List<ProjectTagData>.unmodifiable(group.tags),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> _openActiveSortMenu() async {
+    final isProjects = _activeTab == NavTab.projects;
+    final result = await showContentSortMenu(
+      context: context,
+      initial: isProjects ? _projectSort : _ideasSort,
+      includeCharacterCount: isProjects,
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      if (isProjects) {
+        _projectSort = result;
+      } else {
+        _ideasSort = result;
+      }
+    });
   }
 
   Widget _buildFloatingActionArea() {
@@ -168,6 +260,9 @@ class _ShellPageState extends State<ShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showQuickActions =
+        _activeTab == NavTab.ideas && _showIdeasQuickActions;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2F8),
       bottomNavigationBar: CustomNavBar(
@@ -180,16 +275,48 @@ class _ShellPageState extends State<ShellPage> {
           Positioned.fill(
             child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
           ),
+          if (showQuickActions)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  setState(() => _showIdeasQuickActions = false);
+                },
+                child: const SizedBox.expand(),
+              ),
+            ),
           Column(
             children: [
               const MainHeader(asSliver: false),
-              const FuncoesBusca(),
+              FuncoesBusca(
+                controller: _activeTab == NavTab.projects
+                    ? _projectSearchController
+                    : _ideasSearchController,
+                onChanged: _onSearchChanged,
+                onFilterTap: () => unawaited(_openActiveFilterMenu()),
+                onSortTap: () => unawaited(_openActiveSortMenu()),
+                filterActive: _activeTab == NavTab.projects
+                    ? _projectFilter.isActive
+                    : _ideasFilter.isActive,
+                sortActive: (_activeTab == NavTab.projects
+                    ? _projectSort.isActive
+                    : _ideasSort.isActive),
+                hintText: _activeTab == NavTab.projects
+                    ? 'Pesquisar projetos'
+                    : 'Pesquisar ideias',
+              ),
               Expanded(
                 child: _AnimatedTabContent(
                   activeTab: _activeTab,
                   toIdeas: _toIdeas,
                   projectListController: _projectListController,
-                  ideasContentKey: _ideasContentKey,
+                  ideasContentController: _ideasContentController,
+                  projectSearchQuery: _projectSearchQuery,
+                  projectFilter: _projectFilter,
+                  projectSort: _projectSort,
+                  ideasSearchQuery: _ideasSearchQuery,
+                  ideasFilter: _ideasFilter,
+                  ideasSort: _ideasSort,
                 ),
               ),
             ],
@@ -198,6 +325,18 @@ class _ShellPageState extends State<ShellPage> {
       ),
     );
   }
+}
+
+class _ProjectTagGroupDraft {
+  final String title;
+  Color color;
+  final List<ProjectTagData> tags;
+
+  _ProjectTagGroupDraft({
+    required this.title,
+    required this.color,
+    required this.tags,
+  });
 }
 
 class _IdeasQuickActionButton extends StatelessWidget {
@@ -270,13 +409,25 @@ class _AnimatedTabContent extends StatelessWidget {
   final NavTab activeTab;
   final bool toIdeas;
   final ProjectListController projectListController;
-  final GlobalKey<IdeasContentState> ideasContentKey;
+  final IdeasContentController ideasContentController;
+  final String projectSearchQuery;
+  final ContentFilterState projectFilter;
+  final ContentSortState projectSort;
+  final String ideasSearchQuery;
+  final ContentFilterState ideasFilter;
+  final ContentSortState ideasSort;
 
   const _AnimatedTabContent({
     required this.activeTab,
     required this.toIdeas,
     required this.projectListController,
-    required this.ideasContentKey,
+    required this.ideasContentController,
+    required this.projectSearchQuery,
+    required this.projectFilter,
+    required this.projectSort,
+    required this.ideasSearchQuery,
+    required this.ideasFilter,
+    required this.ideasSort,
   });
 
   @override
@@ -329,8 +480,18 @@ class _AnimatedTabContent extends StatelessWidget {
       child: KeyedSubtree(
         key: ValueKey(activeTab),
         child: activeTab == NavTab.projects
-            ? ProjectListPage(controller: projectListController)
-            : IdeasContent(key: ideasContentKey),
+            ? ProjectListPage(
+                controller: projectListController,
+                searchQuery: projectSearchQuery,
+                filterState: projectFilter,
+                sortState: projectSort,
+              )
+            : IdeasContent(
+                controller: ideasContentController,
+                searchQuery: ideasSearchQuery,
+                filterState: ideasFilter,
+                sortState: ideasSort,
+              ),
       ),
     );
   }

@@ -4,13 +4,20 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../characters/data/repositories/character_repository.dart';
+import '../../characters/models/characters_models.dart';
+import '../../characters/widgets/character_notebook_page.dart';
 import '../models/project_image_data.dart';
+import '../models/project_record.dart';
 import '../models/project_tag_data.dart';
 import '../models/project_style_defaults.dart';
 import '../pages/project_page.dart';
+import '../utils/project_character_showcase.dart';
 import '../../../shared/utils/rect_from_context.dart';
 import '../../../shared/widgets/anchored_info_bubble.dart';
 import 'project_cover_fill.dart';
+import 'project_image_transform_view.dart';
+import 'project_image_viewer_dialog.dart';
 import '../../../shared/widgets/buttons/glass_circle_button.dart';
 import '../../../shared/widgets/outlined_tag_pill.dart';
 import '../../../shared/widgets/pin_badge.dart';
@@ -18,6 +25,7 @@ import '../../../shared/widgets/synopsis_scroll_box.dart';
 
 part 'project_card_header.dart';
 part 'project_card_details.dart';
+part 'project_card_parts/project_card_details_widgets.dart';
 part 'project_card_info_bubble.dart';
 
 class ProjectCard extends StatefulWidget {
@@ -25,6 +33,7 @@ class ProjectCard extends StatefulWidget {
   final String title;
   final String synopsis;
   final List<ProjectTagData> tags;
+  final List<ProjectTagData> availableTags;
   final Color coverColor;
   final Color accentColor;
   final ProjectImageData coverImage;
@@ -36,9 +45,14 @@ class ProjectCard extends StatefulWidget {
   final DateTime lastAccessed;
   final String characterDisplayMode;
   final int characterGridColumns;
+  final List<int> featuredCharacterIds;
+  final List<CharacterListItem> displayedCharacters;
+  final int unpinnedIndex;
   final VoidCallback? onOpenProject;
   final VoidCallback? onProjectReloadRequested;
+  final ValueChanged<ProjectRecord>? onProjectChanged;
   final void Function(String title, String synopsis)? onProjectEdited;
+  final VoidCallback? onDelete;
 
   const ProjectCard({
     super.key,
@@ -46,6 +60,7 @@ class ProjectCard extends StatefulWidget {
     this.title = 'Projeto 1',
     this.synopsis = '',
     this.tags = const <ProjectTagData>[],
+    this.availableTags = const <ProjectTagData>[],
     this.coverColor = defaultProjectCoverColor,
     this.accentColor = defaultProjectAccentColor,
     this.coverImage = const ProjectImageData(),
@@ -57,9 +72,14 @@ class ProjectCard extends StatefulWidget {
     required this.lastAccessed,
     this.characterDisplayMode = 'list',
     this.characterGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
+    this.displayedCharacters = const <CharacterListItem>[],
+    this.unpinnedIndex = 0,
     this.onOpenProject,
     this.onProjectReloadRequested,
+    this.onProjectChanged,
     this.onProjectEdited,
+    this.onDelete,
   });
 
   @override
@@ -109,7 +129,6 @@ class _ProjectCardState extends State<ProjectCard>
     _synopsisScrollController = ScrollController();
     _titleController = TextEditingController(text: widget.title);
     _synopsisController = TextEditingController(text: widget.synopsis);
-    _synopsisController.addListener(_handleSynopsisChanged);
     _titleFocusNode = FocusNode();
     _entranceController.forward();
   }
@@ -130,19 +149,12 @@ class _ProjectCardState extends State<ProjectCard>
   @override
   void dispose() {
     _titleController.dispose();
-    _synopsisController.removeListener(_handleSynopsisChanged);
     _synopsisController.dispose();
     _synopsisScrollController.dispose();
     _titleFocusNode.dispose();
     _entranceController.dispose();
     _expandController.dispose();
     super.dispose();
-  }
-
-  void _handleSynopsisChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _toggleExpand() {
@@ -159,20 +171,48 @@ class _ProjectCardState extends State<ProjectCard>
 
   Future<void> _openProject() async {
     widget.onOpenProject?.call();
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final updatedProject = await Navigator.of(context).push<ProjectRecord>(
+      MaterialPageRoute<ProjectRecord>(
         builder: (_) => ProjectPage(
           projectId: widget.projectId,
           title: widget.title,
+          synopsis: widget.synopsis,
+          tags: widget.tags,
+          availableTags: widget.availableTags,
           accentColor: widget.accentColor,
           coverColor: widget.coverColor,
           coverImage: widget.coverImage,
+          accentImage: widget.accentImage,
+          createdAt: widget.createdAt,
+          lastModified: widget.lastModified,
+          lastAccessed: widget.lastAccessed,
+          isPinned: widget.isPinned,
+          unpinnedIndex: widget.unpinnedIndex,
           initialCharacterDisplayMode: widget.characterDisplayMode,
           initialAvatarGridColumns: widget.characterGridColumns,
+          featuredCharacterIds: widget.featuredCharacterIds,
         ),
       ),
     );
+    if (updatedProject != null) {
+      widget.onProjectChanged?.call(updatedProject);
+      return;
+    }
+
     widget.onProjectReloadRequested?.call();
+  }
+
+  Future<void> _openCoverImageViewer() async {
+    if (widget.coverImage.bytes == null) {
+      return;
+    }
+
+    await showProjectImageViewerDialog(
+      context,
+      title: widget.title,
+      subtitle: 'Imagem do projeto',
+      image: widget.coverImage,
+    );
   }
 
   void _cycleDateType() {
@@ -237,6 +277,10 @@ class _ProjectCardState extends State<ProjectCard>
     if (hasChanges) {
       widget.onProjectEdited?.call(resolvedTitle, resolvedSynopsis);
     }
+  }
+
+  Future<void> _confirmDelete() async {
+    widget.onDelete?.call();
   }
 
   @override
@@ -332,7 +376,14 @@ class _ProjectCardState extends State<ProjectCard>
                                 titleFocusNode: _titleFocusNode,
                                 bottomRadius: bottomRadius,
                                 onOpenProject: _openProject,
+                                onOpenCoverImageViewer:
+                                    widget.coverImage.bytes == null
+                                    ? null
+                                    : _openCoverImageViewer,
                                 onToggleExpand: _toggleExpand,
+                                onDelete: widget.onDelete == null
+                                    ? null
+                                    : _confirmDelete,
                               ),
                               ClipRect(
                                 child: SizeTransition(
@@ -342,16 +393,31 @@ class _ProjectCardState extends State<ProjectCard>
                                     opacity: _detailsFadeAnimation,
                                     child: _ProjectDetails(
                                       projectTitle: widget.title,
+                                      projectId: widget.projectId,
+                                      synopsis: widget.synopsis,
                                       dateEntry: _currentDateEntry,
                                       tags: widget.tags,
+                                      availableTags: widget.availableTags,
+                                      coverColor: widget.coverColor,
                                       accentColor: widget.accentColor,
                                       coverImage: widget.coverImage,
                                       accentImage: widget.accentImage,
+                                      createdAt: widget.createdAt,
+                                      lastModified: widget.lastModified,
+                                      lastAccessed: widget.lastAccessed,
+                                      isPinned: widget.isPinned,
+                                      unpinnedIndex: widget.unpinnedIndex,
+                                      featuredCharacterIds:
+                                          widget.featuredCharacterIds,
+                                      displayedCharacters:
+                                          widget.displayedCharacters,
                                       isEditing: _isEditing,
                                       synopsisController: _synopsisController,
-                                      synopsisText: _synopsisController.text,
                                       onCycleDateType: _cycleDateType,
                                       onToggleEditing: _toggleEditing,
+                                      onProjectChanged: widget.onProjectChanged,
+                                      onProjectReloadRequested:
+                                          widget.onProjectReloadRequested,
                                       synopsisScrollController:
                                           _synopsisScrollController,
                                     ),

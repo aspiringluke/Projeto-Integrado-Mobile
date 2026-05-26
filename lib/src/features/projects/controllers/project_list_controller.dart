@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -5,8 +6,11 @@ import 'package:flutter/material.dart';
 import '../../characters/data/repositories/character_repository.dart';
 import '../../characters/models/characters_models.dart';
 import '../../notas/data/repositories/folder_repository.dart';
+import '../../notas/data/repositories/note_repository.dart';
+import '../../notas/models/folder.dart';
+import '../../notas/models/note.dart';
+import '../../notas/models/note_metadata.dart';
 import '../../shared/story_registry.dart';
-import '../../tags/controllers/tag_controller.dart';
 import '../../tags/data/repositories/tag_group_repository.dart';
 import '../../tags/data/repositories/tag_repository.dart';
 import '../data/repositories/project_repository.dart';
@@ -14,6 +18,8 @@ import '../models/project_image_data.dart';
 import '../models/project_record.dart';
 import '../models/project_style_defaults.dart';
 import '../models/project_tag_data.dart';
+import '../utils/project_character_showcase.dart';
+import '../../../shared/utils/text_normalization.dart';
 
 class ProjectListItem {
   final int? id;
@@ -31,6 +37,8 @@ class ProjectListItem {
   int unpinnedIndex;
   String characterDisplayMode;
   int characterGridColumns;
+  List<int> featuredCharacterIds;
+  List<CharacterListItem> displayedCharacters;
 
   ProjectListItem({
     this.id,
@@ -48,29 +56,37 @@ class ProjectListItem {
     required this.unpinnedIndex,
     this.characterDisplayMode = 'list',
     this.characterGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
+    this.displayedCharacters = const <CharacterListItem>[],
   });
 }
 
 class ProjectListController extends ChangeNotifier {
-  static const String _projectTagGroupTitle = 'Projetos';
-
   final ProjectRepository _projectRepository;
   final CharacterRepository _characterRepository;
+  final NoteRepository _noteRepository;
   final TagRepository _tagRepository;
   final TagGroupRepository _tagGroupRepository;
-  int? _projectTagGroupId;
   final List<ProjectListItem> _projects = <ProjectListItem>[];
   final List<ProjectTagData> _availableTags = <ProjectTagData>[];
+  final List<CharacterListItem> _allCharacters = <CharacterListItem>[];
+  late final UnmodifiableListView<ProjectListItem> _projectView =
+      UnmodifiableListView<ProjectListItem>(_projects);
+  late final UnmodifiableListView<ProjectTagData> _availableTagView =
+      UnmodifiableListView<ProjectTagData>(_availableTags);
   bool _isLoading = false;
   String? _errorMessage;
+  int _loadRequestToken = 0;
 
   ProjectListController({
     ProjectRepository? projectRepository,
     CharacterRepository? characterRepository,
+    NoteRepository? noteRepository,
     TagRepository? tagRepository,
     TagGroupRepository? tagGroupRepository,
   }) : _projectRepository = projectRepository ?? ProjectRepository(),
        _characterRepository = characterRepository ?? CharacterRepository(),
+       _noteRepository = noteRepository ?? NoteRepository(),
        _tagRepository = tagRepository ?? TagRepository(),
        _tagGroupRepository = tagGroupRepository ?? TagGroupRepository() {
     unawaited(_hydrateInitialState());
@@ -79,8 +95,8 @@ class ProjectListController extends ChangeNotifier {
   bool get isEmpty => _projects.isEmpty;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<ProjectListItem> get projects => List.unmodifiable(_projects);
-  List<ProjectTagData> get availableTags => List.unmodifiable(_availableTags);
+  List<ProjectListItem> get projects => _projectView;
+  List<ProjectTagData> get availableTags => _availableTagView;
 
   Future<void> addProject({
     required String title,
@@ -90,6 +106,7 @@ class ProjectListController extends ChangeNotifier {
     Color accentColor = defaultProjectAccentColor,
     ProjectImageData coverImage = const ProjectImageData(),
     ProjectImageData accentImage = const ProjectImageData(),
+    List<int> featuredCharacterIds = const <int>[],
   }) async {
     final sanitizedTitle = title.trim();
     if (sanitizedTitle.isEmpty) {
@@ -108,6 +125,7 @@ class ProjectListController extends ChangeNotifier {
       accentColor: accentColor,
       coverImage: coverImage,
       accentImage: accentImage,
+      featuredCharacterIds: featuredCharacterIds,
       unpinnedIndex: unpinnedCount,
     );
 
@@ -116,6 +134,7 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
+    _invalidatePendingLoads(resetLoading: true);
     final project = _mapRecordToItem(created.$2!);
     _projects.add(project);
     StoryRegistry.instance.registerProject(
@@ -127,11 +146,16 @@ class ProjectListController extends ChangeNotifier {
   }
 
   Future<void> loadProjects() async {
+    final requestToken = ++_loadRequestToken;
     _setLoading(true);
     _setError(null);
     notifyListeners();
 
     final result = await _projectRepository.listProjects();
+    if (requestToken != _loadRequestToken) {
+      return;
+    }
+
     if (!result.$1) {
       _projects.clear();
       _setLoading(false);
@@ -147,7 +171,10 @@ class ProjectListController extends ChangeNotifier {
             .where((record) => record.title.trim().isNotEmpty)
             .map(_mapRecordToItem),
       );
-    await _syncStoryRegistryFromStorage();
+    await _syncCharactersFromStorage();
+    if (requestToken != _loadRequestToken) {
+      return;
+    }
     _setLoading(false);
     notifyListeners();
   }
@@ -163,6 +190,55 @@ class ProjectListController extends ChangeNotifier {
 
   Future<void> refreshAfterProjectPage() async {
     await loadProjects();
+  }
+
+  void applyProjectPageUpdate(ProjectListItem project, ProjectRecord updated) {
+    final index = _projects.indexOf(project);
+    if (index == -1) {
+      return;
+    }
+
+    final oldTitle = project.title;
+    _mergeAvailableTags(updated.tags);
+
+    _projects[index] = ProjectListItem(
+      id: updated.id ?? project.id,
+      title: updated.title,
+      synopsis: updated.synopsis,
+      tags: updated.tags,
+      coverColor: updated.coverColor,
+      accentColor: updated.accentColor,
+      coverImage: updated.coverImage,
+      accentImage: const ProjectImageData(),
+      createdAt: updated.createdAt,
+      lastModified: updated.lastModified,
+      lastAccessed: updated.lastAccessed,
+      isPinned: project.isPinned,
+      unpinnedIndex: project.unpinnedIndex,
+      characterDisplayMode: updated.characterDisplayMode,
+      characterGridColumns: updated.characterGridColumns,
+      featuredCharacterIds: List<int>.unmodifiable(
+        updated.featuredCharacterIds,
+      ),
+      displayedCharacters: _displayedCharactersForProject(
+        updated.id ?? project.id,
+        updated.featuredCharacterIds,
+      ),
+    );
+
+    if (oldTitle.trim() != updated.title.trim()) {
+      StoryRegistry.instance.renameProject(oldTitle, updated.title);
+      unawaited(_syncAutoFolderRename(oldTitle, updated.title));
+    } else {
+      StoryRegistry.instance.registerProject(
+        title: updated.title,
+        accentColor: updated.accentColor,
+      );
+    }
+
+    _invalidatePendingLoads(resetLoading: true);
+    notifyListeners();
+    unawaited(_refreshDisplayedCharactersForProject(_projects[index]));
   }
 
   void reorderProjects(int oldIndex, int newIndex) {
@@ -208,6 +284,222 @@ class ProjectListController extends ChangeNotifier {
     unawaited(_persistProjectOrdering());
   }
 
+  Future<
+    ({
+      int characterCount,
+      int linkedNoteCount,
+      int folderNoteCount,
+      bool hasProjectFolder,
+    })
+  >
+  buildProjectDeletionImpact(ProjectListItem project) async {
+    final normalizedTitle = _normalizeLabel(project.title);
+    final notesResult = await _noteRepository.listAllNotes();
+    final notes = notesResult.$1
+        ? notesResult.$2 ?? const <Note>[]
+        : const <Note>[];
+    final linkedNoteCount = notes
+        .where((note) => _isNoteLinkedToProject(note, normalizedTitle))
+        .length;
+
+    final folderRepository = FolderRepository();
+    final folder = await folderRepository.findRootFolderByTitle(project.title);
+    var folderNoteCount = 0;
+    if (folder?.id != null) {
+      final count = await folderRepository.countNotesInFolderTree(folder!.id!);
+      if (count.$1) {
+        folderNoteCount = count.$2;
+      }
+    }
+
+    return (
+      characterCount: characterCountForProject(project),
+      linkedNoteCount: linkedNoteCount,
+      folderNoteCount: folderNoteCount,
+      hasProjectFolder: folder?.id != null,
+    );
+  }
+
+  int characterCountForProject(ProjectListItem project) {
+    final projectId = project.id;
+    if (projectId == null) return 0;
+    return _allCharacters
+        .where((character) => character.projectId == projectId)
+        .length;
+  }
+
+  Future<void> deleteProject(
+    ProjectListItem project, {
+    bool deleteProjectFolder = false,
+    bool releaseProjectFolder = true,
+  }) async {
+    final currentIndex = _projects.indexOf(project);
+    if (currentIndex == -1) return;
+
+    final projectId = project.id;
+    if (projectId == null) {
+      _projects.removeAt(currentIndex);
+      StoryRegistry.instance.removeProject(project.title);
+      _normalizePinnedGroups();
+      _updateUnpinnedSlots();
+      notifyListeners();
+      return;
+    }
+
+    await _markProjectNotesAsFormerlyLinked(project.title);
+    if (releaseProjectFolder) {
+      final folderReleased = await _releaseProjectFolder(
+        project,
+        deleteFolder: deleteProjectFolder,
+      );
+      if (!folderReleased) {
+        notifyListeners();
+        return;
+      }
+    }
+
+    final result = await _projectRepository.deleteProject(projectId);
+    if (!result.$1) {
+      _setError(result.$2);
+      notifyListeners();
+      return;
+    }
+
+    _invalidatePendingLoads(resetLoading: true);
+    _projects.removeWhere((item) => item.id == projectId);
+    _allCharacters.removeWhere((character) => character.projectId == projectId);
+    StoryRegistry.instance.removeProject(project.title);
+    _normalizePinnedGroups();
+    _updateUnpinnedSlots();
+    notifyListeners();
+    unawaited(_persistProjectOrdering());
+  }
+
+  Future<void> _markProjectNotesAsFormerlyLinked(String projectTitle) async {
+    final normalizedTitle = _normalizeLabel(projectTitle);
+    if (normalizedTitle.isEmpty) return;
+
+    final result = await _noteRepository.listAllNotes();
+    if (!result.$1) return;
+
+    final notes = result.$2 ?? const <Note>[];
+    for (final note in notes) {
+      final noteId = note.id;
+      if (noteId == null || !_isNoteLinkedToProject(note, normalizedTitle)) {
+        continue;
+      }
+
+      final link = note.metadata.linkTarget;
+      await _noteRepository.saveNote(
+        id: noteId,
+        titulo: note.title,
+        descricao: note.text,
+        idPasta: note.idPasta,
+        color: note.color,
+        metadata: note.metadata.copyWith(
+          linkTarget: NoteLinkTarget(
+            projectTitle: _formerLinkLabel(projectTitle),
+            characterName: link.characterName?.trim().isEmpty == false
+                ? _formerLinkLabel(link.characterName!)
+                : null,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _releaseProjectFolder(
+    ProjectListItem project, {
+    required bool deleteFolder,
+  }) async {
+    final folderRepository = FolderRepository();
+    final folder = await folderRepository.findRootFolderByTitle(project.title);
+    final folderId = folder?.id;
+    if (folder == null || folderId == null) return true;
+    final deletedRefs = deleteFolder
+        ? await _collectFolderTreeMentionRefs(folderRepository, folderId)
+        : (folderIds: <int>{}, noteIds: <int>{});
+
+    final metadata = NoteMetadata(
+      tagGroups: folder.metadata.tagGroups,
+      linkTarget: NoteLinkTarget(projectTitle: _formerLinkLabel(project.title)),
+      pinned: folder.metadata.pinned,
+    );
+    await folderRepository.updateFolderMetadata(
+      folderId,
+      metadata.toJsonString(),
+    );
+
+    if (deleteFolder) {
+      final deleteResult = await folderRepository
+          .deleteFolderIgnoringProtection(folderId);
+      if (!deleteResult.$1) {
+        _setError(deleteResult.$2);
+        return false;
+      }
+      _removeDeletedFolderMentions(deletedRefs);
+    }
+
+    return true;
+  }
+
+  Future<({Set<int> folderIds, Set<int> noteIds})>
+  _collectFolderTreeMentionRefs(
+    FolderRepository folderRepository,
+    int rootFolderId,
+  ) async {
+    final folderIds = <int>{};
+
+    Future<void> visit(int folderId) async {
+      if (!folderIds.add(folderId)) return;
+
+      final children = await folderRepository.listFolders(folderId);
+      if (!children.$1) return;
+
+      for (final child in children.$2 ?? const <Folder>[]) {
+        final childId = child.id;
+        if (childId != null && childId > 0) {
+          await visit(childId);
+        }
+      }
+    }
+
+    await visit(rootFolderId);
+
+    final notesResult = await _noteRepository.listAllNotes();
+    final noteIds = notesResult.$1
+        ? (notesResult.$2 ?? const <Note>[])
+              .where((note) => note.idPasta != null)
+              .where((note) => folderIds.contains(note.idPasta))
+              .map((note) => note.id)
+              .whereType<int>()
+              .toSet()
+        : <int>{};
+
+    return (folderIds: folderIds, noteIds: noteIds);
+  }
+
+  void _removeDeletedFolderMentions(
+    ({Set<int> folderIds, Set<int> noteIds}) deletedRefs,
+  ) {
+    for (final folderId in deletedRefs.folderIds) {
+      StoryRegistry.instance.removeFolder(folderId);
+    }
+    for (final noteId in deletedRefs.noteIds) {
+      StoryRegistry.instance.removeNote(noteId);
+    }
+  }
+
+  bool _isNoteLinkedToProject(Note note, String normalizedProjectTitle) {
+    return _normalizeLabel(note.metadata.linkTarget.projectTitle) ==
+        normalizedProjectTitle;
+  }
+
+  String _formerLinkLabel(String value) =>
+      'Anteriormente vinculado à ${value.trim()}';
+
+  String _normalizeLabel(String? value) => normalizeSearchText(value ?? '');
+
   Future<void> updateProjectContent(
     ProjectListItem project, {
     required String title,
@@ -225,11 +517,12 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
-    final updateResult = await _projectRepository.updateProject(
-      project.id!,
-      title: sanitizedTitle,
-      synopsis: synopsis,
-      lastAccessed: project.lastAccessed,
+    final updateResult = await _projectRepository.saveProject(
+      _projectRecordFromListItem(project).copyWith(
+        title: sanitizedTitle,
+        synopsis: synopsis,
+        lastAccessed: project.lastAccessed,
+      ),
     );
 
     if (!updateResult.$1) {
@@ -237,6 +530,7 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
+    _invalidatePendingLoads(resetLoading: true);
     project.title = sanitizedTitle;
     project.synopsis = synopsis;
     project.lastModified = DateTime.now();
@@ -261,15 +555,17 @@ class ProjectListController extends ChangeNotifier {
       return;
     }
 
+    _invalidatePendingLoads(resetLoading: true);
     project.characterDisplayMode = characterDisplayMode;
     project.characterGridColumns = characterGridColumns;
     notifyListeners();
 
-    final result = await _projectRepository.updateProject(
-      project.id!,
-      characterDisplayMode: characterDisplayMode,
-      characterGridColumns: characterGridColumns,
-      lastAccessed: project.lastAccessed,
+    final result = await _projectRepository.saveProject(
+      _projectRecordFromListItem(project).copyWith(
+        characterDisplayMode: characterDisplayMode,
+        characterGridColumns: characterGridColumns,
+        lastAccessed: project.lastAccessed,
+      ),
     );
 
     if (!result.$1) {
@@ -283,62 +579,78 @@ class ProjectListController extends ChangeNotifier {
   }
 
   Future<void> _hydrateTagsFromStorage() async {
-    final groupId = await _ensureProjectTagGroupId();
-    final result = await _tagRepository.listTags(groupId: groupId);
-    if (!result.$1 || result.$2 == null || result.$2!.isEmpty) return;
+    final groupsResult = await _tagGroupRepository.listGroups();
+    if (!groupsResult.$1 || groupsResult.$2 == null) return;
 
-    final persisted = result.$2!
-        .map((tag) => ProjectTagData(label: tag.label, color: tag.color))
+    final groups = groupsResult.$2!;
+    final groupTitlesById = <int, String>{
+      for (final group in groups)
+        if (group.id != null) group.id!: group.title,
+    };
+
+    final tagsResult = await _tagRepository.listTags();
+    if (!tagsResult.$1 || tagsResult.$2 == null) return;
+
+    final persisted = tagsResult.$2!
+        .where((tag) => tag.label.trim().isNotEmpty)
+        .map(
+          (tag) => ProjectTagData(
+            label: tag.label,
+            color: tag.color,
+            groupId: tag.groupId,
+            groupTitle: tag.groupId == null
+                ? null
+                : groupTitlesById[tag.groupId!],
+          ),
+        )
         .toList(growable: false);
 
-    final resolution = TagController.resolveProjectTagPool(
-      existingTags: _availableTags,
-      incomingTags: persisted,
-    );
-    _availableTags
-      ..clear()
-      ..addAll(resolution.resolvedKnownTags);
+    _mergeAvailableTags(persisted);
     notifyListeners();
-  }
-
-  Future<int?> _ensureProjectTagGroupId() async {
-    if (_projectTagGroupId != null) return _projectTagGroupId;
-
-    final ensured = await _tagGroupRepository.ensureGroup(
-      title: _projectTagGroupTitle,
-      color: defaultProjectAccentColor,
-    );
-    if (ensured.$1 && ensured.$2?.id != null) {
-      _projectTagGroupId = ensured.$2!.id;
-    }
-
-    return _projectTagGroupId;
-  }
-
-  Future<void> _persistResolvedTags(Iterable<ProjectTagData> tags) async {
-    final groupId = await _ensureProjectTagGroupId();
-    for (final tag in tags) {
-      await _tagRepository.upsertTag(
-        label: tag.label,
-        color: tag.color,
-        groupId: groupId,
-      );
-    }
   }
 
   Future<void> _persistProjectOrdering() async {
     _normalizePinnedGroups();
     _updateUnpinnedSlots();
 
-    for (final project in _projects) {
-      if (project.id == null) continue;
-      await _projectRepository.updateProject(
-        project.id!,
-        isPinned: project.isPinned,
-        unpinnedIndex: project.unpinnedIndex,
-        lastAccessed: project.lastAccessed,
-      );
+    final records = _projects
+        .where((project) => project.id != null)
+        .map(
+          (project) => _projectRecordFromListItem(project).copyWith(
+            isPinned: project.isPinned,
+            unpinnedIndex: project.unpinnedIndex,
+            lastAccessed: project.lastAccessed,
+          ),
+        )
+        .toList(growable: false);
+    if (records.isEmpty) return;
+
+    final result = await _projectRepository.saveProjectOrdering(records);
+    if (!result.$1) {
+      _setError(result.$2);
+      notifyListeners();
     }
+  }
+
+  ProjectRecord _projectRecordFromListItem(ProjectListItem project) {
+    return ProjectRecord(
+      id: project.id,
+      title: project.title,
+      synopsis: project.synopsis,
+      tags: project.tags,
+      coverColor: project.coverColor,
+      accentColor: project.accentColor,
+      coverImage: project.coverImage,
+      accentImage: project.accentImage,
+      isPinned: project.isPinned,
+      unpinnedIndex: project.unpinnedIndex,
+      characterDisplayMode: project.characterDisplayMode,
+      characterGridColumns: project.characterGridColumns,
+      featuredCharacterIds: project.featuredCharacterIds,
+      createdAt: project.createdAt,
+      lastModified: project.lastModified,
+      lastAccessed: project.lastAccessed,
+    );
   }
 
   Future<void> _syncAutoFolderRename(String oldTitle, String newTitle) async {
@@ -362,7 +674,7 @@ class ProjectListController extends ChangeNotifier {
     await folderRepository.updateFolderMetadata(
       folder.id!,
       folder.metadata
-          .copyWith(projectRootTitle: normalizedNewTitle)
+          .copyWith(projectRootTitle: normalizedNewTitle, protectedFolder: true)
           .toJsonString(),
     );
   }
@@ -381,9 +693,16 @@ class ProjectListController extends ChangeNotifier {
     );
   }
 
-  Future<void> _syncStoryRegistryFromStorage() async {
+  Future<void> _syncCharactersFromStorage() async {
     final characterResult = await _characterRepository.listAllCharacters();
-    final characters = characterResult.$1 ? characterResult.$2 ?? const <CharacterListItem>[] : const <CharacterListItem>[];
+    final characters = characterResult.$1
+        ? characterResult.$2 ?? const <CharacterListItem>[]
+        : const <CharacterListItem>[];
+
+    _allCharacters
+      ..clear()
+      ..addAll(characters);
+    _applyDisplayedCharacters(characters);
 
     StoryRegistry.instance.syncProjectsAndCharacters(
       projects: _projects
@@ -412,16 +731,21 @@ class ProjectListController extends ChangeNotifier {
   }
 
   List<ProjectTagData> _resolveTags(Iterable<ProjectTagData> tags) {
-    final resolution = TagController.resolveProjectTagPool(
-      existingTags: _availableTags,
-      incomingTags: tags,
-    );
-
-    _availableTags
-      ..clear()
-      ..addAll(resolution.resolvedKnownTags);
-    unawaited(_persistResolvedTags(resolution.resolvedIncomingTags));
-    return resolution.resolvedIncomingTags;
+    final normalizedIncoming = tags
+        .map(
+          (tag) => ProjectTagData(
+            groupId: tag.groupId,
+            groupTitle: tag.groupTitle?.trim().isNotEmpty == true
+                ? tag.groupTitle!.trim()
+                : null,
+            label: tag.label,
+            color: tag.color,
+          ),
+        )
+        .where((tag) => tag.label.trim().isNotEmpty)
+        .toList(growable: false);
+    _mergeAvailableTags(normalizedIncoming);
+    return normalizedIncoming;
   }
 
   ProjectListItem _mapRecordToItem(ProjectRecord record) {
@@ -429,11 +753,15 @@ class ProjectListController extends ChangeNotifier {
       id: record.id,
       title: record.title,
       synopsis: record.synopsis,
-      tags: List<ProjectTagData>.unmodifiable(record.tags),
+      tags: List<ProjectTagData>.unmodifiable(
+        record.tags
+            .where((tag) => tag.label.trim().isNotEmpty)
+            .toList(growable: false),
+      ),
       coverColor: record.coverColor,
       accentColor: record.accentColor,
       coverImage: record.coverImage,
-      accentImage: record.accentImage,
+      accentImage: const ProjectImageData(),
       createdAt: record.createdAt,
       lastModified: record.lastModified,
       lastAccessed: record.lastAccessed,
@@ -441,7 +769,98 @@ class ProjectListController extends ChangeNotifier {
       unpinnedIndex: record.unpinnedIndex,
       characterDisplayMode: record.characterDisplayMode,
       characterGridColumns: record.characterGridColumns,
+      featuredCharacterIds: List<int>.unmodifiable(record.featuredCharacterIds),
+      displayedCharacters: _displayedCharactersForProject(
+        record.id,
+        record.featuredCharacterIds,
+      ),
     );
+  }
+
+  void _mergeAvailableTags(Iterable<ProjectTagData> tags) {
+    final merged = <String, ProjectTagData>{
+      for (final tag in _availableTags) _projectTagKey(tag): tag,
+    };
+
+    for (final tag in tags) {
+      merged[_projectTagKey(tag)] = tag;
+    }
+
+    _availableTags
+      ..clear()
+      ..addAll(merged.values);
+  }
+
+  String _projectTagKey(ProjectTagData tag) {
+    final groupKey =
+        tag.groupId?.toString() ?? normalizeSearchText(tag.groupTitle ?? '');
+    return '$groupKey|${tag.normalizedLabel}';
+  }
+
+  void _applyDisplayedCharacters(List<CharacterListItem> characters) {
+    final charactersByProject = <int, List<CharacterListItem>>{};
+    for (final character in characters) {
+      final projectId = character.projectId;
+      charactersByProject
+          .putIfAbsent(projectId, () => <CharacterListItem>[])
+          .add(character);
+    }
+
+    for (final project in _projects) {
+      project.displayedCharacters = resolveProjectShowcaseCharacters(
+        selectedCharacterIds: project.featuredCharacterIds,
+        characters:
+            charactersByProject[project.id] ?? const <CharacterListItem>[],
+      );
+    }
+  }
+
+  List<CharacterListItem> _displayedCharactersForProject(
+    int? projectId,
+    List<int> featuredCharacterIds,
+  ) {
+    if (projectId == null) {
+      return const <CharacterListItem>[];
+    }
+
+    return resolveProjectShowcaseCharacters(
+      selectedCharacterIds: featuredCharacterIds,
+      characters: _allCharacters
+          .where((character) => character.projectId == projectId)
+          .toList(growable: false),
+    );
+  }
+
+  Future<void> _refreshDisplayedCharactersForProject(
+    ProjectListItem project,
+  ) async {
+    final projectId = project.id;
+    if (projectId == null) {
+      return;
+    }
+
+    final result = await _characterRepository.listCharactersForProject(
+      projectId,
+    );
+    if (!result.$1) {
+      return;
+    }
+
+    final characters = result.$2 ?? const <CharacterListItem>[];
+    _allCharacters.removeWhere((character) => character.projectId == projectId);
+    _allCharacters.addAll(characters);
+    project.displayedCharacters = resolveProjectShowcaseCharacters(
+      selectedCharacterIds: project.featuredCharacterIds,
+      characters: characters,
+    );
+    notifyListeners();
+  }
+
+  void _invalidatePendingLoads({bool resetLoading = false}) {
+    _loadRequestToken += 1;
+    if (resetLoading) {
+      _setLoading(false);
+    }
   }
 
   int _unpinnedIndexAt(int listIndex) {

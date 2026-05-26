@@ -77,30 +77,197 @@ Future<void> _showAnchoredInfoBubble({
 }
 
 class _ProjectInfoButton extends StatelessWidget {
-  const _ProjectInfoButton();
+  final List<CharacterListItem> characters;
+  final ValueChanged<CharacterListItem>? onCharacterTap;
+
+  const _ProjectInfoButton({required this.characters, this.onCharacterTap});
+
+  static const double _thumbnailSize = 44;
+  static const double _thumbnailGap = 6;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 38,
-      height: 38,
-      child: Center(child: _DottedCircle()),
+    if (characters.isEmpty) {
+      return const SizedBox(
+        height: 52,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: _DottedCircle(diameter: _thumbnailSize),
+        ),
+      );
+    }
+
+    final visibleCharacters = characters
+        .take(projectShowcaseCharacterLimit)
+        .toList(growable: false);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: _thumbnailGap,
+          runSpacing: 8,
+          children: [
+            for (final character in visibleCharacters)
+              Tooltip(
+                message: character.data.name.trim().isEmpty
+                    ? 'Abrir personagem'
+                    : character.data.name,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onCharacterTap == null
+                        ? null
+                        : () => onCharacterTap!(character),
+                    child: _ProjectCharacterThumbnail(
+                      character: character,
+                      size: _thumbnailSize,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectCharacterThumbnail extends StatelessWidget {
+  final CharacterListItem character;
+  final double size;
+
+  const _ProjectCharacterThumbnail({
+    required this.character,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final image = character.data.profileImage;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            character.data.avatarColor.withValues(alpha: 0.95),
+            character.data.accent.withValues(alpha: 0.78),
+            Colors.white.withValues(alpha: 0.36),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.96),
+          width: 1.35,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 7,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      foregroundDecoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.72),
+          width: 0.75,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.08),
+            Colors.white.withValues(alpha: 0.02),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.32, 0.72],
+        ),
+      ),
+      child: ClipOval(
+        child: image.bytes == null
+            ? Icon(
+                Icons.person_rounded,
+                size: size * 0.56,
+                color: const Color(0xFF171419).withValues(alpha: 0.7),
+              )
+            : ProjectImageTransformView(
+                imageBytes: image.bytes!,
+                imageWidth: image.width ?? size,
+                imageHeight: image.height ?? size,
+                scale: image.scale,
+                offsetX: image.offsetX,
+                offsetY: image.offsetY,
+                viewportWidth: size,
+                viewportHeight: size,
+              ),
+      ),
+    );
+  }
+}
+
+class _ProjectCharacterNamePill extends StatelessWidget {
+  final CharacterListItem character;
+
+  const _ProjectCharacterNamePill({required this.character});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 180),
+      padding: const EdgeInsets.fromLTRB(5, 4, 9, 4),
+      decoration: BoxDecoration(
+        color: character.data.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: character.data.accent.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ProjectCharacterThumbnail(character: character, size: 24),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              character.data.name.trim().isEmpty
+                  ? 'Sem nome'
+                  : character.data.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF3E313A),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _DottedCircle extends StatelessWidget {
-  const _DottedCircle();
+  final double diameter;
+
+  const _DottedCircle({required this.diameter});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 26,
-      height: 26,
+      width: diameter,
+      height: diameter,
       child: CustomPaint(
         painter: _DottedCirclePainter(
           color: const Color(0xFFB0B0B0),
-          strokeWidth: 2,
+          strokeWidth: 2.8,
         ),
       ),
     );

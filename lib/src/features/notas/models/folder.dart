@@ -66,4 +66,6 @@ class Folder {
   }
 
   bool get isProjectRoot => metadata.isProjectRoot;
+  bool get isCharacterRoot => metadata.isCharacterRoot;
+  bool get isProtectedRoot => metadata.isProtectedRoot;
 }

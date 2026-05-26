@@ -79,6 +79,24 @@ class NoteRepository {
     );
   }
 
+  Future<(bool, String)> saveNote({
+    required int id,
+    required String titulo,
+    required String descricao,
+    required int? idPasta,
+    required Color color,
+    required NoteMetadata metadata,
+  }) {
+    return service.updateNote(
+      id,
+      titulo,
+      descricao,
+      idPasta,
+      color.toARGB32().toString(),
+      metadataJson: metadata.toJsonString(),
+    );
+  }
+
   Future<(bool, Note?, String?)> getNote(int id) {
     return service.getNote(id);
   }
@@ -89,6 +107,11 @@ class NoteRepository {
 
   Future<(bool, List<Note>?, String?)> listAllNotes() {
     return service.listAllNotes();
+  }
+
+  Future<(bool, List<({Color color, int id, String title})>?, String?)>
+  listNoteRegistryRefs() {
+    return service.listNoteRegistryRefs();
   }
 
   Future<(bool, String)> deleteNote(int id) async {

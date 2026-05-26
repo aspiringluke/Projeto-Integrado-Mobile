@@ -1,6 +1,9 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+
+import '../../shared/utils/text_normalization.dart';
 
 enum MentionTargetKind { project, character, note, folder }
 
@@ -116,6 +119,7 @@ class MentionTargetRef {
   final String? characterName;
   final int? noteId;
   final List<String> searchTerms;
+  final List<String> normalizedSearchTerms;
 
   const MentionTargetRef({
     required this.kind,
@@ -126,6 +130,7 @@ class MentionTargetRef {
     this.characterName,
     this.noteId,
     this.searchTerms = const <String>[],
+    this.normalizedSearchTerms = const <String>[],
   });
 }
 
@@ -134,18 +139,31 @@ class StoryRegistry extends ChangeNotifier {
 
   static final StoryRegistry instance = StoryRegistry._();
 
-  final List<RegisteredProjectRef> _projects = <RegisteredProjectRef>[];
-  final List<RegisteredCharacterRef> _characters = <RegisteredCharacterRef>[];
-  final List<RegisteredNoteRef> _notes = <RegisteredNoteRef>[];
-  final List<RegisteredFolderRef> _folders = <RegisteredFolderRef>[];
-  final List<MentionTargetRef> _mentionTargets = <MentionTargetRef>[];
+  late final List<RegisteredProjectRef> _projects = <RegisteredProjectRef>[];
+  late final List<RegisteredCharacterRef> _characters =
+      <RegisteredCharacterRef>[];
+  late final List<RegisteredNoteRef> _notes = <RegisteredNoteRef>[];
+  late final List<RegisteredFolderRef> _folders = <RegisteredFolderRef>[];
+  late final List<MentionTargetRef> _mentionTargets = <MentionTargetRef>[];
+  final Map<String, MentionTargetRef> _mentionTargetsByUri =
+      <String, MentionTargetRef>{};
 
-  List<RegisteredProjectRef> get projects => List.unmodifiable(_projects);
-  List<RegisteredCharacterRef> get characters => List.unmodifiable(_characters);
-  List<RegisteredNoteRef> get notes => List.unmodifiable(_notes);
-  List<RegisteredFolderRef> get folders => List.unmodifiable(_folders);
-  List<MentionTargetRef> get mentionTargets =>
-      List.unmodifiable(_mentionTargets);
+  late final UnmodifiableListView<RegisteredProjectRef> _projectView =
+      UnmodifiableListView<RegisteredProjectRef>(_projects);
+  late final UnmodifiableListView<RegisteredCharacterRef> _characterView =
+      UnmodifiableListView<RegisteredCharacterRef>(_characters);
+  late final UnmodifiableListView<RegisteredNoteRef> _noteView =
+      UnmodifiableListView<RegisteredNoteRef>(_notes);
+  late final UnmodifiableListView<RegisteredFolderRef> _folderView =
+      UnmodifiableListView<RegisteredFolderRef>(_folders);
+  late final UnmodifiableListView<MentionTargetRef> _mentionTargetView =
+      UnmodifiableListView<MentionTargetRef>(_mentionTargets);
+
+  List<RegisteredProjectRef> get projects => _projectView;
+  List<RegisteredCharacterRef> get characters => _characterView;
+  List<RegisteredNoteRef> get notes => _noteView;
+  List<RegisteredFolderRef> get folders => _folderView;
+  List<MentionTargetRef> get mentionTargets => _mentionTargetView;
 
   void registerProject({required String title, required Color accentColor}) {
     final normalizedTitle = title.trim();
@@ -220,6 +238,22 @@ class StoryRegistry extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeProject(String title) {
+    final normalizedTitle = title.trim();
+    if (normalizedTitle.isEmpty) return;
+
+    _projects.removeWhere((project) => project.matchesTitle(normalizedTitle));
+    _characters.removeWhere(
+      (character) => _matchesAnyTitle(normalizedTitle, [
+        character.projectTitle,
+        ...character.projectAliases,
+      ]),
+    );
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
   void registerCharacter({
     required String projectTitle,
     required String name,
@@ -255,6 +289,84 @@ class StoryRegistry extends ChangeNotifier {
     _projects
       ..clear()
       ..addAll(projects);
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void syncNotes(Iterable<RegisteredNoteRef> notes) {
+    final previousById = <int, RegisteredNoteRef>{
+      for (final note in _notes) note.id: note,
+    };
+    _notes
+      ..clear()
+      ..addAll(
+        notes.where((note) => note.id > 0 && note.title.trim().isNotEmpty).map((
+          note,
+        ) {
+          final previous = previousById[note.id];
+          if (previous == null) {
+            return note;
+          }
+
+          final titleChanged = previous.title != note.title;
+          return RegisteredNoteRef(
+            id: note.id,
+            title: note.title,
+            accentColor: note.accentColor,
+            aliases: _mergeAliases(previous.aliases, [
+              if (titleChanged) previous.title,
+              ...note.aliases,
+            ]),
+          );
+        }),
+      );
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void upsertFolders(Iterable<RegisteredFolderRef> folders) {
+    var didChange = false;
+
+    for (final folder in folders) {
+      if (folder.id <= 0 || folder.title.trim().isEmpty) {
+        continue;
+      }
+
+      final existingIndex = _folders.indexWhere(
+        (current) => current.id == folder.id,
+      );
+      if (existingIndex == -1) {
+        _folders.add(folder);
+        didChange = true;
+        continue;
+      }
+
+      final current = _folders[existingIndex];
+      final titleChanged = current.title != folder.title;
+      final nextAliases = _mergeAliases(current.aliases, [
+        if (titleChanged) current.title,
+        ...folder.aliases,
+      ]);
+      if (current.title == folder.title &&
+          current.accentColor == folder.accentColor &&
+          _sameStringList(current.aliases, nextAliases)) {
+        continue;
+      }
+
+      _folders[existingIndex] = RegisteredFolderRef(
+        id: folder.id,
+        title: folder.title,
+        accentColor: folder.accentColor,
+        aliases: nextAliases,
+      );
+      didChange = true;
+    }
+
+    if (!didChange) {
+      return;
+    }
 
     _rebuildMentionTargets();
     notifyListeners();
@@ -329,6 +441,22 @@ class StoryRegistry extends ChangeNotifier {
         currentCharacter.name,
         ...currentCharacter.nameAliases,
       ]),
+    );
+
+    _rebuildMentionTargets();
+    notifyListeners();
+  }
+
+  void removeCharacter({required String projectTitle, required String name}) {
+    final normalizedProjectTitle = projectTitle.trim();
+    final normalizedName = name.trim();
+    if (normalizedProjectTitle.isEmpty || normalizedName.isEmpty) return;
+
+    _characters.removeWhere(
+      (character) => character.matchesIdentity(
+        projectTitle: normalizedProjectTitle,
+        name: normalizedName,
+      ),
     );
 
     _rebuildMentionTargets();
@@ -425,18 +553,16 @@ class StoryRegistry extends ChangeNotifier {
       return _mentionTargets.take(limit).toList(growable: false);
     }
 
-    final matches = _mentionTargets
-        .where((target) {
-          final haystack = <String>[
-            target.label,
-            ...target.searchTerms,
-            if (target.projectTitle != null) target.projectTitle!,
-            if (target.characterName != null) target.characterName!,
-          ].map(_normalizeStoryValue);
-
-          return haystack.any((value) => value.contains(normalizedQuery));
-        })
-        .toList(growable: false);
+    final matches = <MentionTargetRef>[];
+    for (final target in _mentionTargets) {
+      final terms = target.normalizedSearchTerms;
+      final hasMatch = terms.isEmpty
+          ? _normalizeStoryValue(target.label).contains(normalizedQuery)
+          : terms.any((value) => value.contains(normalizedQuery));
+      if (hasMatch) {
+        matches.add(target);
+      }
+    }
 
     matches.sort((left, right) {
       final leftExact = _normalizeStoryValue(
@@ -456,6 +582,11 @@ class StoryRegistry extends ChangeNotifier {
   }
 
   MentionTargetRef? findMentionTargetByUri(String uri) {
+    final exact = _mentionTargetsByUri[uri];
+    if (exact != null) {
+      return exact;
+    }
+
     final parsed = Uri.tryParse(uri);
     if (parsed == null || parsed.scheme != 'app' || parsed.host.isEmpty) {
       return null;
@@ -499,19 +630,28 @@ class StoryRegistry extends ChangeNotifier {
     _mentionTargets
       ..clear()
       ..addAll(
-        _projects.map(
-          (project) => MentionTargetRef(
+        _projects.map((project) {
+          final searchTerms = <String>[project.title, ...project.aliases];
+          return MentionTargetRef(
             kind: MentionTargetKind.project,
             label: project.title,
             uri: _projectMentionUri(project.title),
             accentColor: project.accentColor,
-            searchTerms: <String>[project.title, ...project.aliases],
-          ),
-        ),
+            searchTerms: searchTerms,
+            normalizedSearchTerms: _normalizedTerms(searchTerms),
+          );
+        }),
       )
       ..addAll(
-        _characters.map(
-          (character) => MentionTargetRef(
+        _characters.map((character) {
+          final searchTerms = <String>[
+            character.name,
+            character.projectTitle,
+            '${character.projectTitle} ${character.name}',
+            ...character.projectAliases,
+            ...character.nameAliases,
+          ];
+          return MentionTargetRef(
             kind: MentionTargetKind.character,
             label: character.name,
             uri: _characterMentionUri(
@@ -521,39 +661,46 @@ class StoryRegistry extends ChangeNotifier {
             accentColor: character.accentColor,
             projectTitle: character.projectTitle,
             characterName: character.name,
-            searchTerms: <String>[
-              character.name,
-              character.projectTitle,
-              '${character.projectTitle} ${character.name}',
-              ...character.projectAliases,
-              ...character.nameAliases,
-            ],
-          ),
-        ),
+            searchTerms: searchTerms,
+            normalizedSearchTerms: _normalizedTerms(searchTerms),
+          );
+        }),
       );
     _mentionTargets.addAll(
-      _folders.map(
-        (folder) => MentionTargetRef(
+      _folders.map((folder) {
+        final searchTerms = <String>[folder.title, ...folder.aliases];
+        return MentionTargetRef(
           kind: MentionTargetKind.folder,
           label: folder.title,
           uri: _folderMentionUri(folder.id),
           accentColor: folder.accentColor,
-          searchTerms: <String>[folder.title, ...folder.aliases],
-        ),
-      ),
+          searchTerms: searchTerms,
+          normalizedSearchTerms: _normalizedTerms(searchTerms),
+        );
+      }),
     );
     _mentionTargets.addAll(
-      _notes.map(
-        (note) => MentionTargetRef(
+      _notes.map((note) {
+        final searchTerms = <String>[note.title, ...note.aliases];
+        return MentionTargetRef(
           kind: MentionTargetKind.note,
           label: note.title,
           uri: _noteMentionUri(note.id),
           accentColor: note.accentColor,
           noteId: note.id,
-          searchTerms: <String>[note.title, ...note.aliases],
-        ),
-      ),
+          searchTerms: searchTerms,
+          normalizedSearchTerms: _normalizedTerms(searchTerms),
+        );
+      }),
     );
+
+    _mentionTargetsByUri
+      ..clear()
+      ..addEntries(
+        _mentionTargets.map(
+          (target) => MapEntry<String, MentionTargetRef>(target.uri, target),
+        ),
+      );
   }
 
   MentionTargetRef? _findProjectMentionTarget(String title) {
@@ -649,7 +796,7 @@ class StoryRegistry extends ChangeNotifier {
 }
 
 String _normalizeStoryValue(String value) {
-  return value.trim().toLowerCase();
+  return normalizeSearchText(value);
 }
 
 bool _matchesAnyTitle(String candidate, Iterable<String> values) {
@@ -673,6 +820,34 @@ List<String> _mergeAliases(Iterable<String> existing, Iterable<String> added) {
   }
 
   return List<String>.unmodifiable(aliases);
+}
+
+List<String> _normalizedTerms(Iterable<String> terms) {
+  final seen = <String>{};
+  final normalizedTerms = <String>[];
+
+  for (final term in terms) {
+    final normalized = _normalizeStoryValue(term);
+    if (normalized.isEmpty || !seen.add(normalized)) {
+      continue;
+    }
+    normalizedTerms.add(normalized);
+  }
+
+  return List<String>.unmodifiable(normalizedTerms);
+}
+
+bool _sameStringList(List<String> left, List<String> right) {
+  if (identical(left, right)) return true;
+  if (left.length != right.length) return false;
+
+  for (var index = 0; index < left.length; index += 1) {
+    if (left[index] != right[index]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 String _projectMentionUri(String title) {

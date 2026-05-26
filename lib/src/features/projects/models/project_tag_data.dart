@@ -1,15 +1,41 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/utils/text_normalization.dart';
+
 class ProjectTagData {
+  final int? groupId;
+  final String? groupTitle;
   final String label;
   final Color color;
 
-  const ProjectTagData({required this.label, required this.color});
+  const ProjectTagData({
+    this.groupId,
+    this.groupTitle,
+    required this.label,
+    required this.color,
+  });
 
   String get normalizedLabel => normalizeProjectTagLabel(label);
 
+  ProjectTagData copyWith({
+    int? groupId,
+    String? groupTitle,
+    String? label,
+    Color? color,
+  }) {
+    return ProjectTagData(
+      groupId: groupId ?? this.groupId,
+      groupTitle: groupTitle ?? this.groupTitle,
+      label: label ?? this.label,
+      color: color ?? this.color,
+    );
+  }
+
   Map<String, Object?> toJson() {
     return <String, Object?>{
+      if (groupId != null) 'groupId': groupId,
+      if (groupTitle != null && groupTitle!.trim().isNotEmpty)
+        'groupTitle': groupTitle,
       'label': label,
       'color': color.toARGB32(),
     };
@@ -17,6 +43,8 @@ class ProjectTagData {
 
   factory ProjectTagData.fromJson(Map<String, Object?> map) {
     return ProjectTagData(
+      groupId: _readIntValue(map['groupId']),
+      groupTitle: map['groupTitle'] as String?,
       label: map['label'] as String? ?? '',
       color: Color(_readColorValue(map['color']) ?? 0xFFDF6EB8),
     );
@@ -35,7 +63,7 @@ const List<Color> projectTagPalette = <Color>[
 ];
 
 String normalizeProjectTagLabel(String label) {
-  return sanitizeProjectTagLabel(label).toLowerCase();
+  return normalizeSearchText(sanitizeProjectTagLabel(label));
 }
 
 String sanitizeProjectTagLabel(String label) {
@@ -49,6 +77,22 @@ Color projectTagColorAt(int index) {
 int? _readColorValue(Object? value) {
   if (value is int) {
     return value;
+  }
+
+  if (value is String) {
+    return int.tryParse(value);
+  }
+
+  return null;
+}
+
+int? _readIntValue(Object? value) {
+  if (value is int) {
+    return value;
+  }
+
+  if (value is num) {
+    return value.toInt();
   }
 
   if (value is String) {

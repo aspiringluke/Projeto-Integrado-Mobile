@@ -2,6 +2,8 @@ part of '../create_character_dialog.dart';
 
 enum _CharacterTagKind { gender, sexuality, ethnicity, function }
 
+enum _RelevanceEditorMode { simple, advanced }
+
 class _RelevanceParameterConfig {
   final String id;
   final String symbol;
@@ -53,13 +55,43 @@ class _RelevanceSelectionResult {
   final Map<String, double> weights;
   final List<_RelevanceParameterConfig> parameters;
   final String categoryName;
+  final _RelevanceEditorMode mode;
 
   const _RelevanceSelectionResult({
     required this.values,
     required this.weights,
     required this.parameters,
     required this.categoryName,
+    required this.mode,
   });
+}
+
+const String _relevanceStoragePrefix = 'relevance::';
+const String _relevanceStorageOrderKey = '${_relevanceStoragePrefix}order';
+const String _relevanceStorageModeKey = '${_relevanceStoragePrefix}mode';
+
+String _relevanceStorageKey(String parameterId, String field) {
+  return '$_relevanceStoragePrefix$parameterId::$field';
+}
+
+String _relevanceMonogram(String name, {String fallback = '?'}) {
+  final words = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((word) => word.isNotEmpty)
+      .take(2)
+      .toList(growable: false);
+  if (words.isEmpty) {
+    return fallback;
+  }
+  if (words.length == 1) {
+    final letter = words.first[0];
+    return '${letter.toUpperCase()}${letter.toLowerCase()}';
+  }
+
+  final first = words.first[0];
+  final second = words[1][0];
+  return '${first.toUpperCase()}${second.toLowerCase()}';
 }
 
 List<_RelevanceParameterConfig> _defaultRelevanceParameters() {
@@ -69,7 +101,7 @@ List<_RelevanceParameterConfig> _defaultRelevanceParameters() {
       symbol: 'Cc',
       name: 'Centralidade causal',
       description:
-          'Baixo: reage aos eventos. Alto: cria viradas, escolhas vitais e consequencias irreversiveis.',
+          'Baixo: reage aos eventos. Alto: cria viradas, escolhas vitais e consequências irreversíveis.',
       weight: 0.45,
     ),
     _RelevanceParameterConfig(
@@ -77,23 +109,23 @@ List<_RelevanceParameterConfig> _defaultRelevanceParameters() {
       symbol: 'Dr',
       name: 'Densidade relacional',
       description:
-          'Baixo: poucas conexoes. Alto: conecta grupos, move relacoes e irradia influencia no elenco.',
+          'Baixo: poucas conexões. Alto: conecta grupos, move relações e irradia influência no elenco.',
       weight: 0.25,
     ),
     _RelevanceParameterConfig(
       id: 'thematic',
       symbol: 'Ct',
-      name: 'Carga tematica',
+      name: 'Carga temática',
       description:
-          'Baixo: pouca tese propria. Alto: encarna conflitos, ideias e perguntas centrais da obra.',
+          'Baixo: pouca tese própria. Alto: encarna conflitos, ideias e perguntas centrais da obra.',
       weight: 0.15,
     ),
     _RelevanceParameterConfig(
       id: 'presence',
       symbol: 'Pd',
-      name: 'Presenca discursiva',
+      name: 'Presença discursiva',
       description:
-          'Baixo: aparece pouco. Alto: ocupa cenas, falas, paginas ou atencao recorrente.',
+          'Baixo: aparece pouco. Alto: ocupa cenas, falas, páginas ou atenção recorrente.',
       weight: 0.10,
     ),
     _RelevanceParameterConfig(
@@ -107,34 +139,47 @@ List<_RelevanceParameterConfig> _defaultRelevanceParameters() {
   ];
 }
 
+_RelevanceParameterConfig? _defaultRelevanceParameterById(String id) {
+  for (final parameter in _defaultRelevanceParameters()) {
+    if (parameter.id == id) {
+      return parameter;
+    }
+  }
+  return null;
+}
+
 List<_RelevanceCategoryConfig> _defaultRelevanceCategories() {
   return const [
     _RelevanceCategoryConfig(
       name: 'Contorno',
       min: 0,
       max: 1.9,
-      description: 'Figura passiva ou cenografica.',
+      description:
+          'Existem apenas para enriquecer o mundo, dar cor ou construir o contexto de algum objeto narrativo (como familiares ou habitantes locais), com pouco ou nenhum impacto no avanço da trama.',
       color: Color(0xFF8E838B),
     ),
     _RelevanceCategoryConfig(
-      name: 'Periferico',
+      name: 'Periférico',
       min: 2,
       max: 4.9,
-      description: 'Agente funcional, gatilho ou catalisador.',
+      description:
+          'Têm momentos de importância pontual. Brilham ou influenciam a história em eventos específicos, mas permanecem omissos ou em segundo plano na maior parte do tempo.',
       color: Color(0xFF8EAFF1),
     ),
     _RelevanceCategoryConfig(
       name: 'Orbital',
       min: 5,
       max: 7.9,
-      description: 'Sustentação crítica ao redor do núcleo.',
+      description:
+          'Personagens orbitais têm grande significância para algo importante para a narrativa (como outros personagens de núcleo). A história não é sobre eles, mas mesmo assim têm grande peso em seu direcionamento.',
       color: Color(0xFFDF9C53),
     ),
     _RelevanceCategoryConfig(
       name: 'Núcleo',
       min: 8,
       max: 10,
-      description: 'Entidade vital da espinha causal da historia.',
+      description:
+          'Personagens que fazem a narrativa girar ao redor deles, movendo a trama central em conjunto. A história comumente é sobre eles.',
       color: Color(0xFFDF6EB8),
     ),
   ];

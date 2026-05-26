@@ -25,7 +25,6 @@ class ExpandedCharacterBody extends StatelessWidget {
   final TextEditingController weightController;
   final VoidCallback onCycleDateType;
   final ValueChanged<Rect> onTapSign;
-  final ValueChanged<Rect> onTapAge;
   final VoidCallback onTapBirthday;
   final VoidCallback onTapHeightUnit;
   final VoidCallback onTapWeightUnit;
@@ -52,7 +51,6 @@ class ExpandedCharacterBody extends StatelessWidget {
     required this.weightController,
     required this.onCycleDateType,
     required this.onTapSign,
-    required this.onTapAge,
     required this.onTapBirthday,
     required this.onTapHeightUnit,
     required this.onTapWeightUnit,
@@ -171,7 +169,6 @@ class ExpandedCharacterBody extends StatelessWidget {
                 birthdayLabel: birthdayLabel,
                 signData: signData,
                 isEditing: isEditing,
-                onTapAge: onTapAge,
                 onTapBirthday: onTapBirthday,
                 onTapSign: onTapSign,
               );

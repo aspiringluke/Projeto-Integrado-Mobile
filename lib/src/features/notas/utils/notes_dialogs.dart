@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import 'package:projeto_integrado_mobile/src/features/notas/models/content_stats.dart';
 import 'package:projeto_integrado_mobile/src/features/notas/models/folder.dart';
@@ -7,13 +7,19 @@ import 'package:projeto_integrado_mobile/src/features/notas/widgets/folder_color
 import 'package:projeto_integrado_mobile/src/features/notas/widgets/notes_visuals.dart';
 import 'package:projeto_integrado_mobile/src/features/shared/story_registry.dart';
 import 'package:projeto_integrado_mobile/src/features/tags/controllers/tag_group_controller.dart';
+import 'package:projeto_integrado_mobile/src/shared/utils/pt_br_text.dart';
 
 part 'notes_dialogs/form_dialogs.dart';
 part 'notes_dialogs/confirmation_dialogs.dart';
 part 'notes_dialogs/metadata_widgets.dart';
 part 'notes_dialogs/folder_metadata_sheet.dart';
+part 'notes_dialogs/folder_metadata_sheet_widgets.dart';
 
 enum NotesCreateAction { note, folder }
+
+enum ProjectFolderDeletionAction { deleteFolder, keepFolder }
+
+enum CharacterLinkedNotesDeletionAction { deleteLinkedNotes, keepLinkedNotes }
 
 class FolderFormData {
   final String title;
@@ -171,8 +177,8 @@ Future<bool> showDeleteFolderConfirmation(
         title: preserveFolder ? 'Apagar conteúdo da pasta' : 'Excluir pasta',
         message: preserveFolder
             ? (hasChildren
-                  ? 'A pasta "$folderTitle" é vinculada a um projeto. Apagar o conteúdo remove tudo que está dentro, incluindo subpastas.'
-                  : 'A pasta "$folderTitle" é vinculada a um projeto. Deseja apagar todo o conteúdo dela sem excluir a pasta?')
+                  ? 'A pasta "$folderTitle" é protegida porque está vinculada a um projeto. Para apagar a pasta inteira, exclua o projeto vinculado; por aqui, só o conteúdo interno será apagado, incluindo subpastas.'
+                  : 'A pasta "$folderTitle" é protegida porque está vinculada a um projeto. Para apagar a pasta inteira, exclua o projeto vinculado; por aqui, só o conteúdo interno será apagado.')
             : hasChildren
             ? 'A pasta "$folderTitle" possui subpastas e $noteCount nota(s). Excluir também remove tudo que está dentro.'
             : 'A pasta "$folderTitle" possui $noteCount nota(s). Deseja excluir e apagar tudo que está salvo dentro?',
@@ -209,6 +215,94 @@ Future<bool> showDeleteNoteConfirmation(
   );
 
   return shouldDelete == true;
+}
+
+Future<CharacterLinkedNotesDeletionAction?> showDeleteCharacterConfirmation(
+  BuildContext context, {
+  required String characterName,
+  required int linkedNoteCount,
+}) {
+  return showDialog<CharacterLinkedNotesDeletionAction>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.24),
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: _DeleteCharacterConfirmationDialog(
+        characterName: characterName,
+        linkedNoteCount: linkedNoteCount,
+      ),
+    ),
+  );
+}
+
+Future<CharacterLinkedNotesDeletionAction?> showDeleteCharactersConfirmation(
+  BuildContext context, {
+  required int characterCount,
+  required int linkedNoteCount,
+}) {
+  return showDialog<CharacterLinkedNotesDeletionAction>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.24),
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: _DeleteCharactersConfirmationDialog(
+        characterCount: characterCount,
+        linkedNoteCount: linkedNoteCount,
+      ),
+    ),
+  );
+}
+
+Future<ProjectFolderDeletionAction?> showDeleteProjectConfirmation(
+  BuildContext context, {
+  required String projectTitle,
+  required int characterCount,
+  required int linkedNoteCount,
+  required int folderNoteCount,
+  required bool hasProjectFolder,
+}) {
+  return showDialog<ProjectFolderDeletionAction>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.24),
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: _DeleteProjectConfirmationDialog(
+        projectTitle: projectTitle,
+        characterCount: characterCount,
+        linkedNoteCount: linkedNoteCount,
+        folderNoteCount: folderNoteCount,
+        hasProjectFolder: hasProjectFolder,
+      ),
+    ),
+  );
+}
+
+Future<ProjectFolderDeletionAction?> showDeleteProjectsConfirmation(
+  BuildContext context, {
+  required int projectCount,
+  required int characterCount,
+  required int linkedNoteCount,
+  required int folderNoteCount,
+  required int projectFolderCount,
+}) {
+  return showDialog<ProjectFolderDeletionAction>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.24),
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: _DeleteProjectsConfirmationDialog(
+        projectCount: projectCount,
+        characterCount: characterCount,
+        linkedNoteCount: linkedNoteCount,
+        folderNoteCount: folderNoteCount,
+        projectFolderCount: projectFolderCount,
+      ),
+    ),
+  );
 }
 
 Future<bool> showDeleteSelectionConfirmation(

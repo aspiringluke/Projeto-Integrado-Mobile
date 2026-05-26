@@ -1,4 +1,4 @@
-@startuml Diagrama de classes do PI - Diagramacao
+@startuml Diagrama de classes do PI - Diagramação
 
 class Diagrama {
     idDiagrama: int

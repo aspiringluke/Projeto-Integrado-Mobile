@@ -37,7 +37,7 @@ class _CharacterProfilePhotoSection extends StatelessWidget {
           const SizedBox(height: 5),
           CreateProjectDialogFieldDescription(
             text:
-                'Escolha a imagem principal do personagem. GIF também é suportado. O enquadramento abaixo replica a mesma moldura usada no card.',
+                'Escolha a imagem principal do personagem. GIF também é suportado. O enquadramento abaixo replica a mesma moldura usada no cartão.',
           ),
           const SizedBox(height: 8),
           _CharacterProfileImageEditor(
@@ -159,19 +159,15 @@ class _CharacterProfileImageEditor extends StatelessWidget {
                       )
                     : GestureDetector(
                         onPanUpdate: (details) {
-                          final dx =
-                              image.offsetX +
-                              ((metrics?.maxTranslationX ?? 0) <= 0
-                                  ? 0
-                                  : details.delta.dx /
-                                        metrics!.maxTranslationX);
-                          final dy =
-                              image.offsetY +
-                              ((metrics?.maxTranslationY ?? 0) <= 0
-                                  ? 0
-                                  : details.delta.dy /
-                                        metrics!.maxTranslationY);
-                          onOffsetChanged(dx, dy);
+                          final resolvedMetrics = metrics;
+                          if (resolvedMetrics == null) return;
+                          final offset = resolveProjectImageDragOffset(
+                            currentOffsetX: image.offsetX,
+                            currentOffsetY: image.offsetY,
+                            dragDelta: details.delta,
+                            metrics: resolvedMetrics,
+                          );
+                          onOffsetChanged(offset.dx, offset.dy);
                         },
                         child: Stack(
                           fit: StackFit.expand,

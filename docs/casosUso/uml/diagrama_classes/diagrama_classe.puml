@@ -17,8 +17,8 @@ class Personagem {
 
 class Projeto {
     idProjeto: int
-    titulo: string
-    sintese: string
+    título: string
+    síntese: string
     estilo: any
     tags: Tag[]
     gruposTag: TagGroup[]

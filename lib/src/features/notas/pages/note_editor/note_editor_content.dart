@@ -302,16 +302,20 @@ class _MarkdownEditorPane extends StatefulWidget {
 }
 
 class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
+  static final RegExp _mentionBoundaryPattern = RegExp(r'[A-Za-z0-9_.%+-]');
+  static final RegExp _mentionStopPattern = RegExp(r'[\s\r\n]');
+
   late final TapGestureRecognizer _ghostTapRecognizer;
   String? _mentionQuery;
   List<MentionTargetRef> _mentionOptions = const <MentionTargetRef>[];
+  bool _isUpdatingGhost = false;
 
   @override
   void initState() {
     super.initState();
     _ghostTapRecognizer = TapGestureRecognizer()..onTap = _acceptGhost;
     widget.controller.ghostTapRecognizer = _ghostTapRecognizer;
-    widget.controller.addListener(_syncMentionState);
+    widget.controller.addListener(_handleControllerChanged);
     widget.focusNode.addListener(_syncMentionState);
     _syncMentionState();
   }
@@ -320,8 +324,8 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
   void didUpdateWidget(covariant _MarkdownEditorPane oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
-      oldWidget.controller.removeListener(_syncMentionState);
-      widget.controller.addListener(_syncMentionState);
+      oldWidget.controller.removeListener(_handleControllerChanged);
+      widget.controller.addListener(_handleControllerChanged);
     }
     if (oldWidget.focusNode != widget.focusNode) {
       oldWidget.focusNode.removeListener(_syncMentionState);
@@ -332,44 +336,60 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
 
   @override
   void dispose() {
-    widget.controller.removeListener(_syncMentionState);
+    widget.controller.removeListener(_handleControllerChanged);
     widget.focusNode.removeListener(_syncMentionState);
     widget.controller.ghostTapRecognizer = null;
     _ghostTapRecognizer.dispose();
     super.dispose();
   }
 
+  void _handleControllerChanged() {
+    if (_isUpdatingGhost) {
+      return;
+    }
+
+    _syncMentionState();
+  }
+
   void _syncMentionState() {
     final controller = widget.controller;
     if (!widget.focusNode.hasFocus) {
-      _mentionQuery = null;
-      _mentionOptions = const <MentionTargetRef>[];
-      controller.updateGhost(null);
+      _applyMentionState(
+        query: null,
+        options: const <MentionTargetRef>[],
+        ghost: null,
+      );
       return;
     }
 
     final value = controller.value;
     final selection = value.selection;
     if (!selection.isValid || !selection.isCollapsed) {
-      _mentionQuery = null;
-      _mentionOptions = const <MentionTargetRef>[];
-      controller.updateGhost(null);
+      _applyMentionState(
+        query: null,
+        options: const <MentionTargetRef>[],
+        ghost: null,
+      );
       return;
     }
 
     final query = _extractMentionQuery(value);
     if (query == null) {
-      _mentionQuery = null;
-      _mentionOptions = const <MentionTargetRef>[];
-      controller.updateGhost(null);
+      _applyMentionState(
+        query: null,
+        options: const <MentionTargetRef>[],
+        ghost: null,
+      );
       return;
     }
 
     final atIndex = value.text.lastIndexOf('@', selection.end - 1);
     if (atIndex == -1) {
-      _mentionQuery = null;
-      _mentionOptions = const <MentionTargetRef>[];
-      controller.updateGhost(null);
+      _applyMentionState(
+        query: null,
+        options: const <MentionTargetRef>[],
+        ghost: null,
+      );
       return;
     }
 
@@ -377,30 +397,72 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
       query,
       limit: 6,
     );
-    _mentionQuery = query;
-    _mentionOptions = options;
     if (options.isEmpty) {
-      controller.updateGhost(null);
+      _applyMentionState(
+        query: query,
+        options: const <MentionTargetRef>[],
+        ghost: null,
+      );
       return;
     }
 
     final target = _resolveGhostTarget(query, options)!;
     final suffix = _resolveGhostSuffix(query, target.label);
     if (suffix.isEmpty) {
-      _mentionQuery = query;
-      _mentionOptions = options;
-      controller.updateGhost(null);
+      _applyMentionState(query: query, options: options, ghost: null);
       return;
     }
 
-    controller.updateGhost(
-      _MentionGhost(
+    _applyMentionState(
+      query: query,
+      options: options,
+      ghost: _MentionGhost(
         start: atIndex,
         end: selection.end,
         target: target,
         suffix: suffix,
       ),
     );
+  }
+
+  void _applyMentionState({
+    required String? query,
+    required List<MentionTargetRef> options,
+    required _MentionGhost? ghost,
+  }) {
+    if (_mentionQuery != query ||
+        !_sameMentionOptions(_mentionOptions, options)) {
+      setState(() {
+        _mentionQuery = query;
+        _mentionOptions = options;
+      });
+    } else {
+      _mentionQuery = query;
+      _mentionOptions = options;
+    }
+
+    _isUpdatingGhost = true;
+    try {
+      widget.controller.updateGhost(ghost);
+    } finally {
+      _isUpdatingGhost = false;
+    }
+  }
+
+  bool _sameMentionOptions(
+    List<MentionTargetRef> current,
+    List<MentionTargetRef> next,
+  ) {
+    if (identical(current, next)) return true;
+    if (current.length != next.length) return false;
+
+    for (var index = 0; index < current.length; index += 1) {
+      if (current[index].uri != next[index].uri) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   String? _extractMentionQuery(TextEditingValue value) {
@@ -414,13 +476,13 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
 
     if (atIndex > 0) {
       final previous = prefix[atIndex - 1];
-      if (RegExp(r'[A-Za-z0-9_.%+-]').hasMatch(previous)) {
+      if (_mentionBoundaryPattern.hasMatch(previous)) {
         return null;
       }
     }
 
     final query = prefix.substring(atIndex + 1);
-    if (query.contains(RegExp(r'[\s\r\n]'))) return null;
+    if (query.contains(_mentionStopPattern)) return null;
     return query;
   }
 
@@ -445,20 +507,17 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
       selection: TextSelection.collapsed(offset: atIndex + insertText.length),
     );
     widget.onChanged();
-    _syncMentionState();
   }
 
   void _acceptGhost() {
     if (widget.controller.acceptGhostSuggestion()) {
       widget.onChanged();
-      _syncMentionState();
     }
   }
 
   bool _acceptMentionSuggestion() {
     if (widget.controller.acceptGhostSuggestion()) {
       widget.onChanged();
-      _syncMentionState();
       return true;
     }
 
@@ -547,7 +606,6 @@ class _MarkdownEditorPaneState extends State<_MarkdownEditorPane> {
                         ),
                         onChanged: (_) {
                           widget.onChanged();
-                          _syncMentionState();
                         },
                       ),
                     ),

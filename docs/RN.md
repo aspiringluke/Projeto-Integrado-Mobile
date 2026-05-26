@@ -10,7 +10,7 @@
 
 ### RN02 — Limite de Upload de Imagens
 
-  Os arquivos de imagem armazenados em ideias e perfis de personagens devem respeitar o limite máximo de 5 MB por arquivo para garantir a estabilidade do aplicativo.
+  Os arquivos de imagem armazenados em ideias e perfis de personagens devem respeitar o limite máximo de 20 MB por arquivo para garantir a estabilidade do aplicativo.
 
   Requisitos relacionados: RF11, RF20
 

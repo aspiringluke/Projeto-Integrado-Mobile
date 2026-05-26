@@ -2,36 +2,110 @@ import 'package:flutter/material.dart';
 
 import '../../features/diagrams/pages/diagrams_sub_page.dart';
 import '../../features/notas/pages/notes_sub_page.dart';
+import '../../shared/widgets/funcoes_busca.dart';
 import '../../shared/widgets/buttons/ideas_toggle_button.dart';
 
 enum IdeasView { notes, diagrams }
 
+abstract class _IdeasContentActions {
+  bool get isNotesView;
+  Future<void> onPrimaryActionPressed();
+  Future<void> onCreateNoteRequested();
+  Future<void> onCreateFolderRequested();
+}
+
+class IdeasContentController {
+  _IdeasContentActions? _actions;
+
+  bool get isNotesView => _actions?.isNotesView ?? false;
+
+  void _attach(_IdeasContentActions actions) {
+    _actions = actions;
+  }
+
+  void _detach(_IdeasContentActions actions) {
+    if (identical(_actions, actions)) {
+      _actions = null;
+    }
+  }
+
+  Future<void> onPrimaryActionPressed() async {
+    await _actions?.onPrimaryActionPressed();
+  }
+
+  Future<void> onCreateNoteRequested() async {
+    await _actions?.onCreateNoteRequested();
+  }
+
+  Future<void> onCreateFolderRequested() async {
+    await _actions?.onCreateFolderRequested();
+  }
+}
+
 class IdeasContent extends StatefulWidget {
-  const IdeasContent({super.key});
+  final IdeasContentController? controller;
+  final String searchQuery;
+  final ContentFilterState filterState;
+  final ContentSortState sortState;
+
+  const IdeasContent({
+    super.key,
+    this.controller,
+    this.searchQuery = '',
+    this.filterState = const ContentFilterState(),
+    this.sortState = const ContentSortState(),
+  });
 
   @override
   State<IdeasContent> createState() => IdeasContentState();
 }
 
-class IdeasContentState extends State<IdeasContent> {
+class IdeasContentState extends State<IdeasContent>
+    implements _IdeasContentActions {
   IdeasView _activeView = IdeasView.notes;
-  final GlobalKey<NotesSubPageState> _notesSubPageKey =
-      GlobalKey<NotesSubPageState>();
+  final NotesSubPageController _notesSubPageController =
+      NotesSubPageController();
+
+  @override
   bool get isNotesView => _activeView == IdeasView.notes;
 
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?._attach(this);
+  }
+
+  @override
+  void didUpdateWidget(covariant IdeasContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) return;
+
+    oldWidget.controller?._detach(this);
+    widget.controller?._attach(this);
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach(this);
+    super.dispose();
+  }
+
+  @override
   Future<void> onPrimaryActionPressed() async {
     if (_activeView != IdeasView.notes) return;
-    await _notesSubPageKey.currentState?.onPrimaryActionPressed();
+    await _notesSubPageController.onPrimaryActionPressed();
   }
 
+  @override
   Future<void> onCreateNoteRequested() async {
     if (_activeView != IdeasView.notes) return;
-    await _notesSubPageKey.currentState?.createNoteFromFab();
+    await _notesSubPageController.createNoteFromFab();
   }
 
+  @override
   Future<void> onCreateFolderRequested() async {
     if (_activeView != IdeasView.notes) return;
-    await _notesSubPageKey.currentState?.createFolderFromFab();
+    await _notesSubPageController.createFolderFromFab();
   }
 
   @override
@@ -126,7 +200,12 @@ class IdeasContentState extends State<IdeasContent> {
                 );
               },
               child: _activeView == IdeasView.notes
-                  ? NotesSubPage(key: _notesSubPageKey)
+                  ? NotesSubPage(
+                      controller: _notesSubPageController,
+                      searchQuery: widget.searchQuery,
+                      filterState: widget.filterState,
+                      sortState: widget.sortState,
+                    )
                   : const DiagramsSubPage(key: ValueKey(IdeasView.diagrams)),
             ),
           ),

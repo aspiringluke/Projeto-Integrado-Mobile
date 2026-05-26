@@ -3,23 +3,43 @@ part of 'project_page.dart';
 class ProjectPage extends StatefulWidget {
   final int? projectId;
   final String title;
+  final String synopsis;
+  final List<ProjectTagData> tags;
   final Color accentColor;
   final Color? coverColor;
   final ProjectImageData coverImage;
+  final ProjectImageData accentImage;
+  final List<ProjectTagData> availableTags;
+  final DateTime? createdAt;
+  final DateTime? lastModified;
+  final DateTime? lastAccessed;
+  final bool isPinned;
+  final int unpinnedIndex;
   final ProjectSectionId initialSection;
   final String initialCharacterDisplayMode;
   final int initialAvatarGridColumns;
+  final List<int> featuredCharacterIds;
 
   const ProjectPage({
     super.key,
     this.projectId,
     required this.title,
+    this.synopsis = '',
+    this.tags = const <ProjectTagData>[],
     this.accentColor = const Color(0xFFDF6EB8),
     this.coverColor,
     this.coverImage = const ProjectImageData(),
+    this.accentImage = const ProjectImageData(),
+    this.availableTags = const <ProjectTagData>[],
+    this.createdAt,
+    this.lastModified,
+    this.lastAccessed,
+    this.isPinned = false,
+    this.unpinnedIndex = 0,
     this.initialSection = ProjectSectionId.configProjeto,
     this.initialCharacterDisplayMode = 'list',
     this.initialAvatarGridColumns = 3,
+    this.featuredCharacterIds = const <int>[],
   });
 
   @override
@@ -53,9 +73,9 @@ class _ProjectPageState extends State<ProjectPage> {
   static const Map<ProjectSectionId, _ProjectSectionMeta> _sectionMeta =
       <ProjectSectionId, _ProjectSectionMeta>{
         ProjectSectionId.configProjeto: _ProjectSectionMeta(
-          label: 'Página inicial',
+          label: 'Geral',
           icon: Icons.tune_rounded,
-          isImplemented: false,
+          isImplemented: true,
         ),
         ProjectSectionId.insights: _ProjectSectionMeta(
           label: 'IA',
@@ -91,26 +111,163 @@ class _ProjectPageState extends State<ProjectPage> {
   final CharacterRepository _characterRepository = CharacterRepository();
   final ProjectRepository _projectRepository = ProjectRepository();
   late List<CharacterListItem> _characters;
+  late ProjectRecord _projectDraft;
   late CharacterDisplayMode _characterDisplayMode;
   late int _avatarGridColumns;
+  late final TextEditingController _characterSearchController;
+  String _characterSearchQuery = '';
+  ContentFilterState _characterFilter = const ContentFilterState();
+  ContentSortState _characterSort = const ContentSortState();
   bool _isLoadingCharacters = false;
   String? _characterErrorMessage;
+  int _characterLoadRequestToken = 0;
+  bool _hasPendingProjectChanges = false;
+  bool _isClosing = false;
+  late String _lastPersistedProjectTitle;
+  late final ValueNotifier<String> _projectTitleNotifier;
 
   @override
   void initState() {
     super.initState();
     _activeSection = widget.initialSection;
     _characters = <CharacterListItem>[];
+    final now = DateTime.now();
+    _projectDraft = ProjectRecord(
+      id: widget.projectId,
+      title: widget.title,
+      synopsis: widget.synopsis,
+      tags: widget.tags,
+      coverColor: widget.coverColor ?? widget.accentColor,
+      accentColor: widget.accentColor,
+      coverImage: widget.coverImage,
+      accentImage: const ProjectImageData(),
+      isPinned: widget.isPinned,
+      unpinnedIndex: widget.unpinnedIndex,
+      characterDisplayMode: widget.initialCharacterDisplayMode,
+      characterGridColumns: widget.initialAvatarGridColumns,
+      featuredCharacterIds: widget.featuredCharacterIds,
+      createdAt: widget.createdAt ?? now,
+      lastModified: widget.lastModified ?? now,
+      lastAccessed: widget.lastAccessed ?? now,
+    );
+    _projectTitleNotifier = ValueNotifier<String>(_projectDraft.title);
+    _characterSearchController = TextEditingController();
+    _lastPersistedProjectTitle = _projectDraft.title;
     _characterDisplayMode = _characterDisplayModeFromStorage(
       widget.initialCharacterDisplayMode,
     );
     _avatarGridColumns = widget.initialAvatarGridColumns.clamp(2, 6);
-    if (widget.projectId != null) {
+    if (_projectDraft.id != null) {
       unawaited(_loadCharacters());
     }
   }
 
   String get _activeSectionLabel => _sectionMeta[_activeSection]!.label;
+
+  @override
+  void dispose() {
+    _characterSearchController.dispose();
+    _projectTitleNotifier.dispose();
+    super.dispose();
+  }
+
+  void _updateProjectDraft(ProjectRecord next) {
+    final previous = _projectDraft;
+    final updated = next.copyWith(
+      lastModified: DateTime.now(),
+      lastAccessed: DateTime.now(),
+    );
+    _projectDraft = updated;
+    _hasPendingProjectChanges = true;
+
+    if (_projectTitleNotifier.value != updated.title) {
+      _projectTitleNotifier.value = updated.title;
+    }
+
+    if (_requiresProjectBodyRebuild(previous, updated)) {
+      setState(() {});
+    }
+  }
+
+  bool _requiresProjectBodyRebuild(ProjectRecord previous, ProjectRecord next) {
+    return previous.id != next.id ||
+        previous.tags != next.tags ||
+        previous.coverColor != next.coverColor ||
+        previous.accentColor != next.accentColor ||
+        previous.coverImage != next.coverImage ||
+        previous.accentImage != next.accentImage ||
+        previous.isPinned != next.isPinned ||
+        previous.unpinnedIndex != next.unpinnedIndex ||
+        previous.characterDisplayMode != next.characterDisplayMode ||
+        previous.characterGridColumns != next.characterGridColumns ||
+        previous.featuredCharacterIds != next.featuredCharacterIds;
+  }
+
+  Future<bool> _flushProjectDraft() async {
+    if (!_hasPendingProjectChanges) {
+      return true;
+    }
+
+    if (_projectDraft.id == null) {
+      _hasPendingProjectChanges = false;
+      return true;
+    }
+
+    final previousTitle = _lastPersistedProjectTitle;
+    final projectToSave = _projectDraft.copyWith(
+      accentImage: const ProjectImageData(),
+      characterDisplayMode: _characterDisplayMode.name,
+      characterGridColumns: _avatarGridColumns,
+    );
+    final result = await _projectRepository.saveProject(projectToSave);
+
+    if (!mounted) {
+      return false;
+    }
+
+    if (!result.$1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.$2), behavior: SnackBarBehavior.floating),
+      );
+      return false;
+    }
+
+    _hasPendingProjectChanges = false;
+    _projectDraft = projectToSave;
+    _lastPersistedProjectTitle = _projectDraft.title;
+    if (previousTitle.trim() != _projectDraft.title.trim()) {
+      StoryRegistry.instance.renameProject(previousTitle, _projectDraft.title);
+    } else {
+      StoryRegistry.instance.registerProject(
+        title: _projectDraft.title,
+        accentColor: _projectDraft.accentColor,
+      );
+    }
+    return true;
+  }
+
+  Future<void> _closeProjectPage() async {
+    if (_isClosing) {
+      return;
+    }
+
+    _isClosing = true;
+    final didFlush = await _flushProjectDraft();
+    if (!mounted) {
+      return;
+    }
+
+    if (!didFlush) {
+      _isClosing = false;
+      return;
+    }
+
+    Navigator.of(context).pop(_projectDraft);
+  }
+
+  void _updateBannerCoverImage(ProjectImageData image) {
+    _updateProjectDraft(_projectDraft.copyWith(coverImage: image));
+  }
 
   void _setActiveSection(ProjectSectionId section) {
     setState(() {
@@ -146,18 +303,21 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   Future<void> _loadCharacters() async {
-    final projectId = widget.projectId;
+    final projectId = _projectDraft.id;
     if (projectId == null) {
       return;
     }
 
+    final requestToken = ++_characterLoadRequestToken;
     setState(() {
       _isLoadingCharacters = true;
       _characterErrorMessage = null;
     });
 
-    final result = await _characterRepository.listCharactersForProject(projectId);
-    if (!mounted) {
+    final result = await _characterRepository.listCharactersForProject(
+      projectId,
+    );
+    if (!mounted || requestToken != _characterLoadRequestToken) {
       return;
     }
 
@@ -169,20 +329,24 @@ class _ProjectPageState extends State<ProjectPage> {
         return;
       }
 
-      _characters = result.$2 ?? <CharacterListItem>[];
+      _characters = (result.$2 ?? const <CharacterListItem>[]).toList(
+        growable: true,
+      );
     });
   }
 
   Future<void> _persistProjectViewSettings() async {
-    final projectId = widget.projectId;
+    final projectId = _projectDraft.id;
     if (projectId == null) {
       return;
     }
 
-    final result = await _projectRepository.updateProject(
-      projectId,
-      characterDisplayMode: _characterDisplayMode.name,
-      characterGridColumns: _avatarGridColumns,
+    final result = await _projectRepository.saveProject(
+      _projectDraft.copyWith(
+        characterDisplayMode: _characterDisplayMode.name,
+        characterGridColumns: _avatarGridColumns,
+        lastAccessed: _projectDraft.lastAccessed,
+      ),
     );
     if (!result.$1 && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -198,12 +362,11 @@ class _ProjectPageState extends State<ProjectPage> {
         continue;
       }
 
-      await _characterRepository.updateCharacter(
-        characterId,
-        projectTitle: widget.title,
-        isPinned: character.isPinned,
-        unpinnedIndex: character.unpinnedIndex,
-        lastAccessed: character.lastAccessed,
+      await _characterRepository.saveCharacter(
+        character.copyWith(
+          projectTitle: _projectDraft.title,
+          lastAccessed: character.lastAccessed,
+        ),
       );
     }
   }
@@ -236,11 +399,12 @@ class _ProjectPageState extends State<ProjectPage> {
 
     final characterId = character.id;
     if (characterId != null) {
-      final result = await _characterRepository.updateCharacter(
-        characterId,
-        projectTitle: widget.title,
-        data: updatedData,
-        lastAccessed: character.lastAccessed,
+      final result = await _characterRepository.saveCharacter(
+        character.copyWith(
+          projectTitle: _projectDraft.title,
+          data: updatedData,
+          lastAccessed: character.lastAccessed,
+        ),
       );
       if (!result.$1 && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -255,7 +419,7 @@ class _ProjectPageState extends State<ProjectPage> {
     if (previousName != updatedData.name ||
         previousAccent != updatedData.accent) {
       StoryRegistry.instance.updateCharacter(
-        projectTitle: widget.title,
+        projectTitle: _projectDraft.title,
         oldName: previousName,
         newName: updatedData.name,
         accentColor: updatedData.accent,
@@ -264,11 +428,224 @@ class _ProjectPageState extends State<ProjectPage> {
     }
 
     StoryRegistry.instance.registerCharacter(
-      projectTitle: widget.title,
+      projectTitle: _projectDraft.title,
       name: updatedData.name,
       accentColor: updatedData.accent,
     );
   }
+
+  Future<void> _deleteCharacter(CharacterListItem character) async {
+    final characterId = character.id;
+    final linkedNotes = await _notesLinkedToCharacter(character);
+    if (!mounted) {
+      return;
+    }
+
+    final deletionAction = await showDeleteCharacterConfirmation(
+      context,
+      characterName: character.data.name,
+      linkedNoteCount: linkedNotes.length,
+    );
+    if (!mounted || deletionAction == null) {
+      return;
+    }
+
+    if (deletionAction ==
+        CharacterLinkedNotesDeletionAction.deleteLinkedNotes) {
+      await _deleteCharacterLinkedNotes(linkedNotes);
+    } else {
+      await _markCharacterNotesAsFormerlyLinked(character, linkedNotes);
+    }
+    if (!mounted) {
+      return;
+    }
+
+    if (characterId == null) {
+      setState(() {
+        _characters.remove(character);
+      });
+      return;
+    }
+
+    final result = await _characterRepository.deleteCharacter(characterId);
+    if (!mounted) {
+      return;
+    }
+
+    if (!result.$1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.$2), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+
+    setState(() {
+      _characters.removeWhere((item) => item.id == characterId);
+      if (_projectDraft.featuredCharacterIds.contains(characterId)) {
+        _projectDraft = _projectDraft.copyWith(
+          featuredCharacterIds: _projectDraft.featuredCharacterIds
+              .where((id) => id != characterId)
+              .toList(growable: false),
+        );
+        _hasPendingProjectChanges = true;
+      }
+    });
+
+    StoryRegistry.instance.removeCharacter(
+      projectTitle: _projectDraft.title,
+      name: character.data.name,
+    );
+    unawaited(_persistCharacterOrdering());
+    unawaited(_flushProjectDraft());
+  }
+
+  Future<void> _deleteCharacters(List<CharacterListItem> characters) async {
+    if (characters.isEmpty) return;
+
+    final linkedNotesByCharacter = <CharacterListItem, List<Note>>{};
+    for (final character in characters) {
+      linkedNotesByCharacter[character] = await _notesLinkedToCharacter(
+        character,
+      );
+    }
+    if (!mounted) return;
+
+    final linkedNoteIds = <int>{};
+    for (final notes in linkedNotesByCharacter.values) {
+      linkedNoteIds.addAll(notes.map((note) => note.id).whereType<int>());
+    }
+
+    final deletionAction = await showDeleteCharactersConfirmation(
+      context,
+      characterCount: characters.length,
+      linkedNoteCount: linkedNoteIds.length,
+    );
+    if (!mounted || deletionAction == null) {
+      return;
+    }
+
+    if (deletionAction ==
+        CharacterLinkedNotesDeletionAction.deleteLinkedNotes) {
+      await _deleteCharacterLinkedNotes(
+        linkedNotesByCharacter.values
+            .expand((notes) => notes)
+            .toList(growable: false),
+      );
+    } else {
+      for (final entry in linkedNotesByCharacter.entries) {
+        await _markCharacterNotesAsFormerlyLinked(entry.key, entry.value);
+      }
+    }
+    if (!mounted) return;
+
+    final deletedIds = <int>{};
+    for (final character in characters) {
+      final characterId = character.id;
+      if (characterId == null) {
+        deletedIds.addAll(
+          _characters
+              .where((item) => identical(item, character))
+              .map((item) => item.id)
+              .whereType<int>(),
+        );
+        continue;
+      }
+
+      final result = await _characterRepository.deleteCharacter(characterId);
+      if (!mounted) return;
+      if (!result.$1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.$2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        continue;
+      }
+      deletedIds.add(characterId);
+      StoryRegistry.instance.removeCharacter(
+        projectTitle: _projectDraft.title,
+        name: character.data.name,
+      );
+    }
+
+    setState(() {
+      _characters.removeWhere(
+        (item) => item.id != null && deletedIds.contains(item.id),
+      );
+      if (_projectDraft.featuredCharacterIds.any(deletedIds.contains)) {
+        _projectDraft = _projectDraft.copyWith(
+          featuredCharacterIds: _projectDraft.featuredCharacterIds
+              .where((id) => !deletedIds.contains(id))
+              .toList(growable: false),
+        );
+        _hasPendingProjectChanges = true;
+      }
+    });
+
+    unawaited(_persistCharacterOrdering());
+    unawaited(_flushProjectDraft());
+  }
+
+  Future<List<Note>> _notesLinkedToCharacter(
+    CharacterListItem character,
+  ) async {
+    final result = await NoteRepository().listAllNotes();
+    if (!result.$1) {
+      return const <Note>[];
+    }
+
+    final projectTitle = _normalizeDeletionLabel(_projectDraft.title);
+    final characterName = _normalizeDeletionLabel(character.data.name);
+    return (result.$2 ?? const <Note>[])
+        .where((note) {
+          final link = note.metadata.linkTarget;
+          return _normalizeDeletionLabel(link.projectTitle) == projectTitle &&
+              _normalizeDeletionLabel(link.characterName) == characterName;
+        })
+        .toList(growable: false);
+  }
+
+  Future<void> _markCharacterNotesAsFormerlyLinked(
+    CharacterListItem character,
+    List<Note> notes,
+  ) async {
+    final repository = NoteRepository();
+    for (final note in notes) {
+      final noteId = note.id;
+      if (noteId == null) continue;
+
+      final link = note.metadata.linkTarget;
+      await repository.saveNote(
+        id: noteId,
+        titulo: note.title,
+        descricao: note.text,
+        idPasta: note.idPasta,
+        color: note.color,
+        metadata: note.metadata.copyWith(
+          linkTarget: NoteLinkTarget(
+            projectTitle: link.projectTitle,
+            characterName:
+                'Anteriormente vinculado à ${character.data.name.trim()}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteCharacterLinkedNotes(List<Note> notes) async {
+    final repository = NoteRepository();
+    final deletedNoteIds = <int>{};
+    for (final note in notes) {
+      final noteId = note.id;
+      if (noteId == null || !deletedNoteIds.add(noteId)) continue;
+
+      await repository.deleteNote(noteId);
+    }
+  }
+
+  String _normalizeDeletionLabel(String? value) =>
+      (value ?? '').trim().toLowerCase();
 
   void _setAvatarGridColumns(int columnCount) {
     if (columnCount < 2 || columnCount > 6) {
@@ -288,7 +665,7 @@ class _ProjectPageState extends State<ProjectPage> {
       return;
     }
 
-    final projectId = widget.projectId;
+    final projectId = _projectDraft.id;
     if (projectId == null) {
       return;
     }
@@ -297,7 +674,7 @@ class _ProjectPageState extends State<ProjectPage> {
     final created = await _characterRepository.createCharacter(
       CharacterListItem(
         projectId: projectId,
-        projectTitle: widget.title,
+        projectTitle: _projectDraft.title,
         data: CharacterCardData(
           name: draft.name,
           alias: draft.alias,
@@ -321,6 +698,7 @@ class _ProjectPageState extends State<ProjectPage> {
           weightKg: draft.weightKg,
           quote: draft.motto,
           synopsis: draft.synopsis,
+          notebookComplexityValues: draft.notebookComplexityValues,
           seed: DateTime.now().microsecondsSinceEpoch,
         ),
         unpinnedIndex: _characters.where((item) => !item.isPinned).length,
@@ -344,13 +722,16 @@ class _ProjectPageState extends State<ProjectPage> {
       return;
     }
 
+    _characterLoadRequestToken += 1;
     setState(() {
       _characters.add(created.$2!);
       _isCreateMenuOpen = false;
+      _isLoadingCharacters = false;
+      _characterErrorMessage = null;
     });
 
     StoryRegistry.instance.registerCharacter(
-      projectTitle: widget.title,
+      projectTitle: _projectDraft.title,
       name: draft.name,
       accentColor: draft.accentColor,
     );
@@ -383,21 +764,203 @@ class _ProjectPageState extends State<ProjectPage> {
       );
     }
 
+    final visibleCharacters = _visibleCharacters(_characters);
     return CharactersSection(
-      characters: _characters,
+      characters: visibleCharacters,
       showAvatarGrid: _characterDisplayMode == CharacterDisplayMode.avatars,
       avatarGridColumns: _avatarGridColumns,
       onToggleDisplayMode: _toggleCharacterDisplayMode,
       onChangeAvatarGridColumns: _setAvatarGridColumns,
+      emptyMessage: _characters.isEmpty
+          ? 'Nenhum personagem criado. Clique no "+" para criar um!'
+          : 'Nenhum personagem encontrado com os filtros atuais.',
       onTogglePinned: _togglePinnedCharacter,
       onCharacterEdited: (character, updatedData) =>
           unawaited(_updateCharacter(character, updatedData)),
       onCharacterViewed: (character) => unawaited(_touchCharacter(character)),
+      onCharacterDeleted: (character) => unawaited(_deleteCharacter(character)),
+      onCharactersDeleted: (characters) =>
+          unawaited(_deleteCharacters(characters)),
     );
+  }
+
+  List<CharacterListItem> _visibleCharacters(
+    Iterable<CharacterListItem> characters,
+  ) {
+    final query = normalizeSearchText(_characterSearchQuery);
+    final filtered = characters
+        .where((character) {
+          final tagMatches = _characterFilter.matchesTags(
+            _characterTagLabels(character),
+          );
+          if (!tagMatches) return false;
+          if (query.isEmpty) {
+            return true;
+          }
+          final data = character.data;
+          final haystack = normalizeSearchText(
+            <String>[
+              data.name,
+              data.alias,
+              data.synopsis,
+              data.motto,
+              data.genderTag,
+              data.sexualityTag,
+              data.ethnicityTag,
+              data.functionTag,
+              data.relevanceTag,
+            ].join(' '),
+          );
+          return haystack.contains(query);
+        })
+        .toList(growable: false);
+
+    return filtered..sort((left, right) {
+      if (left.isPinned != right.isPinned) {
+        return left.isPinned ? -1 : 1;
+      }
+
+      final comparison = switch (_characterSort.mode) {
+        ContentSortMode.lastAccessed => right.lastAccessed.compareTo(
+          left.lastAccessed,
+        ),
+        ContentSortMode.lastModified => right.lastModified.compareTo(
+          left.lastModified,
+        ),
+        ContentSortMode.createdAt => right.createdAt.compareTo(left.createdAt),
+        ContentSortMode.title => left.data.name.toLowerCase().compareTo(
+          right.data.name.toLowerCase(),
+        ),
+        ContentSortMode.synopsisLength =>
+          right.data.synopsis.trim().length.compareTo(
+            left.data.synopsis.trim().length,
+          ),
+        ContentSortMode.characterCount => 0,
+      };
+      return _characterSort.reversed ? -comparison : comparison;
+    });
+  }
+
+  List<String> _characterTagLabels(CharacterListItem character) {
+    final data = character.data;
+    return [
+      data.genderTag,
+      data.sexualityTag,
+      data.ethnicityTag,
+      data.functionTag,
+      data.relevanceTag,
+    ].where((tag) => tag.trim().isNotEmpty).toList(growable: false);
+  }
+
+  List<TagFilterGroup> _buildCharacterTagGroups() {
+    final groups = <TagFilterGroup>[
+      _buildCharacterTagGroup(
+        title: 'Gênero',
+        icon: Icons.wc_rounded,
+        color: projectTagColorAt(0),
+        labels: _characters
+            .map((character) => character.data.genderTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Sexualidade',
+        icon: Icons.favorite_border_rounded,
+        color: projectTagColorAt(1),
+        labels: _characters
+            .map((character) => character.data.sexualityTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Etnia',
+        icon: Icons.groups_2_outlined,
+        color: projectTagColorAt(2),
+        labels: _characters
+            .map((character) => character.data.ethnicityTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Função',
+        icon: Icons.badge_outlined,
+        color: projectTagColorAt(3),
+        labels: _characters
+            .map((character) => character.data.functionTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+      _buildCharacterTagGroup(
+        title: 'Relevância',
+        icon: Icons.star_rounded,
+        color: projectTagColorAt(4),
+        labels: _characters
+            .map((character) => character.data.relevanceTag)
+            .where((tag) => tag.trim().isNotEmpty),
+      ),
+    ];
+
+    return groups
+        .where((group) => group.tags.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  TagFilterGroup _buildCharacterTagGroup({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Iterable<String> labels,
+  }) {
+    final tagsByNormalized = <String, ProjectTagData>{};
+    for (final label in labels) {
+      final sanitized = sanitizeProjectTagLabel(label);
+      final normalized = normalizeSearchText(sanitized);
+      if (normalized.isEmpty) continue;
+      tagsByNormalized.putIfAbsent(
+        normalized,
+        () => ProjectTagData(label: sanitized, color: color, groupTitle: title),
+      );
+    }
+
+    return TagFilterGroup(
+      title: title,
+      color: color,
+      icon: icon,
+      tags: tagsByNormalized.values.toList(growable: false),
+    );
+  }
+
+  void _onCharacterSearchChanged(String value) {
+    setState(() {
+      _characterSearchQuery = value;
+    });
+  }
+
+  Future<void> _openCharacterFilterMenu() async {
+    final result = await showContentFilterMenu(
+      context: context,
+      initial: _characterFilter,
+      availableTagGroups: _buildCharacterTagGroups(),
+    );
+    if (!mounted || result == null) return;
+    setState(() => _characterFilter = result);
+  }
+
+  Future<void> _openCharacterSortMenu() async {
+    final result = await showContentSortMenu(
+      context: context,
+      initial: _characterSort,
+      includeCharacterCount: false,
+    );
+    if (!mounted || result == null) return;
+    setState(() => _characterSort = result);
   }
 
   Widget _buildSectionBody() {
     return switch (_activeSection) {
+      ProjectSectionId.configProjeto => ProjectGeneralSection(
+        project: _projectDraft,
+        availableTags: widget.availableTags,
+        availableCharacters: _characters,
+        isLoadingCharacters: _isLoadingCharacters,
+        onChanged: _updateProjectDraft,
+      ),
       ProjectSectionId.characters => _buildCharactersSection(),
       _ => _UnderConstructionSection(
         icon: _sectionMeta[_activeSection]!.icon,
@@ -422,9 +985,25 @@ class _ProjectPageState extends State<ProjectPage> {
     unawaited(_persistProjectViewSettings());
   }
 
+  Future<void> _openCoverImageViewer() async {
+    final coverImage = _projectDraft.coverImage;
+    if (coverImage.bytes == null) {
+      return;
+    }
+
+    await showProjectImageViewerDialog(
+      context,
+      title: _projectDraft.title,
+      subtitle: 'Imagem do projeto',
+      image: coverImage,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final resolvedCoverColor = widget.coverColor ?? widget.accentColor;
+    final resolvedCoverColor = _projectDraft.coverColor;
+    final accentColor = _projectDraft.accentColor;
+    final coverImage = _projectDraft.coverImage;
     final headerBackground = Stack(
       fit: StackFit.expand,
       children: [
@@ -435,7 +1014,7 @@ class _ProjectPageState extends State<ProjectPage> {
               end: Alignment.bottomRight,
               colors: [
                 Color.alphaBlend(
-                  widget.accentColor.withValues(alpha: 0.08),
+                  accentColor.withValues(alpha: 0.08),
                   resolvedCoverColor.withValues(alpha: 0.92),
                 ),
                 Color.alphaBlend(
@@ -443,7 +1022,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   Colors.black.withValues(alpha: 0.06),
                 ),
                 Color.alphaBlend(
-                  widget.accentColor.withValues(alpha: 0.05),
+                  accentColor.withValues(alpha: 0.05),
                   Colors.white.withValues(alpha: 0.1),
                 ),
               ],
@@ -451,517 +1030,267 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
           ),
         ),
-        if (widget.coverImage.bytes != null)
+        if (coverImage.bytes != null)
           Positioned.fill(
-            child: Opacity(
-              opacity: 0.78,
-              child: ProjectImageTransformView(
-                imageBytes: widget.coverImage.bytes!,
-                imageWidth: widget.coverImage.width ?? 1,
-                imageHeight: widget.coverImage.height ?? 1,
-                scale: widget.coverImage.scale,
-                offsetX: widget.coverImage.offsetX,
-                offsetY: widget.coverImage.offsetY,
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final metrics = computeProjectImageViewportMetrics(
+                  viewportSize: constraints.biggest,
+                  imageWidth: coverImage.width ?? 0,
+                  imageHeight: coverImage.height ?? 0,
+                  scale: coverImage.scale,
+                );
+
+                return GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanUpdate: (details) {
+                    final offset = resolveProjectImageDragOffset(
+                      currentOffsetX: coverImage.offsetX,
+                      currentOffsetY: coverImage.offsetY,
+                      dragDelta: details.delta,
+                      metrics: metrics,
+                    );
+                    _updateBannerCoverImage(
+                      coverImage.copyWith(
+                        offsetX: offset.dx,
+                        offsetY: offset.dy,
+                      ),
+                    );
+                  },
+                  child: Opacity(
+                    opacity: 0.78,
+                    child: ProjectImageTransformView(
+                      imageBytes: coverImage.bytes!,
+                      imageWidth: coverImage.width ?? 1,
+                      imageHeight: coverImage.height ?? 1,
+                      scale: coverImage.scale,
+                      offsetX: coverImage.offsetX,
+                      offsetY: coverImage.offsetY,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.18),
-                  Colors.transparent,
-                  Colors.white.withValues(alpha: 0.05),
-                  Colors.white.withValues(alpha: 0.16),
-                ],
-                stops: const [0.0, 0.34, 0.76, 1.0],
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.18),
+                    Colors.transparent,
+                    Colors.white.withValues(alpha: 0.05),
+                    Colors.white.withValues(alpha: 0.16),
+                  ],
+                  stops: const [0.0, 0.34, 0.76, 1.0],
+                ),
               ),
             ),
           ),
         ),
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withValues(alpha: 0.14),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.06),
-                ],
-                stops: const [0.0, 0.52, 1.0],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-    final headerCenter = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            widget.title.toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.fade,
-            softWrap: false,
-            style: TextStyle(
-              color: const Color(0xFFF8EFF5),
-              fontSize: 31,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 2.8,
-              height: 1,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 18,
-                  offset: const Offset(0, 2),
-                ),
-                Shadow(
-                  color: Colors.white.withValues(alpha: 0.16),
-                  blurRadius: 12,
-                  offset: Offset.zero,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '...$_activeSectionLabel...',
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: const Color(0xFFF7EEF4).withValues(alpha: 0.92),
-            fontSize: 13,
-            fontStyle: FontStyle.italic,
-            letterSpacing: 0.3,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.34),
-                blurRadius: 12,
-                offset: const Offset(0, 1),
-              ),
-              Shadow(
-                color: Colors.white.withValues(alpha: 0.16),
-                blurRadius: 10,
-                offset: Offset.zero,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFFDF2F8),
-      bottomNavigationBar: _ProjectFooterNav(
-        accentColor: widget.accentColor,
-        activeSection: _activeSection,
-        onSelect: _setActiveSection,
-      ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
-          ),
-          Column(
-            children: [
-              MainHeader(
-                asSliver: false,
-                title: widget.title,
-                subtitle: _activeSectionLabel,
-                onBackPressed: () => Navigator.of(context).pop(),
-                onConfigPressed: () {},
-                titleFontSize: 31,
-                titleLetterSpacing: 2.8,
-                contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                titleHorizontalPadding: 60,
-                titleShadow: true,
-                surroundSubtitleWithDots: true,
-                centerChild: headerCenter,
-                backgroundChild: headerBackground,
-              ),
-              const FuncoesBusca(),
-              Expanded(child: _buildSectionBody()),
-            ],
-          ),
-          if (_isCreateMenuOpen)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _closeCreateMenu,
-                child: const SizedBox.expand(),
-              ),
-            ),
-          Positioned(
-            right: 18,
-            bottom: 88,
-            child: _ProjectCreateFab(
-              accentColor: widget.accentColor,
-              isOpen: _isCreateMenuOpen,
-              onToggle: _toggleCreateMenu,
-              onCreateCharacter: _createCharacter,
-              onCreateDiagram: _createDiagram,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProjectFooterNav extends StatelessWidget {
-  final Color accentColor;
-  final ProjectSectionId activeSection;
-  final ValueChanged<ProjectSectionId> onSelect;
-
-  const _ProjectFooterNav({
-    required this.accentColor,
-    required this.activeSection,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const items = <(ProjectSectionId, String, IconData)>[
-      (ProjectSectionId.configProjeto, 'Página inicial', Icons.tune_rounded),
-      (
-        ProjectSectionId.characters,
-        'Personagens',
-        Icons.person_outline_rounded,
-      ),
-      (ProjectSectionId.notes, 'Enredo', Icons.auto_stories_outlined),
-      (ProjectSectionId.world, 'Mundo', Icons.public_outlined),
-    ];
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: 66,
+          child: IgnorePointer(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withValues(alpha: 0.7),
-                    const Color(0xFFF1EDF1).withValues(alpha: 0.58),
+                    Colors.white.withValues(alpha: 0.14),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.06),
                   ],
+                  stops: const [0.0, 0.52, 1.0],
                 ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  width: 0.85,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  for (final item in items)
-                    Expanded(
-                      child: _ProjectFooterItem(
-                        accentColor: accentColor,
-                        label: item.$2,
-                        icon: item.$3,
-                        isActive: activeSection == item.$1,
-                        onTap: () => onSelect(item.$1),
-                      ),
-                    ),
-                ],
               ),
             ),
           ),
         ),
-      ),
+        if (coverImage.bytes != null)
+          Positioned(
+            left: 16,
+            bottom: 12,
+            child: GlassCircleButton(
+              diameter: 34,
+              onTap: _openCoverImageViewer,
+              tooltip: 'Ver imagem',
+              fillColor: Colors.white.withValues(alpha: 0.14),
+              borderColor: Colors.white.withValues(alpha: 0.72),
+              borderWidth: 0.8,
+              blurSigma: 12,
+              child: Icon(
+                Icons.open_in_full_rounded,
+                size: 17,
+                color: Colors.white.withValues(alpha: 0.96),
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.28),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
-  }
-}
-
-class _ProjectFooterItem extends StatelessWidget {
-  final Color accentColor;
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ProjectFooterItem({
-    required this.accentColor,
-    required this.label,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            height: double.infinity,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          unawaited(_closeProjectPage());
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFDF2F8),
+        bottomNavigationBar: _ProjectFooterNav(
+          accentColor: accentColor,
+          activeSection: _activeSection,
+          onSelect: _setActiveSection,
+        ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset('assets/images/FUNDO.png', fit: BoxFit.cover),
+            ),
+            Column(
               children: [
-                Opacity(
-                  opacity: isActive ? 1 : 0.5,
-                  child: Icon(
-                    icon,
-                    size: 25,
-                    color: isActive
-                        ? _darkenProjectAccent(accentColor, 0.34)
-                        : const Color(0xFF1B171C),
-                  ),
+                ValueListenableBuilder<String>(
+                  valueListenable: _projectTitleNotifier,
+                  builder: (context, projectTitle, _) {
+                    final liveHeaderCenter = Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            projectTitle.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.fade,
+                            softWrap: false,
+                            style: TextStyle(
+                              color: const Color(0xFFF8EFF5),
+                              fontSize: 31,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 2.8,
+                              height: 1,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.4),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 2),
+                                ),
+                                Shadow(
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                  blurRadius: 12,
+                                  offset: Offset.zero,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '...$_activeSectionLabel...',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: const Color(
+                              0xFFF7EEF4,
+                            ).withValues(alpha: 0.92),
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                            letterSpacing: 0.3,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.34),
+                                blurRadius: 12,
+                                offset: const Offset(0, 1),
+                              ),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.16),
+                                blurRadius: 10,
+                                offset: Offset.zero,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+
+                    return MainHeader(
+                      asSliver: false,
+                      title: projectTitle,
+                      subtitle: _activeSectionLabel,
+                      onBackPressed: () => unawaited(_closeProjectPage()),
+                      onConfigPressed: () {},
+                      titleFontSize: 31,
+                      titleLetterSpacing: 2.8,
+                      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      titleHorizontalPadding: 60,
+                      titleShadow: true,
+                      surroundSubtitleWithDots: true,
+                      centerChild: liveHeaderCenter,
+                      backgroundChild: headerBackground,
+                    );
+                  },
                 ),
-                const SizedBox(height: 8),
-                AnimatedContainer(
+                AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  width: isActive ? 16 : 0,
-                  height: 2.5,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: BorderRadius.circular(999),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: FuncoesBusca(
+                    key: ValueKey('project-search-${_activeSection.name}'),
+                    controller: _activeSection == ProjectSectionId.characters
+                        ? _characterSearchController
+                        : null,
+                    onChanged: _activeSection == ProjectSectionId.characters
+                        ? _onCharacterSearchChanged
+                        : null,
+                    onFilterTap: _activeSection == ProjectSectionId.characters
+                        ? () => unawaited(_openCharacterFilterMenu())
+                        : null,
+                    onSortTap: _activeSection == ProjectSectionId.characters
+                        ? () => unawaited(_openCharacterSortMenu())
+                        : null,
+                    filterActive: _activeSection == ProjectSectionId.characters
+                        ? _characterFilter.isActive
+                        : false,
+                    sortActive: _activeSection == ProjectSectionId.characters
+                        ? _characterSort.isActive
+                        : false,
+                    hintText: _activeSection == ProjectSectionId.characters
+                        ? 'Pesquisar personagens'
+                        : 'Pesquisar',
                   ),
                 ),
+                Expanded(child: _buildSectionBody()),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectCreateFab extends StatelessWidget {
-  final Color accentColor;
-  final bool? isOpen;
-  final VoidCallback onToggle;
-  final VoidCallback onCreateCharacter;
-  final VoidCallback onCreateDiagram;
-
-  const _ProjectCreateFab({
-    required this.accentColor,
-    required this.isOpen,
-    required this.onToggle,
-    required this.onCreateCharacter,
-    required this.onCreateDiagram,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final open = isOpen ?? false;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        IgnorePointer(
-          ignoring: !open,
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 180),
-            opacity: open ? 1 : 0,
-            child: AnimatedSlide(
-              duration: const Duration(milliseconds: 220),
-              offset: open ? Offset.zero : const Offset(0, 0.16),
-              curve: Curves.easeOutCubic,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _CreateActionButton(
-                    icon: Icons.account_tree_outlined,
-                    tint: _lightenProjectAccent(accentColor, 0.3),
-                    tooltip: 'Novo diagrama',
-                    onTap: onCreateDiagram,
-                  ),
-                  const SizedBox(height: 10),
-                  _CreateActionButton(
-                    icon: Icons.person_add_alt_1_rounded,
-                    tint: _lightenProjectAccent(accentColor, 0.18),
-                    tooltip: 'Novo personagem',
-                    onTap: onCreateCharacter,
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-          ),
-        ),
-        AnimatedScale(
-          scale: open ? 1.04 : 1,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          child: GlassCircleButton(
-            diameter: 52,
-            onTap: onToggle,
-            blurSigma: 10,
-            fillColor: accentColor.withValues(alpha: 0.58),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.88),
-                _lightenProjectAccent(
-                  accentColor,
-                  0.18,
-                ).withValues(alpha: 0.92),
-                accentColor.withValues(alpha: 0.98),
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ),
-            borderColor: Colors.white.withValues(alpha: 0.9),
-            boxShadow: [
-              BoxShadow(
-                color: accentColor.withValues(alpha: open ? 0.18 : 0.12),
-                blurRadius: open ? 18 : 14,
-                offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            child: AnimatedRotation(
-              turns: open ? 0.125 : 0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              child: const Icon(
-                Icons.add_rounded,
-                color: Color(0xFF171419),
-                size: 28,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CreateActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color tint;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _CreateActionButton({
-    required this.icon,
-    required this.tint,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCircleButton(
-      diameter: 44,
-      onTap: onTap,
-      tooltip: tooltip,
-      blurSigma: 8,
-      fillColor: tint.withValues(alpha: 0.82),
-      borderColor: Colors.white.withValues(alpha: 0.88),
-      borderWidth: 0.85,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-      child: Icon(icon, size: 21, color: const Color(0xFF171419)),
-    );
-  }
-}
-
-Color _lightenProjectAccent(Color color, double amount) {
-  final hsl = HSLColor.fromColor(color);
-  return hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0)).toColor();
-}
-
-Color _darkenProjectAccent(Color color, double amount) {
-  final hsl = HSLColor.fromColor(color);
-  return hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0)).toColor();
-}
-
-CharacterDisplayMode _characterDisplayModeFromStorage(String rawValue) {
-  return rawValue == CharacterDisplayMode.avatars.name
-      ? CharacterDisplayMode.avatars
-      : CharacterDisplayMode.list;
-}
-
-class _UnderConstructionSection extends StatelessWidget {
-  final IconData icon;
-  final String title;
-
-  const _UnderConstructionSection({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 150),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.34),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.46),
-                  width: 0.8,
+            if (_isCreateMenuOpen)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: _closeCreateMenu,
+                  child: const SizedBox.expand(),
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 42, color: const Color(0xFF544959)),
-                  const SizedBox(height: 12),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2C262C),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Esta seção ainda está em construção dentro do projeto.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.58),
-                      height: 1.35,
-                    ),
-                  ),
-                ],
+            Positioned(
+              right: 18,
+              bottom: 88,
+              child: _ProjectCreateFab(
+                accentColor: accentColor,
+                isOpen: _isCreateMenuOpen,
+                onToggle: _toggleCreateMenu,
+                onCreateCharacter: _createCharacter,
+                onCreateDiagram: _createDiagram,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

@@ -53,6 +53,9 @@ class NoteListCard extends StatefulWidget {
 
 class _NoteListCardState extends State<NoteListCard> {
   _NoteDateType _activeDateType = _NoteDateType.lastModified;
+  String? _cachedText;
+  ContentStats _cachedContentStats = const ContentStats.zero();
+  String _cachedPreview = '';
 
   void _cycleDateType() {
     setState(() {
@@ -83,8 +86,9 @@ class _NoteListCardState extends State<NoteListCard> {
 
   @override
   Widget build(BuildContext context) {
-    final contentStats = ContentStats.fromText(widget.text);
-    final preview = buildNotePreview(widget.text);
+    _syncTextCache();
+    final contentStats = _cachedContentStats;
+    final preview = _cachedPreview;
     final metrics = contentStats.isEmpty
         ? const <Widget>[]
         : _buildMetricChips(contentStats);
@@ -245,6 +249,16 @@ class _NoteListCardState extends State<NoteListCard> {
         ],
       ),
     );
+  }
+
+  void _syncTextCache() {
+    if (_cachedText == widget.text) {
+      return;
+    }
+
+    _cachedText = widget.text;
+    _cachedContentStats = ContentStats.fromText(widget.text);
+    _cachedPreview = buildNotePreview(widget.text);
   }
 
   List<Widget> _buildSummaryChips() {

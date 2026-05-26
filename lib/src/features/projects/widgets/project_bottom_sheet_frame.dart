@@ -2,6 +2,63 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+Future<T?> showProjectDismissibleSheet<T>({
+  required BuildContext context,
+  required String title,
+  required WidgetBuilder builder,
+  bool useRootNavigator = true,
+}) {
+  return showGeneralDialog<T>(
+    context: context,
+    useRootNavigator: useRootNavigator,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.01),
+    transitionDuration: const Duration(milliseconds: 180),
+    pageBuilder: (dialogContext, _, _) {
+      return Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(dialogContext).maybePop(),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.deferToChild,
+                onTap: () {},
+                child: ProjectBottomSheetFrame(
+                  title: title,
+                  child: Builder(builder: builder),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      final slide = Tween<Offset>(
+        begin: const Offset(0, 0.08),
+        end: Offset.zero,
+      ).animate(curved);
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(position: slide, child: child),
+      );
+    },
+  );
+}
+
 class ProjectBottomSheetFrame extends StatelessWidget {
   final String title;
   final Widget child;

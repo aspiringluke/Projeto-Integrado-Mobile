@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -18,12 +19,16 @@ class NoteController extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  List<Note> _notes = const [];
+  final List<Note> _notes = <Note>[];
+  late final UnmodifiableListView<Note> _notesView = UnmodifiableListView<Note>(
+    _notes,
+  );
   int? _currentFolderId;
+  int _loadRequestToken = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<Note> get notes => List.unmodifiable(_notes);
+  List<Note> get notes => _notesView;
   int? get currentFolderId => _currentFolderId;
 
   void _setLoading(bool value) {
@@ -39,21 +44,31 @@ class NoteController extends ChangeNotifier {
   }
 
   Future<(bool, String?)> loadNotes({int? folderId}) async {
+    final requestToken = ++_loadRequestToken;
     _setLoading(true);
     _setError(null);
     _currentFolderId = folderId;
 
     final result = await repository.listNotes(folderId);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
+
     _setLoading(false);
 
     if (!result.$1) {
-      _notes = const [];
+      _notes.clear();
       _setError(result.$3 ?? 'Falha ao listar notas');
       return (false, _errorMessage);
     }
 
-    _notes = result.$2 ?? const [];
+    _notes
+      ..clear()
+      ..addAll(result.$2 ?? const <Note>[]);
     await _syncNoteMentions(_notes);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
     notifyListeners();
     return (true, null);
   }
@@ -72,11 +87,7 @@ class NoteController extends ChangeNotifier {
 
     _setError(null);
     final metadata = await _resolveDraftMetadata(folderId ?? _currentFolderId);
-    final targetFolderId = await _resolveTargetFolderId(
-      metadata.linkTarget.projectTitle,
-      fallbackFolderId: folderId ?? _currentFolderId,
-      fallbackColor: color,
-    );
+    final targetFolderId = folderId ?? _currentFolderId;
 
     final result = await repository.createNewNote(
       title.trim(),
@@ -100,11 +111,7 @@ class NoteController extends ChangeNotifier {
   }) async {
     _setError(null);
     final metadata = await _resolveDraftMetadata(folderId ?? _currentFolderId);
-    final targetFolderId = await _resolveTargetFolderId(
-      metadata.linkTarget.projectTitle,
-      fallbackFolderId: folderId ?? _currentFolderId,
-      fallbackColor: color,
-    );
+    final targetFolderId = folderId ?? _currentFolderId;
     final result = await repository.createNewNoteWithId(
       'Sem título',
       '',
@@ -195,40 +202,100 @@ class NoteController extends ChangeNotifier {
   }
 
   Future<void> _syncNoteMentions(List<Note> notes) async {
-    final result = await repository.listAllNotes();
+    final result = await repository.listNoteRegistryRefs();
     if (result.$1 && result.$2 != null) {
-      for (final note in result.$2!) {
-        StoryRegistry.instance.registerNote(
-          id: note.id ?? 0,
-          title: note.title,
-          accentColor: note.color,
-        );
-      }
+      StoryRegistry.instance.syncNotes(
+        result.$2!.map(
+          (note) => RegisteredNoteRef(
+            id: note.id,
+            title: note.title,
+            accentColor: note.color,
+          ),
+        ),
+      );
       return;
     }
 
-    for (final note in notes) {
-      if (note.id == null) continue;
-      StoryRegistry.instance.registerNote(
-        id: note.id!,
-        title: note.title,
-        accentColor: note.color,
-      );
-    }
+    StoryRegistry.instance.syncNotes(
+      notes
+          .where((note) => note.id != null)
+          .map(
+            (note) => RegisteredNoteRef(
+              id: note.id!,
+              title: note.title,
+              accentColor: note.color,
+            ),
+          ),
+    );
   }
 
   Future<NoteMetadata> _resolveDraftMetadata(int? folderId) async {
-    final projectTitle = await _resolveProjectTitleFromFolder(folderId);
-    if (projectTitle == null || projectTitle.isEmpty) {
+    final linkTarget = await _resolveLinkTargetFromFolder(folderId);
+    if ((linkTarget.projectTitle == null || linkTarget.projectTitle!.isEmpty) &&
+        (linkTarget.characterName == null ||
+            linkTarget.characterName!.isEmpty)) {
       return NoteMetadata.empty();
     }
 
     return NoteMetadata(
       tagGroups: const <NoteTagGroup>[],
-      linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+      linkTarget: linkTarget,
     );
   }
 
+  Future<NoteLinkTarget> _resolveLinkTargetFromFolder(int? folderId) async {
+    if (folderId == null) return const NoteLinkTarget();
+
+    Folder? current;
+    int? currentId = folderId;
+    final knownProjectTitles = StoryRegistry.instance.projects
+        .map((project) => project.title.trim().toLowerCase())
+        .where((title) => title.isNotEmpty)
+        .toSet();
+
+    while (currentId != null) {
+      final result = await folderRepository.getFolder(currentId);
+      if (!result.$1 || result.$2 == null) {
+        return const NoteLinkTarget();
+      }
+
+      current = result.$2!;
+      final characterRootName = current.metadata.characterRootName?.trim();
+      if (characterRootName != null && characterRootName.isNotEmpty) {
+        return NoteLinkTarget(
+          projectTitle: current.metadata.linkTarget.projectTitle?.trim(),
+          characterName: characterRootName,
+        );
+      }
+
+      final currentTitle = current.title.trim();
+      final normalizedTitle = currentTitle.toLowerCase();
+      final projectRootTitle = current.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
+      final isKnownProjectRoot =
+          (projectRootTitle != null &&
+              projectRootTitle.isNotEmpty &&
+              knownProjectTitles.contains(projectRootTitle)) ||
+          (current.parentFolderId == null &&
+              knownProjectTitles.contains(normalizedTitle));
+      if (normalizedTitle.isNotEmpty &&
+          normalizedTitle != 'sem vínculo' &&
+          isKnownProjectRoot) {
+        return NoteLinkTarget(projectTitle: currentTitle);
+      }
+      currentId = current.parentFolderId;
+    }
+
+    final rootTitle = current?.title.trim() ?? '';
+    if (rootTitle.isEmpty || rootTitle.toLowerCase() == 'sem vínculo') {
+      return const NoteLinkTarget();
+    }
+
+    return NoteLinkTarget(projectTitle: rootTitle);
+  }
+
+  // ignore: unused_element
   Future<String?> _resolveProjectTitleFromFolder(int? folderId) async {
     if (folderId == null) return null;
 
@@ -248,8 +315,9 @@ class NoteController extends ChangeNotifier {
       current = result.$2!;
       final currentTitle = current.title.trim();
       final normalizedTitle = currentTitle.toLowerCase();
-      final projectRootTitle =
-          current.metadata.projectRootTitle?.trim().toLowerCase();
+      final projectRootTitle = current.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
       final isKnownProjectRoot =
           (projectRootTitle != null &&
               projectRootTitle.isNotEmpty &&
@@ -270,40 +338,5 @@ class NoteController extends ChangeNotifier {
     }
 
     return rootTitle;
-  }
-
-  Future<int?> _resolveTargetFolderId(
-    String? projectTitle, {
-    required int? fallbackFolderId,
-    required Color fallbackColor,
-  }) async {
-    final normalizedProjectTitle = projectTitle?.trim();
-    if (normalizedProjectTitle == null || normalizedProjectTitle.isEmpty) {
-      return fallbackFolderId;
-    }
-
-    var accentColor = fallbackColor;
-    for (final project in StoryRegistry.instance.projects) {
-      if (project.title.trim().toLowerCase() ==
-          normalizedProjectTitle.toLowerCase()) {
-        accentColor = project.accentColor;
-        break;
-      }
-    }
-
-    final folder = await folderRepository.ensureRootFolder(
-      title: normalizedProjectTitle,
-      color: accentColor,
-    );
-    if (folder?.id == null || folder!.id! <= 0) {
-      return fallbackFolderId;
-    }
-
-    StoryRegistry.instance.registerFolder(
-      id: folder.id!,
-      title: folder.title,
-      accentColor: folder.color,
-    );
-    return folder.id;
   }
 }

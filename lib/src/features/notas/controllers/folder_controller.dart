@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -15,12 +16,15 @@ class FolderController extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  List<Folder> _folders = const [];
+  final List<Folder> _folders = <Folder>[];
+  late final UnmodifiableListView<Folder> _foldersView =
+      UnmodifiableListView<Folder>(_folders);
   int? _currentParentFolderId;
+  int _loadRequestToken = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<Folder> get folders => List.unmodifiable(_folders);
+  List<Folder> get folders => _foldersView;
   int? get currentParentFolderId => _currentParentFolderId;
 
   void _setLoading(bool value) {
@@ -36,11 +40,15 @@ class FolderController extends ChangeNotifier {
   }
 
   Future<(bool, String?)> loadFolders({int? parentFolderId}) async {
+    final requestToken = ++_loadRequestToken;
     _setLoading(true);
     _setError(null);
     _currentParentFolderId = parentFolderId;
 
     final result = await repository.listFolders(parentFolderId);
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
 
     _setLoading(false);
 
@@ -49,8 +57,15 @@ class FolderController extends ChangeNotifier {
       return (false, _errorMessage);
     }
 
-    _folders = result.$2 ?? const [];
-    _folders = await _syncProtectedProjectFolders(_folders);
+    final syncedFolders = await _syncProtectedProjectFolders(
+      result.$2 ?? const <Folder>[],
+    );
+    if (requestToken != _loadRequestToken) {
+      return (true, null);
+    }
+    _folders
+      ..clear()
+      ..addAll(syncedFolders);
     _syncFoldersToRegistry(_folders);
     notifyListeners();
     return (true, null);
@@ -260,6 +275,31 @@ class FolderController extends ChangeNotifier {
     return result;
   }
 
+  Future<(bool, Folder?, String?)> ensureCharacterRootFolder({
+    required String characterName,
+    required Color color,
+    String? projectTitle,
+  }) async {
+    _setError(null);
+    final folder = await repository.ensureCharacterRootFolder(
+      characterName: characterName,
+      color: color,
+      projectTitle: projectTitle,
+    );
+    if (folder?.id == null) {
+      const message = 'Falha ao preparar pasta do personagem';
+      _setError(message);
+      return (false, null, message);
+    }
+
+    StoryRegistry.instance.registerFolder(
+      id: folder!.id!,
+      title: folder.title,
+      accentColor: folder.color,
+    );
+    return (true, folder, null);
+  }
+
   NoteMetadata _normalizeFolderMetadata(NoteMetadata metadata) {
     return metadata.copyWith(linkTarget: const NoteLinkTarget());
   }
@@ -288,12 +328,17 @@ class FolderController extends ChangeNotifier {
       final isProjectRoot = normalizedProjectTitles.contains(normalizedTitle);
       if (!isProjectRoot) continue;
 
-      final currentProjectRootTitle =
-          folder.metadata.projectRootTitle?.trim().toLowerCase();
-      if (currentProjectRootTitle == normalizedTitle) continue;
+      final currentProjectRootTitle = folder.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
+      if (currentProjectRootTitle == normalizedTitle &&
+          folder.metadata.protectedFolder) {
+        continue;
+      }
 
       final updatedMetadata = folder.metadata.copyWith(
         projectRootTitle: folder.title.trim(),
+        protectedFolder: true,
       );
       final updateResult = await repository.updateFolderMetadata(
         folderId,
@@ -313,14 +358,16 @@ class FolderController extends ChangeNotifier {
   }
 
   void _syncFoldersToRegistry(Iterable<Folder> folders) {
-    for (final folder in folders) {
-      final folderId = folder.id;
-      if (folderId == null || folderId <= 0) continue;
-      StoryRegistry.instance.registerFolder(
-        id: folderId,
-        title: folder.title,
-        accentColor: folder.color,
-      );
-    }
+    StoryRegistry.instance.upsertFolders(
+      folders
+          .where((folder) => folder.id != null && folder.id! > 0)
+          .map(
+            (folder) => RegisteredFolderRef(
+              id: folder.id!,
+              title: folder.title,
+              accentColor: folder.color,
+            ),
+          ),
+    );
   }
 }

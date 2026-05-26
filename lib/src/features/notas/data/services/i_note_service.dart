@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:projeto_integrado_mobile/src/features/notas/models/note.dart';
 
 abstract interface class INoteService {
@@ -26,6 +28,8 @@ abstract interface class INoteService {
   Future<(bool, Note?, String?)> getNote(int id);
   Future<(bool, List<Note>?, String?)> listNotes(int? idPasta);
   Future<(bool, List<Note>?, String?)> listAllNotes();
+  Future<(bool, List<({Color color, int id, String title})>?, String?)>
+  listNoteRegistryRefs();
   Future<(bool, String)> deleteNote(int id);
   Future<(bool, String)> touchNote(int id);
 }

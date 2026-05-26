@@ -13,7 +13,12 @@ class FolderRepository {
   FolderRepository({IFolderService? service})
     : service = service ?? SqliteFolderService();
 
-  Future<(bool, int?, String?)> createNewFolder(String title, Color color, int? parentFolderId, [NoteMetadata? metadata]) {
+  Future<(bool, int?, String?)> createNewFolder(
+    String title,
+    Color color,
+    int? parentFolderId, [
+    NoteMetadata? metadata,
+  ]) {
     return service.createNewFolder(
       title,
       color.toARGB32().toString(),
@@ -62,6 +67,10 @@ class FolderRepository {
     return _deleteFolderWithProtection(id);
   }
 
+  Future<(bool, String)> deleteFolderIgnoringProtection(int id) {
+    return service.deleteFolder(id);
+  }
+
   Future<(bool, String)> deleteFolderContents(int id) {
     return service.deleteFolderContents(id);
   }
@@ -91,10 +100,61 @@ class FolderRepository {
     final normalizedTitle = title.trim().toLowerCase();
     for (final folder in result.$2!) {
       final folderTitle = folder.title.trim().toLowerCase();
-      final projectRootTitle =
-          folder.metadata.projectRootTitle?.trim().toLowerCase();
+      final projectRootTitle = folder.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
+      final characterRootName = folder.metadata.characterRootName
+          ?.trim()
+          .toLowerCase();
       if (folderTitle == normalizedTitle ||
-          projectRootTitle == normalizedTitle) {
+          projectRootTitle == normalizedTitle ||
+          characterRootName == normalizedTitle) {
+        return folder;
+      }
+    }
+
+    return null;
+  }
+
+  Future<Folder?> findCharacterRootFolder({
+    required String characterName,
+    String? projectTitle,
+  }) async {
+    final result = await listFolders(null);
+    if (!result.$1 || result.$2 == null) {
+      return null;
+    }
+
+    final normalizedName = characterName.trim().toLowerCase();
+    final normalizedProject = projectTitle?.trim().toLowerCase();
+    if (normalizedName.isEmpty) {
+      return null;
+    }
+
+    for (final folder in result.$2!) {
+      final characterRootName = folder.metadata.characterRootName
+          ?.trim()
+          .toLowerCase();
+      if (characterRootName != normalizedName) {
+        continue;
+      }
+
+      final folderProjectTitle = folder.metadata.linkTarget.projectTitle
+          ?.trim()
+          .toLowerCase();
+      if (normalizedProject == null ||
+          normalizedProject.isEmpty ||
+          folderProjectTitle == normalizedProject) {
+        return folder;
+      }
+    }
+
+    for (final folder in result.$2!) {
+      if (folder.parentFolderId != null || folder.metadata.isProjectRoot) {
+        continue;
+      }
+
+      if (folder.title.trim().toLowerCase() == normalizedName) {
         return folder;
       }
     }
@@ -109,15 +169,17 @@ class FolderRepository {
     final existing = await findRootFolderByTitle(title);
     if (existing != null) {
       if (existing.id != null &&
-          existing.metadata.projectRootTitle?.trim().toLowerCase() !=
-              title.trim().toLowerCase()) {
+          (existing.metadata.projectRootTitle?.trim().toLowerCase() !=
+                  title.trim().toLowerCase() ||
+              !existing.metadata.protectedFolder)) {
         await updateFolderMetadata(
           existing.id!,
           existing.metadata
-              .copyWith(projectRootTitle: title.trim())
+              .copyWith(projectRootTitle: title.trim(), protectedFolder: true)
               .toJsonString(),
         );
       }
+      await _ensureDefaultProjectFolders(existing.id!, title.trim(), color);
       return existing;
     }
 
@@ -129,13 +191,234 @@ class FolderRepository {
         tagGroups: const <NoteTagGroup>[],
         linkTarget: const NoteLinkTarget(),
         projectRootTitle: title.trim(),
+        protectedFolder: true,
       ),
     );
     if (!created.$1 || created.$2 == null) {
       return null;
     }
 
-    return await findRootFolderByTitle(title);
+    final root = await findRootFolderByTitle(title);
+    if (root?.id != null) {
+      await _ensureDefaultProjectFolders(root!.id!, title.trim(), color);
+    }
+    return root;
+  }
+
+  Future<Folder?> ensureCharacterRootFolder({
+    required String characterName,
+    required Color color,
+    String? projectTitle,
+  }) async {
+    final normalizedName = characterName.trim();
+    if (normalizedName.isEmpty) {
+      return null;
+    }
+
+    int? projectFolderId;
+    final normalizedProjectTitle = projectTitle?.trim();
+    if (normalizedProjectTitle != null && normalizedProjectTitle.isNotEmpty) {
+      final ensuredProjectFolder = await ensureRootFolder(
+        title: normalizedProjectTitle,
+        color: color,
+      );
+      projectFolderId = ensuredProjectFolder?.id;
+      if (projectFolderId == null) {
+        return null;
+      }
+    }
+
+    int? charactersFolderId = projectFolderId;
+    if (projectFolderId != null) {
+      final ensuredCharactersFolder = await _ensureChildFolder(
+        parentFolderId: projectFolderId,
+        title: 'Personagens',
+        color: color,
+        metadata: NoteMetadata(
+          tagGroups: const <NoteTagGroup>[],
+          linkTarget: NoteLinkTarget(projectTitle: normalizedProjectTitle),
+          protectedFolder: true,
+        ),
+      );
+      charactersFolderId = ensuredCharactersFolder?.id;
+      if (charactersFolderId == null) {
+        return null;
+      }
+    }
+
+    final existing =
+        await _findCharacterFolderUnderParent(
+          parentFolderId: charactersFolderId,
+          characterName: normalizedName,
+        ) ??
+        await _findCharacterFolderUnderParent(
+          parentFolderId: projectFolderId,
+          characterName: normalizedName,
+        ) ??
+        await findCharacterRootFolder(
+          characterName: normalizedName,
+          projectTitle: normalizedProjectTitle,
+        );
+    if (existing != null) {
+      final existingId = existing.id;
+      if (existingId != null) {
+        final metadata = existing.metadata.copyWith(
+          characterRootName: normalizedName,
+          protectedFolder: true,
+          linkTarget: NoteLinkTarget(
+            projectTitle:
+                normalizedProjectTitle == null || normalizedProjectTitle.isEmpty
+                ? existing.metadata.linkTarget.projectTitle
+                : normalizedProjectTitle,
+            characterName: normalizedName,
+          ),
+        );
+        await updateFolderMetadata(existingId, metadata.toJsonString());
+        if (charactersFolderId != null &&
+            existing.parentFolderId != charactersFolderId) {
+          await moveFolderToFolder(existingId, charactersFolderId);
+        }
+        final refreshed = await getFolder(existingId);
+        if (refreshed.$1 && refreshed.$2 != null) {
+          return refreshed.$2;
+        }
+      }
+      return existing;
+    }
+
+    final created = await createNewFolder(
+      normalizedName,
+      color,
+      charactersFolderId,
+      NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(
+          projectTitle: normalizedProjectTitle,
+          characterName: normalizedName,
+        ),
+        characterRootName: normalizedName,
+        protectedFolder: true,
+      ),
+    );
+    if (!created.$1 || created.$2 == null) {
+      return null;
+    }
+
+    final fetched = await getFolder(created.$2!);
+    return fetched.$2;
+  }
+
+  Future<void> _ensureDefaultProjectFolders(
+    int rootFolderId,
+    String projectTitle,
+    Color color,
+  ) async {
+    await _ensureChildFolder(
+      parentFolderId: rootFolderId,
+      title: 'Personagens',
+      color: color,
+      metadata: NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        protectedFolder: true,
+      ),
+    );
+    await _ensureChildFolder(
+      parentFolderId: rootFolderId,
+      title: 'Enredo',
+      color: color,
+      metadata: NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        protectedFolder: true,
+      ),
+    );
+    await _ensureChildFolder(
+      parentFolderId: rootFolderId,
+      title: 'Mundo',
+      color: color,
+      metadata: NoteMetadata(
+        tagGroups: const <NoteTagGroup>[],
+        linkTarget: NoteLinkTarget(projectTitle: projectTitle),
+        protectedFolder: true,
+      ),
+    );
+  }
+
+  Future<Folder?> _ensureChildFolder({
+    required int parentFolderId,
+    required String title,
+    required Color color,
+    required NoteMetadata metadata,
+  }) async {
+    final existing = await _findFolderByTitleUnderParent(parentFolderId, title);
+    if (existing != null) {
+      if (existing.id != null) {
+        await updateFolderMetadata(existing.id!, metadata.toJsonString());
+      }
+      return existing;
+    }
+
+    final created = await createNewFolder(
+      title,
+      color,
+      parentFolderId,
+      metadata,
+    );
+    if (!created.$1 || created.$2 == null) {
+      return null;
+    }
+
+    final fetched = await getFolder(created.$2!);
+    return fetched.$2;
+  }
+
+  Future<Folder?> _findFolderByTitleUnderParent(
+    int parentFolderId,
+    String title,
+  ) async {
+    final result = await listFolders(parentFolderId);
+    if (!result.$1 || result.$2 == null) {
+      return null;
+    }
+
+    final normalizedTitle = title.trim().toLowerCase();
+    for (final folder in result.$2!) {
+      final folderTitle = folder.title.trim().toLowerCase();
+      if (folderTitle == normalizedTitle) {
+        return folder;
+      }
+    }
+
+    return null;
+  }
+
+  Future<Folder?> _findCharacterFolderUnderParent({
+    required int? parentFolderId,
+    required String characterName,
+  }) async {
+    if (parentFolderId == null) {
+      return null;
+    }
+
+    final result = await listFolders(parentFolderId);
+    if (!result.$1 || result.$2 == null) {
+      return null;
+    }
+
+    final normalizedName = characterName.trim().toLowerCase();
+    for (final folder in result.$2!) {
+      final folderTitle = folder.title.trim().toLowerCase();
+      final characterRootName = folder.metadata.characterRootName
+          ?.trim()
+          .toLowerCase();
+      if (folderTitle == normalizedName ||
+          characterRootName == normalizedName) {
+        return folder;
+      }
+    }
+
+    return null;
   }
 
   Future<(bool, String)> moveFolderToFolder(int id, int? parentFolderId) async {
@@ -169,7 +452,7 @@ class FolderRepository {
       return (false, "Pasta não encontrada");
     }
 
-    if (_isProtectedProjectFolder(folder)) {
+    if (_isProtectedFolder(folder)) {
       return (
         false,
         "Esta pasta de projeto não pode ser excluída. Apague o conteúdo da pasta em vez disso.",
@@ -179,8 +462,8 @@ class FolderRepository {
     return await service.deleteFolder(id);
   }
 
-  bool _isProtectedProjectFolder(Folder folder) {
-    if (folder.metadata.isProjectRoot) {
+  bool _isProtectedFolder(Folder folder) {
+    if (folder.metadata.isProtectedRoot) {
       return true;
     }
 
@@ -194,7 +477,10 @@ class FolderRepository {
     }
 
     return StoryRegistry.instance.projects.any(
-      (project) => project.title.trim().toLowerCase() == normalizedTitle,
-    );
+          (project) => project.title.trim().toLowerCase() == normalizedTitle,
+        ) ||
+        StoryRegistry.instance.characters.any(
+          (character) => character.name.trim().toLowerCase() == normalizedTitle,
+        );
   }
 }

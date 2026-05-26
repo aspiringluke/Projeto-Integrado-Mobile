@@ -88,13 +88,16 @@ class NoteEditorController extends ChangeNotifier {
     _folderId = note.idPasta;
     _metadata = note.metadata;
     _tagGroupController.setGroups(_metadata.tagGroups);
-    if (_metadata.linkTarget.projectTitle == null ||
-        _metadata.linkTarget.projectTitle!.trim().isEmpty) {
-      final projectTitle = await _resolveProjectTitleFromFolder(_folderId);
-      if (projectTitle != null && projectTitle.isNotEmpty) {
-        _metadata = _metadata.copyWith(
-          linkTarget: NoteLinkTarget(projectTitle: projectTitle),
-        );
+    if ((_metadata.linkTarget.projectTitle == null ||
+            _metadata.linkTarget.projectTitle!.trim().isEmpty) &&
+        (_metadata.linkTarget.characterName == null ||
+            _metadata.linkTarget.characterName!.trim().isEmpty)) {
+      final linkTarget = await _resolveLinkTargetFromFolder(_folderId);
+      if ((linkTarget.projectTitle != null &&
+              linkTarget.projectTitle!.isNotEmpty) ||
+          (linkTarget.characterName != null &&
+              linkTarget.characterName!.isNotEmpty)) {
+        _metadata = _metadata.copyWith(linkTarget: linkTarget);
       }
     }
     if (note.id != null) {
@@ -222,30 +225,27 @@ class NoteEditorController extends ChangeNotifier {
     _setError(null);
     notifyListeners();
 
-    final resolvedProjectTitle = await _resolveProjectTitleFromFolder(
-      _folderId,
-    );
+    final resolvedLinkTarget = await _resolveLinkTargetFromFolder(_folderId);
     if ((_metadata.linkTarget.projectTitle == null ||
             _metadata.linkTarget.projectTitle!.trim().isEmpty) &&
-        resolvedProjectTitle != null &&
-        resolvedProjectTitle.isNotEmpty) {
-      _metadata = _metadata.copyWith(
-        linkTarget: NoteLinkTarget(projectTitle: resolvedProjectTitle),
-      );
+        (_metadata.linkTarget.characterName == null ||
+            _metadata.linkTarget.characterName!.trim().isEmpty) &&
+        ((resolvedLinkTarget.projectTitle != null &&
+                resolvedLinkTarget.projectTitle!.isNotEmpty) ||
+            (resolvedLinkTarget.characterName != null &&
+                resolvedLinkTarget.characterName!.isNotEmpty))) {
+      _metadata = _metadata.copyWith(linkTarget: resolvedLinkTarget);
     }
 
-    final targetFolderId = await _resolveTargetFolderId(
-      _metadata.linkTarget.projectTitle,
-      fallbackFolderId: _folderId,
-    );
+    final targetFolderId = _folderId;
     _folderId = targetFolderId;
 
-    final result = await repository.updateNote(
-      noteId,
-      _title.trim().isEmpty ? 'Sem título' : _title.trim(),
-      _description,
-      targetFolderId,
-      _color,
+    final result = await repository.saveNote(
+      id: noteId,
+      titulo: _title.trim().isEmpty ? 'Sem título' : _title.trim(),
+      descricao: _description,
+      idPasta: targetFolderId,
+      color: _color,
       metadata: _metadata,
     );
 
@@ -266,6 +266,7 @@ class NoteEditorController extends ChangeNotifier {
     return (true, null);
   }
 
+  // ignore: unused_element
   Future<String?> _resolveProjectTitleFromFolder(int? folderId) async {
     if (folderId == null) return null;
 
@@ -301,37 +302,55 @@ class NoteEditorController extends ChangeNotifier {
     return rootTitle;
   }
 
-  Future<int?> _resolveTargetFolderId(
-    String? projectTitle, {
-    required int? fallbackFolderId,
-  }) async {
-    final normalizedProjectTitle = projectTitle?.trim();
-    if (normalizedProjectTitle == null || normalizedProjectTitle.isEmpty) {
-      return fallbackFolderId;
-    }
+  Future<NoteLinkTarget> _resolveLinkTargetFromFolder(int? folderId) async {
+    if (folderId == null) return const NoteLinkTarget();
 
-    var accentColor = _color;
-    for (final project in StoryRegistry.instance.projects) {
-      if (project.title.trim().toLowerCase() ==
-          normalizedProjectTitle.toLowerCase()) {
-        accentColor = project.accentColor;
-        break;
+    Folder? current;
+    int? currentId = folderId;
+    final knownProjectTitles = StoryRegistry.instance.projects
+        .map((project) => project.title.trim().toLowerCase())
+        .where((title) => title.isNotEmpty)
+        .toSet();
+
+    while (currentId != null) {
+      final result = await folderRepository.getFolder(currentId);
+      if (!result.$1 || result.$2 == null) {
+        return const NoteLinkTarget();
       }
+
+      current = result.$2!;
+      final characterRootName = current.metadata.characterRootName?.trim();
+      if (characterRootName != null && characterRootName.isNotEmpty) {
+        return NoteLinkTarget(
+          projectTitle: current.metadata.linkTarget.projectTitle?.trim(),
+          characterName: characterRootName,
+        );
+      }
+
+      final currentTitle = current.title.trim();
+      final normalizedTitle = currentTitle.toLowerCase();
+      final projectRootTitle = current.metadata.projectRootTitle
+          ?.trim()
+          .toLowerCase();
+      final isKnownProjectRoot =
+          (projectRootTitle != null &&
+              projectRootTitle.isNotEmpty &&
+              knownProjectTitles.contains(projectRootTitle)) ||
+          (current.parentFolderId == null &&
+              knownProjectTitles.contains(normalizedTitle));
+      if (normalizedTitle.isNotEmpty &&
+          normalizedTitle != 'sem vínculo' &&
+          isKnownProjectRoot) {
+        return NoteLinkTarget(projectTitle: currentTitle);
+      }
+      currentId = current.parentFolderId;
     }
 
-    final folder = await folderRepository.ensureRootFolder(
-      title: normalizedProjectTitle,
-      color: accentColor,
-    );
-    if (folder?.id == null || folder!.id! <= 0) {
-      return fallbackFolderId;
+    final rootTitle = current?.title.trim() ?? '';
+    if (rootTitle.isEmpty || rootTitle.toLowerCase() == 'sem vínculo') {
+      return const NoteLinkTarget();
     }
 
-    StoryRegistry.instance.registerFolder(
-      id: folder.id!,
-      title: folder.title,
-      accentColor: folder.color,
-    );
-    return folder.id;
+    return NoteLinkTarget(projectTitle: rootTitle);
   }
 }

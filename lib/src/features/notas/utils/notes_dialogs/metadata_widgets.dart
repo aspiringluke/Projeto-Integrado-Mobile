@@ -217,49 +217,6 @@ class _AssociationChoiceChip extends StatelessWidget {
   }
 }
 
-// ignore: unused_element
-class _TagColorSwatch extends StatelessWidget {
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TagColorSwatch({
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.88),
-              width: isSelected ? 2.2 : 1.1,
-            ),
-          ),
-          child: isSelected
-              ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
-              : null,
-        ),
-      ),
-    );
-  }
-}
-
 class _ClassificationPreviewChip extends StatelessWidget {
   final String label;
   final Color color;

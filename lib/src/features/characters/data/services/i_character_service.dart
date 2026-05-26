@@ -11,4 +11,5 @@ abstract interface class ICharacterService {
   );
   Future<(bool, List<CharacterListItem>?, String?)> listAllCharacters();
   Future<(bool, String)> touchCharacter(int id);
+  Future<(bool, String)> deleteCharacter(int id);
 }
