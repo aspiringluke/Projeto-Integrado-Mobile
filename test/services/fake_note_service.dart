@@ -79,10 +79,12 @@ class FakeNoteService implements INoteService {
 
   @override
   Future<(bool, List<Note>?, String?)> listNotes(int? idPasta) async {
-    final notes = _notes.values.where((note) {
-      if (idPasta == null) return true;
-      return note.idPasta == idPasta;
-    }).toList(growable: false);
+    final notes = _notes.values
+        .where((note) {
+          if (idPasta == null) return true;
+          return note.idPasta == idPasta;
+        })
+        .toList(growable: false);
     return (true, notes, null);
   }
 
@@ -133,10 +135,9 @@ class FakeNoteService implements INoteService {
     if (note == null) {
       return (false, 'Nota não encontrada');
     }
-    final finalTitle = newTitulo.trim().isEmpty ? 'Sem título' : newTitulo;
     _notes[id] = Note(
       id: id,
-      title: finalTitle,
+      title: newTitulo,
       text: newDescricao,
       color: Color(int.parse(newColor)),
       idPasta: newIdPasta,

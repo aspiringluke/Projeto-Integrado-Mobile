@@ -87,7 +87,10 @@ void main() {
         repository: FolderRepository(service: folderService),
       );
 
-      final result = await controller.createFolder('Pasta Teste', const Color(0xFF0000FF));
+      final result = await controller.createFolder(
+        'Pasta Teste',
+        const Color(0xFF0000FF),
+      );
       expect(result.$1, isTrue);
       expect(controller.folders, hasLength(1));
       expect(controller.folders.first.title, 'Pasta Teste');
@@ -99,7 +102,10 @@ void main() {
         repository: FolderRepository(service: folderService),
       );
 
-      final createResult = await controller.createFolder('Pasta para excluir', const Color(0xFFFF00FF));
+      final createResult = await controller.createFolder(
+        'Pasta para excluir',
+        const Color(0xFFFF00FF),
+      );
       expect(createResult.$1, isTrue);
       expect(controller.folders, hasLength(1));
 
@@ -120,7 +126,10 @@ void main() {
         repository: FolderRepository(service: folderService),
       );
 
-      final folderResult = await folderController.createFolder('Pasta Alvo', const Color(0xFF00FFFF));
+      final folderResult = await folderController.createFolder(
+        'Pasta Alvo',
+        const Color(0xFF00FFFF),
+      );
       expect(folderResult.$1, isTrue);
       final folderId = folderController.folders.first.id!;
 
@@ -132,7 +141,10 @@ void main() {
       expect(createResult.$1, isTrue);
       final noteId = noteController.notes.first.id!;
 
-      final moveResult = await noteController.moveNoteToFolder(noteId: noteId, folderId: folderId);
+      final moveResult = await noteController.moveNoteToFolder(
+        noteId: noteId,
+        folderId: folderId,
+      );
       expect(moveResult.$1, isTrue);
 
       final noteAfterMove = await noteService.getNote(noteId);
@@ -150,11 +162,21 @@ void main() {
       final result = await noteController.createNote(
         title: 'Nota colorida',
         description: 'Cor alterada',
-        color: const Color(0xFFFF8800),
+        color: const Color(0xFF112233),
       );
       expect(result.$1, isTrue);
       final noteId = noteController.notes.first.id!;
 
+      final editor = NoteEditorController(
+        repository: NoteRepository(service: noteService),
+        folderRepository: FolderRepository(service: folderService),
+        noteId: noteId,
+      );
+      await editor.loadNote();
+      editor.setColor(const Color(0xFFFF8800));
+      final saveResult = await editor.save();
+
+      expect(saveResult.$1, isTrue);
       final savedNote = (await noteService.getNote(noteId)).$2!;
       expect(savedNote.color.value, const Color(0xFFFF8800).value);
     });
@@ -165,11 +187,19 @@ void main() {
         repository: FolderRepository(service: folderService),
       );
 
-      final result = await controller.createFolder('Pasta colorida', const Color(0xFF88FF00));
+      final result = await controller.createFolder(
+        'Pasta colorida',
+        const Color(0xFF101010),
+      );
       expect(result.$1, isTrue);
       final folderId = controller.folders.first.id!;
-      final folder = (await folderService.getFolder(folderId)).$2!;
+      final updateResult = await controller.updateFolder(
+        folderId,
+        color: const Color(0xFF88FF00),
+      );
+      expect(updateResult.$1, isTrue);
 
+      final folder = (await folderService.getFolder(folderId)).$2!;
       expect(folder.color.value, const Color(0xFF88FF00).value);
     });
 
@@ -234,7 +264,7 @@ void main() {
       final saveResult = await editor.save();
       expect(saveResult.$1, isTrue);
       final updatedNote = (await noteService.getNote(noteId)).$2!;
-      expect(updatedNote.text.length, hugeText.length);
+      expect(updatedNote.text, hugeText);
     });
 
     test('TC11 Edição de nota deixando título vazio', () async {
@@ -265,6 +295,7 @@ void main() {
       final saveResult = await editor.save();
       expect(saveResult.$1, isTrue);
       final updatedNote = (await noteService.getNote(noteId)).$2!;
+      expect(editor.title, isEmpty);
       expect(updatedNote.title, 'Sem título');
     });
 
@@ -274,9 +305,15 @@ void main() {
         repository: FolderRepository(service: folderService),
       );
 
-      final parentResult = await controller.createFolder('Pasta A', const Color(0xFF4422CC));
+      final parentResult = await controller.createFolder(
+        'Pasta A',
+        const Color(0xFF4422CC),
+      );
       expect(parentResult.$1, isTrue);
-      final childResult = await controller.createFolder('Pasta B', const Color(0xFF22CC44));
+      final childResult = await controller.createFolder(
+        'Pasta B',
+        const Color(0xFF22CC44),
+      );
       expect(childResult.$1, isTrue);
       final folders = controller.folders;
       expect(folders, hasLength(2));
@@ -284,7 +321,10 @@ void main() {
       final folderA = folders.firstWhere((folder) => folder.title == 'Pasta A');
       final folderB = folders.firstWhere((folder) => folder.title == 'Pasta B');
 
-      final moveResult = await controller.moveFolderToFolder(folderA.id!, folderB.id);
+      final moveResult = await controller.moveFolderToFolder(
+        folderA.id!,
+        folderB.id,
+      );
       expect(moveResult.$1, isTrue);
 
       final updatedFolderA = (await folderService.getFolder(folderA.id!)).$2!;
@@ -306,4 +346,3 @@ void _resetStoryRegistry() {
     characters: const <RegisteredCharacterRef>[],
   );
 }
-
