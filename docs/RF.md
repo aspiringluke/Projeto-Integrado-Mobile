@@ -6,6 +6,12 @@
 
   O sistema deve permitir ao usuário a criação de novos projetos.
 
+### RF02 - Exclusão de Projeto
+
+  O sistema deve permitir a exclusão de um projeto existente
+
+
+
 ## Edição de projeto
 
 ### RF02 - Editar informações
@@ -49,6 +55,7 @@
 
 ---
 
+
 ## Edição de Notas
 
 ### RF10 - Editar texto da nota
@@ -89,6 +96,10 @@
 
   O sistema deve permitir a remoção de pastas
 
+### RF18 - Alterar cor da pasta
+
+  O sistema deve permitir alterar a cor de realce das pastas
+
 ---
 
 ## Edição de Projeto (Aba de Gerenciamento de Personagens)
@@ -105,6 +116,9 @@
 
   O sistema deve permitir o armazenamento de arquivos de imagem no perfil do personagem.
 
+### RF21 - Alterar cores do personagem
+
+  O sistema deve permitir ao usuário alterar as cores de capa e realce do personagem
 
 ### RF21 - Exclusão de personagens
 
@@ -120,10 +134,6 @@
 
   O sistema deve permitir ao usuário definir uma senha para o aplicativo.
 
-### RF23 - Configuração de limite de caracteres
-
-  O sistema deve permitir que o usuário configure o limite de caracteres da sinopse.
-  
 ### RF24 - Seleção de Idiomas
 
   O sistema deve permitir a troca de idiomas de acordo com a preferência do usuário.
@@ -132,15 +142,23 @@
 
   O sistema deve possuir um "Modo Desempenho".
 
-### RF26 - Assistente de Insights Contextuais (IA)
-
-  O sistema deve fornecer uma funcionalidade de inteligência artificial que, ao ser acionada, analisa o conteúdo da página ou diretório atual
-  (Projetos, Personagens, Notas ou Diagramas) para gerar insights, perfis de personagem e auxílio na organização.
-
 
 ---
 
-# BAIXA PRIORIDADE
+## Modelo de IA
+
+### RF26 - Conversação interativa com modelo de IA
+
+  O usuário poderá conversar com um modelo de inteligência artificial através de mensagens de texto
+
+### RF27 - Envio de contexto ao modelo de IA
+
+  O sistema deve poder enviar dados do aplicativo ao modelo de IA como contexto aos pedidos do usuário
+
+### RF28 - Histórico de conversas
+
+  O sistema deve armazenar as conversas do usuário de forma persistente, permitindo-o revisitar contextos anteriores. O sistema também deve permitir a renomeação e a exclusão de conversas
+
 
 ---
 
@@ -159,6 +177,11 @@
 
   O sistema deve oferecer um campo de pesquisa global para encontrar itens (notas, personagens e demais elementos do projeto) via metadados.
 
+
+---
+
+
+# BAIXA PRIORIDADE
 
 ---
 
