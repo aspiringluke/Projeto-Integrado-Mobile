@@ -46,13 +46,13 @@ Documento consolidado dos casos de uso.
 1. Abrir a tela inicial.
 2. Clicar em "Novo Projeto".
 3. Informar nome do projeto.
-4. Adicionar tags ao projeto (opcional).
+4. Confirmar criação.
 5. Sistema cria o projeto.
+6. Sistema cria automaticamente a pasta raiz do projeto na área de notas.
 
 ## Fluxo alternativo
 
 - A1 - Nome não informado: sistema exibe validação de nome obrigatório e bloqueia a criação.
-- A2 - Tag já cadastrada informada na criação: sistema reaproveita a tag existente e a associa ao projeto.
 
 ## Requisitos relacionados
 
@@ -83,6 +83,7 @@ Documento consolidado dos casos de uso.
 
 ## Fluxo alternativo
 
+- A1 - Nome não informado na edição: sistema exibe validação de nome obrigatório e bloqueia o salvamento.
 - A2 - Remover imagem do cartão: sistema remove a imagem e mantém as demais alterações.
 
 ## Requisitos relacionados
@@ -122,11 +123,11 @@ Documento consolidado dos casos de uso.
 
 - A1 - Campos obrigatórios ausentes: sistema destaca os campos pendentes e bloqueia a criação.
 - A2 - Cancelar criação: sistema descarta os dados preenchidos e retorna à lista de personagens.
-- A3 - Tag já cadastrada informada no seletor: sistema reaproveita a opção existente.
 
 ## Requisitos relacionados
 
 - RF20
+- RF21
 - RF22
 - RN17
 - RN18
@@ -176,7 +177,7 @@ Documento consolidado dos casos de uso.
 ## Fluxo principal
 
 1. Abrir área de imagem do item.
-2. Selecionar imagem (até 5 MB).
+2. Selecionar imagem (até 30 MB).
 3. Sistema valida o arquivo selecionado.
 4. Sistema salva a imagem no item.
 5. Usuário confirma salvamento.
@@ -191,6 +192,7 @@ Documento consolidado dos casos de uso.
 
 - RF12
 - RF22
+- RN20
 - RNF05
 
 ---
@@ -255,9 +257,8 @@ A2 - Nota sem título:
 1. Acessar a tela de listagem de itens.
 2. Acionar a opção "Criar pasta".
 3. Informar nome da pasta.
-4. Definir classificações e tags da pasta (opcional).
-5. Confirmar criação.
-6. Sistema exibe a pasta na listagem.
+4. Confirmar criação.
+5. Sistema exibe a pasta na listagem.
 
 ## Fluxos alternativos
 
@@ -267,8 +268,6 @@ A2 - Nota sem título:
 ## Requisitos relacionados
 
 - RF15
-- RF10
-- RF36
 - RN12
 
 ---
@@ -284,21 +283,22 @@ A2 - Nota sem título:
 
 ## Fluxo principal
 
-1. Pressionar e segurar item.
+1. Pressionar e segurar item (pasta, nota ou nó).
 2. Arrastar para nova posição.
-3. Soltar item.
-4. Sistema valida e confirma alteração.
+3. Soltar item no destino.
+4. Sistema valida o destino.
+5. Sistema confirma alteração.
 
 ## Fluxo alternativo
 
 - A1 - Área inválida: sistema retorna item para posição original.
+- A2 - Auto-contenção de pasta: ao tentar mover uma pasta para dentro dela mesma, sistema bloqueia a ação e mantém estado anterior.
 
 ## Requisitos relacionados
 
-- RF43
+- RF42
 - RF17
 - RN13
-- RN24
 - RNF01
 - RNF04
 
@@ -347,18 +347,20 @@ A2 - Nota sem título:
 1. Acessar listagem de itens.
 2. Abrir configurações da pasta.
 3. Selecionar "Excluir pasta".
-4. Escolher excluir só a pasta ou pasta com conteúdo.
-5. Confirmar.
+4. Sistema exibe confirmação de exclusão com impacto no conteúdo.
+5. Confirmar exclusão.
+6. Sistema remove a pasta e todo o conteúdo interno.
 
 ## Fluxo alternativo
 
-- A1 - Excluir apenas pasta: sistema move conteúdo para raiz e remove diretório vazio.
+- A1 - Pasta raiz de projeto: sistema bloqueia a exclusão da pasta raiz e permite apenas excluir seu conteúdo interno.
 
 ## Requisitos relacionados
 
 - RF16
 - RF17
 - RF18
+- RN03
 - RN14
 - RN15
 - RN16
@@ -407,8 +409,9 @@ A2 - Nota sem título:
 1. Acessar o chat de IA.
 2. Digitar uma pergunta ou solicitação.
 3. Enviar mensagem.
-4. Sistema encaminha a solicitação para a IA.
-5. Sistema exibe a resposta no chat.
+4. Sistema valida se a mensagem não está vazia.
+5. Sistema encaminha a solicitação para a IA.
+6. Sistema exibe a resposta no chat.
 
 ## Fluxos alternativos
 
@@ -418,6 +421,7 @@ A2 - Nota sem título:
 ## Requisitos relacionados
 
 - RF28
+- RN21
 
 ---
 
@@ -479,7 +483,7 @@ A2 - Nota sem título:
 - RF34
 - RF38
 - RF41
-- RN21
+- RN22
 - RNF04
 - RNF05
 
@@ -539,7 +543,7 @@ A2 - Nota sem título:
 - RF50
 - RF51
 - RF53
-- RN24
+- RN25
 - RNF04
 
 ---
@@ -598,8 +602,8 @@ A2 - Nota sem título:
 
 - RF40
 - RF43
-- RN22
 - RN23
+- RN24
 - RNF05
 
 ---
