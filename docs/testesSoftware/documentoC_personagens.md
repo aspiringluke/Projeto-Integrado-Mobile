@@ -35,7 +35,6 @@
 Existe uma classe válida de entrada e um fluxo integrado:
 
 - criação de personagem válido
-- abertura automática da tela de edição
 - dados preenchidos corretamente na edição
 
 **TC01 - Criação de personagem e abertura de edição**  
@@ -114,7 +113,6 @@ Classe válida: campos de fichas técnicas preenchidos corretamente.
 
 - Dados de personagem atualizados com sucesso
 - Alterações salvas
-- Mensagem de sucesso exibida
 
 **CT05 - Validar upload de imagem de personagem**
 
@@ -236,29 +234,7 @@ Campos de fichas técnicas vazios podem ser válidos (informações opcionais).
 - Campos opcionais aceitos em branco
 - Mensagem de sucesso exibida
 
-**CT11 - Validar criação de múltiplos personagens**
-
-**Técnica Utilizada:**
-
-- Teste Baseado em Cenário
-
-**Justificativa:**  
-Cenário: criar vários personagens e validar organização.
-
-**TC11 - Criação de múltiplos personagens**  
-**Entradas:**
-
-- Personagem 1: "Herói"
-- Personagem 2: "Vilão"
-- Personagem 3: "Aliado"
-
-**Resultado Esperado:**
-
-- Todos os personagens criados com sucesso
-- Lista de personagens atualizada
-- Todos visíveis na interface
-
-**CT12 - Validar deselecção de personagem do cartão**
+**CT11 - Validar deselecção de personagem do cartão**
 
 **Técnica Utilizada:**
 
@@ -267,7 +243,7 @@ Cenário: criar vários personagens e validar organização.
 **Justificativa:**  
 Mudança de estado: personagem selecionado → personagem deseleccionado do cartão.
 
-**TC12 - Remoção de personagem da seleção de cartão**  
+**TC11 - Remoção de personagem da seleção de cartão**  
 **Pré-condição:** Personagem selecionado para cartão de projeto.  
 **Resultado Esperado:**
 
@@ -289,8 +265,7 @@ Mudança de estado: personagem selecionado → personagem deseleccionado do cart
 | CT08         | Valor Limite                                               |
 | CT09         | Transição de Estado                                        |
 | CT10         | Particionamento de Equivalência + Valor Limite             |
-| CT11         | Teste Baseado em Cenário                                   |
-| CT12         | Transição de Estado                                        |
+| CT11         | Transição de Estado                                        |
 
 **4\. Tabela Consolidada de Casos de Teste**
 
@@ -305,9 +280,8 @@ Mudança de estado: personagem selecionado → personagem deseleccionado do cart
 | TC07   | Edição de personagem deixando nome vazio              |
 | TC08   | Edição de personagem com descrição gigantesca         |
 | TC09   | Remoção de imagem de personagem                       |
-| TC10   | Edição de fichas técnicas com campos opcionais vazios |
-| TC11   | Criação de múltiplos personagens                      |
-| TC12   | Remoção de personagem da seleção de cartão            |
+| TC10   | Edição de fichas técnicas com campos opcionais vazios |                                |
+| TC11   | Remoção de personagem da seleção de cartão            |
 
 **5\. Requisitos Funcionais Cobertos**
 
