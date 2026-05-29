@@ -81,6 +81,10 @@ class FakeFolderService implements IFolderService {
     return (true, folders, null);
   }
 
+  Future<(bool, List<Folder>?, String?)> listAllFolders() async {
+    return (true, _folders.values.toList(), null);
+  }
+
   @override
   Future<(bool, String)> deleteFolder(int id) async {
     if (!_folders.containsKey(id)) {
