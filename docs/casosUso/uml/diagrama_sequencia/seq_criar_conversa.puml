@@ -1,6 +1,6 @@
 @startuml Diagrama de Sequencia - Criar de conversa (chatbot)
 
-title Diagrama de Sequencia - Criar de conversa (chabot)
+title Diagrama de Sequencia - Criar de conversa (chatbot)
 
 skinparam backgroundColor white
 skinparam actorStyle awesome
@@ -34,8 +34,9 @@ cv -> cvm : Processo de envio de mensagem
 ...Aguardar resposta                                                                                            ...
 note right of cvm
 Se [idConversa] for nulo:
-    Sequência: Atualizar conversa
+    Sequência: Criar conversa
 Senão:
+    Sequência: Atualizar conversa
 endnote
 cvm -> cr : criarConversa(mensagens)
 cr -> cs : criarConversa(mensagens)

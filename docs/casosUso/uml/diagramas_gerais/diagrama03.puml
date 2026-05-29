@@ -4,16 +4,16 @@ left to right direction
 actor "Usuário" as U
 
 rectangle "Sistema de Escrita Criativa - Configurações" {
-    usecase "UC15: Configurar e usar modo desempenho" as UC15
-    usecase "UC17: Proteção de acesso ao aplicativo" as UC17
+    usecase "UC16: Configurar e usar modo desempenho" as UC16
+    usecase "UC18: Proteção de acesso ao aplicativo" as UC18
     usecase "UC11: Personalização e configurações de escrita" as UC11
-    usecase "UC20: Gerenciamento de segurança (senha)" as UC20
+    usecase "UC21: Gerenciamento de segurança (senha)" as UC21
 }
 
-UC11 <.-. UC20: <<extends>>
+UC11 <.-. UC21: <<extends>>
 
-U --> UC15
-U --> UC17
+U --> UC16
+U --> UC18
 U --> UC11
-U --> UC20
+U --> UC21
 @enduml

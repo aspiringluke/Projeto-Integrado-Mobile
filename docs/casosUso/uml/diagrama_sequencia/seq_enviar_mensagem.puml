@@ -1,6 +1,6 @@
 @startuml Diagrama de Sequencia - Enviar mensagem (chatbot)
 
-title Diagrama de Sequencia - Enviar mensagem (chabot)
+title Diagrama de Sequencia - Enviar mensagem (chatbot)
 
 skinparam backgroundColor white
 skinparam actorStyle awesome

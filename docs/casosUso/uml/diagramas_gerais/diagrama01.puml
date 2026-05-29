@@ -13,6 +13,7 @@ rectangle "Sistema de Escrita Criativa - Gestão Criativa" {
         usecase "UC04: Editar dados do personagem" as UC04
         usecase "UC05: Upload de imagem" as UC05
         usecase "UC06: Criar nota de texto" as UC06
+        usecase "UC13: Criar grupo de tags e tag" as UC13
         usecase "UC09: Exclusão de entidades e itens do projeto" as UC09
     }
     
@@ -29,6 +30,7 @@ U --> UC03
 U --> UC04
 U --> UC05
 U --> UC06
+U --> UC13
 U --> UC09
 
 UC03 .> UC05: <<include>>

@@ -2,34 +2,35 @@
 
 |Usuário|
 start
-if (Ação selecionada?) then (Excluir nó)
-  :Selecionar nó no editor;
-  :Clicar em "Excluir";
-  |Sistema|
-  :Identificar arestas vinculadas;
-  :Exibir impacto da exclusão;
-  |Usuário|
-  if (Confirma exclusão?) then (sim)
-    |Sistema|
-    fork
-      :Remover nó;
-    fork again
-      :Remover arestas órfãs;
-    end fork
+:Acessar "Configurações Gerais";
+:Selecionar "Definir senha de acesso";
+:Inserir nova senha;
+:Confirmar nova senha;
+
+|Sistema|
+if (Senha e confirmação iguais?) then (sim)
+  if (Senha atende política mínima?) then (sim)
+    :Salvar senha de acesso;
   else (não)
-    :Cancelar exclusão;
+    :Exibir regra de senha inválida;
+    stop
   endif
-else (Excluir aresta)
-  :Selecionar aresta;
-  :Clicar em "Excluir";
-  |Sistema|
-  :Remover aresta e manter nós;
+else (não)
+  :Exibir erro de confirmação;
+  stop
 endif
 
 |Usuário|
-:Confirmar salvamento;
+:Reiniciar aplicativo;
 
 |Sistema|
-:Persistir estado do diagrama;
+repeat
+  :Solicitar senha;
+  |Usuário|
+  :Inserir senha;
+  |Sistema|
+repeat while (Senha válida?) is (não)
+:Permitir acesso à tela inicial;
+
 stop
 @enduml

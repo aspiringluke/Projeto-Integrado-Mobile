@@ -2,35 +2,25 @@
 
 |Usuário|
 start
-:Acessar "Configurações Gerais";
-:Selecionar "Definir senha de acesso";
-:Inserir nova senha;
-:Confirmar nova senha;
+:Selecionar múltiplos nós no editor;
+:Acionar "Criar grupo de nós";
+:Definir nome e cor;
 
 |Sistema|
-if (Senha e confirmação iguais?) then (sim)
-  if (Senha atende política mínima?) then (sim)
-    :Salvar senha de acesso;
-  else (não)
-    :Exibir regra de senha inválida;
-    stop
-  endif
-else (não)
-  :Exibir erro de confirmação;
-  stop
-endif
+:Criar grupo;
 
 |Usuário|
-:Reiniciar aplicativo;
-
-|Sistema|
-repeat
-  :Solicitar senha;
-  |Usuário|
-  :Inserir senha;
+if (Deseja ajustar o grupo?) then (sim)
+  if (Ação escolhida?) then (Remover nó)
+  :Selecionar nó e acionar "Remover do grupo";
   |Sistema|
-repeat while (Senha válida?) is (não)
-:Permitir acesso à tela inicial;
+  :Manter nó independente no diagrama;
+  else (Excluir grupo)
+  :Selecionar grupo e acionar "Excluir grupo";
+    |Sistema|
+    :Remover grupo e manter nós no diagrama;
+  endif
+endif
 
 stop
 @enduml

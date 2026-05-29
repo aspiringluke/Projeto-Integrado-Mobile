@@ -2,22 +2,22 @@
 
 |Usuário|
 start
-:Acessar "Configurações Gerais";
-:Ativar "Modo Desempenho";
+:Acessar seção "Diagramas";
+:Selecionar "Criar novo diagrama";
 
 |Sistema|
-:Aplicar perfil visual simplificado;
-
-if (Configuração aplicada com sucesso?) then (sim)
-  :Confirmar modo ativo;
-else (não)
-  :Manter configuração anterior e informar falha;
-endif
+:Inicializar plano de edição;
 
 |Usuário|
-if (Deseja desativar?) then (sim)
-  |Sistema|
-  :Restaurar configuração visual padrão;
+:Inserir nós e conexões;
+:Clicar em "Salvar";
+
+|Sistema|
+if (Estrutura mínima atendida?) then (sim)
+  :Persistir diagrama;
+  :Exibir confirmação;
+else (não)
+  :Exibir alerta de estrutura inválida;
 endif
 
 stop

@@ -18,17 +18,18 @@ Documento consolidado dos casos de uso.
 - [UC10 - Exclusão de pastas e conteúdo](#uc10)
 - [UC11 - Personalização e configurações de escrita](#uc11)
 - [UC12 - Interagir com chatbot de IA](#uc12)
+- [UC13 - Criar grupo de tags e tag](#uc13)
 
 ### Baixa prioridade
 
-- [UC13 - Busca global com filtros e tags](#uc13)
-- [UC14 - Criar diagrama de relacionamento de entidades](#uc14)
-- [UC15 - Configurar e usar modo desempenho](#uc15)
-- [UC16 - Gestão de grupos de nós em diagramas](#uc16)
-- [UC17 - Proteção de acesso ao aplicativo](#uc17)
-- [UC18 - Excluir nó e tratar arestas órfãs](#uc18)
-- [UC19 - Gestão de atributos detalhados no diagrama](#uc19)
-- [UC20 - Gerenciamento de segurança (senha)](#uc20)
+- [UC14 - Busca global com filtros e tags](#uc14)
+- [UC15 - Criar diagrama de relacionamento de entidades](#uc15)
+- [UC16 - Configurar e usar modo desempenho](#uc16)
+- [UC17 - Gestão de grupos de nós em diagramas](#uc17)
+- [UC18 - Proteção de acesso ao aplicativo](#uc18)
+- [UC19 - Excluir nó e tratar arestas órfãs](#uc19)
+- [UC20 - Gestão de atributos detalhados no diagrama](#uc20)
+- [UC21 - Gerenciamento de segurança (senha)](#uc21)
 
 ## Prioridade principal
 
@@ -46,19 +47,19 @@ Documento consolidado dos casos de uso.
 1. Abrir a tela inicial.
 2. Clicar em "Novo Projeto".
 3. Informar nome do projeto.
-4. Adicionar tags ao projeto (opcional).
+4. Confirmar criação.
 5. Sistema cria o projeto.
+6. Sistema cria automaticamente a pasta raiz do projeto na área de notas.
 
 ## Fluxo alternativo
 
 - A1 - Nome não informado: sistema exibe validação de nome obrigatório e bloqueia a criação.
-- A2 - Tag já cadastrada informada na criação: sistema reaproveita a tag existente e a associa ao projeto.
 
 ## Requisitos relacionados
 
 - RF01
-- RN06
-- RN07
+- RN01
+- RN02
 
 ---
 
@@ -83,21 +84,22 @@ Documento consolidado dos casos de uso.
 
 ## Fluxo alternativo
 
+- A1 - Nome não informado na edição: sistema exibe validação de nome obrigatório e bloqueia o salvamento.
 - A2 - Remover imagem do cartão: sistema remove a imagem e mantém as demais alterações.
 
 ## Requisitos relacionados
 
-- RF02
 - RF03
 - RF04
 - RF05
 - RF06
+- RF07
+- RN01
+- RN04
+- RN05
 - RN06
+- RN07
 - RN08
-- RN15
-- RN16
-- RN17
-- RN18
 
 ---
 
@@ -122,15 +124,15 @@ Documento consolidado dos casos de uso.
 
 - A1 - Campos obrigatórios ausentes: sistema destaca os campos pendentes e bloqueia a criação.
 - A2 - Cancelar criação: sistema descarta os dados preenchidos e retorna à lista de personagens.
-- A3 - Tag já cadastrada informada no seletor: sistema reaproveita a opção existente.
 
 ## Requisitos relacionados
 
-- RF18
 - RF20
-- RN03
-- RN04
-- RN05
+- RF21
+- RF22
+- RN17
+- RN18
+- RN19
 - RNF05
 
 ---
@@ -158,8 +160,8 @@ Documento consolidado dos casos de uso.
 
 ## Requisitos relacionados
 
-- RF19
-- RF20
+- RF21
+- RF22
 - RNF05
 
 ---
@@ -176,7 +178,7 @@ Documento consolidado dos casos de uso.
 ## Fluxo principal
 
 1. Abrir área de imagem do item.
-2. Selecionar imagem (até 5 MB).
+2. Selecionar imagem (até 30 MB).
 3. Sistema valida o arquivo selecionado.
 4. Sistema salva a imagem no item.
 5. Usuário confirma salvamento.
@@ -189,8 +191,9 @@ Documento consolidado dos casos de uso.
 
 ## Requisitos relacionados
 
-- RF11
-- RF20
+- RF12
+- RF22
+- RN20
 - RNF05
 
 ---
@@ -226,17 +229,17 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF07
-- RF10
+- RF08
 - RF11
 - RF12
 - RF13
-- RN02
+- RF14
+- RN20
 - RN10
-- RN14
-- RN15
-- RN17
-- RN19
+- RN09
+- RN05
+- RN07
+- RN11
 - RNF05
 
 ---
@@ -255,9 +258,8 @@ A2 - Nota sem título:
 1. Acessar a tela de listagem de itens.
 2. Acionar a opção "Criar pasta".
 3. Informar nome da pasta.
-4. Definir classificações e tags da pasta (opcional).
-5. Confirmar criação.
-6. Sistema exibe a pasta na listagem.
+4. Confirmar criação.
+5. Sistema exibe a pasta na listagem.
 
 ## Fluxos alternativos
 
@@ -266,10 +268,8 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF14
-- RF09
-- RF32
-- RN09
+- RF15
+- RN12
 
 ---
 
@@ -284,21 +284,22 @@ A2 - Nota sem título:
 
 ## Fluxo principal
 
-1. Pressionar e segurar item.
+1. Pressionar e segurar item (pasta, nota ou nó).
 2. Arrastar para nova posição.
-3. Soltar item.
-4. Sistema valida e confirma alteração.
+3. Soltar item no destino.
+4. Sistema valida o destino.
+5. Sistema confirma alteração.
 
 ## Fluxo alternativo
 
 - A1 - Área inválida: sistema retorna item para posição original.
+- A2 - Auto-contenção de pasta: ao tentar mover uma pasta para dentro dela mesma, sistema bloqueia a ação e mantém estado anterior.
 
 ## Requisitos relacionados
 
-- RF39
-- RF16
+- RF42
+- RF17
 - RN13
-- RN23
 - RNF01
 - RNF04
 
@@ -327,9 +328,9 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF08
-- RF21
-- RF31
+- RF09
+- RF24
+- RF35
 
 ---
 
@@ -347,21 +348,23 @@ A2 - Nota sem título:
 1. Acessar listagem de itens.
 2. Abrir configurações da pasta.
 3. Selecionar "Excluir pasta".
-4. Escolher excluir só a pasta ou pasta com conteúdo.
-5. Confirmar.
+4. Sistema exibe confirmação de exclusão com impacto no conteúdo.
+5. Confirmar exclusão.
+6. Sistema remove a pasta e todo o conteúdo interno.
 
 ## Fluxo alternativo
 
-- A1 - Excluir apenas pasta: sistema move conteúdo para raiz e remove diretório vazio.
+- A1 - Pasta raiz de projeto: sistema bloqueia a exclusão da pasta raiz e permite apenas excluir seu conteúdo interno.
 
 ## Requisitos relacionados
 
-- RF15
 - RF16
 - RF17
-- RN01
-- RN11
-- RN12
+- RF18
+- RN03
+- RN14
+- RN15
+- RN16
 
 ---
 
@@ -387,8 +390,8 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF24
-- RF25
+- RF26
+- RF27
 
 ---
 
@@ -407,8 +410,9 @@ A2 - Nota sem título:
 1. Acessar o chat de IA.
 2. Digitar uma pergunta ou solicitação.
 3. Enviar mensagem.
-4. Sistema encaminha a solicitação para a IA.
-5. Sistema exibe a resposta no chat.
+4. Sistema valida se a mensagem não está vazia.
+5. Sistema encaminha a solicitação para a IA.
+6. Sistema exibe a resposta no chat.
 
 ## Fluxos alternativos
 
@@ -417,15 +421,51 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF26
+- RF28
+- RN21
+
+---
+
+<a id="uc13"></a>
+
+# UC13 - Criar grupo de tags e tag
+
+- Ator principal: Usuário
+- Objetivo: Criar um novo grupo de tags e uma tag associada ao grupo em um item.
+- Pré-condições: Item que pode ter tags criado.
+- Pós-condições: Item com grupo e tag adicionados.
+
+## Fluxo principal
+
+1. Acessar item que contém menu de adição de tag.
+2. Nomear novo grupo de tag.
+3. Selecionar cor do grupo.
+4. Confirmar criação do grupo de tag.
+5. Nomear uma tag dentro do grupo.
+6. Selecionar cor da tag.
+7. Confirmar criação da tag.
+
+## Fluxos alternativos
+
+- A1 - Nome vazio: usuário tenta criar grupo ou tag sem nomear; sistema rejeita silenciosamente e não cria.
+- A2 - Tag ou grupo existente: usuário tenta criar grupo ou tag com nome duplicado; sistema identifica duplicidade e mantém o cadastro anterior, sem criar novo.
+
+## Requisitos relacionados
+
+- RF06
+- RF14
+- RN05
+- RN06
+- RN07
+- RN08
 
 ---
 
 ## Baixa prioridade
 
-<a id="uc13"></a>
+<a id="uc14"></a>
 
-# UC13 - Busca global com filtros e tags
+# UC14 - Busca global com filtros e tags
 
 - Ator principal: Usuário
 - Objetivo: Localizar itens rapidamente.
@@ -446,16 +486,16 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF27
-- RF28
-- RF29
+- RF31
+- RF32
+- RF33
 - RNF03
 
 ---
 
-<a id="uc14"></a>
+<a id="uc15"></a>
 
-# UC14 - Criar diagrama de relacionamento de entidades
+# UC15 - Criar diagrama de relacionamento de entidades
 
 - Ator principal: Usuário
 - Objetivo: Criar e conectar entidades em um diagrama.
@@ -476,18 +516,18 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF30
 - RF34
-- RF37
-- RN20
+- RF38
+- RF41
+- RN22
 - RNF04
 - RNF05
 
 ---
 
-<a id="uc15"></a>
+<a id="uc16"></a>
 
-# UC15 - Configurar e usar modo desempenho
+# UC16 - Configurar e usar modo desempenho
 
 - Ator principal: Usuário
 - Objetivo: Reduzir consumo de recursos.
@@ -507,14 +547,14 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF25
+- RF27
 - RNF02
 
 ---
 
-<a id="uc16"></a>
+<a id="uc17"></a>
 
-# UC16 - Gestão de grupos de nós em diagramas
+# UC17 - Gestão de grupos de nós em diagramas
 
 - Ator principal: Usuário
 - Objetivo: Agrupar nós para organização.
@@ -534,19 +574,19 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF44
-- RF45
-- RF46
-- RF47
+- RF48
 - RF49
-- RN23
+- RF50
+- RF51
+- RF53
+- RN25
 - RNF04
 
 ---
 
-<a id="uc17"></a>
+<a id="uc18"></a>
 
-# UC17 - Proteção de acesso ao aplicativo
+# UC18 - Proteção de acesso ao aplicativo
 
 - Ator principal: Usuário
 - Objetivo: Proteger acesso ao app por senha.
@@ -568,13 +608,13 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF22
+- RF25
 
 ---
 
-<a id="uc18"></a>
+<a id="uc19"></a>
 
-# UC18 - Excluir nó e tratar arestas órfãs
+# UC19 - Excluir nó e tratar arestas órfãs
 
 - Ator principal: Usuário
 - Objetivo: Manter integridade lógica do diagrama ao excluir nós.
@@ -596,17 +636,17 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF36
-- RF39
-- RN21
-- RN22
+- RF40
+- RF43
+- RN23
+- RN24
 - RNF05
 
 ---
 
-<a id="uc19"></a>
+<a id="uc20"></a>
 
-# UC19 - Gestão de atributos detalhados no diagrama
+# UC20 - Gestão de atributos detalhados no diagrama
 
 - Ator principal: Usuário
 - Objetivo: Adicionar descrições em nós e arestas.
@@ -626,14 +666,14 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF35
-- RF42
+- RF39
+- RF46
 
 ---
 
-<a id="uc20"></a>
+<a id="uc21"></a>
 
-# UC20 - Gerenciamento de segurança (senha)
+# UC21 - Gerenciamento de segurança (senha)
 
 - Ator principal: Usuário
 - Objetivo: Alterar ou remover senha do aplicativo.
@@ -657,4 +697,4 @@ A2 - Nota sem título:
 
 ## Requisitos relacionados
 
-- RF22
+- RF25

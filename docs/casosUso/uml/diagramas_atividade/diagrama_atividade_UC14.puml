@@ -2,22 +2,22 @@
 
 |Usuário|
 start
-:Acessar seção "Diagramas";
-:Selecionar "Criar novo diagrama";
+:Acessar campo de busca global;
+:Informar palavra-chave ou tag;
 
 |Sistema|
-:Inicializar plano de edição;
-
-|Usuário|
-:Inserir nós e conexões;
-:Clicar em "Salvar";
-
-|Sistema|
-if (Estrutura mínima atendida?) then (sim)
-  :Persistir diagrama;
-  :Exibir confirmação;
+:Aplicar debounce;
+if (Consulta vazia?) then (sim)
+  :Exibir itens recentes;
+  stop
 else (não)
-  :Exibir alerta de estrutura inválida;
+  :Executar consulta;
+endif
+
+if (Nenhum resultado encontrado?) then (sim)
+  :Exibir sugestão para refinar termos;
+else (não)
+  :Retornar itens correspondentes;
 endif
 
 stop

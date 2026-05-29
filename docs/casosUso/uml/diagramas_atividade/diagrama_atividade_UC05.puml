@@ -10,7 +10,7 @@ if (Permissão concedida?) then (sim)
   |Usuário|
   :Selecionar arquivo;
   |Sistema|
-  if (Arquivo maior que 5MB?) then (sim)
+  if (Arquivo maior que 30MB?) then (sim)
     :Exibir mensagem de erro;
     stop
   else (não)

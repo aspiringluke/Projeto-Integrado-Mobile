@@ -14,8 +14,12 @@ endif
 :Clicar em "Salvar";
 
 |Sistema|
-:Persistir alterações do projeto;
-:Exibir confirmação de sucesso;
+if (Nome informado?) then (sim)
+  :Persistir alterações do projeto;
+  :Exibir confirmação de sucesso;
+else (não)
+  :Exibir validação de nome obrigatório;
+endif
 
 stop
 @enduml

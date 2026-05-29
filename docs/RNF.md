@@ -64,8 +64,8 @@
 
 #### Relacionados às Regras de Negócio
 
-- RN20
 - RN21
+- RN22
 
 ## Confiabilidade
 
@@ -88,4 +88,4 @@
 
 #### Relacionados às Regras de Negócio
 
-- RN24
+- RN25

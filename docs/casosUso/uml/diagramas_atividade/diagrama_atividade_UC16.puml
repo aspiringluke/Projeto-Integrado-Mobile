@@ -2,24 +2,22 @@
 
 |Usuário|
 start
-:Selecionar múltiplos nós no editor;
-:Acionar "Criar grupo de nós";
-:Definir nome e cor;
+:Acessar "Configurações Gerais";
+:Ativar "Modo Desempenho";
 
 |Sistema|
-:Criar grupo;
+:Aplicar perfil visual simplificado;
+
+if (Configuração aplicada com sucesso?) then (sim)
+  :Confirmar modo ativo;
+else (não)
+  :Manter configuração anterior e informar falha;
+endif
 
 |Usuário|
-if (Deseja ajustar o grupo?) then (sim)
-  if (Ação escolhida?) then (Remover nó)
-  :Selecionar nó e acionar "Remover do grupo";
+if (Deseja desativar?) then (sim)
   |Sistema|
-  :Manter nó independente no diagrama;
-  else (Excluir grupo)
-  :Selecionar grupo e acionar "Excluir grupo";
-    |Sistema|
-    :Remover grupo e manter nós no diagrama;
-  endif
+  :Restaurar configuração visual padrão;
 endif
 
 stop
