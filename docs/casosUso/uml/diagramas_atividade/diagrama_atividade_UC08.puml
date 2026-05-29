@@ -2,7 +2,7 @@
 
 |Usuário|
 start
-:Pressionar e segurar item;
+:Pressionar e segurar item (pasta, nota ou nó);
 :Arrastar item para novo destino;
 
 |Sistema|
@@ -12,8 +12,13 @@ start
 
 |Sistema|
 if (Destino válido?) then (sim)
+  if (Tentativa de mover pasta para dentro dela mesma?) then (sim)
+    :Bloquear ação de auto-contenção;
+    :Manter estado anterior;
+  else (não)
   :Aplicar nova posição/localização;
   :Confirmar alteração;
+  endif
 else (não)
   :Retornar item à posição original;
   :Exibir aviso de área inválida;

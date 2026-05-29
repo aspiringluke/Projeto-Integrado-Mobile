@@ -7,17 +7,15 @@ start
 :Selecionar "Excluir pasta";
 
 |Sistema|
-:Solicitar tipo de exclusão;
+:Validar se é pasta raiz de projeto;
 
-|Usuário|
-if (Deseja excluir conteúdo?) then (Apenas pasta)
-  |Sistema|
-  :Mover itens para o diretório raiz;
-  :Excluir pasta vazia;
-else (Pasta e conteúdo)
+if (É pasta raiz de projeto?) then (sim)
+  :Bloquear exclusão da pasta raiz;
+  :Permitir apenas exclusão do conteúdo interno;
+else (não)
   |Sistema|
   :Confirmar ação irreversível;
-  :Remover pasta e subitens;
+  :Remover pasta e todo o conteúdo interno;
 endif
 
 :Atualizar estrutura de diretórios;

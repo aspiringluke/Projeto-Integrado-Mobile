@@ -8,20 +8,12 @@ start
 |Usuário|
 :Clicar em "Novo Projeto";
 :Informar nome do projeto;
-if (Deseja associar tags?) then (sim)
-  :Selecionar tags existentes ou informar nova tag;
-  |Sistema|
-  if (Tag já cadastrada?) then (sim)
-    :Reaproveitar tag existente;
-  else (não)
-    :Cadastrar nova tag;
-  endif
-  |Usuário|
-endif
+:Confirmar criação;
 
 |Sistema|
 if (Nome informado?) then (sim)
   :Criar projeto;
+  :Criar pasta raiz do projeto na área de notas;
 else (não)
   :Exibir validação de nome obrigatório;
 endif
