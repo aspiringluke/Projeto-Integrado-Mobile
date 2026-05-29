@@ -43,7 +43,13 @@ test/
 |-- documento_c_test.dart
 |-- widget_test.dart
 |-- services/
-    -- fake_note_service.dart
+test/
+|- - services/
+        |- - fake_character_service.dart
+        |- - fake_folder_service.dart
+        `- - fake_note_service.dart
+    |- - documento_c_test.dart
+    `- - personagem_test.dart
 
 lib/src/features/notas/
 |-- controllers/
