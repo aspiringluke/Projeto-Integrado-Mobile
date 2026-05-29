@@ -22,13 +22,12 @@ Fluxo de criação, edição, exclusão e gerenciamento de personagens.
 
 **2\. Itens de teste**
 
-- CharacterViewModel
-- CharacterEditorViewModel
 - CharacterRepository
-- CharacterService
-- ProjectViewModel
-- ProjectRepository
-- ProjectService
+- CharacterListItem
+- CharacterCardData
+- FakeCharacterService
+- FakeFolderService
+- FolderRepository
 
 **3\. Escopo**
 

@@ -32,7 +32,7 @@ Registrar a execução da suíte de testes automatizados de personagens do proje
 
 - MVVM
 - Provider
-- StoryRegistryService
+- FakeCharacterService
 
 ## 3. Estrutura dos testes executados
 
@@ -128,7 +128,6 @@ Demonstrar:
 #### Resultado do Teste
 
 **Reprovado**
-```
 
 ## 7. Análise dos resultados
 

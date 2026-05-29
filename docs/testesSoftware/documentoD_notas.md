@@ -30,7 +30,9 @@ Registrar a execução da suíte de testes automatizados de notas do projeto, do
 
 ### Arquitetura
 
-O projeto segue arquitetura MVVM, com separação das responsabilidades em camadas de controllers, repositories, services e models. Nos testes unitários executados, as regras centrais de notas e pastas foram avaliadas com isolamento de persistência por meio de serviços fake, reduzindo interferência de banco de dados e de componentes de interface.
+- MVVM
+- Provider
+- FakeNoteService
 
 ## 3. Estrutura dos testes executados
 
