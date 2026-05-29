@@ -99,7 +99,7 @@ Foram executados:
 
 ## 6. Simulação de Falha
 
-Foi realizada uma simulação de falha alterando propositalmente o resultado esperado do teste de criação de personagem com nome vazio.
+Foi realizada uma simulação de falha alterando propositalmente o resultado esperado do TC02.
 
 ### Objetivo da simulação
 
