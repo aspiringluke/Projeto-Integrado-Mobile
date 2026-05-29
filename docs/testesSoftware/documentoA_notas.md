@@ -45,7 +45,7 @@ Fluxo de criação de notas
 - Gestão de Imagens: Upload de cover e accent images
 - Banco de Dados (SQLite): Persistência em disco
 - Performance: Otimização de memória
-- Testes de UI avançados: Gestos complexos, animações
+- Testes de UI avançados: Gestos complexos e animações
 
 **5\. Requisitos Funcionais**
 
