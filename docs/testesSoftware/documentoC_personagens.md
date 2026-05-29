@@ -1,8 +1,11 @@
 **Documento C - Técnicas e Casos de Teste (Personagens)**
 
 **Projeto:** Wireframe  
+
 **Tecnologia:** Flutter  
-**Arquitetura:** MVC  
+
+**Arquitetura:** MVVM 
+
 **Norma aplicada:** ISO/IEC/IEEE 29119-4
 
 **Equipe:**

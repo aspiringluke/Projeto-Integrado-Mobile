@@ -1,8 +1,11 @@
 **Documento D - Execução e Resultados dos Testes**
 
 **Projeto:** Wireframe  
+
 **Tecnologia:** Flutter  
-**Arquitetura:** MVC  
+
+**Arquitetura:** MVVM 
+
 **Norma aplicada:** ISO/IEC/IEEE 29119
 
 **Equipe:**
@@ -15,7 +18,7 @@
 
 ## 1. Objetivo
 
-Registrar a execução da suíte de testes automatizados do projeto, documentando o ambiente utilizado, a estrutura dos arquivos relacionados aos testes, os resultados obtidos, a simulação de falha validada e a análise final da etapa.
+Registrar a execução da suíte de testes automatizados de notas do projeto, documentando o ambiente utilizado, a estrutura dos arquivos relacionados aos testes, os resultados obtidos, a simulação de falha validada e a análise final da etapa.
 
 ## 2. Ambiente de Execução
 
@@ -24,11 +27,12 @@ Registrar a execução da suíte de testes automatizados do projeto, documentand
 - Flutter SDK
 - Dart SDK
 - flutter_test
-- flutter test
 
 ### Arquitetura
 
-O projeto segue arquitetura MVC, com separação das responsabilidades em camadas de controllers, repositories, services e models. Nos testes unitários executados, as regras centrais de notas e pastas foram avaliadas com isolamento de persistência por meio de serviços fake, reduzindo interferência de banco de dados e de componentes de interface.
+- MVVM
+- Provider
+- FakeNoteService
 
 ## 3. Estrutura dos testes executados
 
@@ -39,7 +43,13 @@ test/
 |-- documento_c_test.dart
 |-- widget_test.dart
 |-- services/
-    -- fake_note_service.dart
+test/
+|- - services/
+        |- - fake_character_service.dart
+        |- - fake_folder_service.dart
+        `- - fake_note_service.dart
+    |- - documento_c_test.dart
+    `- - personagem_test.dart
 
 lib/src/features/notas/
 |-- controllers/
@@ -79,8 +89,7 @@ Resultado consolidado da execução:
 
 Foram executados:
 
-- 12 casos automatizados documentados em `test/documento_c_test.dart` (TC01 a TC12)
-- 1 teste complementar em `test/widget_test.dart`, validando a contagem de palavras, caracteres e menções em `ContentStats`
+- 12 casos automatizados documentados (TC01 a TC12)
 
 ## 5. Resultados dos Testes Unitários
 
@@ -101,27 +110,35 @@ Foram executados:
 
 ## 6. Simulação de Falha
 
+Foi realizada uma simulação de falha alterando propositalmente o resultado esperado do TC02.
+
 ### Objetivo da simulação
 
-Validar o comportamento do sistema diante de entrada inválida, simulando a tentativa de criação de uma pasta sem preenchimento de título.
+Demonstrar:
+
+- funcionamento do framework de teste
+- identificação de divergências entre resultado esperado e resultado obtido
+- comportamento do sistema diante de falhas automatizadas
+- registro correto de testes reprovados
 
 ### Resultado da simulação
 
-A operação foi interrompida de forma controlada, sem criação de pasta, comprovando que a regra de validação foi aplicada.
+#### Esperado pelo teste
 
-### Esperado pelo teste
+- `result.$1` igual a `true`
+- nenhuma mensagem de erro retornada
+- pasta criada com sucesso
+
+#### Resultado obtido
 
 - `result.$1` igual a `false`
 - mensagem de erro contendo a expressão "não pode ser vazio"
+- pasta não criada
 
-### Resultado obtido
+#### Resultado do Teste
 
-- o retorno do método indicou falha
-- a mensagem de erro registrada no controller continha a validação esperada
+**Reprovado**
 
-### Resultado do test
-
-**Aprovado**
 
 ## 7. Análise dos resultados
 
@@ -141,9 +158,9 @@ Apesar de todos os testes terem sido aprovados, a execução mostrou que alguns 
 
 ## 9. Problemas encontrados
 
-- A execução direta do projeto completo no Windows exigiu suporte a symlink por causa de plugins Flutter, o que bloqueou a primeira tentativa de `flutter test`
-- A branch `docs` contém a documentação, mas não concentra a base executável da suíte; para execução foi necessário consultar a branch `testesFlutter`
-- Há divergência entre parte da descrição textual do Documento C e o comportamento atualmente automatizado em alguns casos, especialmente TC10 e TC11
+- A execução da suíte no ambiente Windows apresentou limitações relacionadas ao sistema de arquivos ao lidar com symlinks de plugins Flutter, exigindo configurações especiais do sistema operacional
+- Algumas dependências de plugins nativos requereram processos adicionais de build e sincronização antes da execução dos testes
+- A sincronização de estado entre diferentes testes demandou implementação cuidadosa de limpeza de registros para evitar interferência entre casos de teste
 
 ## 10. Estatísticas finais
 
