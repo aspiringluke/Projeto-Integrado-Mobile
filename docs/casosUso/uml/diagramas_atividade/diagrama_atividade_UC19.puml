@@ -2,26 +2,34 @@
 
 |Usuário|
 start
-if (Deseja visualização rápida?) then (sim)
+if (Ação selecionada?) then (Excluir nó)
+  :Selecionar nó no editor;
+  :Clicar em "Excluir";
   |Sistema|
-  :Exibir descrição sem abrir editor completo;
-  stop
+  :Identificar arestas vinculadas;
+  :Exibir impacto da exclusão;
+  |Usuário|
+  if (Confirma exclusão?) then (sim)
+    |Sistema|
+    fork
+      :Remover nó;
+    fork again
+      :Remover arestas órfãs;
+    end fork
+  else (não)
+    :Cancelar exclusão;
+  endif
+else (Excluir aresta)
+  :Selecionar aresta;
+  :Clicar em "Excluir";
+  |Sistema|
+  :Remover aresta e manter nós;
 endif
 
 |Usuário|
-:Selecionar aresta e abrir edição;
-:Inserir descrição da relação;
+:Confirmar salvamento;
 
 |Sistema|
-:Salvar metadados da aresta;
-
-|Usuário|
-:Selecionar nó e abrir edição;
-:Inserir descrição do nó;
-
-|Sistema|
-:Salvar metadados do nó;
-:Exibir indicador visual de descrição;
-
+:Persistir estado do diagrama;
 stop
 @enduml

@@ -5,16 +5,16 @@ skinparam PackageStyle rectangle
 actor "Usuário" as U
 
 rectangle "Sistema de Escrita Criativa - Diagramação" {
-    usecase "UC14: Criar diagrama de relacionamento de entidades" as UC14
-    usecase "UC16: Gestão de grupos de nós em diagramas" as UC16
-    usecase "UC18: Excluir nó e tratar arestas órfãs" as UC18
-    usecase "UC19: Gestão de atributos detalhados no diagrama" as UC19
+    usecase "UC15: Criar diagrama de relacionamento de entidades" as UC15
+    usecase "UC17: Gestão de grupos de nós em diagramas" as UC17
+    usecase "UC19: Excluir nó e tratar arestas órfãs" as UC19
+    usecase "UC20: Gestão de atributos detalhados no diagrama" as UC20
 }
 
-U --> UC14
-U --> UC16
-U --> UC18
+U --> UC15
+U --> UC17
 U --> UC19
+U --> UC20
 
-UC14 <.-. UC19: <<extends>>
+UC15 <.-. UC20: <<extends>>
 @enduml

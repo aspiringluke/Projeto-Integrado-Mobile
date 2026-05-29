@@ -1,6 +1,6 @@
 @startuml Diagrama de Sequencia - Atualizar conversa (chatbot)
 
-title Diagrama de Sequencia - Atualizar conversa (chabot)
+title Diagrama de Sequencia - Atualizar conversa (chatbot)
 
 skinparam backgroundColor white
 skinparam actorStyle awesome
@@ -34,8 +34,9 @@ cv -> cvm : Processo de envio de mensagem
 ...Aguardar resposta                                                                                            ...
 note right of cvm
 Se [idConversa] NÃO for nulo:
-    Sequência: Criar conversa
+    Sequência: Atualizar conversa
 Senão:
+    Sequência: Criar conversa
 endnote
 cvm -> cr : atualizarConversa(mensagens)
 cr -> cs : atualizarConversa(mensagens)

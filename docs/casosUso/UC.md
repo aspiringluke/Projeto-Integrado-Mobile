@@ -18,17 +18,18 @@ Documento consolidado dos casos de uso.
 - [UC10 - Exclusão de pastas e conteúdo](#uc10)
 - [UC11 - Personalização e configurações de escrita](#uc11)
 - [UC12 - Interagir com chatbot de IA](#uc12)
+- [UC13 - Criar grupo de tags e tag](#uc13)
 
 ### Baixa prioridade
 
-- [UC13 - Busca global com filtros e tags](#uc13)
-- [UC14 - Criar diagrama de relacionamento de entidades](#uc14)
-- [UC15 - Configurar e usar modo desempenho](#uc15)
-- [UC16 - Gestão de grupos de nós em diagramas](#uc16)
-- [UC17 - Proteção de acesso ao aplicativo](#uc17)
-- [UC18 - Excluir nó e tratar arestas órfãs](#uc18)
-- [UC19 - Gestão de atributos detalhados no diagrama](#uc19)
-- [UC20 - Gerenciamento de segurança (senha)](#uc20)
+- [UC14 - Busca global com filtros e tags](#uc14)
+- [UC15 - Criar diagrama de relacionamento de entidades](#uc15)
+- [UC16 - Configurar e usar modo desempenho](#uc16)
+- [UC17 - Gestão de grupos de nós em diagramas](#uc17)
+- [UC18 - Proteção de acesso ao aplicativo](#uc18)
+- [UC19 - Excluir nó e tratar arestas órfãs](#uc19)
+- [UC20 - Gestão de atributos detalhados no diagrama](#uc20)
+- [UC21 - Gerenciamento de segurança (senha)](#uc21)
 
 ## Prioridade principal
 
@@ -425,11 +426,46 @@ A2 - Nota sem título:
 
 ---
 
-## Baixa prioridade
-
 <a id="uc13"></a>
 
-# UC13 - Busca global com filtros e tags
+# UC13 - Criar grupo de tags e tag
+
+- Ator principal: Usuário
+- Objetivo: Criar um novo grupo de tags e uma tag associada ao grupo em um item.
+- Pré-condições: Item que pode ter tags criado.
+- Pós-condições: Item com grupo e tag adicionados.
+
+## Fluxo principal
+
+1. Acessar item que contém menu de adição de tag.
+2. Nomear novo grupo de tag.
+3. Selecionar cor do grupo.
+4. Confirmar criação do grupo de tag.
+5. Nomear uma tag dentro do grupo.
+6. Selecionar cor da tag.
+7. Confirmar criação da tag.
+
+## Fluxos alternativos
+
+- A1 - Nome vazio: usuário tenta criar grupo ou tag sem nomear; sistema rejeita silenciosamente e não cria.
+- A2 - Tag ou grupo existente: usuário tenta criar grupo ou tag com nome duplicado; sistema identifica duplicidade e mantém o cadastro anterior, sem criar novo.
+
+## Requisitos relacionados
+
+- RF06
+- RF14
+- RN05
+- RN06
+- RN07
+- RN08
+
+---
+
+## Baixa prioridade
+
+<a id="uc14"></a>
+
+# UC14 - Busca global com filtros e tags
 
 - Ator principal: Usuário
 - Objetivo: Localizar itens rapidamente.
@@ -457,9 +493,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc14"></a>
+<a id="uc15"></a>
 
-# UC14 - Criar diagrama de relacionamento de entidades
+# UC15 - Criar diagrama de relacionamento de entidades
 
 - Ator principal: Usuário
 - Objetivo: Criar e conectar entidades em um diagrama.
@@ -489,9 +525,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc15"></a>
+<a id="uc16"></a>
 
-# UC15 - Configurar e usar modo desempenho
+# UC16 - Configurar e usar modo desempenho
 
 - Ator principal: Usuário
 - Objetivo: Reduzir consumo de recursos.
@@ -516,9 +552,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc16"></a>
+<a id="uc17"></a>
 
-# UC16 - Gestão de grupos de nós em diagramas
+# UC17 - Gestão de grupos de nós em diagramas
 
 - Ator principal: Usuário
 - Objetivo: Agrupar nós para organização.
@@ -548,9 +584,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc17"></a>
+<a id="uc18"></a>
 
-# UC17 - Proteção de acesso ao aplicativo
+# UC18 - Proteção de acesso ao aplicativo
 
 - Ator principal: Usuário
 - Objetivo: Proteger acesso ao app por senha.
@@ -576,9 +612,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc18"></a>
+<a id="uc19"></a>
 
-# UC18 - Excluir nó e tratar arestas órfãs
+# UC19 - Excluir nó e tratar arestas órfãs
 
 - Ator principal: Usuário
 - Objetivo: Manter integridade lógica do diagrama ao excluir nós.
@@ -608,9 +644,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc19"></a>
+<a id="uc20"></a>
 
-# UC19 - Gestão de atributos detalhados no diagrama
+# UC20 - Gestão de atributos detalhados no diagrama
 
 - Ator principal: Usuário
 - Objetivo: Adicionar descrições em nós e arestas.
@@ -635,9 +671,9 @@ A2 - Nota sem título:
 
 ---
 
-<a id="uc20"></a>
+<a id="uc21"></a>
 
-# UC20 - Gerenciamento de segurança (senha)
+# UC21 - Gerenciamento de segurança (senha)
 
 - Ator principal: Usuário
 - Objetivo: Alterar ou remover senha do aplicativo.

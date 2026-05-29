@@ -6,12 +6,12 @@ actor "Usuário"as U
 rectangle "Sistema de Escrita Criativa - Organização" {
     usecase "UC07: Criar pasta" as UC07
     usecase "UC08: Organizar elementos via drag-and-drop" as UC08
-    usecase "UC13: Busca global com filtros e tags" as UC13
+    usecase "UC14: Busca global com filtros e tags" as UC14
     usecase "UC10: Exclusão de pastas e conteúdo" as UC10
 }
 
 U --> UC07
 U --> UC08
-U --> UC13
+U --> UC14
 U --> UC10
 @enduml

@@ -2,22 +2,42 @@
 
 |Usuário|
 start
-:Acessar campo de busca global;
-:Digitar palavra-chave ou selecionar tag;
+:Acessar item que contém menu de adição de tag;
+:Nomear novo grupo de tag;
 
 |Sistema|
-:Aplicar debounce;
-if (Consulta vazia?) then (sim)
-  :Exibir itens recentes;
+if (Nome do grupo vazio?) then (sim)
+  :Rejeitar silenciosamente e não criar grupo;
   stop
 else (não)
-  :Executar consulta;
+  if (Grupo já existente?) then (sim)
+    :Manter grupo anterior, sem criar novo;
+  else (não)
+    |Usuário|
+    :Selecionar cor do grupo;
+    :Confirmar criação do grupo de tag;
+    |Sistema|
+    :Criar grupo de tag;
+  endif
 endif
 
-if (Nenhum resultado encontrado?) then (sim)
-  :Exibir sugestão para refinar termos;
+|Usuário|
+:Nomear uma tag dentro do grupo;
+
+|Sistema|
+if (Nome da tag vazio?) then (sim)
+  :Rejeitar silenciosamente e não criar tag;
+  stop
 else (não)
-  :Retornar itens correspondentes;
+  if (Tag já existente no grupo?) then (sim)
+    :Manter tag anterior, sem criar nova;
+  else (não)
+    |Usuário|
+    :Selecionar cor da tag;
+    :Confirmar criação da tag;
+    |Sistema|
+    :Criar tag no grupo;
+  endif
 endif
 
 stop
