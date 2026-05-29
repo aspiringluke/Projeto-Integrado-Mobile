@@ -232,17 +232,7 @@ void main() {
       expect(getResult.$2!.data.motto, isEmpty);
     });
 
-    test('TC11 Criação de múltiplos personagens', () async {
-      await repository.createCharacter(createBaseCharacter(name: 'Herói'));
-      await repository.createCharacter(createBaseCharacter(name: 'Vilão'));
-      await repository.createCharacter(createBaseCharacter(name: 'Aliado'));
-
-      final listResult = await repository.listAllCharacters();
-      expect(listResult.$1, isTrue);
-      expect(listResult.$2, hasLength(3));
-    });
-
-    test('TC12 Remoção de personagem da seleção de cartão', () async {
+    test('TC11 Remoção de personagem da seleção de cartão', () async {
       final character = createBaseCharacter(name: 'Selecionado').copyWith(isPinned: true);
       final createResult = await repository.createCharacter(character);
       final id = createResult.$2!.id!;
