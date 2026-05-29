@@ -54,8 +54,11 @@ Os testes executados e os arquivos diretamente relacionados à suíte ficaram or
 │           └── project_image_data.dart
 └── test
     └── services
-        ├── documento_c_test.dart
-        └── personagem_test.dart
+        └── fake_character_service.dart
+        └── fake_folder_service.dart
+        └── fake_note_service.dart
+    ├── documento_c_test.dart
+    └── personagem_test.dart
 ```
 
 ## 4. Execução dos testes
