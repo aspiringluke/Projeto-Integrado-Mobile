@@ -1,8 +1,11 @@
 **Documento D - Execução e Resultados dos Testes**
 
 **Projeto:** Wireframe  
+
 **Tecnologia:** Flutter  
+
 **Arquitetura:** MVVM 
+
 **Norma aplicada:** ISO/IEC/IEEE 29119
 
 **Equipe:**

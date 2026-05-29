@@ -1,8 +1,11 @@
 **Documento B - Processo de Teste**
 
 **Projeto:** Wireframe  
-**Tecnologia:** Flutter  
-**Arquitetura:** MVC  
+
+**Tecnologia:** Flutter 
+
+**Arquitetura:** MVVM
+
 **Norma aplicada:** ISO/IEC/IEEE 29119-2
 
 **Equipe:**

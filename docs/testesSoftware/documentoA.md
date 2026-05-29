@@ -4,7 +4,7 @@
 
 **Tecnologia:** Flutter
 
-**Arquitetura:** MVC
+**Arquitetura:** MVVM
 
 **Normas Aplicadas:** ISO/IEC/IEEE 29119-1
 
