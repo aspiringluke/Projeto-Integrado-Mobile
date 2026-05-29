@@ -57,8 +57,8 @@ Documento consolidado dos casos de uso.
 ## Requisitos relacionados
 
 - RF01
-- RN06
-- RN07
+- RN01
+- RN02
 
 ---
 
@@ -92,12 +92,12 @@ Documento consolidado dos casos de uso.
 - RF05
 - RF06
 - RF07
+- RN01
+- RN04
+- RN05
 - RN06
+- RN07
 - RN08
-- RN15
-- RN16
-- RN17
-- RN18
 
 ---
 
@@ -128,9 +128,9 @@ Documento consolidado dos casos de uso.
 
 - RF20
 - RF22
-- RN03
-- RN04
-- RN05
+- RN17
+- RN18
+- RN19
 - RNF05
 
 ---
@@ -231,12 +231,12 @@ A2 - Nota sem título:
 - RF12
 - RF13
 - RF14
-- RN02
+- RN20
 - RN10
-- RN14
-- RN15
-- RN17
-- RN19
+- RN09
+- RN05
+- RN07
+- RN11
 - RNF05
 
 ---
@@ -269,7 +269,7 @@ A2 - Nota sem título:
 - RF15
 - RF10
 - RF36
-- RN09
+- RN12
 
 ---
 
@@ -298,7 +298,7 @@ A2 - Nota sem título:
 - RF43
 - RF17
 - RN13
-- RN23
+- RN24
 - RNF01
 - RNF04
 
@@ -359,9 +359,9 @@ A2 - Nota sem título:
 - RF16
 - RF17
 - RF18
-- RN01
-- RN11
-- RN12
+- RN14
+- RN15
+- RN16
 
 ---
 
@@ -479,7 +479,7 @@ A2 - Nota sem título:
 - RF34
 - RF38
 - RF41
-- RN20
+- RN21
 - RNF04
 - RNF05
 
@@ -539,7 +539,7 @@ A2 - Nota sem título:
 - RF50
 - RF51
 - RF53
-- RN23
+- RN24
 - RNF04
 
 ---
@@ -598,8 +598,8 @@ A2 - Nota sem título:
 
 - RF40
 - RF43
-- RN21
 - RN22
+- RN23
 - RNF05
 
 ---
