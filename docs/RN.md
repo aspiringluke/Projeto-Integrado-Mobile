@@ -130,6 +130,12 @@
 
   Requisitos relacionados: RF12, RF22
 
+## Tags
+
+### RN21 — Criação de tags e grupos
+
+  Grupos e tags devem ser criados dinamicamente a partir do menu de adição em itens que podem ter tags
+
 ## Configurações gerais
 
 ## Modelo de IA

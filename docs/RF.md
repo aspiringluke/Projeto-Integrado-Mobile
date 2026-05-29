@@ -127,6 +127,15 @@
 
 ---
 
+## Tags
+
+### RF25 - Tags
+
+  O sistema deve permitir adição e remocão de tags
+
+### RF26 - Grupos de tags
+
+  O sistema deve permitir adição e remoção de grupos de tags
 
 ## Configurações gerais
 
