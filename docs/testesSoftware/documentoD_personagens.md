@@ -39,28 +39,23 @@ Registrar a execução da suíte de testes automatizados de personagens do proje
 Os testes executados e os arquivos diretamente relacionados à suíte ficaram organizados da seguinte forma:
 
 ```text
-test/
-|-- documento_c_test.dart
-|-- services/
-    |-- fake_folder_service.dart
-    |-- fake_note_service.dart
-
-lib/src/features/characters/
-|-- controllers/
-|   `-- characters_pin_controller.dart
-|-- data/
-|   |-- repositories/
-|   |   `-- character_repository.dart
-|   `-- services/
-|       |-- i_character_service.dart
-|       `-- sqlite_character_service.dart
-|-- models/
-|   |-- characters_models.dart
-|   |-- character_relevance.dart
-|   `-- character_card.dart
-
-lib/src/features/shared/
-|-- story_registry.dart
+├── src
+│   |
+│   ├── shared
+│   │   └── story_registry.dart
+│   ├── characters
+│   │   ├── data
+│   │   │   └── repositories
+│   │   │       └── character_repository.dart
+│   │   └── models
+│   │       └── character_model.dart
+│   └── projects
+│       └── models
+│           └── project_image_data.dart
+└── test
+    └── services
+        ├── documento_c_test.dart
+        └── personagem_test.dart
 ```
 
 ## 4. Execução dos testes
