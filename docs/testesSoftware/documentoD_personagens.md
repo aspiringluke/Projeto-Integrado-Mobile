@@ -99,27 +99,35 @@ Foram executados:
 
 ## 6. Simulação de Falha
 
+Foi realizada uma simulação de falha alterando propositalmente o resultado esperado do teste de criação de personagem com nome vazio.
+
 ### Objetivo da simulação
 
-Validar o comportamento do sistema diante de entrada inválida, simulando a tentativa de criação de um personagem sem preenchimento de nome.
+Demonstrar:
+
+- funcionamento do framework de teste
+- identificação de divergências entre resultado esperado e resultado obtido
+- comportamento das validações de campos obrigatórios
+- registro correto de testes reprovados
 
 ### Resultado da simulação
 
-A operação foi rejeitada de forma controlada, sem registro de personagem, comprovando que a validação de campos obrigatórios foi aplicada.
+#### Esperado pelo teste
 
-### Esperado pelo teste
+- Personagem criado com sucesso
+- Registro adicionado à lista de personagens
+- Nenhuma mensagem de erro exibida
 
-- Nenhum personagem adicionado ao registro
-- Contagem de personagens permanece inalterada
+#### Resultado obtido
 
-### Resultado obtido
+- Personagem não criado
+- Nenhum registro adicionado à lista de personagens
+- Mensagem de erro informando que o nome do personagem é obrigatório
 
-- O método de registro ignorou a entrada vazia
-- A lista de personagens manteve-se sem mudanças
+#### Resultado do Teste
 
-### Resultado do teste
-
-**Aprovado**
+**Reprovado**
+```
 
 ## 7. Análise dos resultados
 

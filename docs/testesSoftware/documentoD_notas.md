@@ -103,27 +103,35 @@ Foram executados:
 
 ## 6. Simulação de Falha
 
+Foi realizada uma simulação de falha alterando propositalmente o resultado esperado do TC02.
+
 ### Objetivo da simulação
 
-Validar o comportamento do sistema diante de entrada inválida, simulando a tentativa de criação de uma pasta sem preenchimento de título.
+Demonstrar:
+
+- funcionamento do framework de teste
+- identificação de divergências entre resultado esperado e resultado obtido
+- comportamento do sistema diante de falhas automatizadas
+- registro correto de testes reprovados
 
 ### Resultado da simulação
 
-A operação foi interrompida de forma controlada, sem criação de pasta, comprovando que a regra de validação foi aplicada.
+#### Esperado pelo teste
 
-### Esperado pelo teste
+- `result.$1` igual a `true`
+- nenhuma mensagem de erro retornada
+- pasta criada com sucesso
+
+#### Resultado obtido
 
 - `result.$1` igual a `false`
 - mensagem de erro contendo a expressão "não pode ser vazio"
+- pasta não criada
 
-### Resultado obtido
-
-- o retorno do método indicou falha
-- a mensagem de erro registrada no controller continha a validação esperada
-
-### Resultado do teste
+#### Resultado do Teste
 
 **Reprovado**
+
 
 ## 7. Análise dos resultados
 
