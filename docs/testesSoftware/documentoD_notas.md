@@ -83,7 +83,6 @@ Resultado consolidado da execução:
 Foram executados:
 
 - 12 casos automatizados documentados (TC01 a TC12)
-- 1 teste complementar em `test/widget_test.dart`, validando a contagem de palavras, caracteres e menções em `ContentStats`
 
 ## 5. Resultados dos Testes Unitários
 
@@ -122,9 +121,9 @@ A operação foi interrompida de forma controlada, sem criação de pasta, compr
 - o retorno do método indicou falha
 - a mensagem de erro registrada no controller continha a validação esperada
 
-### Resultado do test
+### Resultado do teste
 
-**Aprovado**
+**Reprovado**
 
 ## 7. Análise dos resultados
 
