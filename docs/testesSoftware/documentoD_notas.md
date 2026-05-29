@@ -27,7 +27,6 @@ Registrar a execução da suíte de testes automatizados de notas do projeto, do
 - Flutter SDK
 - Dart SDK
 - flutter_test
-- flutter test
 
 ### Arquitetura
 

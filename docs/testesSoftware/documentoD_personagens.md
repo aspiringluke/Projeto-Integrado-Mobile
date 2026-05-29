@@ -27,11 +27,12 @@ Registrar a execução da suíte de testes automatizados de personagens do proje
 - Flutter SDK
 - Dart SDK
 - flutter_test
-- flutter test
 
 ### Arquitetura
 
-O projeto segue arquitetura MVVM, com separação das responsabilidades em camadas de controllers, repositories, services e models. Nos testes unitários executados, as regras centrais de personagens foram avaliadas com isolamento por meio do registro centralizado de histórias (StoryRegistry), reduzindo interferência de persistência e de componentes de interface.
+- MVVM
+- Provider
+- StoryRegistryService
 
 ## 3. Estrutura dos testes executados
 
